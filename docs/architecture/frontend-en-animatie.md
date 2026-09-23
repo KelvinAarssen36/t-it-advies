@@ -7,10 +7,39 @@ Vue 3 met TypeScript, via Inertia aan Laravel gekoppeld. Pagina's staan in
 `Inertia::render()` meegeeft. Layouts worden centraal toegewezen in
 `resources/js/app.ts`:
 
-- `Welcome` krijgt geen layout (dat is de publieke site met een eigen opzet).
+- `Welcome` en alles onder `public/` krijgt `PublicLayout`.
 - Alles onder `auth/` krijgt `AuthLayout`.
 - Alles onder `settings/` krijgt `AppLayout` plus de instellingen-layout.
 - De rest krijgt `AppLayout`, inclusief het beveiligde gedeelte onder `admin/`.
+
+Een nieuwe openbare pagina zet je dus in `resources/js/pages/public/` en die
+heeft meteen de kop, de voet en de animatielaag.
+
+`PublicLayout` wordt **asynchroon** geladen met `defineAsyncComponent`. Dat is
+geen stijlkeuze: de layout trekt GSAP en Lenis mee, en bij een gewone import
+boven aan `app.ts` belandt die hele animatielaag in de hoofdbundel. Dan
+betaalt ook het beheergedeelte ruim honderd kilobyte voor animaties die het
+niet gebruikt. Zo staat het in een eigen chunk die alleen de publieke site
+ophaalt.
+
+## De publieke site
+
+| Onderdeel                            | Waarvoor                                                |
+| ------------------------------------ | ------------------------------------------------------- |
+| `layouts/PublicLayout.vue`           | Kop, voet, smooth scrolling en de scroll-reveals.       |
+| `components/site/SiteHeader.vue`     | Navigatie. Krijgt pas een achtergrond zodra je scrollt. |
+| `components/site/SiteFooter.vue`     | Voet met accentlijn.                                    |
+| `components/site/SiteSection.vue`    | Eén breedte en één verticale ruimte voor alle secties.  |
+| `components/site/SectionHeading.vue` | Bovenschrift, titel en inleiding.                       |
+| `components/site/FeatureCard.vue`    | Kaart op donker, met glow op hover.                     |
+
+Gebruik `SiteSection` ook als je denkt dat je maar één keer afwijkt. Zodra
+elke pagina zijn eigen padding kiest, staat niets meer op één lijn, en dat is
+achteraf niet meer recht te trekken.
+
+De reveals worden opnieuw gescand na elke Inertia-navigatie. De layout blijft
+namelijk staan, dus `onMounted` draait maar één keer; zonder die herscan zou
+de inhoud van een volgende pagina op `opacity: 0` blijven hangen.
 
 ## Routes vanuit JavaScript
 
@@ -33,9 +62,20 @@ geen `tailwind.config.js` meer; kleuren en tokens staan in het CSS-bestand.
 Donkere modus loopt via de `dark`-klasse op `<html>`, aangestuurd door
 `useAppearance`.
 
+De kleuren zelf staan in [huisstijl en kleuren](huisstijl-en-kleuren.md).
+Schrijf in een component `bg-background`, `text-muted-foreground` of
+`bg-brand-blue` -- nooit een hexcode. De publieke site zet zelf `dark` op
+zijn wortel en staat dus altijd in het donkere thema, los van de voorkeur van
+de bezoeker.
+
 De UI-componenten in `resources/js/components/ui` komen van reka-ui. Pas die
 bij voorkeur niet aan: maak een eigen component eromheen als je afwijkend
 gedrag nodig hebt.
+
+Eén uitzondering, en die is bewust: `ui/button` heeft er twee varianten bij
+gekregen, `brand` en `brand-outline`. Een knop in de merkgradient is geen
+ander gedrag maar dezelfde knop in een andere jas; een wikkelcomponent zou
+alleen maar een tweede plek opleveren waar de maten uit elkaar kunnen lopen.
 
 ## Animatie
 
@@ -61,7 +101,12 @@ elke scroll. Niet weghalen.
 Inertia vervangt de pagina zonder de browser te herladen. Een Lenis-instantie
 of ScrollTrigger die je niet opruimt blijft draaien op een pagina die er niet
 meer is. Elke functie in `motion.ts` geeft daarom een opruimfunctie terug; roep
-die aan in `onBeforeUnmount`. Zie `Welcome.vue` voor het patroon.
+die aan in `onBeforeUnmount`. Zie `PublicLayout.vue` voor het patroon.
+
+Voor de publieke site hoef je dit meestal niet zelf te doen: scrollen en de
+reveals zitten al in de layout. Alleen een animatie die bij één pagina hoort
+-- zoals de binnenkomst van de hero in `Welcome.vue` -- zet je in die pagina,
+en dan ruim je hem daar ook op.
 
 ### prefers-reduced-motion
 

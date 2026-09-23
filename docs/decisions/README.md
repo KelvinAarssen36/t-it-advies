@@ -190,3 +190,30 @@ zelf; wie details nodig heeft logt in.
 
 **Terugdraaien:** de scanner staat los van het commando en is elders te
 gebruiken.
+
+---
+
+## 012 -- De publieke site staat altijd in het donkere thema
+
+**Keuze:** `PublicLayout` zet zelf `dark` op zijn wortel. De openbare pagina's
+zijn navy, ook voor een bezoeker die zijn systeem op licht heeft staan. Het
+beheergedeelte volgt de voorkeur van de gebruiker wél.
+
+**Alternatief:** de publieke site laten meebewegen met de systeemvoorkeur, en
+dus twee volwaardige versies onderhouden.
+
+**Waarom:** Midnight Navy is volgens de huisstijl het fundament van de site en
+draagt 55 tot 65 procent van het beeld. Een lichte versie van dezelfde pagina
+is dan geen instelling maar een tweede ontwerp -- met eigen contrastvragen,
+eigen schermafdrukken en een eigen kans om scheef te groeien. Voor een
+marketingsite is een vaste uitstraling het punt.
+
+Voor het beheergedeelte ligt dat anders: daar zit je soms een uur in, en dan
+is de voorkeur van de gebruiker belangrijker dan de merkbeleving.
+
+**Gevolg:** wil je op de publieke site een licht vlak, bouw dat dan als een
+lichte sectie binnen het donkere geheel, en draai niet het thema per sectie
+om. Dat laatste breekt de `dark:`-varianten van de componenten erin.
+
+**Terugdraaien:** één klasse in `PublicLayout`. Reken er dan wel op dat elke
+sectie op contrast nagelopen moet worden.

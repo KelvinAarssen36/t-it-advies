@@ -72,6 +72,8 @@ cronregel op de server staat.
 | `app/Listeners`                 | Koppeling van auth- en mailevents aan de logging.                    |
 | `app/Support/Maintenance`       | Opruimen van oude rijen in blokken.                                  |
 | `app/Support/Security`          | SecurityLogger, Turnstile, handtekeningcontrole, de anomaliescanner. |
+| `resources/js/components/site`  | De bouwstenen van de publieke site.                                  |
+| `resources/js/layouts`          | `PublicLayout`, `AppLayout`, `AuthLayout`.                           |
 | `resources/js/lib/motion.ts`    | De animatielaag (GSAP + Lenis).                                      |
 | `routes/console.php`            | De geplande taken.                                                   |
 | `routes/web.php`                | Publiek en ingelogd.                                                 |

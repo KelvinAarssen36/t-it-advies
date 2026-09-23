@@ -9,7 +9,15 @@ export const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground hover:bg-primary/90",
+          "bg-primary text-primary-foreground hover:bg-primary-hover",
+        // Alleen op een donkere achtergrond. Op wit verliest de gradient
+        // zijn contrast en wordt de knop juist zwakker dan de gewone.
+        "brand":
+          "brand-surface text-white shadow-xs hover:brightness-110",
+        // De secundaire knop op donker: doorzichtig, zodat de gradient of
+        // de navy eronder gewoon doorloopt.
+        "brand-outline":
+          "border border-brand-line bg-transparent text-white hover:bg-brand-navy-deep",
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         outline:

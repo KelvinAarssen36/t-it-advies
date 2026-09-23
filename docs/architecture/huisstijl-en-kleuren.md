@@ -5,9 +5,9 @@ hier niet in staat, en voeg er geen toe zonder hem hier op te schrijven.
 Anders staan er over een half jaar zeven soorten blauw in de code en lijkt
 elke pagina net iets anders.
 
-> **Stand van zaken.** Het palet is vastgesteld, maar staat nog niet in
-> `resources/css/app.css`. De applicatie draait nog op het standaardthema van
-> de starter kit. Zie [Hoe dit in code landt](#hoe-dit-in-code-landt).
+Het palet staat in `resources/css/app.css` en werkt door in de hele
+applicatie: de publieke site, het beheergedeelte en de inlogschermen.
+Zie [Hoe dit in code landt](#hoe-dit-in-code-landt).
 
 ## Het volledige palet
 
@@ -226,21 +226,86 @@ De frontend gebruikt Tailwind 4 met de tokenopzet van shadcn-vue. In
    `--color-primary: var(--primary);`
 2. `:root` en `.dark` geven die variabelen hun waarde.
 
-Het palet hoort dus in laag 2 terecht te komen, niet als losse hexcodes in
-componenten. Concreet betekent dat:
+Het palet staat in laag 2, niet als losse hexcodes in componenten. Concreet:
 
 - Schrijf in componenten `bg-background`, `text-foreground`, `border-border`
   en `bg-primary`, en **niet** `bg-[#061626]`. Dan blijft licht en donker
   vanzelf kloppen en hoef je een kleurwijziging maar op één plek te doen.
-- Kleuren die geen tegenhanger hebben in de tokenset -- de gradients, de
-  glow, Cyan als highlight -- komen als eigen variabelen in `:root`, met de
-  naam uit dit document (`--brand-cyan`, `--brand-gradient`).
+- De hexcodes staan één keer, in `:root`, onder hun merknaam
+  (`--brand-navy`, `--brand-cyan`, `--brand-gradient`). De rolvariabelen
+  verwijzen daarnaar.
+
+### Wat de rollen zijn geworden
+
+| Token              | Licht         | Donker                   |
+| ------------------ | ------------- | ------------------------ |
+| `background`       | Wit           | Midnight Navy            |
+| `foreground`       | Charcoal      | `#D8E2EA`                |
+| `card`             | Wit           | Deep Navy                |
+| `popover`          | Wit           | Verhoogde card `#102D4A` |
+| `primary`          | Electric Blue | Electric Blue            |
+| `muted-foreground` | Slate         | Steel Silver             |
+| `border`           | Soft Gray     | `#1A3A55`                |
+| `ring` (focus)     | Electric Blue | **Cyan Accent**          |
+
+Die laatste is geen slordigheid: Electric Blue als focusring op Midnight Navy
+is nauwelijks te zien, en een focusring die je niet ziet is geen focusring.
+
+### Merkkleuren als utility
+
+Naast de rollen zijn de merkkleuren los beschikbaar voor plekken waar een rol
+niets zegt: `bg-brand-navy`, `text-brand-cyan`, `border-brand-line`,
+`text-brand-ice`, `bg-brand-cloud`. Gebruik ze spaarzaam -- de verhouding
+hierboven is er niet voor niets.
+
+### Gradients, glow en de accentlijn
+
+Als eigen utility, zodat de waarden op één plek staan en niemand er een
+vierde gradient bij verzint:
+
+| Utility                | Wat het doet                        |
+| ---------------------- | ----------------------------------- |
+| `brand-surface`        | De Brand Gradient als achtergrond   |
+| `brand-surface-dark`   | De Dark Brand Gradient, voor hero's |
+| `brand-surface-silver` | De Silver Gradient                  |
+| `brand-text-gradient`  | Tekst in de merkgradient            |
+| `brand-glow`           | De subtiele glow                    |
+| `brand-glow-strong`    | De sterke versie, voor het logo     |
+| `brand-rule`           | Dunne cyaan lijn die uitdooft       |
+
+Het zijn `@utility`-regels en geen gewone klassen, zodat `hover:brand-glow`
+werkt -- en juist op hover gebruik je de glow.
+
+`brand-text-gradient` heeft een vaste terugvalkleur. Zonder ondersteuning
+voor `background-clip: text` zou de tekst anders onzichtbaar worden, en dat
+is erger dan een tint mis.
+
+### Knoppen
+
+De gewone `Button` is al Electric Blue met wit, want `primary` is dat. Voor
+op donker zijn er twee varianten bij: `variant="brand"` (de gradient) en
+`variant="brand-outline"` (doorzichtig met een `#2D5E83`-rand). Gebruik
+`brand` niet op wit: daar verliest de gradient zijn contrast en wordt de knop
+juist zwakker dan de gewone.
 
 **Let op de contrastcheck.** Electric Blue op Midnight Navy haalt de
 WCAG-eis voor gewone tekst niet. Gebruik `#0787E8` daarom als vlak met witte
 tekst erop, en niet als tekstkleur op donker; daar is Cyan Accent of Ice Blue
 voor. Zie ook [frontend en animatie](frontend-en-animatie.md), waar staat dat
 beweging uit moet kunnen -- toegankelijkheid is geen sluitstuk.
+
+### De publieke site staat altijd donker
+
+`PublicLayout` zet zelf `dark` op zijn wortel. De bezoeker die zijn systeem
+op licht heeft staan krijgt dus toch de navy site. Midnight Navy is het
+fundament van de huisstijl; een lichte versie van dezelfde pagina zou een
+tweede ontwerp zijn en geen instelling. Het beheergedeelte volgt de voorkeur
+van de gebruiker wél -- daar zit je soms een uur in.
+
+Wil je op de publieke site een lichte sectie, bouw die dan als een bewuste
+lichte blok binnen het donkere geheel (Platinum of Cloud als vlak), en niet
+door het thema per sectie om te draaien. Dat laatste breekt de
+`dark:`-varianten van de componenten die erin staan.
 
 ## Het logo
 

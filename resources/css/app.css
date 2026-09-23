@@ -7,6 +7,19 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+  Kleuren komen nooit rechtstreeks in een component. Er zijn twee lagen:
+
+  1. `@theme inline` koppelt de Tailwind-kleurnamen aan CSS-variabelen.
+  2. `:root` en `.dark` geven die variabelen hun waarde.
+
+  Schrijf in een component dus `bg-background` of `bg-brand-blue`, en nooit
+  `bg-[#061626]`. Dan klopt licht en donker vanzelf en hoef je een
+  kleurwijziging maar op één plek te doen.
+
+  Het palet zelf staat in docs/architecture/huisstijl-en-kleuren.md.
+*/
+
 @theme inline {
     --font-sans:
         Instrument Sans, ui-sans-serif, system-ui, sans-serif,
@@ -28,6 +41,7 @@
 
     --color-primary: var(--primary);
     --color-primary-foreground: var(--primary-foreground);
+    --color-primary-hover: var(--primary-hover);
 
     --color-secondary: var(--secondary);
     --color-secondary-foreground: var(--secondary-foreground);
@@ -59,6 +73,27 @@
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
+
+    /*
+      De merkkleuren onder hun eigen naam, voor plekken waar de rol-tokens
+      hierboven niets zeggen: een cyaan accentlijn, een zilveren detail.
+      Gebruik ze spaarzaam -- de verhouding in het palet is er niet voor
+      niets.
+    */
+    --color-brand-navy: var(--brand-navy);
+    --color-brand-navy-deep: var(--brand-navy-deep);
+    --color-brand-navy-raised: var(--brand-navy-raised);
+    --color-brand-blue: var(--brand-blue);
+    --color-brand-cyan: var(--brand-cyan);
+    --color-brand-ice: var(--brand-ice);
+    --color-brand-silver: var(--brand-silver);
+    --color-brand-platinum: var(--brand-platinum);
+    --color-brand-cloud: var(--brand-cloud);
+    --color-brand-line: var(--brand-border-dark-strong);
+
+    --color-success: var(--success);
+    --color-warning: var(--warning);
+    --color-error: var(--error);
 }
 
 /*
@@ -90,76 +125,124 @@
 }
 
 :root {
-    --background: hsl(0 0% 100%);
-    --foreground: hsl(0 0% 3.9%);
-    --card: hsl(0 0% 100%);
-    --card-foreground: hsl(0 0% 3.9%);
-    --popover: hsl(0 0% 100%);
-    --popover-foreground: hsl(0 0% 3.9%);
-    --primary: hsl(0 0% 9%);
-    --primary-foreground: hsl(0 0% 98%);
-    --secondary: hsl(0 0% 92.1%);
-    --secondary-foreground: hsl(0 0% 9%);
-    --muted: hsl(0 0% 96.1%);
-    --muted-foreground: hsl(0 0% 45.1%);
-    --accent: hsl(0 0% 96.1%);
-    --accent-foreground: hsl(0 0% 9%);
-    --destructive: hsl(0 84.2% 60.2%);
-    --destructive-foreground: hsl(0 0% 98%);
-    --border: hsl(0 0% 92.8%);
-    --input: hsl(0 0% 89.8%);
-    --ring: hsl(0 0% 3.9%);
-    --chart-1: hsl(12 76% 61%);
-    --chart-2: hsl(173 58% 39%);
-    --chart-3: hsl(197 37% 24%);
-    --chart-4: hsl(43 74% 66%);
-    --chart-5: hsl(27 87% 67%);
+    /* Het palet. Namen en gebruik: docs/architecture/huisstijl-en-kleuren.md */
+    --brand-navy: #061626; /* Midnight Navy */
+    --brand-navy-deep: #0a2340; /* Deep Navy */
+    --brand-navy-raised: #102d4a; /* Verhoogde card op donker */
+    --brand-navy-line: #104a78; /* Corporate Blue */
+    --brand-blue: #0787e8; /* Electric Blue */
+    --brand-blue-hover: #13a8ed;
+    --brand-cyan: #13c7f3; /* Cyan Accent */
+    --brand-ice: #a9e8fa; /* Ice Blue */
+    --brand-silver: #9eadbc; /* Steel Silver */
+    --brand-platinum: #e3eaf0; /* Platinum */
+    --brand-cloud: #f5f8fa; /* Cloud */
+    --brand-charcoal: #111820; /* Charcoal */
+    --brand-slate: #65717d; /* Slate */
+    --brand-soft-gray: #e8edf1; /* Soft Gray */
+    --brand-border-dark: #1a3a55;
+    --brand-border-dark-strong: #2d5e83;
+    --brand-border-light-strong: #c9d4dd;
+    --brand-text-on-dark: #d8e2ea;
+    --brand-text-on-light: #263746;
+
+    --brand-gradient: linear-gradient(135deg, #0787e8 0%, #13c7f3 100%);
+    --brand-gradient-dark: linear-gradient(
+        135deg,
+        #061626 0%,
+        #0a2340 55%,
+        #104a78 100%
+    );
+    --brand-gradient-silver: linear-gradient(
+        135deg,
+        #ffffff 0%,
+        #e3eaf0 45%,
+        #9eadbc 100%
+    );
+
+    --brand-glow: 0 0 20px rgb(19 199 243 / 0.18);
+    --brand-glow-strong: 0 0 35px rgb(7 135 232 / 0.3);
+
+    /* Statuskleuren. Bewust gedempt, zodat ze niet met het blauw botsen. */
+    --success: #24a66a;
+    --warning: #e3a425;
+    --error: #d94a4a;
+
+    /* Licht thema: wit met Charcoal-tekst, Electric Blue als actiekleur. */
+    --background: #ffffff;
+    --foreground: var(--brand-charcoal);
+    --card: #ffffff;
+    --card-foreground: var(--brand-charcoal);
+    --popover: #ffffff;
+    --popover-foreground: var(--brand-charcoal);
+    --primary: var(--brand-blue);
+    --primary-foreground: #ffffff;
+    --primary-hover: var(--brand-blue-hover);
+    --secondary: var(--brand-soft-gray);
+    --secondary-foreground: var(--brand-navy-deep);
+    --muted: var(--brand-cloud);
+    --muted-foreground: var(--brand-slate);
+    --accent: var(--brand-cloud);
+    --accent-foreground: var(--brand-navy-deep);
+    --destructive: var(--error);
+    --destructive-foreground: #ffffff;
+    --border: var(--brand-soft-gray);
+    --input: var(--brand-border-light-strong);
+    --ring: var(--brand-blue);
+    --chart-1: var(--brand-blue);
+    --chart-2: var(--brand-cyan);
+    --chart-3: var(--brand-navy-line);
+    --chart-4: var(--success);
+    --chart-5: var(--warning);
     --radius: 0.5rem;
-    --sidebar-background: hsl(0 0% 98%);
-    --sidebar-foreground: hsl(240 5.3% 26.1%);
-    --sidebar-primary: hsl(0 0% 10%);
-    --sidebar-primary-foreground: hsl(0 0% 98%);
-    --sidebar-accent: hsl(0 0% 94%);
-    --sidebar-accent-foreground: hsl(0 0% 30%);
-    --sidebar-border: hsl(0 0% 91%);
-    --sidebar-ring: hsl(217.2 91.2% 59.8%);
-    --sidebar: hsl(0 0% 98%);
+    --sidebar-background: var(--brand-cloud);
+    --sidebar-foreground: var(--brand-text-on-light);
+    --sidebar-primary: var(--brand-blue);
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: var(--brand-soft-gray);
+    --sidebar-accent-foreground: var(--brand-navy-deep);
+    --sidebar-border: var(--brand-soft-gray);
+    --sidebar-ring: var(--brand-blue);
+    --sidebar: var(--brand-cloud);
 }
 
 .dark {
-    --background: hsl(0 0% 3.9%);
-    --foreground: hsl(0 0% 98%);
-    --card: hsl(0 0% 3.9%);
-    --card-foreground: hsl(0 0% 98%);
-    --popover: hsl(0 0% 3.9%);
-    --popover-foreground: hsl(0 0% 98%);
-    --primary: hsl(0 0% 98%);
-    --primary-foreground: hsl(0 0% 9%);
-    --secondary: hsl(0 0% 14.9%);
-    --secondary-foreground: hsl(0 0% 98%);
-    --muted: hsl(0 0% 16.08%);
-    --muted-foreground: hsl(0 0% 63.9%);
-    --accent: hsl(0 0% 14.9%);
-    --accent-foreground: hsl(0 0% 98%);
-    --destructive: hsl(0 84% 60%);
-    --destructive-foreground: hsl(0 0% 98%);
-    --border: hsl(0 0% 14.9%);
-    --input: hsl(0 0% 14.9%);
-    --ring: hsl(0 0% 83.1%);
-    --chart-1: hsl(220 70% 50%);
-    --chart-2: hsl(160 60% 45%);
-    --chart-3: hsl(30 80% 55%);
-    --chart-4: hsl(280 65% 60%);
-    --chart-5: hsl(340 75% 55%);
-    --sidebar-background: hsl(0 0% 7%);
-    --sidebar-foreground: hsl(0 0% 95.9%);
-    --sidebar-primary: hsl(360, 100%, 100%);
-    --sidebar-primary-foreground: hsl(0 0% 100%);
-    --sidebar-accent: hsl(0 0% 15.9%);
-    --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
-    --sidebar-border: hsl(0 0% 15.9%);
-    --sidebar-ring: hsl(217.2 91.2% 59.8%);
-    --sidebar: hsl(240 5.9% 10%);
+    /* Donker thema: Midnight Navy als bodem, Deep Navy als laag erop. */
+    --background: var(--brand-navy);
+    --foreground: var(--brand-text-on-dark);
+    --card: var(--brand-navy-deep);
+    --card-foreground: #ffffff;
+    --popover: var(--brand-navy-raised);
+    --popover-foreground: #ffffff;
+    --primary: var(--brand-blue);
+    --primary-foreground: #ffffff;
+    --primary-hover: var(--brand-blue-hover);
+    --secondary: var(--brand-navy-raised);
+    --secondary-foreground: #ffffff;
+    --muted: var(--brand-navy-deep);
+    --muted-foreground: var(--brand-silver);
+    --accent: var(--brand-navy-raised);
+    --accent-foreground: #ffffff;
+    --destructive: var(--error);
+    --destructive-foreground: #ffffff;
+    --border: var(--brand-border-dark);
+    --input: var(--brand-border-dark-strong);
+    /* Cyan als focusring: Electric Blue op navy is te weinig zichtbaar. */
+    --ring: var(--brand-cyan);
+    --chart-1: var(--brand-blue);
+    --chart-2: var(--brand-cyan);
+    --chart-3: var(--brand-ice);
+    --chart-4: var(--success);
+    --chart-5: var(--warning);
+    --sidebar-background: var(--brand-navy-deep);
+    --sidebar-foreground: var(--brand-text-on-dark);
+    --sidebar-primary: var(--brand-blue);
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: var(--brand-navy-raised);
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: var(--brand-border-dark);
+    --sidebar-ring: var(--brand-cyan);
+    --sidebar: var(--brand-navy-deep);
 }
 
 @layer base {
@@ -168,5 +251,63 @@
     }
     body {
         @apply bg-background text-foreground;
+    }
+}
+
+/*
+  De drie toegestane gradients en de glow, als eigen utilities. Zo staan de
+  waarden op één plek en kan niemand er per ongeluk een vierde bij verzinnen.
+
+  Bewust `@utility` en niet `@layer components`: alleen dan werken varianten
+  als `hover:brand-glow`, en juist de glow gebruik je vooral op hover.
+*/
+@utility brand-surface {
+    background-image: var(--brand-gradient);
+}
+
+@utility brand-surface-dark {
+    background-image: var(--brand-gradient-dark);
+}
+
+@utility brand-surface-silver {
+    background-image: var(--brand-gradient-silver);
+}
+
+@utility brand-glow {
+    box-shadow: var(--brand-glow);
+}
+
+@utility brand-glow-strong {
+    box-shadow: var(--brand-glow-strong);
+}
+
+/* Dunne accentlijn die aan beide kanten uitdooft. */
+@utility brand-rule {
+    height: 1px;
+    background-image: linear-gradient(
+        90deg,
+        transparent 0%,
+        var(--brand-cyan) 50%,
+        transparent 100%
+    );
+}
+
+@layer components {
+    /*
+      Tekst in de merkgradient. De fallback-kleur staat er bewust op: zonder
+      ondersteuning voor background-clip zou de tekst onzichtbaar worden, en
+      dat is erger dan een tint mis.
+    */
+    .brand-text-gradient {
+        color: var(--brand-cyan);
+    }
+
+    @supports (background-clip: text) or (-webkit-background-clip: text) {
+        .brand-text-gradient {
+            background-image: var(--brand-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
     }
 }
