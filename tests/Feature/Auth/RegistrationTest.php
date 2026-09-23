@@ -3,37 +3,34 @@
 namespace Tests\Feature\Auth;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 use Tests\TestCase;
 
+/**
+ * Registratie staat uit, en dat is een keuze en geen vergetelheid.
+ *
+ * Deze site heeft één gebruiker: de eigenaar. Een open registratieformulier
+ * zou vreemden een account geven op een applicatie die verder alleen voor hem
+ * is. Accounts maak je met `php artisan user:create`.
+ *
+ * Zet iemand de feature terug aan, dan faalt deze test. Dat is de bedoeling:
+ * het hoort een bewuste beslissing te zijn, niet een regel die ongemerkt
+ * terugkomt bij het bijwerken van de starter kit.
+ */
 class RegistrationTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function setUp(): void
+    public function test_registration_is_disabled(): void
     {
-        parent::setUp();
-
-        $this->skipUnlessFortifyHas(Features::registration());
+        $this->assertFalse(Features::enabled(Features::registration()));
     }
 
-    public function test_registration_screen_can_be_rendered()
+    public function test_there_is_no_registration_route(): void
     {
-        $response = $this->get(route('register'));
+        $this->assertFalse(Route::has('register'));
 
-        $response->assertOk();
-    }
-
-    public function test_new_users_can_register()
-    {
-        $response = $this->post(route('register.store'), [
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
-        ]);
-
-        $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $this->get('/register')->assertNotFound();
     }
 }

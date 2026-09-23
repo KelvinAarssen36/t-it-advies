@@ -217,3 +217,32 @@ om. Dat laatste breekt de `dark:`-varianten van de componenten erin.
 
 **Terugdraaien:** één klasse in `PublicLayout`. Reken er dan wel op dat elke
 sectie op contrast nagelopen moet worden.
+
+---
+
+## 013 -- Registratie uit, accounts via de opdrachtregel
+
+**Keuze:** `Features::registration()` staat uit. Accounts maak je met
+`php artisan user:create`.
+
+**Alternatief:** registratie aan laten staan en afschermen met een
+uitnodigingscode, of een scherm voor gebruikersbeheer met een
+aanmaakformulier.
+
+**Waarom:** deze site heeft één gebruiker, de eigenaar. Een open
+registratieformulier geeft vreemden een account op een applicatie die verder
+alleen voor hem is, en elk account dat je niet nodig hebt is een ingang die
+je wel moet bewaken. Een uitnodigingscode is een tweede mechanisme dat
+onderhouden en getest moet worden voor iets wat één keer gebeurt.
+
+Het wachtwoord is in dat commando een vraag en geen optie: opties belanden in
+de shell-geschiedenis en zijn op een gedeelde server zichtbaar in `ps`.
+
+Het aangemaakte account krijgt meteen een geverifieerd e-mailadres. Zonder
+dat komt de eigenaar niet in het beheergedeelte, en op het moment dat je dit
+commando draait staat de mailprovider vaak nog niet ingesteld.
+
+**Terugdraaien:** de feature terugzetten in `config/fortify.php`. Dan faalt
+`RegistrationTest` -- met opzet, zodat het een beslissing blijft. Je hebt dan
+ook `auth/Register.vue`, `Fortify::registerView` en een `CreatesNewUsers`-actie
+weer nodig; die staan in de geschiedenis van deze commit.

@@ -9,12 +9,47 @@ Fortify registreert de routes en controllers; wij leveren alleen de schermen
 
 Ingeschakelde functies (`config/fortify.php`):
 
-- registratie,
 - wachtwoord herstellen,
 - e-mailverificatie,
 - tweestapsverificatie met bevestiging,
 - passkeys,
 - wachtwoordbevestiging bij gevoelige schermen.
+
+## Registratie staat uit
+
+Deze site heeft één gebruiker: de eigenaar. Een open registratieformulier zou
+vreemden een account geven op een applicatie die verder alleen voor hem is,
+en elk account dat je niet nodig hebt is een ingang die je wel moet bewaken.
+
+`Features::registration()` staat daarom niet in de lijst hierboven. De route
+`/register` bestaat niet, de pagina is weg en de inloglink ernaartoe ook.
+[`RegistrationTest`](../../tests/Feature/Auth/RegistrationTest.php) faalt
+zodra iemand de feature terugzet -- zo blijft het een bewuste beslissing en
+kan hij niet ongemerkt terugkomen bij het bijwerken van de starter kit.
+
+Er staat ook **geen inlogknop op de publieke site**. Zie
+[frontend en animatie](../architecture/frontend-en-animatie.md).
+
+## Een account aanmaken
+
+```bash
+php artisan user:create
+php artisan user:create --name="De Klant" --email=klant@example.com --role=admin
+```
+
+Het commando vraagt om de naam, het e-mailadres en twee keer het wachtwoord,
+en controleert alles met dezelfde regels als de rest van de applicatie.
+
+**Het wachtwoord kan bewust geen optie zijn.** Opties belanden in de
+shell-geschiedenis en zijn op een gedeelde server zichtbaar in `ps`. Vragen
+is de enige manier waarop het nergens blijft staan. Het komt ook niet in het
+beveiligingslogboek; er is een test die dat afdwingt.
+
+Het account wordt meteen als geverifieerd aangemerkt. Zonder geverifieerd
+e-mailadres komt de eigenaar niet in het beheergedeelte, en op het moment dat
+je dit commando draait staat de mailprovider vaak nog niet ingesteld.
+
+Zet er daarna direct tweestapsverificatie op.
 
 ## Tweestapsverificatie
 

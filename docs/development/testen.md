@@ -34,9 +34,11 @@ renderen. Draai `npm run build` als je `Vite manifest not found` ziet.
 | [UserManagementTest](../../tests/Feature/Admin/UserManagementTest.php)             | Dat rollen wijzigen en verwijderen een verse code vragen, en dat je jezelf en de laatste beheerder niet kunt weghalen.               |
 | [SecurityAlertTest](../../tests/Feature/Security/SecurityAlertTest.php)            | Dat er pas boven de drempel wordt gemeld, dat de afkoeltijd werkt, en dat er geen e-mailadressen van gebruikers in de melding staan. |
 | [MaintenanceCommandsTest](../../tests/Feature/Console/MaintenanceCommandsTest.php) | Dat het opruimen oude regels weghaalt en recente laat staan, ook over meerdere blokken heen.                                         |
+| [CreateUserCommandTest](../../tests/Feature/Console/CreateUserCommandTest.php)     | Dat `user:create` een bruikbaar account oplevert en het wachtwoord nergens vastlegt.                                                 |
+| [RegistrationTest](../../tests/Feature/Auth/RegistrationTest.php)                  | Dat registratie uit staat en niet ongemerkt terugkomt.                                                                               |
 
-Daarnaast de tests die de starter kit meelevert voor inloggen, registreren,
-wachtwoord herstellen, e-mailverificatie, de 2FA-challenge en de instellingen.
+Daarnaast de tests die de starter kit meelevert voor inloggen, wachtwoord
+herstellen, e-mailverificatie, de 2FA-challenge en de instellingen.
 
 ## Een geldige TOTP-code in een test
 

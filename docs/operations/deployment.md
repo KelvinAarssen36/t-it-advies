@@ -108,7 +108,9 @@ webhook-endpoint alles. Dat is geen storing maar het ontwerp: zie
 2. Domein verifiëren in het dashboard van de mailprovider.
 3. Webhook instellen op `https://<domein>/webhooks/resend`.
 4. Turnstile-widget aanmaken voor het productiedomein.
-5. Een beheerdersaccount maken en er meteen 2FA op zetten.
+5. Een beheerdersaccount maken met `php artisan user:create` en er meteen 2FA
+   op zetten. Registratie via de website staat uit, dus dit is de enige weg;
+   zie [authenticatie en 2FA](../security/authenticatie-en-2fa.md).
 6. HTTPS afdwingen. De applicatie doet dat zelf al in productie
    (`URL::forceScheme('https')`), maar de webserver hoort ook te redirecten.
 7. `APP_DEBUG=false` controleren.

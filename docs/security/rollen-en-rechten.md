@@ -94,6 +94,14 @@ onherstelbaar ongeluk:
 Beide leveren een melding op het scherm op, en beide wijzigingen komen in het
 [beveiligingslogboek](logging.md).
 
+## Een account aanmaken
+
+Registratie via de website staat uit, dus accounts maak je met
+`php artisan user:create --role=admin`. Het commando weigert een rol die niet
+bestaat, zodat je niet per ongeluk een account zonder rechten aanmaakt en
+daar pas bij het inloggen achter komt. Zie
+[authenticatie en 2FA](authenticatie-en-2fa.md).
+
 ## Het lokale beheerdersaccount
 
 `DatabaseSeeder` maakt in `local` een account aan:
