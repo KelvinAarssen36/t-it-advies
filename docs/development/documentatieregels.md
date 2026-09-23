@@ -18,21 +18,23 @@ heid om te bepalen wat er bijgewerkt moet worden.
 
 ## Wanneer werk je wat bij
 
-| Je verandert                          | Werk bij                                                                        |
-| ------------------------------------- | ------------------------------------------------------------------------------- |
-| Een route, controller of de structuur | [architecture/overzicht.md](../architecture/overzicht.md)                       |
-| Iets aan Vue, Tailwind, GSAP of Lenis | [architecture/frontend-en-animatie.md](../architecture/frontend-en-animatie.md) |
-| Mailverzending, queues of webhooks    | [architecture/mail-en-queues.md](../architecture/mail-en-queues.md)             |
-| Inloggen, 2FA of Fortify-instellingen | [security/authenticatie-en-2fa.md](../security/authenticatie-en-2fa.md)         |
-| Welke acties een verse code vragen    | [security/gevoelige-acties.md](../security/gevoelige-acties.md)                 |
-| Een rol of recht                      | [security/rollen-en-rechten.md](../security/rollen-en-rechten.md)               |
-| Wat er wordt gelogd of geredigeerd    | [security/logging.md](../security/logging.md)                                   |
-| Turnstile, honeypot of rate limiting  | [security/spam-en-botbescherming.md](../security/spam-en-botbescherming.md)     |
-| Afzenders of DNS-records voor mail    | [security/e-mailauthenticatie.md](../security/e-mailauthenticatie.md)           |
-| Deploy, hosting of achtergrondtaken   | [operations/deployment.md](../operations/deployment.md)                         |
-| Een variabele in `.env`               | `.env.example` **en** de doc waar die variabele bij hoort                       |
-| Een nieuw pakket                      | [architecture/overzicht.md](../architecture/overzicht.md), en zeg waarom        |
-| Een keuze met een reëel alternatief   | [decisions/](../decisions/README.md)                                            |
+| Je verandert                             | Werk bij                                                                        |
+| ---------------------------------------- | ------------------------------------------------------------------------------- |
+| Een route, controller of de structuur    | [architecture/overzicht.md](../architecture/overzicht.md)                       |
+| Iets aan Vue, Tailwind, GSAP of Lenis    | [architecture/frontend-en-animatie.md](../architecture/frontend-en-animatie.md) |
+| Een kleur, gradient of iets aan het logo | [architecture/huisstijl-en-kleuren.md](../architecture/huisstijl-en-kleuren.md) |
+| Mailverzending, queues of webhooks       | [architecture/mail-en-queues.md](../architecture/mail-en-queues.md)             |
+| Inloggen, 2FA of Fortify-instellingen    | [security/authenticatie-en-2fa.md](../security/authenticatie-en-2fa.md)         |
+| Welke acties een verse code vragen       | [security/gevoelige-acties.md](../security/gevoelige-acties.md)                 |
+| Een rol of recht                         | [security/rollen-en-rechten.md](../security/rollen-en-rechten.md)               |
+| Wat er wordt gelogd of geredigeerd       | [security/logging.md](../security/logging.md)                                   |
+| Turnstile, honeypot of rate limiting     | [security/spam-en-botbescherming.md](../security/spam-en-botbescherming.md)     |
+| Afzenders of DNS-records voor mail       | [security/e-mailauthenticatie.md](../security/e-mailauthenticatie.md)           |
+| Deploy, hosting of achtergrondtaken      | [operations/deployment.md](../operations/deployment.md)                         |
+| Een geplande taak of bewaartermijn       | [operations/onderhoudstaken.md](../operations/onderhoudstaken.md)               |
+| Een variabele in `.env`                  | `.env.example` **en** de doc waar die variabele bij hoort                       |
+| Een nieuw pakket                         | [architecture/overzicht.md](../architecture/overzicht.md), en zeg waarom        |
+| Een keuze met een reëel alternatief      | [decisions/](../decisions/README.md)                                            |
 
 Staat jouw wijziging er niet bij en is er geen passend document? Maak er een,
 en zet hem in de index van [docs/README.md](../README.md).

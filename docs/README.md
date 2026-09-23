@@ -19,6 +19,7 @@ Nieuw op dit project? Lees in deze volgorde:
 
 - [Overzicht](architecture/overzicht.md) -- de stack, de lagen en waarom.
 - [Frontend en animatie](architecture/frontend-en-animatie.md) -- Inertia, Vue, Tailwind, GSAP, Lenis, en wanneer wel of geen Three.js.
+- [Huisstijl en kleuren](architecture/huisstijl-en-kleuren.md) -- het kleurenpalet, de gradients, en hoe die in de Tailwind-tokens landen.
 - [Mail en queues](architecture/mail-en-queues.md) -- verzending, provider, webhooks en het mailoverzicht.
 
 ## Beveiliging
@@ -40,6 +41,7 @@ Nieuw op dit project? Lees in deze volgorde:
 ## Beheer
 
 - [Deployment](operations/deployment.md) -- hosting, queue workers, scheduler.
+- [Onderhoudstaken](operations/onderhoudstaken.md) -- wat er vanzelf draait: opruimen en alarmeren.
 - [Monitoring](operations/monitoring.md) -- Pulse, logs, waar je kijkt als er iets mis is.
 
 ## Beslissingen

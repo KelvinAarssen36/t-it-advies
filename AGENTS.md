@@ -38,12 +38,14 @@ Voordat je code wijzigt, lees het document dat bij het gebied hoort:
 | ----------------------------------- | -------------------------------------------------------------------------------------- |
 | Structuur, routes, nieuwe pakketten | [docs/architecture/overzicht.md](docs/architecture/overzicht.md)                       |
 | Vue, Tailwind, GSAP, Lenis          | [docs/architecture/frontend-en-animatie.md](docs/architecture/frontend-en-animatie.md) |
+| Kleuren, gradients, het logo        | [docs/architecture/huisstijl-en-kleuren.md](docs/architecture/huisstijl-en-kleuren.md) |
 | Mail, queues, webhooks              | [docs/architecture/mail-en-queues.md](docs/architecture/mail-en-queues.md)             |
 | Inloggen en 2FA                     | [docs/security/authenticatie-en-2fa.md](docs/security/authenticatie-en-2fa.md)         |
 | Acties die een verse code vragen    | [docs/security/gevoelige-acties.md](docs/security/gevoelige-acties.md)                 |
 | Rollen en rechten                   | [docs/security/rollen-en-rechten.md](docs/security/rollen-en-rechten.md)               |
 | Logging                             | [docs/security/logging.md](docs/security/logging.md)                                   |
 | Spam en bots                        | [docs/security/spam-en-botbescherming.md](docs/security/spam-en-botbescherming.md)     |
+| Geplande taken, bewaartermijnen     | [docs/operations/onderhoudstaken.md](docs/operations/onderhoudstaken.md)               |
 | Tests                               | [docs/development/testen.md](docs/development/testen.md)                               |
 | Code-conventies                     | [docs/development/werkwijze.md](docs/development/werkwijze.md)                         |
 
