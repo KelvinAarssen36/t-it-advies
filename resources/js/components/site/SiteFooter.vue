@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
-import { login } from '@/routes';
-
+/**
+ * De voet van de publieke site. Geen inloglink: zie SiteHeader.vue.
+ */
 const year = new Date().getFullYear();
 </script>
 
@@ -40,12 +40,6 @@ const year = new Date().getFullYear();
                     >
                         Contact
                     </a>
-                    <Link
-                        :href="login()"
-                        class="text-muted-foreground transition-colors hover:text-brand-cyan"
-                    >
-                        Inloggen
-                    </Link>
                 </nav>
             </div>
 

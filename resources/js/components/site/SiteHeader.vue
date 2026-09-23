@@ -3,7 +3,7 @@ import { Link, usePage } from '@inertiajs/vue3';
 import { Menu, X } from '@lucide/vue';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { Button } from '@/components/ui/button';
-import { dashboard, login } from '@/routes';
+import { dashboard } from '@/routes';
 
 /**
  * De kop van de publieke site.
@@ -11,6 +11,12 @@ import { dashboard, login } from '@/routes';
  * De navigatie wijst nu naar ankers op de landingspagina. Zodra er echte
  * pagina's zijn, worden dit routes; de rest van dit component verandert dan
  * niet mee.
+ *
+ * Er staat bewust géén inlogknop op de publieke site. Er is maar één
+ * gebruiker -- de eigenaar -- en die kent zijn eigen adres. Een inlogknop
+ * zou bezoekers alleen maar wijzen op een deur die niet voor hen is, en
+ * nodigt uit tot proberen. De link naar het portaal verschijnt alleen als
+ * je al ingelogd bent.
  */
 
 type NavLink = { label: string; href: string };
@@ -78,14 +84,6 @@ onBeforeUnmount(() => {
                 >
                     Dashboard
                 </Link>
-                <Link
-                    v-else
-                    :href="login()"
-                    class="text-sm text-muted-foreground transition-colors hover:text-brand-cyan"
-                >
-                    Inloggen
-                </Link>
-
                 <Button as="a" href="#contact" variant="brand">
                     Neem contact op
                 </Button>
@@ -125,9 +123,6 @@ onBeforeUnmount(() => {
                     class="py-2 text-muted-foreground"
                 >
                     Dashboard
-                </Link>
-                <Link v-else :href="login()" class="py-2 text-muted-foreground">
-                    Inloggen
                 </Link>
             </nav>
         </div>

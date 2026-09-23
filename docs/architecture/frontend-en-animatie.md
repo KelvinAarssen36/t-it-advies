@@ -37,6 +37,12 @@ Gebruik `SiteSection` ook als je denkt dat je maar één keer afwijkt. Zodra
 elke pagina zijn eigen padding kiest, staat niets meer op één lijn, en dat is
 achteraf niet meer recht te trekken.
 
+**Er staat bewust geen inloglink op de publieke site.** Er is één gebruiker,
+de eigenaar, en die kent zijn eigen adres. Een inlogknop wijst bezoekers
+alleen maar op een deur die niet voor hen is. De link naar het portaal
+verschijnt alleen voor wie al is ingelogd. Zet er dus ook geen terug in een
+nieuwe openbare pagina.
+
 De reveals worden opnieuw gescand na elke Inertia-navigatie. De layout blijft
 namelijk staan, dus `onMounted` draait maar één keer; zonder die herscan zou
 de inhoud van een volgende pagina op `opacity: 0` blijven hangen.
