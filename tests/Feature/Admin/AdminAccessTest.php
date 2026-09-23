@@ -34,6 +34,7 @@ class AdminAccessTest extends TestCase
         $this->actingAs($user)->get(route('admin.dashboard'))->assertForbidden();
         $this->actingAs($user)->get(route('admin.mail.index'))->assertForbidden();
         $this->actingAs($user)->get(route('admin.security.index'))->assertForbidden();
+        $this->actingAs($user)->get(route('admin.users.index'))->assertForbidden();
     }
 
     public function test_an_admin_can_open_every_page(): void
@@ -44,6 +45,7 @@ class AdminAccessTest extends TestCase
         $this->actingAs($user)->get(route('admin.dashboard'))->assertOk();
         $this->actingAs($user)->get(route('admin.mail.index'))->assertOk();
         $this->actingAs($user)->get(route('admin.security.index'))->assertOk();
+        $this->actingAs($user)->get(route('admin.users.index'))->assertOk();
     }
 
     public function test_permissions_are_checked_per_page(): void
@@ -53,5 +55,6 @@ class AdminAccessTest extends TestCase
 
         $this->actingAs($user)->get(route('admin.mail.index'))->assertOk();
         $this->actingAs($user)->get(route('admin.security.index'))->assertForbidden();
+        $this->actingAs($user)->get(route('admin.users.index'))->assertForbidden();
     }
 }

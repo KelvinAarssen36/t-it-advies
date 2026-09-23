@@ -131,4 +131,19 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Bewaartermijn mailoverzicht
+    |--------------------------------------------------------------------------
+    |
+    | Hoeveel dagen een regel in `mail_logs` blijft staan. Opgeruimd door de
+    | geplande taak `mail:prune-logs`; zie docs/operations/onderhoudstaken.md.
+    |
+    | Staat los van de termijn van het beveiligingslogboek: een bounce van een
+    | jaar geleden zegt niets meer, een inlogpoging van een jaar geleden wel.
+    |
+    */
+
+    'log_retention_days' => (int) env('MAIL_LOG_RETENTION_DAYS', 180),
+
 ];

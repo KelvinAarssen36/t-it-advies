@@ -46,25 +46,38 @@ Browser
   └── Beveiligd gedeelte   /admin, achter rol en recht
         ├── Mailoverzicht      wat is verstuurd, wat meldt de provider
         ├── Beveiligingslogboek geslaagde en mislukte pogingen
+        ├── Gebruikers         rollen en accounts, wijzigen vraagt 2FA
         └── Pulse              prestaties en achtergrondtaken
+
+Scheduler
+  ├── security:report        elk uur: meldt pieken per mail
+  └── prune-taken            's nachts: ruimt de logboeken op
 ```
+
+De geplande taken staan in [`routes/console.php`](../../routes/console.php)
+en zijn beschreven in
+[onderhoudstaken](../operations/onderhoudstaken.md). Ze draaien alleen als de
+cronregel op de server staat.
 
 ## Belangrijke mappen
 
-| Pad                             | Wat er staat                                           |
-| ------------------------------- | ------------------------------------------------------ |
-| `app/Enums`                     | Vaste waardenlijsten: gebeurtenistypen, mailstatussen. |
-| `app/Http/Controllers/Admin`    | Het beveiligde gedeelte.                               |
-| `app/Http/Controllers/Security` | Bevestiging van gevoelige acties.                      |
-| `app/Http/Controllers/Webhooks` | Inkomende webhooks van externe diensten.               |
-| `app/Http/Middleware`           | Onder andere `RequireTwoFactorConfirmation`.           |
-| `app/Listeners`                 | Koppeling van auth- en mailevents aan de logging.      |
-| `app/Support/Security`          | SecurityLogger, Turnstile, handtekeningcontrole.       |
-| `resources/js/lib/motion.ts`    | De animatielaag (GSAP + Lenis).                        |
-| `routes/web.php`                | Publiek en ingelogd.                                   |
-| `routes/admin.php`              | Het beveiligde gedeelte.                               |
-| `routes/webhooks.php`           | Endpoints voor externe diensten.                       |
-| `docs/`                         | Deze documentatie.                                     |
+| Pad                             | Wat er staat                                                         |
+| ------------------------------- | -------------------------------------------------------------------- |
+| `app/Console/Commands`          | De geplande taken: opruimen en alarmeren.                            |
+| `app/Enums`                     | Vaste waardenlijsten: gebeurtenistypen, mailstatussen.               |
+| `app/Http/Controllers/Admin`    | Het beveiligde gedeelte.                                             |
+| `app/Http/Controllers/Security` | Bevestiging van gevoelige acties.                                    |
+| `app/Http/Controllers/Webhooks` | Inkomende webhooks van externe diensten.                             |
+| `app/Http/Middleware`           | Onder andere `RequireTwoFactorConfirmation`.                         |
+| `app/Listeners`                 | Koppeling van auth- en mailevents aan de logging.                    |
+| `app/Support/Maintenance`       | Opruimen van oude rijen in blokken.                                  |
+| `app/Support/Security`          | SecurityLogger, Turnstile, handtekeningcontrole, de anomaliescanner. |
+| `resources/js/lib/motion.ts`    | De animatielaag (GSAP + Lenis).                                      |
+| `routes/console.php`            | De geplande taken.                                                   |
+| `routes/web.php`                | Publiek en ingelogd.                                                 |
+| `routes/admin.php`              | Het beveiligde gedeelte.                                             |
+| `routes/webhooks.php`           | Endpoints voor externe diensten.                                     |
+| `docs/`                         | Deze documentatie.                                                   |
 
 ## Eigen tabellen
 

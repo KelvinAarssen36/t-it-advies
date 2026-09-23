@@ -69,19 +69,31 @@ zijn dezelfde.
 * * * * * cd /var/www/t-it-advies && php artisan schedule:run >> /dev/null 2>&1
 ```
 
+Deze ene regel laat álle geplande taken draaien: het opruimen van de
+logboeken en de alarmering. Vergeet je hem, dan groeien de tabellen door en
+komt er nooit een melding, zonder dat er iets zichtbaar stuk is. Controleer
+na een deploy met `php artisan schedule:list`; wat er hoort te staan vind je
+in [onderhoudstaken](onderhoudstaken.md).
+
 ## Omgevingsvariabelen
 
 Naast de standaard Laravel-variabelen:
 
-| Variabele                     | Waarvoor                                      | Verplicht in productie |
-| ----------------------------- | --------------------------------------------- | ---------------------- |
-| `RESEND_API_KEY`              | Mail versturen                                | ja                     |
-| `MAIL_WEBHOOK_SECRET`         | Handtekening van de mailwebhook               | ja                     |
-| `MAIL_CONTACT_ADDRESS`        | Waar contactformulieren binnenkomen           | ja                     |
-| `TURNSTILE_SITE_KEY`          | Botcheck in de browser                        | ja                     |
-| `TURNSTILE_SECRET_KEY`        | Botcheck op de server                         | ja                     |
-| `SENSITIVE_ACTION_TTL`        | Geldigheid van een 2FA-bevestiging (seconden) | nee, standaard 900     |
-| `SECURITY_LOG_RETENTION_DAYS` | Bewaartermijn logboektabel                    | nee, standaard 365     |
+| Variabele                         | Waarvoor                                      | Verplicht in productie |
+| --------------------------------- | --------------------------------------------- | ---------------------- |
+| `RESEND_API_KEY`                  | Mail versturen                                | ja                     |
+| `MAIL_WEBHOOK_SECRET`             | Handtekening van de mailwebhook               | ja                     |
+| `MAIL_CONTACT_ADDRESS`            | Waar contactformulieren binnenkomen           | ja                     |
+| `TURNSTILE_SITE_KEY`              | Botcheck in de browser                        | ja                     |
+| `TURNSTILE_SECRET_KEY`            | Botcheck op de server                         | ja                     |
+| `SECURITY_ALERT_ADDRESS`          | Waar beveiligingsmeldingen heen gaan          | ja                     |
+| `SENSITIVE_ACTION_TTL`            | Geldigheid van een 2FA-bevestiging (seconden) | nee, standaard 900     |
+| `SECURITY_LOG_RETENTION_DAYS`     | Bewaartermijn logboektabel                    | nee, standaard 365     |
+| `MAIL_LOG_RETENTION_DAYS`         | Bewaartermijn mailoverzicht                   | nee, standaard 180     |
+| `SECURITY_ALERT_WINDOW_MINUTES`   | Hoe ver de alarmering terugkijkt              | nee, standaard 60      |
+| `SECURITY_ALERT_COOLDOWN_MINUTES` | Pauze na een melding                          | nee, standaard 180     |
+| `SECURITY_ALERT_FAILED_LOGINS`    | Drempel mislukte inlogpogingen                | nee, standaard 25      |
+| `SECURITY_ALERT_MAIL_PROBLEMS`    | Drempel mailproblemen                         | nee, standaard 5       |
 
 Zonder `TURNSTILE_SECRET_KEY` weigert de applicatie in productie bewust elk
 beschermd formulier. Zonder `MAIL_WEBHOOK_SECRET` weigert het
@@ -100,6 +112,10 @@ webhook-endpoint alles. Dat is geen storing maar het ontwerp: zie
 6. HTTPS afdwingen. De applicatie doet dat zelf al in productie
    (`URL::forceScheme('https')`), maar de webserver hoort ook te redirecten.
 7. `APP_DEBUG=false` controleren.
+8. `SECURITY_ALERT_ADDRESS` zetten en de cronregel voor de scheduler
+   aanzetten. Zonder die twee logt de applicatie wel alles, maar krijgt
+   niemand ooit bericht. Controleer het met
+   `php artisan security:report --force --window=10080`.
 
 ## Draait het achter een proxy of load balancer
 

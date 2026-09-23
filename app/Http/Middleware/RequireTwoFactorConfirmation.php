@@ -54,7 +54,14 @@ class RequireTwoFactorConfirmation
             return $next($request);
         }
 
-        $request->session()->put('url.intended', $request->fullUrl());
+        // Na het bevestigen gaat de gebruiker met een GET naar de onthouden
+        // URL. Voor een DELETE of PUT bestaat die GET niet -- dan zou hij na
+        // het invoeren van zijn code op een 405 landen. We onthouden in dat
+        // geval de pagina waar hij vandaan kwam: daar staat de knop, en de
+        // bevestiging is dan vers genoeg om hem meteen nog eens in te drukken.
+        $request->session()->put('url.intended', $request->isMethodSafe()
+            ? $request->fullUrl()
+            : url()->previous());
 
         return redirect()->route('security.two-factor.confirm');
     }

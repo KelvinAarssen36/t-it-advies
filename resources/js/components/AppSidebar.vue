@@ -7,6 +7,7 @@ import {
     LayoutGrid,
     Mail,
     ShieldAlert,
+    Users,
 } from '@lucide/vue';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
@@ -26,6 +27,7 @@ import { dashboard } from '@/routes';
 import { dashboard as adminDashboard } from '@/routes/admin';
 import adminMail from '@/routes/admin/mail';
 import adminSecurity from '@/routes/admin/security';
+import adminUsers from '@/routes/admin/users';
 import type { NavItem } from '@/types';
 
 const page = usePage();
@@ -64,6 +66,15 @@ const mainNavItems = computed<NavItem[]>(() => [
                   title: 'Mail',
                   href: adminMail.index(),
                   icon: Mail,
+              },
+          ]
+        : []),
+    ...(can('manage users')
+        ? [
+              {
+                  title: 'Gebruikers',
+                  href: adminUsers.index(),
+                  icon: Users,
               },
           ]
         : []),

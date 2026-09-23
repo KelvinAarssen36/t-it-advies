@@ -119,3 +119,74 @@ suite.
 effecten die 3D lijken kunnen met GSAP en CSS. Zie
 [frontend en animatie](../architecture/frontend-en-animatie.md) voor de
 voorwaarden waaronder je hem wél toevoegt.
+
+---
+
+## 009 -- Gebruikersbeheer als eerste echte gevoelige actie
+
+**Keuze:** rollen wijzigen en accounts verwijderen op `/admin/users` zijn de
+eerste handelingen die achter `2fa.confirm` zijn gezet.
+
+**Alternatief:** het mechanisme ongebruikt laten staan tot er "echt iets
+gevaarlijks" zou komen.
+
+**Waarom:** een beveiligingsmechanisme dat nergens wordt gebruikt, werkt in
+de praktijk niet. Het is nooit tegen een echte controller aan gehouden en
+niemand merkt dat het stuk is. Bij het aansluiten bleek dat meteen: de
+middleware onthield de URL van het `DELETE`-verzoek, en na het bevestigen
+kwam de gebruiker met een GET op die route uit -- een 405. Dat was onzichtbaar
+zolang alleen een GET-testroute de middleware raakte.
+
+**Terugdraaien:** de routes zijn los te koppelen zonder dat het mechanisme
+verandert.
+
+---
+
+## 010 -- Zelfbescherming in gebruikersbeheer, geen policy
+
+**Keuze:** je kunt je eigen account niet aanpassen of verwijderen, en de
+laatste beheerder blijft staan. Allebei afgedwongen in `UserController`, met
+een melding op het scherm in plaats van een 403.
+
+**Alternatief:** een `UserPolicy`, of helemaal geen grens en vertrouwen op de
+oplettendheid van de beheerder.
+
+**Waarom:** het is geen autorisatievraag. De uitvoerder _mag_ het -- hij heeft
+`manage users` en een verse code. Het is een ongelukkenrem, en die hoort een
+begrijpelijke melding te geven en geen 403. Een policy zou suggereren dat het
+om rechten gaat, en dan gaat iemand later de verkeerde knop omzetten.
+
+De laatste-beheerdergrens is de belangrijkste van de twee: zonder die grens
+maakt één klik de applicatie onbeheerbaar, en er is geen scherm om dat te
+herstellen. Dan moet je de seeder of de database in.
+
+**Terugdraaien:** eenvoudig, maar bedenk dan eerst hoe je uit de situatie
+komt die je daarmee mogelijk maakt.
+
+---
+
+## 011 -- Alarmering per e-mail, met drempel en afkoeltijd
+
+**Keuze:** een geplande taak die elk uur in het logboek kijkt en per e-mail
+meldt. Met een drempel per signaal en een afkoeltijd van drie uur.
+
+**Alternatief:** meteen melden bij elke mislukte poging, of een externe
+dienst zoals Sentry of Better Stack.
+
+**Waarom:** melden bij elke mislukte poging levert ruis op -- mensen typen
+hun wachtwoord verkeerd -- en ruis leert de ontvanger meldingen te negeren.
+De drempel maakt van "er gebeurde iets" een "dit is meer dan normaal". De
+afkoeltijd voorkomt dat één aanval van drie uur ook drie uur lang elk uur
+mailt.
+
+Geen externe dienst, omdat de gegevens die ertoe doen al in onze eigen tabel
+staan en dit geen nieuwe leverancier, nieuw contract of nieuwe uitgaande
+verbinding kost. Wordt de behoefte groter (escalatie, diensten, Slack), dan
+is een externe dienst het overwegen waard.
+
+**Bewust weggelaten uit de mail:** e-mailadressen van gebruikers. De melding
+komt terecht in een postbus die minder goed is beveiligd dan de applicatie
+zelf; wie details nodig heeft logt in.
+
+**Terugdraaien:** de scanner staat los van het commando en is elders te
+gebruiken.

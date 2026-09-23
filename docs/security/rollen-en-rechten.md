@@ -5,12 +5,12 @@ Het `User`-model gebruikt de trait `HasRoles`.
 
 ## Rechten
 
-| Recht               | Geeft toegang tot                |
-| ------------------- | -------------------------------- |
-| `view mail log`     | `/admin/mail`                    |
-| `view security log` | `/admin` en `/admin/security`    |
-| `view pulse`        | `/pulse`                         |
-| `manage users`      | Gebruikersbeheer (nog te bouwen) |
+| Recht               | Geeft toegang tot             |
+| ------------------- | ----------------------------- |
+| `view mail log`     | `/admin/mail`                 |
+| `view security log` | `/admin` en `/admin/security` |
+| `view pulse`        | `/pulse`                      |
+| `manage users`      | `/admin/users`                |
 
 ## Rollen
 
@@ -73,6 +73,26 @@ enige bescherming; de controle op de server is de echte.
 Een recht zegt wat iemand mág. Het zegt niet dat hij het op dit moment zelf
 is. Voor handelingen die je niet wilt terugdraaien combineer je `can:` met de
 middleware `2fa.confirm`. Zie [gevoelige acties](gevoelige-acties.md).
+
+## Gebruikersbeheer
+
+Op `/admin/users` deel je rollen uit en verwijder je accounts. Kijken heeft
+genoeg aan `manage users`; wijzigen vraagt daarnaast om een verse
+authenticator-code.
+
+Twee vangnetten zitten in
+[`UserController`](../../app/Http/Controllers/Admin/UserController.php). Ze
+zijn geen autorisatie -- de uitvoerder mág het -- maar voorkomen een
+onherstelbaar ongeluk:
+
+- **Je eigen account kun je hier niet aanpassen of verwijderen.** Wie zichzelf
+  zijn rol afneemt, kan het niet meer terugdraaien.
+- **De laatste beheerder blijft staan.** Zonder die grens maakt één verkeerde
+  klik de applicatie onbeheerbaar, en er is geen scherm om dat te herstellen;
+  dan moet je de seeder of de database in.
+
+Beide leveren een melding op het scherm op, en beide wijzigingen komen in het
+[beveiligingslogboek](logging.md).
 
 ## Het lokale beheerdersaccount
 

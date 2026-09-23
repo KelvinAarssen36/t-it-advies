@@ -23,14 +23,17 @@ renderen. Draai `npm run build` als je `Vite manifest not found` ziet.
 
 ## Wat er getest is
 
-| Bestand                                                                     | Bewaakt                                                                                                                              |
-| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| [SecurityLoggerTest](../../tests/Feature/Security/SecurityLoggerTest.php)   | Dat er nooit een wachtwoord, code, secret of recovery code wordt opgeslagen, ook niet genest of anders geschreven.                   |
-| [SensitiveActionTest](../../tests/Feature/Security/SensitiveActionTest.php) | Dat gevoelige acties een verse TOTP-code vragen, recovery codes weigeren, zonder 2FA niet doorgaan, en begrensd zijn.                |
-| [TurnstileTest](../../tests/Feature/Security/TurnstileTest.php)             | Dat Turnstile dichtklapt bij een storing en bij ontbrekende configuratie buiten local.                                               |
-| [ContactFormTest](../../tests/Feature/ContactFormTest.php)                  | Honeypot, validatie, rate limiting, en dat mail via de queue gaat.                                                                   |
-| [MailLoggingTest](../../tests/Feature/Mail/MailLoggingTest.php)             | Dat verstuurde mail wordt vastgelegd, dat een bounce niet wordt weggepoetst, en dat de webhook zonder geldige handtekening dichtzit. |
-| [AdminAccessTest](../../tests/Feature/Admin/AdminAccessTest.php)            | Dat het beveiligde gedeelte per pagina op rechten controleert.                                                                       |
+| Bestand                                                                            | Bewaakt                                                                                                                              |
+| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| [SecurityLoggerTest](../../tests/Feature/Security/SecurityLoggerTest.php)          | Dat er nooit een wachtwoord, code, secret of recovery code wordt opgeslagen, ook niet genest of anders geschreven.                   |
+| [SensitiveActionTest](../../tests/Feature/Security/SensitiveActionTest.php)        | Dat gevoelige acties een verse TOTP-code vragen, recovery codes weigeren, zonder 2FA niet doorgaan, en begrensd zijn.                |
+| [TurnstileTest](../../tests/Feature/Security/TurnstileTest.php)                    | Dat Turnstile dichtklapt bij een storing en bij ontbrekende configuratie buiten local.                                               |
+| [ContactFormTest](../../tests/Feature/ContactFormTest.php)                         | Honeypot, validatie, rate limiting, en dat mail via de queue gaat.                                                                   |
+| [MailLoggingTest](../../tests/Feature/Mail/MailLoggingTest.php)                    | Dat verstuurde mail wordt vastgelegd, dat een bounce niet wordt weggepoetst, en dat de webhook zonder geldige handtekening dichtzit. |
+| [AdminAccessTest](../../tests/Feature/Admin/AdminAccessTest.php)                   | Dat het beveiligde gedeelte per pagina op rechten controleert.                                                                       |
+| [UserManagementTest](../../tests/Feature/Admin/UserManagementTest.php)             | Dat rollen wijzigen en verwijderen een verse code vragen, en dat je jezelf en de laatste beheerder niet kunt weghalen.               |
+| [SecurityAlertTest](../../tests/Feature/Security/SecurityAlertTest.php)            | Dat er pas boven de drempel wordt gemeld, dat de afkoeltijd werkt, en dat er geen e-mailadressen van gebruikers in de melding staan. |
+| [MaintenanceCommandsTest](../../tests/Feature/Console/MaintenanceCommandsTest.php) | Dat het opruimen oude regels weghaalt en recente laat staan, ook over meerdere blokken heen.                                         |
 
 Daarnaast de tests die de starter kit meelevert voor inloggen, registreren,
 wachtwoord herstellen, e-mailverificatie, de 2FA-challenge en de instellingen.
@@ -77,3 +80,6 @@ docblock niet meer. Gebruik `#[DataProvider('naam')]`.
 - Nieuw veld dat gevoelig kan zijn → zet de sleutel in
   `config/security.php` **en** in de dataprovider van `SecurityLoggerTest`.
 - Nieuw formulier → een test voor honeypot en rate limiting.
+- Nieuwe geplande taak → een test die bewijst dat hij doet wat hij belooft
+  **en** dat hij niet te veel weghaalt. Zie
+  [onderhoudstaken](../operations/onderhoudstaken.md).

@@ -37,7 +37,11 @@ enum SecurityEventType: string
     case TurnstileFailed = 'spam.turnstile_failed';
     case RateLimited = 'throttle.limited';
 
+    case UserRolesChanged = 'user.roles_changed';
+    case UserDeleted = 'user.deleted';
+
     case WebhookRejected = 'webhook.rejected';
+    case AlertSent = 'alert.sent';
 
     public function label(): string
     {
@@ -65,7 +69,10 @@ enum SecurityEventType: string
             self::SpamBlocked => __('Spam geblokkeerd'),
             self::TurnstileFailed => __('Turnstile mislukt'),
             self::RateLimited => __('Rate limit geraakt'),
+            self::UserRolesChanged => __('Rollen van gebruiker gewijzigd'),
+            self::UserDeleted => __('Gebruiker verwijderd'),
             self::WebhookRejected => __('Webhook geweigerd'),
+            self::AlertSent => __('Alarmering verstuurd'),
         };
     }
 }

@@ -45,6 +45,15 @@ Elke verstuurde mail komt in de tabel `mail_logs`, via de listener
 **Niet** de inhoud van de mail. Wil je die kunnen terugzien, maak daar dan een
 bewuste keuze van met een bewaartermijn, en leg vast waarom.
 
+De tabel wordt elke nacht opgeruimd door `mail:prune-logs`. De termijn staat
+in `MAIL_LOG_RETENTION_DAYS` (standaard 180 dagen) en is korter dan die van
+het beveiligingslogboek: een bounce van een jaar geleden zegt niets meer. Zie
+[onderhoudstaken](../operations/onderhoudstaken.md).
+
+Gaat er structureel iets mis met uitgaande mail, dan hoef je dat niet zelf op
+te merken: `security:report` mailt bij een piek in bounces, klachten en
+mislukte verzendingen.
+
 > De listener wordt niet handmatig geregistreerd. Laravel ontdekt listeners in
 > `app/Listeners` automatisch aan de hand van een methode die met `handle`
 > begint. Meld je hem daarnaast ook aan in een service provider, dan draait hij

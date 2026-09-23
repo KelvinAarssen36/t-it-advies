@@ -7,6 +7,7 @@
 | Overzicht van de laatste 24 uur              | `/admin`                                     | `view security log` |
 | Wat is er verstuurd en wat meldt de provider | `/admin/mail`                                | `view mail log`     |
 | Geslaagde en mislukte beveiligingspogingen   | `/admin/security`                            | `view security log` |
+| Wie er toegang heeft en met welke rollen     | `/admin/users`                               | `manage users`      |
 | Prestaties, trage queries, achtergrondtaken  | `/pulse`                                     | `view pulse`        |
 | Ruwe logs                                    | `storage/logs/laravel.log` en `security.log` | server              |
 | Gezondheidscheck                             | `/up`                                        | geen                |
@@ -58,9 +59,21 @@ Filter `/admin/security` op uitkomst "Mislukt". Let op:
 Kijk in Pulse naar trage verzoeken en trage queries. Groeit `security_events`
 of `mail_logs` heel hard, controleer dan of de indexen nog worden gebruikt.
 
+## Alarmering
+
+Je hoeft niet zelf te blijven kijken. `security:report` draait elk uur en
+mailt bij een piek in mislukte inlogpogingen of bij mailproblemen, met een
+afkoeltijd zodat één aanval geen stroom mails oplevert. Instellen doe je met
+`SECURITY_ALERT_ADDRESS` en de drempels; alles staat in
+[onderhoudstaken](onderhoudstaken.md).
+
+Zonder adres blijft de applicatie stil. Zet dat adres dus voordat je live
+gaat.
+
 ## Wat er nog niet is
 
-Er is nog geen alarmering: niemand krijgt automatisch bericht bij een piek in
-mislukte inlogpogingen of bij een mailstoring. Voeg dat toe zodra de site live
-is, bijvoorbeeld met een scheduled command dat naar Slack of e-mail
-rapporteert, en werk dit document dan bij.
+- **Geen melding als de scheduler zelf stilvalt.** Draait de cronregel niet,
+  dan ruimt niets op en meldt niets iets -- en dat is aan de buitenkant
+  onzichtbaar. Een externe dienst die een heartbeat verwacht dekt dit af.
+- **Geen escalatie en geen Slack of Teams.** Alleen e-mail, en een melding
+  die een dag aanhoudt is niet dringender dan een melding van één uur.

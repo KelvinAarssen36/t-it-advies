@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\MailLogController;
 use App\Http\Controllers\Admin\SecurityEventController;
+use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -38,4 +39,19 @@ Route::middleware(['auth', 'verified'])
         Route::get('security', [SecurityEventController::class, 'index'])
             ->middleware('can:view security log')
             ->name('security.index');
+
+        // Kijken mag met alleen het recht. Wijzigen vraagt daarnaast om een
+        // verse authenticator-code: rollen uitdelen en accounts verwijderen
+        // zijn precies de handelingen die je niet wilt terugdraaien.
+        Route::get('users', [UserController::class, 'index'])
+            ->middleware('can:manage users')
+            ->name('users.index');
+
+        Route::put('users/{user}/roles', [UserController::class, 'updateRoles'])
+            ->middleware(['can:manage users', '2fa.confirm'])
+            ->name('users.roles.update');
+
+        Route::delete('users/{user}', [UserController::class, 'destroy'])
+            ->middleware(['can:manage users', '2fa.confirm'])
+            ->name('users.destroy');
     });

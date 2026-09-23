@@ -59,4 +59,34 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Alarmering
+    |--------------------------------------------------------------------------
+    |
+    | Het beveiligingslogboek is alleen nuttig als iemand kijkt. De geplande
+    | taak `security:report` kijkt voor je en stuurt een mail zodra het aantal
+    | mislukte pogingen of mailproblemen binnen het venster boven de drempel
+    | komt.
+    |
+    | 'cooldown_minutes' voorkomt dat een aanval die een uur duurt ook een uur
+    | lang elke keer opnieuw mailt. Na een melding blijft hetzelfde soort
+    | melding zo lang stil; in het logboek staat intussen alles gewoon door.
+    |
+    | Zonder 'address' verstuurt de taak niets. Dat is geen storing maar de
+    | keuze om geen mail naar een half ingevuld adres te sturen.
+    |
+    */
+
+    'alerts' => [
+        'address' => env('SECURITY_ALERT_ADDRESS'),
+        'window_minutes' => (int) env('SECURITY_ALERT_WINDOW_MINUTES', 60),
+        'cooldown_minutes' => (int) env('SECURITY_ALERT_COOLDOWN_MINUTES', 180),
+
+        'thresholds' => [
+            'failed_logins' => (int) env('SECURITY_ALERT_FAILED_LOGINS', 25),
+            'mail_problems' => (int) env('SECURITY_ALERT_MAIL_PROBLEMS', 5),
+        ],
+    ],
+
 ];

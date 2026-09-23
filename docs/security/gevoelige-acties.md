@@ -49,8 +49,33 @@ loopt drie stappen af:
    zou de bescherming te omzeilen zijn door 2FA simpelweg uit te laten.
 2. **Recent bevestigd?** Dan mag het verzoek door. "Recent" is
    `SENSITIVE_ACTION_TTL` seconden, standaard vijftien minuten.
-3. **Anders** wordt de huidige URL onthouden en gaat de gebruiker naar het
-   bevestigingsscherm. Daarna komt hij terug op de plek waar hij was.
+3. **Anders** wordt onthouden waar de gebruiker heen wilde en gaat hij naar
+   het bevestigingsscherm. Daarna komt hij terug op de plek waar hij was.
+
+**Let op bij stap 3 en niet-GET-routes.** Na het bevestigen stuurt Laravel de
+gebruiker met een GET naar de onthouden URL. Voor een `DELETE` of `PUT`
+bestaat die GET niet -- hij zou op een 405 landen. De middleware onthoudt
+daarom bij die methoden de pagina waar hij vandaan kwam. Daar staat de knop,
+en zijn bevestiging is dan vers genoeg om hem meteen nog een keer in te
+drukken. Haal dat niet weg zonder een andere oplossing: zonder die regel is
+elke gevoelige actie achter een formulier stuk.
+
+## Waar het nu op zit
+
+| Route                          | Actie                    |
+| ------------------------------ | ------------------------ |
+| `PUT admin/users/{user}/roles` | Rollen van een gebruiker |
+| `DELETE admin/users/{user}`    | Een account verwijderen  |
+
+Allebei met `can:manage users` ernaast. Zie
+[rollen en rechten](rollen-en-rechten.md) voor de twee vangnetten die daar
+nog bovenop zitten.
+
+Wat er bewust **niet** achter zit: je eigen account verwijderen via
+[instellingen](../../app/Http/Controllers/Settings/ProfileController.php).
+Dat vraagt om je wachtwoord, niet om een authenticator-code. Zou het wel een
+verse code vragen, dan kan een gebruiker zonder 2FA zijn eigen account nooit
+meer opzeggen -- en dat is zijn recht, geen beheerdershandeling.
 
 ## Instellingen
 
