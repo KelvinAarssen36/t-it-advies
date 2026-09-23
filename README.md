@@ -28,7 +28,15 @@ npm run dev
 De site draait daarna op `http://t-it-advies.test`.
 
 Werk je met Valet Linux onder WSL, dan heeft Windows ook een regel in het
-hosts-bestand nodig. Zie [docs/development/setup.md](docs/development/setup.md).
+hosts-bestand nodig — `valet link` alleen is niet genoeg, want Windows lost
+`.test` niet op. Voeg toe aan `C:\Windows\System32\drivers\etc\hosts`:
+
+```
+127.0.0.1	t-it-advies.test
+```
+
+Uitleg en het commando daarvoor staan in
+[docs/development/setup.md](docs/development/setup.md).
 
 Lokaal beheerdersaccount: `admin@t-it-advies.test` / `password`.
 
