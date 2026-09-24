@@ -74,14 +74,15 @@ iemand de map leegmaakt.
 
 ### Wat er nu staat
 
-| Bestand                                      | Waarvoor                               |
-| -------------------------------------------- | -------------------------------------- |
-| `public/favicon.ico`                         | Het tabblad-icoon                      |
-| `public/apple-touch-icon.png`                | 180x180, wat iOS ophaalt               |
-| `public/images/hero-achtergrond.webp`        | De hero-achtergrond, breed scherm      |
-| `public/images/hero-achtergrond-mobiel.webp` | Dezelfde foto, kleiner, voor telefoons |
-| `public/images/og-afbeelding.jpg`            | Wat sociale media tonen bij een link   |
-| `public/images/*.png`                        | De aangeleverde bronbestanden          |
+| Bestand                                      | Waarvoor                                                |
+| -------------------------------------------- | ------------------------------------------------------- |
+| `public/favicon.ico`                         | Het tabblad-icoon                                       |
+| `public/images/favicon.ico`                  | Dezelfde, en dit is de versie waar de pagina naar wijst |
+| `public/apple-touch-icon.png`                | 180x180, wat iOS ophaalt                                |
+| `public/images/hero-achtergrond.webp`        | De hero-achtergrond, breed scherm                       |
+| `public/images/hero-achtergrond-mobiel.webp` | Dezelfde foto, kleiner, voor telefoons                  |
+| `public/images/og-afbeelding.jpg`            | Wat sociale media tonen bij een link                    |
+| `public/images/*.png`                        | De aangeleverde bronbestanden                           |
 
 **Zet nooit een aangeleverde PNG rechtstreeks op de pagina.** De
 hero-achtergrond kwam binnen als PNG van 1,2 MB; als WebP is dat 39 kB, en
@@ -94,6 +95,28 @@ zijn toegevoegd.
 
 Bestandsnamen zijn kebab-case zonder spaties en hoofdletters. Een spatie in
 een URL moet gecodeerd worden en dat gaat vroeg of laat ergens mis.
+
+### Waarom de favicon er twee keer staat
+
+`public/favicon.ico` is de plek waar browsers en bots het icoon uit zichzelf
+zoeken, dus die blijft staan. De pagina verwijst echter naar de kopie in
+`public/images/`, en dat is een omweg om Valet Linux heen.
+
+In `/etc/nginx/sites-available/valet.conf` staat `root /` plus een exacte
+location voor `/favicon.ico`. Die exacte match wint van de rewrite naar
+`server.php`, dus nginx zoekt het bestand op de filesystem-root, vindt niets
+en geeft 404. De `error_page 404` stuurt het verzoek alsnog naar Valet, die
+het juiste bestand teruggeeft -- maar de status blijft 404, en een browser
+weigert een favicon met een foutcode.
+
+Je herkent het hieraan: `/favicon.ico` geeft 404 met de goede bytes erin,
+terwijl `/apple-touch-icon.png` gewoon 200 geeft. Hetzelfde geldt voor
+`/robots.txt`.
+
+Op productie speelt dit niet: daar wijst de nginx-root naar `public/` en is
+er geen aparte favicon-regel. Wil je het lokaal echt oplossen, haal dan die
+twee `location =`-regels uit `valet.conf` en herstart nginx; dat geldt dan
+voor al je Valet-sites.
 
 ## Mobiel is geen bijzaak
 

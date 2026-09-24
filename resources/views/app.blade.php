@@ -43,7 +43,16 @@
             }
         </style>
 
-        <link rel="icon" href="/favicon.ico" sizes="any">
+        {{--
+            Het icoon staat ook op /favicon.ico -- de plek waar browsers en
+            bots hem uit zichzelf zoeken -- maar we verwijzen naar de kopie in
+            /images. Valet Linux heeft in zijn nginx-config een exacte
+            location voor /favicon.ico die van de rewrite naar server.php
+            wint; het bestand komt dan met status 404 binnen en een browser
+            weigert een favicon met een foutcode. Op productie speelt dat niet.
+            Zie docs/architecture/frontend-en-animatie.md.
+        --}}
+        <link rel="icon" href="/images/favicon.ico" sizes="any">
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
         {{--
