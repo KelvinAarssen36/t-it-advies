@@ -85,13 +85,24 @@ iemand de map leegmaakt.
 | `public/images/*.png`                        | De aangeleverde bronbestanden                           |
 
 **Zet nooit een aangeleverde PNG rechtstreeks op de pagina.** De
-hero-achtergrond kwam binnen als PNG van 1,2 MB; als WebP is dat 39 kB, en
-de mobiele versie 15 kB. Op een telefoon met slecht bereik is dat het
+hero-achtergrond kwam binnen als PNG van 1,2 MB; als WebP is dat 70 kB, en
+de mobiele versie 21 kB. Op een telefoon met slecht bereik is dat het
 verschil tussen een site die laadt en een bezoeker die wegklikt.
 
 Er staat geen beeldbewerking in het project. Converteren doe je met een
 eenmalig script; hoe dat is gegaan staat in de commit waarin deze bestanden
 zijn toegevoegd.
+
+**Kwaliteit 92 en niet lager**, terwijl 82 gemeten nauwelijks slechter is
+(41,2 tegen 42,8 dB PSNR, allebei ruim boven wat een oog ziet). De reden is
+banding: grote donkere verlopen zijn het slechtste geval voor WebP, en dat
+is precies wat deze foto is. PSNR meet dat slecht, je oog niet.
+
+**Een foto wordt nooit scherper dan zijn bron.** Deze is 1672 px breed. Op
+een scherm van 1920 wordt hij dus al 15% opgerekt, op een 2560-monitor 53%,
+en op een scherm met dubbele pixeldichtheid nog veel meer. Dat is geen
+instelling die je kunt bijdraaien: vraag een grotere bronfoto. Voor een
+hero die de volle breedte vult wil je er minstens 2560 px, liever 3840 px.
 
 Bestandsnamen zijn kebab-case zonder spaties en hoofdletters. Een spatie in
 een URL moet gecodeerd worden en dat gaat vroeg of laat ergens mis.
