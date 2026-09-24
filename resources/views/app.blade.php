@@ -19,20 +19,42 @@
             })();
         </script>
 
-        {{-- Inline style to set the HTML background color based on our theme in app.css --}}
+        @php
+            // De publieke site staat altijd in het donkere thema; zie
+            // PublicLayout.vue en docs/architecture/huisstijl-en-kleuren.md.
+            $isPublicPage = $page['component'] === 'Welcome'
+                || str_starts_with($page['component'], 'public/');
+        @endphp
+
+        {{--
+            De achtergrondkleur staat hier inline, vóór de stylesheet, zodat je
+            geen flits van een verkeerde kleur ziet. Voor een openbare pagina is
+            dat altijd Midnight Navy: die staat los van de voorkeur van de
+            bezoeker, dus meebewegen met .dark zou juist een witte flits geven.
+            Kleuren: docs/architecture/huisstijl-en-kleuren.md
+        --}}
         <style>
             html {
-                background-color: oklch(1 0 0);
+                background-color: {{ $isPublicPage ? '#061626' : '#ffffff' }};
             }
 
             html.dark {
-                background-color: oklch(0.145 0 0);
+                background-color: #061626;
             }
         </style>
 
         <link rel="icon" href="/favicon.ico" sizes="any">
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml">
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+        {{--
+            Wat sociale media tonen bij een gedeelde link. De titel komt uit
+            <title>, die Inertia per pagina zet. Een omschrijving per pagina
+            hoort bij de SEO-ronde; dit is de bodem waar niets ontbreekt.
+        --}}
+        <meta property="og:site_name" content="{{ config('app.name') }}">
+        <meta property="og:type" content="website">
+        <meta property="og:image" content="{{ url('/images/og-afbeelding.jpg') }}">
+        <meta name="twitter:card" content="summary_large_image">
 
         @fonts
 

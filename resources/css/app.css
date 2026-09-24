@@ -294,6 +294,42 @@
 
 @layer components {
     /*
+      De afdeklaag boven een achtergrondfoto.
+
+      Witte tekst haalt op de lichte plekken van een foto het contrast niet,
+      en welke plekken dat zijn verschilt per foto. Afdekken is dus geen
+      stijlkeuze maar de enige manier om te weten dat het leesbaar blijft.
+
+      Op breed scherm dekt hij van links af, waar de tekst staat, zodat de
+      rechterkant van het beeld zichtbaar blijft.
+    */
+    .brand-image-overlay {
+        background-image: linear-gradient(
+            to right,
+            rgb(6 22 38 / 0.95) 0%,
+            rgb(6 22 38 / 0.85) 40%,
+            rgb(6 22 38 / 0.5) 75%,
+            rgb(6 22 38 / 0.35) 100%
+        );
+    }
+
+    /*
+      Op een telefoon staat de tekst over de volle breedte, dus dekt hij van
+      onderaf af. Van links zou de tekst onderin over het onbedekte deel
+      vallen.
+    */
+    @media (max-width: 40rem) {
+        .brand-image-overlay {
+            background-image: linear-gradient(
+                to bottom,
+                rgb(6 22 38 / 0.7) 0%,
+                rgb(6 22 38 / 0.88) 55%,
+                rgb(6 22 38 / 0.96) 100%
+            );
+        }
+    }
+
+    /*
       Tekst in de merkgradient. De fallback-kleur staat er bewust op: zonder
       ondersteuning voor background-clip zou de tekst onzichtbaar worden, en
       dat is erger dan een tint mis.

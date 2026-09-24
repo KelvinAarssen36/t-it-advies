@@ -72,6 +72,55 @@ Houd die twee gescheiden. Zet je uploads in `public/`, dan staan
 klantbestanden in git; zet je het logo in `storage/`, dan is het weg zodra
 iemand de map leegmaakt.
 
+### Wat er nu staat
+
+| Bestand                                      | Waarvoor                               |
+| -------------------------------------------- | -------------------------------------- |
+| `public/favicon.ico`                         | Het tabblad-icoon                      |
+| `public/apple-touch-icon.png`                | 180x180, wat iOS ophaalt               |
+| `public/images/hero-achtergrond.webp`        | De hero-achtergrond, breed scherm      |
+| `public/images/hero-achtergrond-mobiel.webp` | Dezelfde foto, kleiner, voor telefoons |
+| `public/images/og-afbeelding.jpg`            | Wat sociale media tonen bij een link   |
+| `public/images/*.png`                        | De aangeleverde bronbestanden          |
+
+**Zet nooit een aangeleverde PNG rechtstreeks op de pagina.** De
+hero-achtergrond kwam binnen als PNG van 1,2 MB; als WebP is dat 39 kB, en
+de mobiele versie 15 kB. Op een telefoon met slecht bereik is dat het
+verschil tussen een site die laadt en een bezoeker die wegklikt.
+
+Er staat geen beeldbewerking in het project. Converteren doe je met een
+eenmalig script; hoe dat is gegaan staat in de commit waarin deze bestanden
+zijn toegevoegd.
+
+Bestandsnamen zijn kebab-case zonder spaties en hoofdletters. Een spatie in
+een URL moet gecodeerd worden en dat gaat vroeg of laat ergens mis.
+
+## Mobiel is geen bijzaak
+
+**De publieke site moet op een telefoon net zo goed zijn als op een
+desktop.** Wie dit bedrijf opzoekt doet dat waarschijnlijk op zijn telefoon,
+en dat is precies het moment waarop je hem wint of kwijtraakt. Een pagina die
+"ook werkt" op mobiel is niet genoeg.
+
+Wat dat concreet betekent bij elke openbare pagina:
+
+- Controleer bij **375 px breed**, niet alleen in een verkleind
+  browservenster. Dat is de smalste breedte die er nog echt toe doet.
+- **Geen horizontale scroll.** Eén element dat te breed is verpest de hele
+  pagina.
+- **Aanraakvlakken van minstens 44 px.** Een link in een rij tekst is op een
+  muis prima en met een duim niet.
+- **Elke achtergrondfoto krijgt een mobiele variant.** Zie hierboven.
+- **Contrast controleren boven een foto**, juist op mobiel: daar staat de
+  tekst over de volle breedte en dus over het hele beeld.
+- Grote koppen krijgen op mobiel een kleinere maat. `text-4xl sm:text-6xl`,
+  niet één maat voor alles.
+
+Voor het **portaal** ligt de lat lager: het moet bruikbaar zijn op een
+telefoon -- niets onbereikbaar, geen horizontale scroll -- maar het is
+gemaakt om achter een scherm te gebruiken. Een tabel met zes kolommen mag
+daar horizontaal schuiven; op de publieke site niet.
+
 ## Routes vanuit JavaScript
 
 We gebruiken [Wayfinder](https://github.com/laravel/wayfinder): die genereert

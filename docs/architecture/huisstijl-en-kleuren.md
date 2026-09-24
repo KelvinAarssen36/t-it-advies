@@ -312,3 +312,24 @@ door het thema per sectie om te draaien. Dat laatste breekt de
 Het logo bestaat uit een blauw/cyaan oog met zilveren metalen delen. De
 gradients hierboven zijn er om die twee materialen elders op de site terug te
 laten komen zonder het logo zelf te herhalen.
+
+De aangeleverde bestanden staan in `public/images/`:
+
+| Bestand                    | Wat het is                            |
+| -------------------------- | ------------------------------------- |
+| `logo-vierkant.png`        | Vierkant, met transparantie           |
+| `logo-breed.png`           | Liggend, met transparantie            |
+| `logo-volledig-1/2/3.png`  | Varianten met achtergrond             |
+| `achtergrond-met-logo.png` | Het sfeerbeeld met het oog -- de hero |
+| `persoon-met-logo.png`     | Nog niet gebruikt                     |
+| `vulling-1.png`            | Nog niet gebruikt                     |
+
+Het tabblad-icoon (`public/favicon.ico`) en het iOS-icoon
+(`public/apple-touch-icon.png`) komen hiervandaan. De `favicon.svg` van de
+starter kit is verwijderd: browsers geven een SVG voorrang boven een `.ico`,
+dus zolang die er stond zag je het Laravel-logo in je tabblad.
+
+De hero gebruikt het sfeerbeeld met een afdeklaag eroverheen. Het oog staat
+rechts in beeld, dus de laag dekt van links af en de tekst staat links. Zie
+[frontend en animatie](frontend-en-animatie.md) voor hoe dat werkt en waarom
+er altijd een afdeklaag overheen gaat.

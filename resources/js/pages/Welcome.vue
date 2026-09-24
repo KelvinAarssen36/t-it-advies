@@ -93,7 +93,12 @@ onBeforeUnmount(() => {
 <template>
     <Head title="IT-advies dat blijft staan" />
 
-    <SiteSection tone="gradient">
+    <SiteSection
+        tone="gradient"
+        image="/images/hero-achtergrond.webp"
+        image-mobile="/images/hero-achtergrond-mobiel.webp"
+        priority
+    >
         <div class="py-10 sm:py-16">
             <p
                 data-intro
