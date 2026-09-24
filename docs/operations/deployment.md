@@ -27,6 +27,11 @@ npm run build
 php artisan migrate --force
 php artisan db:seed --class=RolesAndPermissionsSeeder --force
 
+# De symlink naar de uploadmap. Staat in .gitignore, dus die moet op elke
+# nieuwe omgeving opnieuw worden gelegd; zonder deze link geeft elke
+# geüploade afbeelding een 404.
+php artisan storage:link
+
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache

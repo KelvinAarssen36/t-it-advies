@@ -47,6 +47,31 @@ De reveals worden opnieuw gescand na elke Inertia-navigatie. De layout blijft
 namelijk staan, dus `onMounted` draait maar één keer; zonder die herscan zou
 de inhoud van een volgende pagina op `opacity: 0` blijven hangen.
 
+## Afbeeldingen
+
+Er zijn twee plekken, en het verschil is wie het bestand erin zet.
+
+| Plek                  | URL              | Waarvoor                                                    |
+| --------------------- | ---------------- | ----------------------------------------------------------- |
+| `public/images/`      | `/images/<naam>` | Vaste beelden die met de code meegaan: logo, og-afbeelding. |
+| `storage/app/public/` | `/storage/<pad>` | Alles wat de klant later zelf uploadt.                      |
+
+**`public/images/`** staat in git en gaat dus mee bij een deploy. Zet er wat
+je zelf neerzet: het logo, een og-afbeelding, vaste sfeerbeelden. Verwijs
+ernaar met een gewoon pad, `<img src="/images/logo.svg">` -- niet met een
+import, want deze bestanden gaan bewust niet door Vite heen.
+
+**`storage/app/public/`** is voor uploads. Dat is een aparte map buiten git,
+zichtbaar via de symlink `public/storage` die `php artisan storage:link`
+aanmaakt. Die link staat in `.gitignore` en moet op elke nieuwe omgeving
+opnieuw worden gelegd -- dat staat in de deploystappen. Zonder die link geeft
+elke geüploade afbeelding een 404, en dat is de eerste plek om te kijken als
+dat gebeurt.
+
+Houd die twee gescheiden. Zet je uploads in `public/`, dan staan
+klantbestanden in git; zet je het logo in `storage/`, dan is het weg zodra
+iemand de map leegmaakt.
+
 ## Routes vanuit JavaScript
 
 We gebruiken [Wayfinder](https://github.com/laravel/wayfinder): die genereert
