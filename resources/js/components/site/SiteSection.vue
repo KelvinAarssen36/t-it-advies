@@ -15,8 +15,11 @@ import { computed } from 'vue';
  * Met `image` krijgt de sectie een foto als achtergrond. Er komt dan altijd
  * een afdeklaag overheen: witte tekst haalt op de lichte plekken van een
  * foto het contrast niet, en welke plekken dat zijn verschilt per foto.
- * Geef ook `imageMobile` mee -- een telefoon hoeft geen desktopbestand te
- * downloaden.
+ *
+ * Geef `imageSrcset` mee met meerdere breedtes. De browser kiest dan zelf,
+ * op basis van de schermbreedte én de pixeldichtheid -- een telefoon hoeft
+ * geen bestand voor een 4K-scherm te downloaden, en een scherm met dubbele
+ * pixeldichtheid hoeft geen opgerekte kleine versie te tonen.
  */
 const props = withDefaults(
     defineProps<{
@@ -24,7 +27,10 @@ const props = withDefaults(
         width?: 'default' | 'narrow';
         divided?: boolean;
         image?: string;
-        imageMobile?: string;
+        /** Varianten met breedtes, bijvoorbeeld '/klein.webp 900w, /groot.webp 3344w'. */
+        imageSrcset?: string;
+        /** Hoe breed de foto op de pagina staat. Standaard de volle breedte. */
+        imageSizes?: string;
         /** Alleen invullen als de foto inhoud is. Een sfeerbeeld blijft leeg. */
         imageAlt?: string;
         /** True voor de eerste sectie van de pagina: die laadt met voorrang. */
@@ -35,7 +41,8 @@ const props = withDefaults(
         width: 'default',
         divided: false,
         image: undefined,
-        imageMobile: undefined,
+        imageSrcset: undefined,
+        imageSizes: '100vw',
         imageAlt: '',
         priority: false,
     },
@@ -65,21 +72,16 @@ const widthClass = computed(() =>
         class="scroll-mt-16"
     >
         <template v-if="image">
-            <picture>
-                <source
-                    v-if="imageMobile"
-                    media="(max-width: 40rem)"
-                    :srcset="imageMobile"
-                />
-                <img
-                    :src="image"
-                    :alt="imageAlt"
-                    class="absolute inset-0 -z-10 size-full object-cover"
-                    :loading="priority ? 'eager' : 'lazy'"
-                    :fetchpriority="priority ? 'high' : 'auto'"
-                    decoding="async"
-                />
-            </picture>
+            <img
+                :src="image"
+                :srcset="imageSrcset"
+                :sizes="imageSrcset ? imageSizes : undefined"
+                :alt="imageAlt"
+                class="absolute inset-0 -z-10 size-full object-cover"
+                :loading="priority ? 'eager' : 'lazy'"
+                :fetchpriority="priority ? 'high' : 'auto'"
+                decoding="async"
+            />
 
             <div
                 class="brand-image-overlay absolute inset-0 -z-10"

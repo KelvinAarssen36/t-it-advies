@@ -28,6 +28,14 @@ import { store as contactStore } from '@/routes/contact';
 const page = usePage();
 const status = computed(() => page.props.flash?.status);
 
+// Drie maten van dezelfde achtergrond; de browser kiest op schermbreedte en
+// pixeldichtheid. Zie docs/architecture/frontend-en-animatie.md.
+const heroSrcset = [
+    '/images/hero-achtergrond-mobiel.webp 900w',
+    '/images/hero-achtergrond.webp 1672w',
+    '/images/hero-achtergrond-groot.webp 3344w',
+].join(', ');
+
 const services = [
     {
         eyebrow: '01',
@@ -96,7 +104,7 @@ onBeforeUnmount(() => {
     <SiteSection
         tone="gradient"
         image="/images/hero-achtergrond.webp"
-        image-mobile="/images/hero-achtergrond-mobiel.webp"
+        :image-srcset="heroSrcset"
         priority
     >
         <div class="py-10 sm:py-16">

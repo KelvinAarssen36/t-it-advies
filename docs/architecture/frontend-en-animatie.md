@@ -79,8 +79,9 @@ iemand de map leegmaakt.
 | `public/favicon.ico`                         | Het tabblad-icoon                                       |
 | `public/images/favicon.ico`                  | Dezelfde, en dit is de versie waar de pagina naar wijst |
 | `public/apple-touch-icon.png`                | 180x180, wat iOS ophaalt                                |
-| `public/images/hero-achtergrond.webp`        | De hero-achtergrond, breed scherm                       |
-| `public/images/hero-achtergrond-mobiel.webp` | Dezelfde foto, kleiner, voor telefoons                  |
+| `public/images/hero-achtergrond.webp`        | De hero-achtergrond, 1672 px                            |
+| `public/images/hero-achtergrond-mobiel.webp` | Dezelfde foto, 900 px, voor telefoons                   |
+| `public/images/hero-achtergrond-groot.webp`  | Dezelfde foto, 3344 px, opgeschaald en verscherpt       |
 | `public/images/og-afbeelding.jpg`            | Wat sociale media tonen bij een link                    |
 | `public/images/*.png`                        | De aangeleverde bronbestanden                           |
 
@@ -103,6 +104,43 @@ een scherm van 1920 wordt hij dus al 15% opgerekt, op een 2560-monitor 53%,
 en op een scherm met dubbele pixeldichtheid nog veel meer. Dat is geen
 instelling die je kunt bijdraaien: vraag een grotere bronfoto. Voor een
 hero die de volle breedte vult wil je er minstens 2560 px, liever 3840 px.
+
+### De opgeschaalde variant
+
+Zolang die grotere bron er niet is, staat er een variant van 3344 px:
+tweemaal opgeschaald en daarna verscherpt met een milde convolutiekern.
+
+Dat maakt geen nieuwe details -- die zitten niet in de bron. Het haalt het
+oprekken alleen weg bij de browser. Een browser rekt op zonder te
+verscherpen; wij rekken op, verscherpen de randen, en de browser schaalt
+vervolgens terug. Terugschalen ziet er altijd scherper uit dan oprekken, en
+de verscherping blijft daarbij behouden.
+
+De kern is bewust mild (2,0 in het midden, deler 1,2). Een sterkere geeft
+lichte randen om donkere vormen, en op een egale navy achtergrond valt dat
+meteen op.
+
+Vervang dit zodra er een echte bron van 3000 px of meer is: verscherpen is
+een pleister, geen oplossing.
+
+### Drie maten, de browser kiest
+
+De hero gebruikt `srcset` met breedtes en `sizes="100vw"`:
+
+| Bestand                        | Breedte | Grootte |
+| ------------------------------ | ------- | ------- |
+| `hero-achtergrond-mobiel.webp` | 900     | 21 kB   |
+| `hero-achtergrond.webp`        | 1672    | 70 kB   |
+| `hero-achtergrond-groot.webp`  | 3344    | 180 kB  |
+
+Daarmee telt ook de pixeldichtheid mee, en dat is precies wat je wilt: een
+telefoon met een scherm van 375 px en drievoudige dichtheid heeft 1125 px
+nodig en krijgt dus de middelste, niet de kleinste. Met alleen een
+`media`-regel in een `<picture>` zou die telefoon een opgerekte 900 px
+krijgen.
+
+Gebruik daarom `imageSrcset` op `SiteSection` en niet één vast bestand,
+zodra een foto de volle breedte vult.
 
 Bestandsnamen zijn kebab-case zonder spaties en hoofdletters. Een spatie in
 een URL moet gecodeerd worden en dat gaat vroeg of laat ergens mis.
