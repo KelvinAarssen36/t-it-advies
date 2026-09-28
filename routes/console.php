@@ -1,5 +1,6 @@
 <?php
 
+use App\Console\Commands\PruneActivityEntries;
 use App\Console\Commands\PruneMailLogs;
 use App\Console\Commands\PruneSecurityEvents;
 use App\Console\Commands\ReportSecurityAnomalies;
@@ -35,6 +36,7 @@ Schedule::command(ReportSecurityAnomalies::class)
 // tegelijk op dezelfde database maken elkaar alleen maar trager.
 Schedule::command(PruneSecurityEvents::class)->dailyAt('03:10');
 Schedule::command(PruneMailLogs::class)->dailyAt('03:20');
+Schedule::command(PruneActivityEntries::class)->dailyAt('03:25');
 
 // Huishouding van het framework zelf. Zonder dit groeien `failed_jobs`,
 // `job_batches` en `password_reset_tokens` ook onbeperkt door.

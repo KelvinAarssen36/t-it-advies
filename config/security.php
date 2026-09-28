@@ -36,6 +36,14 @@ return [
     'logging' => [
         'retention_days' => (int) env('SECURITY_LOG_RETENTION_DAYS', 365),
 
+        /*
+         * Het activiteitenlogboek heeft een eigen termijn. Bij onderzoek
+         * naar een inbraak wil je maanden terug kunnen kijken; bij "wat heb
+         * ik vorige maand aan die pagina veranderd" is een jaar ruim
+         * voldoende en daarna is het ballast.
+         */
+        'activity_retention_days' => (int) env('ACTIVITY_LOG_RETENTION_DAYS', 365),
+
         'redacted_keys' => [
             'password',
             'password_confirmation',
@@ -61,6 +69,56 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Tweestapsverificatie verplicht
+    |--------------------------------------------------------------------------
+    |
+    | Staat dit aan, dan komt niemand het portaal in vóórdat 2FA is
+    | bevestigd. Er is geen knop die je kunt overslaan: bij het eerste
+    | bezoek word je naar de instelpagina gestuurd en kom je daar pas vanaf
+    | met een werkende code.
+    |
+    | In productie staat het vanzelf aan, ook als niemand eraan denkt.
+    | Lokaal kun je het uitzetten, bijvoorbeeld om een testbrowser erlangs
+    | te krijgen.
+    |
+    | Let op: dit stuurt op `two_factor_confirmed_at` en niet op het bestaan
+    | van een geheim. Wie de instelpagina opent en afhaakt vóór het intypen
+    | van de code heeft wel een geheim maar is niet beveiligd.
+    |
+    */
+
+    'two_factor' => [
+        'required' => (bool) env('PORTAL_TWO_FACTOR_REQUIRED', env('APP_ENV') === 'production'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Het account van de eigenaar
+    |--------------------------------------------------------------------------
+    |
+    | Deze applicatie heeft één gebruiker. Dat account wordt door
+    | PortalAccountSeeder aangemaakt en hoort er in elke omgeving te zijn --
+    | het is geen testdata.
+    |
+    | Naam en e-mailadres staan hier omdat ze geen geheim zijn. Het
+    | wachtwoord komt uitsluitend uit .env: een wachtwoord in een bestand dat
+    | in git staat is geen wachtwoord meer. Zie AGENTS.md, regel 2.
+    |
+    | De seeder werkt een bestaand account nooit bij. Zou hij dat wel doen,
+    | dan zet elke deploy het wachtwoord terug dat in .env staat, ook als de
+    | eigenaar het inmiddels zelf heeft gewijzigd.
+    |
+    */
+
+    'portal_account' => [
+        'name' => env('PORTAL_ACCOUNT_NAME', 'Erik Aarssen'),
+        'email' => env('PORTAL_ACCOUNT_EMAIL', 'aarssen@atitadvies.nl'),
+        'password' => env('PORTAL_ACCOUNT_PASSWORD'),
+        'role' => 'admin',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Alarmering
     |--------------------------------------------------------------------------
     |
@@ -82,6 +140,13 @@ return [
         'address' => env('SECURITY_ALERT_ADDRESS'),
         'window_minutes' => (int) env('SECURITY_ALERT_WINDOW_MINUTES', 60),
         'cooldown_minutes' => (int) env('SECURITY_ALERT_COOLDOWN_MINUTES', 180),
+
+        /*
+         * Een eigen, kortere afkoeltijd voor crashmeldingen. Een kapotte
+         * pagina wil je binnen het halfuur weten; een piek in mislukte
+         * logins mag best drie uur wachten.
+         */
+        'crash_cooldown_minutes' => (int) env('CRASH_ALERT_COOLDOWN_MINUTES', 30),
 
         'thresholds' => [
             'failed_logins' => (int) env('SECURITY_ALERT_FAILED_LOGINS', 25),

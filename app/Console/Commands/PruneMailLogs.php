@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\MailLog;
+use App\Support\Datum;
 use App\Support\Maintenance\RowPruner;
 use Illuminate\Console\Command;
 
@@ -43,7 +44,7 @@ class PruneMailLogs extends Command
 
         $this->info(__(':aantal regels uit het mailoverzicht verwijderd (ouder dan :datum).', [
             'aantal' => $deleted,
-            'datum' => $before->toDateString(),
+            'datum' => Datum::dag($before),
         ]));
 
         return self::SUCCESS;

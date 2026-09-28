@@ -115,7 +115,7 @@ class AppServiceProvider extends ServiceProvider
      */
     protected function configureAuthorization(): void
     {
-        Gate::define('viewPulse', fn (User $user) => $user->can('view pulse'));
+        Gate::define('viewPulse', fn (User $user) => $user->can('manage portal'));
     }
 
     private function tooManyAttempts(Request $request, string $limiter): Response

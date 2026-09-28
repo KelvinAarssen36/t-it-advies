@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\MailStatus;
 use App\Http\Controllers\Controller;
 use App\Models\MailLog;
+use App\Support\Datum;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -43,8 +44,8 @@ class MailLogController extends Controller
                 'status' => $log->status->value,
                 'status_label' => $log->status->label(),
                 'is_problem' => $log->status->isProblem(),
-                'sent_at' => $log->sent_at?->toDateTimeString(),
-                'last_event_at' => $log->last_event_at?->toDateTimeString(),
+                'sent_at' => Datum::tijdstip($log->sent_at),
+                'last_event_at' => Datum::tijdstip($log->last_event_at),
                 'events' => $log->events ?? [],
                 'error' => $log->error,
             ]);

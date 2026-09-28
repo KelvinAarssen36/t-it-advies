@@ -4,6 +4,7 @@ import { computed, ref, watch } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { t } from '@/lib/i18n';
 import { dashboard } from '@/routes/admin';
 import users from '@/routes/admin/users';
 import { update as updateUserRoles } from '@/routes/admin/users/roles';
@@ -41,7 +42,6 @@ defineOptions({
 });
 
 const page = usePage();
-const status = computed(() => page.props.flash?.status);
 
 const search = ref(props.filters.search ?? '');
 
@@ -100,9 +100,10 @@ const saveRoles = (row: UserRow) => {
 
 const remove = (row: UserRow) => {
     const confirmed = window.confirm(
-        'Weet je zeker dat je het account van ' +
-            row.name +
-            ' verwijdert? Dit kan niet ongedaan worden gemaakt.',
+        t(
+            'Weet je zeker dat je het account van :naam verwijdert? Dit kan niet ongedaan worden gemaakt.',
+            { naam: row.name },
+        ),
     );
 
     if (!confirmed) {
@@ -114,43 +115,44 @@ const remove = (row: UserRow) => {
 </script>
 
 <template>
-    <Head title="Gebruikers" />
+    <Head :title="$t('Gebruikers')" />
 
     <div class="flex flex-col gap-4 p-4">
-        <div
-            v-if="status"
-            class="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm"
-        >
-            {{ status }}
-        </div>
-
         <div class="flex flex-wrap items-center gap-3">
             <Input
                 v-model="search"
                 type="search"
-                placeholder="Zoek op naam of e-mailadres"
+                :placeholder="$t('Zoek op naam of e-mailadres')"
                 class="max-w-xs"
             />
             <span class="text-sm text-muted-foreground">
-                {{ props.users.total }} gebruikers
+                {{ $t(':aantal gebruikers', { aantal: props.users.total }) }}
             </span>
         </div>
 
         <p class="text-sm text-muted-foreground">
-            Rollen wijzigen en accounts verwijderen vragen om een verse code uit
-            je authenticator. Je eigen account en de laatste beheerder kun je
-            hier niet aanpassen.
+            {{
+                $t(
+                    'Rollen wijzigen en accounts verwijderen vragen om een verse code uit je authenticator. Je eigen account en de laatste beheerder kun je hier niet aanpassen.',
+                )
+            }}
         </p>
 
-        <div class="overflow-x-auto rounded-xl border">
+        <div class="brand-scrollbar overflow-x-auto rounded-xl border">
             <table class="w-full text-sm">
                 <thead class="bg-muted/50 text-left">
                     <tr>
-                        <th class="px-3 py-2 font-medium">Naam</th>
-                        <th class="px-3 py-2 font-medium">E-mailadres</th>
-                        <th class="px-3 py-2 font-medium">Rollen</th>
-                        <th class="px-3 py-2 font-medium">2FA</th>
-                        <th class="px-3 py-2 font-medium">Sinds</th>
+                        <th class="px-3 py-2 font-medium">{{ $t('Naam') }}</th>
+                        <th class="px-3 py-2 font-medium">
+                            {{ $t('E-mailadres') }}
+                        </th>
+                        <th class="px-3 py-2 font-medium">
+                            {{ $t('Rollen') }}
+                        </th>
+                        <th class="px-3 py-2 font-medium">{{ $t('2FA') }}</th>
+                        <th class="px-3 py-2 font-medium">
+                            {{ $t('Sinds') }}
+                        </th>
                         <th class="px-3 py-2 font-medium"></th>
                     </tr>
                 </thead>
@@ -163,7 +165,7 @@ const remove = (row: UserRow) => {
                                     v-if="row.is_self"
                                     class="text-muted-foreground"
                                 >
-                                    (jij)
+                                    {{ $t('(jij)') }}
                                 </span>
                             </td>
                             <td class="px-3 py-2">
@@ -172,7 +174,7 @@ const remove = (row: UserRow) => {
                                     v-if="!row.email_verified"
                                     variant="secondary"
                                 >
-                                    niet geverifieerd
+                                    {{ $t('niet geverifieerd') }}
                                 </Badge>
                             </td>
                             <td class="px-3 py-2">
@@ -180,7 +182,7 @@ const remove = (row: UserRow) => {
                                     v-if="row.roles.length === 0"
                                     class="text-muted-foreground"
                                 >
-                                    geen
+                                    {{ $t('geen') }}
                                 </span>
                                 <Badge
                                     v-for="role in row.roles"
@@ -198,7 +200,7 @@ const remove = (row: UserRow) => {
                                             : 'destructive'
                                     "
                                 >
-                                    {{ row.two_factor ? 'aan' : 'uit' }}
+                                    {{ row.two_factor ? $t('aan') : $t('uit') }}
                                 </Badge>
                             </td>
                             <td class="px-3 py-2 tabular-nums">
@@ -212,7 +214,7 @@ const remove = (row: UserRow) => {
                                     class="mr-2"
                                     @click="startEditing(row)"
                                 >
-                                    Rollen
+                                    {{ $t('Rollen') }}
                                 </Button>
                                 <Button
                                     v-if="!row.is_self"
@@ -220,7 +222,7 @@ const remove = (row: UserRow) => {
                                     size="sm"
                                     @click="remove(row)"
                                 >
-                                    Verwijder
+                                    {{ $t('Verwijder') }}
                                 </Button>
                             </td>
                         </tr>
@@ -248,14 +250,14 @@ const remove = (row: UserRow) => {
                                         :disabled="processing"
                                         @click="saveRoles(row)"
                                     >
-                                        Opslaan
+                                        {{ $t('Opslaan') }}
                                     </Button>
                                     <Button
                                         variant="ghost"
                                         size="sm"
                                         @click="editing = null"
                                     >
-                                        Annuleren
+                                        {{ $t('Annuleren') }}
                                     </Button>
                                 </div>
                             </td>
@@ -266,7 +268,7 @@ const remove = (row: UserRow) => {
                             colspan="6"
                             class="px-3 py-8 text-center text-muted-foreground"
                         >
-                            Geen gebruikers gevonden.
+                            {{ $t('Geen gebruikers gevonden.') }}
                         </td>
                     </tr>
                 </tbody>

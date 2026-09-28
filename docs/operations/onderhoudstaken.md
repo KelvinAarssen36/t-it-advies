@@ -11,14 +11,15 @@ De taken die vanzelf draaien: opruimen en alarmeren. Ze staan in
 
 ## Het overzicht
 
-| Tijd    | Taak                    | Wat het doet                                       |
-| ------- | ----------------------- | -------------------------------------------------- |
-| elk uur | `security:report`       | Meldt pieken in mislukte pogingen en mailproblemen |
-| 03:10   | `security:prune-events` | Ruimt `security_events` op                         |
-| 03:20   | `mail:prune-logs`       | Ruimt `mail_logs` op                               |
-| 03:30   | `queue:prune-failed`    | Ruimt mislukte jobs ouder dan 14 dagen op          |
-| 03:40   | `queue:prune-batches`   | Ruimt afgeronde batches op                         |
-| 03:50   | `auth:clear-resets`     | Ruimt verlopen wachtwoordherstel-tokens op         |
+| Tijd                    | Taak                       | Wat het doet                                       |
+| ----------------------- | -------------------------- | -------------------------------------------------- |
+| elk uur                 | `security:report`          | Meldt pieken in mislukte pogingen en mailproblemen |
+| 03:10                   | `activity:prune`           | 03:25                                              | Ruimt het activiteitenlogboek op. Eigen termijn: `ACTIVITY_LOG_RETENTION_DAYS`, standaard een jaar. Zie [activiteitenlogboek](../security/activiteitenlogboek.md). |
+| `security:prune-events` | Ruimt `security_events` op |
+| 03:20                   | `mail:prune-logs`          | Ruimt `mail_logs` op                               |
+| 03:30                   | `queue:prune-failed`       | Ruimt mislukte jobs ouder dan 14 dagen op          |
+| 03:40                   | `queue:prune-batches`      | Ruimt afgeronde batches op                         |
+| 03:50                   | `auth:clear-resets`        | Ruimt verlopen wachtwoordherstel-tokens op         |
 
 De opruimtaken staan bewust niet op hetzelfde moment: twee grote deletes
 tegelijk op dezelfde database maken elkaar alleen maar trager.

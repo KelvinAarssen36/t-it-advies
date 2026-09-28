@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\ActivityController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\MailLogController;
 use App\Http\Controllers\Admin\SecurityEventController;
@@ -24,34 +25,38 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware(['auth', 'verified'])
+Route::middleware(['auth', 'verified', 'two-factor.required'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
         Route::get('/', [DashboardController::class, 'index'])
-            ->middleware('can:view security log')
+            ->middleware('can:manage portal')
             ->name('dashboard');
 
+        Route::get('activiteit', [ActivityController::class, 'index'])
+            ->middleware('can:manage portal')
+            ->name('activity.index');
+
         Route::get('mail', [MailLogController::class, 'index'])
-            ->middleware('can:view mail log')
+            ->middleware('can:manage portal')
             ->name('mail.index');
 
         Route::get('security', [SecurityEventController::class, 'index'])
-            ->middleware('can:view security log')
+            ->middleware('can:manage portal')
             ->name('security.index');
 
         // Kijken mag met alleen het recht. Wijzigen vraagt daarnaast om een
         // verse authenticator-code: rollen uitdelen en accounts verwijderen
         // zijn precies de handelingen die je niet wilt terugdraaien.
         Route::get('users', [UserController::class, 'index'])
-            ->middleware('can:manage users')
+            ->middleware('can:manage portal')
             ->name('users.index');
 
         Route::put('users/{user}/roles', [UserController::class, 'updateRoles'])
-            ->middleware(['can:manage users', '2fa.confirm'])
+            ->middleware(['can:manage portal', '2fa.confirm'])
             ->name('users.roles.update');
 
         Route::delete('users/{user}', [UserController::class, 'destroy'])
-            ->middleware(['can:manage users', '2fa.confirm'])
+            ->middleware(['can:manage portal', '2fa.confirm'])
             ->name('users.destroy');
     });

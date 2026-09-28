@@ -38,7 +38,10 @@ hosts-bestand nodig — `valet link` alleen is niet genoeg, want Windows lost
 Uitleg en het commando daarvoor staan in
 [docs/development/setup.md](docs/development/setup.md).
 
-Lokaal beheerdersaccount: `admin@t-it-advies.test` / `password`.
+Inloggen: er is één account, dat van de eigenaar. Zet
+`PORTAL_ACCOUNT_PASSWORD` in je `.env` en draai
+`php artisan db:seed --class=PortalAccountSeeder`. Zie
+[docs/security/rollen-en-rechten.md](docs/security/rollen-en-rechten.md).
 
 ## Commando's
 

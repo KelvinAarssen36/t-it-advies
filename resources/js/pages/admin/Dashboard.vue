@@ -33,7 +33,7 @@ defineOptions({
 </script>
 
 <template>
-    <Head title="Beheer" />
+    <Head :title="$t('Beheer')" />
 
     <div class="flex flex-col gap-6 p-4">
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -42,7 +42,7 @@ defineOptions({
                     <CardTitle
                         class="text-sm font-medium text-muted-foreground"
                     >
-                        Mislukte pogingen (24u)
+                        {{ $t('Mislukte pogingen (24u)') }}
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -57,7 +57,7 @@ defineOptions({
                     <CardTitle
                         class="text-sm font-medium text-muted-foreground"
                     >
-                        Gebeurtenissen (24u)
+                        {{ $t('Gebeurtenissen (24u)') }}
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -72,7 +72,7 @@ defineOptions({
                     <CardTitle
                         class="text-sm font-medium text-muted-foreground"
                     >
-                        Mails verzonden (24u)
+                        {{ $t('Mails verzonden (24u)') }}
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -87,7 +87,7 @@ defineOptions({
                     <CardTitle
                         class="text-sm font-medium text-muted-foreground"
                     >
-                        Mailproblemen (24u)
+                        {{ $t('Mailproblemen (24u)') }}
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -105,23 +105,29 @@ defineOptions({
 
         <Card>
             <CardHeader>
-                <CardTitle>Laatste mislukte pogingen</CardTitle>
+                <CardTitle>{{ $t('Laatste mislukte pogingen') }}</CardTitle>
             </CardHeader>
             <CardContent>
                 <p
                     v-if="recentFailures.length === 0"
                     class="text-sm text-muted-foreground"
                 >
-                    Niets te melden.
+                    {{ $t('Niets te melden.') }}
                 </p>
 
                 <table v-else class="w-full text-sm">
                     <thead class="text-left text-muted-foreground">
                         <tr>
-                            <th class="pb-2 font-medium">Gebeurtenis</th>
-                            <th class="pb-2 font-medium">E-mail</th>
-                            <th class="pb-2 font-medium">IP</th>
-                            <th class="pb-2 font-medium">Wanneer</th>
+                            <th class="pb-2 font-medium">
+                                {{ $t('Gebeurtenis') }}
+                            </th>
+                            <th class="pb-2 font-medium">
+                                {{ $t('E-mail') }}
+                            </th>
+                            <th class="pb-2 font-medium">{{ $t('IP') }}</th>
+                            <th class="pb-2 font-medium">
+                                {{ $t('Wanneer') }}
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -146,10 +152,10 @@ defineOptions({
 
         <div class="flex gap-4 text-sm">
             <Link :href="security.index()" class="underline underline-offset-4">
-                Volledig beveiligingslogboek
+                {{ $t('Volledig beveiligingslogboek') }}
             </Link>
             <Link :href="mail.index()" class="underline underline-offset-4">
-                Mailoverzicht
+                {{ $t('Mailoverzicht') }}
             </Link>
         </div>
     </div>

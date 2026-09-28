@@ -2,21 +2,84 @@
 
 ## Waar je kijkt
 
-| Wat                                          | Waar                                         | Nodig recht         |
-| -------------------------------------------- | -------------------------------------------- | ------------------- |
-| Overzicht van de laatste 24 uur              | `/admin`                                     | `view security log` |
-| Wat is er verstuurd en wat meldt de provider | `/admin/mail`                                | `view mail log`     |
-| Geslaagde en mislukte beveiligingspogingen   | `/admin/security`                            | `view security log` |
-| Wie er toegang heeft en met welke rollen     | `/admin/users`                               | `manage users`      |
-| Prestaties, trage queries, achtergrondtaken  | `/pulse`                                     | `view pulse`        |
-| Ruwe logs                                    | `storage/logs/laravel.log` en `security.log` | server              |
-| Gezondheidscheck                             | `/up`                                        | geen                |
+| Wat                                          | Waar                                         | Nodig recht     |
+| -------------------------------------------- | -------------------------------------------- | --------------- |
+| Overzicht van de laatste 24 uur              | `/admin`                                     | `manage portal` |
+| Wat is er verstuurd en wat meldt de provider | `/admin/mail`                                | `manage portal` |
+| Wat er aan de website is veranderd           | `/admin/activiteit`                          | `manage portal` |
+| Geslaagde en mislukte beveiligingspogingen   | `/admin/security`                            | `manage portal` |
+| Wie er toegang heeft en met welke rollen     | `/admin/users`                               | `manage portal` |
+| Prestaties, trage queries, achtergrondtaken  | `/pulse`                                     | `manage portal` |
+| Ruwe logs                                    | `storage/logs/laravel.log` en `security.log` | server          |
+| Gezondheidscheck                             | `/up`                                        | geen            |
 
 ## Laravel Pulse
 
 Pulse toont trage verzoeken, trage queries, mislukte taken, uitzonderingen en
 serverbelasting. Toegang loopt via de gate `viewPulse`, die is gekoppeld aan
-het recht `view pulse`.
+het recht `manage portal`.
+
+## Als de applicatie omvalt
+
+Er gaat een mail uit naar `SECURITY_ALERT_ADDRESS`. Zonder dat staat een 500
+alleen in `storage/logs/laravel.log`, en daar kijkt niemand in tot de klant
+belt -- en dan is het al een dag oud.
+
+Dat doet
+[`CrashReporter`](../../app/Support/Security/CrashReporter.php), met vier
+grenzen die er allemaal zijn om één reden: een melder die te veel stuurt
+wordt weggefilterd, en dan ben je slechter af dan met geen melder, want dan
+dénk je dat je bewaking hebt.
+
+1. **Alleen echte fouten.** Een 404 of een 403 zegt dat het systeem werkt.
+2. **Niet lokaal.** Tijdens het ontwikkelen zie je de fout op je scherm.
+3. **Een afkoeltijd per soort fout** (`CRASH_ALERT_COOLDOWN_MINUTES`,
+   standaard een half uur). Eén kapotte pagina die tien keer wordt bezocht
+   is één probleem. De sleutel is de soort fout plus de plek in de code, niet
+   de melding -- daar staat vaak een id in dat per verzoek verschilt.
+4. **Geen adres ingesteld betekent stil blijven.** Een melder die zelf
+   fouten gooit omdat hij niet kan mailen is een probleem erbij.
+
+**De mail is karig met opzet:** soort, plek, verzoek. Geen stacktrace, want
+die mail landt in een postbus die minder goed beveiligd is dan de
+applicatie. Voor het hele verhaal ga je naar het logbestand op de server.
+
+De melding zelf gaat door `SecurityLogger::redactText()`. Dat is een vangnet
+en geen garantie -- een foutmelding is vrije tekst, en er kan van alles in
+staan wat een pakket erin heeft gezet. Regel 2 uit
+[`AGENTS.md`](../../AGENTS.md) blijft leidend.
+
+Deze mail gaat **niet** door de wachtrij, in tegenstelling tot de rest. Valt
+de applicatie om doordat de database weg is, dan komt een taak in de
+wachtrij nooit aan -- en dan mis je juist de melding die je het hardst nodig
+had.
+
+Wordt het er te veel, dan is dit het moment om een dienst als Sentry ernaast
+te zetten. Tot die tijd is het verschil tussen "we horen het" en "we horen
+het niet" groter dan het verschil tussen een mail en een dashboard.
+
+### Waar kijk je na zo'n mail?
+
+**Er is bewust geen foutenscherm in het portaal.** Dat is een beslissing en
+geen gat: zo'n scherm zou stacktraces en ontwikkelaarstaal aan de eigenaar
+van de website laten zien, terwijl die er niets mee kan. Er is één rol, dus
+alles wat we in het menu zetten ziet hij ook.
+
+De mail zegt dát er iets is en waar. Voor de rest:
+
+| Wat je zoekt                             | Waar                                                   |
+| ---------------------------------------- | ------------------------------------------------------ |
+| De volledige stacktrace                  | `storage/logs/laravel.log` op de server                |
+| Hoe vaak dezelfde fout voorkomt, en waar | `/pulse` -- de uitzonderingenkaart staat standaard aan |
+| Of het aan een gebruiker lag             | `/admin/security` en `/admin/activiteit`               |
+
+`/pulse` staat **niet** in het menu, om diezelfde reden. Type het adres in;
+het recht (`manage portal`) heb je al.
+
+Verandert dat ooit -- bijvoorbeeld als er een tweede beheerder komt die
+alleen inhoud beheert -- dan is een eigen foutenscherm in de schil van het
+portaal de nettere oplossing. De crashmelder legt nu al vast wat zo'n scherm
+zou tonen.
 
 Pulse schrijft veel. Groeit de database onhandig hard, zet dan sampling aan in
 `config/pulse.php` (bijvoorbeeld `sample_rate` op 0.1) of laat Pulse via Redis

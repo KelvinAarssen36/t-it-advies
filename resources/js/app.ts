@@ -5,6 +5,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
+import { t } from '@/lib/i18n';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -27,6 +28,12 @@ void createInertiaApp({
             case name === 'Welcome':
             case name.startsWith('public/'):
                 return PublicLayout;
+            // De laadschermen vullen het hele venster en hebben geen
+            // schil nodig; met een layout eromheen zou het logo er twee
+            // keer staan.
+            case name === 'auth/PortalEntry':
+            case name === 'portal/SiteEntry':
+                return null;
             case name.startsWith('auth/'):
                 return AuthLayout;
             case name.startsWith('settings/'):
@@ -36,6 +43,13 @@ void createInertiaApp({
         }
     },
     withApp: (app) => {
+        /*
+         * Vertalen kan in elk sjabloon met de globale functie $t, zonder
+         * import. In een <script setup> importeer je `t` uit '@/lib/i18n';
+         * dat is dezelfde functie.
+         */
+        app.config.globalProperties.$t = t;
+
         app.directive('focus', {
             mounted: (el: HTMLElement, shouldFocus) => {
                 if (shouldFocus.value !== false) {

@@ -84,10 +84,20 @@ elk subdomein een eigen regel nodig. Windows-hosts kent geen wildcards.
 
 ## Inloggen
 
-De seeder maakt in `local` een beheerdersaccount aan:
+Er is één account: dat van de eigenaar. Het wordt aangemaakt door
+`PortalAccountSeeder`, ook lokaal -- dit is geen testdata.
 
-- e-mail: `admin@t-it-advies.test`
-- wachtwoord: `password`
+Zet eerst `PORTAL_ACCOUNT_PASSWORD` in je `.env` (vraag het wachtwoord aan
+iemand die het al heeft; het staat nergens in git), en draai dan:
+
+```bash
+php artisan db:seed --class=PortalAccountSeeder
+```
+
+Het e-mailadres staat in `config/security.php`. Registratie via de website
+staat uit; heb je een extra account nodig, gebruik dan
+`php artisan user:create`. Zie
+[rollen en rechten](../security/rollen-en-rechten.md).
 
 ## Queue
 

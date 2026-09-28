@@ -34,20 +34,27 @@ variabelen komen altijd óók in `.env.example`, met een lege waarde.
 
 Voordat je code wijzigt, lees het document dat bij het gebied hoort:
 
-| Gebied                              | Lees eerst                                                                             |
-| ----------------------------------- | -------------------------------------------------------------------------------------- |
-| Structuur, routes, nieuwe pakketten | [docs/architecture/overzicht.md](docs/architecture/overzicht.md)                       |
-| Vue, Tailwind, GSAP, Lenis          | [docs/architecture/frontend-en-animatie.md](docs/architecture/frontend-en-animatie.md) |
-| Kleuren, gradients, het logo        | [docs/architecture/huisstijl-en-kleuren.md](docs/architecture/huisstijl-en-kleuren.md) |
-| Mail, queues, webhooks              | [docs/architecture/mail-en-queues.md](docs/architecture/mail-en-queues.md)             |
-| Inloggen en 2FA                     | [docs/security/authenticatie-en-2fa.md](docs/security/authenticatie-en-2fa.md)         |
-| Acties die een verse code vragen    | [docs/security/gevoelige-acties.md](docs/security/gevoelige-acties.md)                 |
-| Rollen en rechten                   | [docs/security/rollen-en-rechten.md](docs/security/rollen-en-rechten.md)               |
-| Logging                             | [docs/security/logging.md](docs/security/logging.md)                                   |
-| Spam en bots                        | [docs/security/spam-en-botbescherming.md](docs/security/spam-en-botbescherming.md)     |
-| Geplande taken, bewaartermijnen     | [docs/operations/onderhoudstaken.md](docs/operations/onderhoudstaken.md)               |
-| Tests                               | [docs/development/testen.md](docs/development/testen.md)                               |
-| Code-conventies                     | [docs/development/werkwijze.md](docs/development/werkwijze.md)                         |
+| Gebied                              | Lees eerst                                                                                           |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Structuur, routes, nieuwe pakketten | [docs/architecture/overzicht.md](docs/architecture/overzicht.md)                                     |
+| Wat er nog open staat               | [docs/openstaand.md](docs/openstaand.md)                                                             |
+| Meldingen na een handeling          | [docs/architecture/meldingen.md](docs/architecture/meldingen.md)                                     |
+| Wie heeft wat gewijzigd             | [docs/security/activiteitenlogboek.md](docs/security/activiteitenlogboek.md)                         |
+| Landing of portaal: wat is wat?     | [docs/README.md](docs/README.md)                                                                     |
+| Vue, Tailwind, GSAP, Lenis          | [docs/architecture/frontend-en-animatie.md](docs/architecture/frontend-en-animatie.md)               |
+| Licht én donker in het portaal      | [docs/architecture/huisstijl-en-kleuren.md](docs/architecture/huisstijl-en-kleuren.md)               |
+| Kleuren, gradients, het logo        | [docs/architecture/huisstijl-en-kleuren.md](docs/architecture/huisstijl-en-kleuren.md)               |
+| Keuzevelden en schuifbalken         | [docs/architecture/formulieren-en-schuifbalken.md](docs/architecture/formulieren-en-schuifbalken.md) |
+| Talen en vertalingen                | [docs/architecture/vertalingen.md](docs/architecture/vertalingen.md)                                 |
+| Mail, queues, webhooks              | [docs/architecture/mail-en-queues.md](docs/architecture/mail-en-queues.md)                           |
+| Inloggen en 2FA                     | [docs/security/authenticatie-en-2fa.md](docs/security/authenticatie-en-2fa.md)                       |
+| Acties die een verse code vragen    | [docs/security/gevoelige-acties.md](docs/security/gevoelige-acties.md)                               |
+| Rollen en rechten                   | [docs/security/rollen-en-rechten.md](docs/security/rollen-en-rechten.md)                             |
+| Logging                             | [docs/security/logging.md](docs/security/logging.md)                                                 |
+| Spam en bots                        | [docs/security/spam-en-botbescherming.md](docs/security/spam-en-botbescherming.md)                   |
+| Geplande taken, bewaartermijnen     | [docs/operations/onderhoudstaken.md](docs/operations/onderhoudstaken.md)                             |
+| Tests                               | [docs/development/testen.md](docs/development/testen.md)                                             |
+| Code-conventies                     | [docs/development/werkwijze.md](docs/development/werkwijze.md)                                       |
 
 ## Regel 4: controleer je werk
 
@@ -60,7 +67,21 @@ composer ci:check
 Dat draait Pint, PHPStan (niveau 7), vue-tsc en de tests. Loopt een test vast
 op `Vite manifest not found`, draai dan eerst `npm run build`.
 
-## Regel 5: schrijf Nederlands
+## Regel 5: elke CRUD krijgt tests
+
+Bouw je een scherm waarmee de klant iets aanmaakt, wijzigt of verwijdert,
+dan lever je dat af **mét** tests. Een CRUD zonder tests is niet af, en dat
+is een afspraak met de opdrachtgever en geen richtlijn.
+
+De volledige lijst van wat zo'n test moet afdekken staat in
+[`docs/development/testen.md`](docs/development/testen.md). De kern: rechten
+per afzonderlijke route, de gewone weg, ongeldige invoer, en bij een
+gevoelige actie dat hij zonder verse code niet doorgaat.
+
+Let op één ding dat makkelijk wordt overgeslagen: de bevestigingsvensters in
+de browser zijn geen beveiliging. Test het verzoek, niet het scherm.
+
+## Regel 6: schrijf Nederlands
 
 Commentaar, documentatie en commitberichten in het Nederlands. Klassenamen,
 methodenamen en variabelen blijven Engels. Gebruikersteksten in `__()`.

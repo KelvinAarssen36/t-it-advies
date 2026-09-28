@@ -110,4 +110,77 @@ export function revealOnScroll(
     };
 }
 
+/**
+ * Houdt bij hoe ver de bezoeker de pagina door is, als getal tussen 0 en 1.
+ *
+ * Het getal komt als CSS-variabele `--scroll-progress` op het meegegeven
+ * element te staan; JavaScript raakt de opmaak verder niet aan. De balk
+ * zelf schaalt daarop met `scaleX`, wat op de GPU draait en geen
+ * herberekening van de pagina kost. Zou je in plaats daarvan `width`
+ * aanpassen, dan rekent de browser bij elke scrollstap de hele pagina
+ * opnieuw door en gaat het schokken.
+ *
+ * Twee dingen die hier anders zijn dan in het simpelste recept:
+ *
+ * - **Het schrijven gebeurt in een animation frame.** Een scroll-event kan
+ *   vaker vuren dan het scherm ververst; zonder die bundeling doe je
+ *   meerdere keren per beeldje hetzelfde werk voor niets.
+ * - **De scrollbare hoogte wordt gemeten en onthouden**, niet bij elke
+ *   scrollstap opnieuw opgevraagd. Dat opvragen dwingt de browser de
+ *   opmaak door te rekenen, en dat is precies wat je tijdens het scrollen
+ *   wilt vermijden. Een ResizeObserver houdt de maat bij wanneer de inhoud
+ *   verandert -- bijvoorbeeld als een afbeelding binnenkomt.
+ *
+ * Geeft een opruimfunctie terug; roep die aan in onBeforeUnmount.
+ */
+export function trackScrollProgress(target: HTMLElement): () => void {
+    if (typeof window === 'undefined') {
+        return () => {};
+    }
+
+    let scrollable = 0;
+    let frame = 0;
+
+    const write = (): void => {
+        frame = 0;
+
+        const progress = scrollable > 0 ? window.scrollY / scrollable : 0;
+
+        // Afkappen tussen 0 en 1: op een telefoon kun je voorbij het begin
+        // en het einde doorveren, en dan schiet de balk anders door.
+        const clamped = Math.min(Math.max(progress, 0), 1);
+
+        target.style.setProperty('--scroll-progress', clamped.toFixed(4));
+    };
+
+    const schedule = (): void => {
+        if (frame === 0) {
+            frame = window.requestAnimationFrame(write);
+        }
+    };
+
+    const measure = (): void => {
+        scrollable = document.documentElement.scrollHeight - window.innerHeight;
+        schedule();
+    };
+
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', measure);
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(document.body);
+
+    measure();
+
+    return () => {
+        window.removeEventListener('scroll', schedule);
+        window.removeEventListener('resize', measure);
+        observer.disconnect();
+
+        if (frame !== 0) {
+            window.cancelAnimationFrame(frame);
+        }
+    };
+}
+
 export { gsap, ScrollTrigger };

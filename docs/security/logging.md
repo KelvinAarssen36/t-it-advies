@@ -1,5 +1,10 @@
 # Security logging
 
+> Dit document gaat over het **beveiligingslogboek**: wie probeerde binnen te
+> komen, en lukte dat. Voor "wie heeft wat aan de website veranderd" is er
+> een tweede logboek met een eigen recht en een eigen scherm; zie
+> [activiteitenlogboek](activiteitenlogboek.md). Die scheiding is bewust.
+
 ## De harde regel
 
 **Er gaat nooit een wachtwoord, TOTP-code, recovery code, secret of token de
@@ -72,7 +77,7 @@ aan het aflopen is.
 
 ## Waar je het ziet
 
-`/admin/security`, achter het recht `view security log`. Je kunt filteren op
+`/admin/security`, achter het recht `manage portal`. Je kunt filteren op
 gebeurtenis, uitkomst, e-mailadres en IP-adres. Klik een regel open voor de
 user agent en de volledige context.
 

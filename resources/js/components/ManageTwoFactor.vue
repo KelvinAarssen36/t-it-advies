@@ -13,12 +13,15 @@ export type Props = {
     canManageTwoFactor?: boolean;
     requiresConfirmation?: boolean;
     twoFactorEnabled?: boolean;
+    /** Verplicht in dit portaal? Dan is uitzetten geen optie. */
+    twoFactorRequired?: boolean;
 };
 
 withDefaults(defineProps<Props>(), {
     canManageTwoFactor: false,
     requiresConfirmation: false,
     twoFactorEnabled: false,
+    twoFactorRequired: false,
 });
 
 const { hasSetupData, clearTwoFactorAuthData } = useTwoFactorAuth();
@@ -31,8 +34,8 @@ onUnmounted(() => clearTwoFactorAuthData());
     <div v-if="canManageTwoFactor" class="space-y-6">
         <Heading
             variant="small"
-            title="Two-factor authentication"
-            description="Manage your two-factor authentication settings"
+            title="Tweestapsverificatie"
+            description="Een extra slot op je account, naast je wachtwoord"
         />
 
         <div
@@ -40,14 +43,14 @@ onUnmounted(() => clearTwoFactorAuthData());
             class="flex flex-col items-start justify-start space-y-4"
         >
             <p class="text-sm text-muted-foreground">
-                When you enable two-factor authentication, you will be prompted
-                for a secure pin during login. This pin can be retrieved from a
-                TOTP-supported application on your phone.
+                Met tweestapsverificatie vraagt het portaal bij het inloggen om
+                een zescijferige code uit een authenticator-app op je telefoon.
+                Alleen je wachtwoord is dan niet meer genoeg.
             </p>
 
             <div>
                 <Button v-if="hasSetupData" @click="showSetupModal = true">
-                    <ShieldCheck />Continue setup
+                    <ShieldCheck />Verder met instellen
                 </Button>
                 <Form
                     v-else
@@ -56,7 +59,7 @@ onUnmounted(() => clearTwoFactorAuthData());
                     #default="{ processing }"
                 >
                     <Button type="submit" :disabled="processing">
-                        Enable 2FA
+                        Tweestapsverificatie aanzetten
                     </Button>
                 </Form>
             </div>
@@ -64,19 +67,24 @@ onUnmounted(() => clearTwoFactorAuthData());
 
         <div v-else class="flex flex-col items-start justify-start space-y-4">
             <p class="text-sm text-muted-foreground">
-                You will be prompted for a secure, random pin during login,
-                which you can retrieve from the TOTP-supported application on
-                your phone.
+                Bij elke keer inloggen vraagt het portaal om een code uit je
+                authenticator-app.
             </p>
 
-            <div class="relative inline">
+            <p v-if="twoFactorRequired" class="text-sm text-muted-foreground">
+                Tweestapsverificatie is verplicht in dit portaal en kan niet
+                worden uitgezet. Nieuwe telefoon? Zet hem daar eerst op met een
+                recovery code.
+            </p>
+
+            <div v-else class="relative inline">
                 <Form v-bind="disable.form()" #default="{ processing }">
                     <Button
                         variant="destructive"
                         type="submit"
                         :disabled="processing"
                     >
-                        Disable 2FA
+                        Uitzetten
                     </Button>
                 </Form>
             </div>

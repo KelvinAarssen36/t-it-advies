@@ -25,7 +25,10 @@ npm ci
 npm run build
 
 php artisan migrate --force
-php artisan db:seed --class=RolesAndPermissionsSeeder --force
+
+# Rollen en het account van de eigenaar. Allebei geen testdata: zonder
+# rollen werkt geen rechtencontrole, zonder dat account kan niemand inloggen.
+php artisan db:seed --force
 
 # De symlink naar de uploadmap. Staat in .gitignore, dus die moet op elke
 # nieuwe omgeving opnieuw worden gelegd; zonder deze link geeft elke
@@ -84,21 +87,23 @@ in [onderhoudstaken](onderhoudstaken.md).
 
 Naast de standaard Laravel-variabelen:
 
-| Variabele                         | Waarvoor                                      | Verplicht in productie |
-| --------------------------------- | --------------------------------------------- | ---------------------- |
-| `RESEND_API_KEY`                  | Mail versturen                                | ja                     |
-| `MAIL_WEBHOOK_SECRET`             | Handtekening van de mailwebhook               | ja                     |
-| `MAIL_CONTACT_ADDRESS`            | Waar contactformulieren binnenkomen           | ja                     |
-| `TURNSTILE_SITE_KEY`              | Botcheck in de browser                        | ja                     |
-| `TURNSTILE_SECRET_KEY`            | Botcheck op de server                         | ja                     |
-| `SECURITY_ALERT_ADDRESS`          | Waar beveiligingsmeldingen heen gaan          | ja                     |
-| `SENSITIVE_ACTION_TTL`            | Geldigheid van een 2FA-bevestiging (seconden) | nee, standaard 900     |
-| `SECURITY_LOG_RETENTION_DAYS`     | Bewaartermijn logboektabel                    | nee, standaard 365     |
-| `MAIL_LOG_RETENTION_DAYS`         | Bewaartermijn mailoverzicht                   | nee, standaard 180     |
-| `SECURITY_ALERT_WINDOW_MINUTES`   | Hoe ver de alarmering terugkijkt              | nee, standaard 60      |
-| `SECURITY_ALERT_COOLDOWN_MINUTES` | Pauze na een melding                          | nee, standaard 180     |
-| `SECURITY_ALERT_FAILED_LOGINS`    | Drempel mislukte inlogpogingen                | nee, standaard 25      |
-| `SECURITY_ALERT_MAIL_PROBLEMS`    | Drempel mailproblemen                         | nee, standaard 5       |
+| Variabele                         | Waarvoor                                      | Verplicht in productie              |
+| --------------------------------- | --------------------------------------------- | ----------------------------------- |
+| `RESEND_API_KEY`                  | Mail versturen                                | ja                                  |
+| `MAIL_WEBHOOK_SECRET`             | Handtekening van de mailwebhook               | ja                                  |
+| `MAIL_CONTACT_ADDRESS`            | Waar contactformulieren binnenkomen           | ja                                  |
+| `TURNSTILE_SITE_KEY`              | Botcheck in de browser                        | ja                                  |
+| `TURNSTILE_SECRET_KEY`            | Botcheck op de server                         | ja                                  |
+| `SECURITY_ALERT_ADDRESS`          | Waar beveiligingsmeldingen heen gaan          | ja                                  |
+| `PORTAL_ACCOUNT_PASSWORD`         | Wachtwoord van het account van de eigenaar    | ja, vóór de eerste seed             |
+| `PORTAL_TWO_FACTOR_REQUIRED`      | 2FA verplicht in het portaal                  | nee, staat in productie vanzelf aan |
+| `SENSITIVE_ACTION_TTL`            | Geldigheid van een 2FA-bevestiging (seconden) | nee, standaard 900                  |
+| `SECURITY_LOG_RETENTION_DAYS`     | Bewaartermijn logboektabel                    | nee, standaard 365                  |
+| `MAIL_LOG_RETENTION_DAYS`         | Bewaartermijn mailoverzicht                   | nee, standaard 180                  |
+| `SECURITY_ALERT_WINDOW_MINUTES`   | Hoe ver de alarmering terugkijkt              | nee, standaard 60                   |
+| `SECURITY_ALERT_COOLDOWN_MINUTES` | Pauze na een melding                          | nee, standaard 180                  |
+| `SECURITY_ALERT_FAILED_LOGINS`    | Drempel mislukte inlogpogingen                | nee, standaard 25                   |
+| `SECURITY_ALERT_MAIL_PROBLEMS`    | Drempel mailproblemen                         | nee, standaard 5                    |
 
 Zonder `TURNSTILE_SECRET_KEY` weigert de applicatie in productie bewust elk
 beschermd formulier. Zonder `MAIL_WEBHOOK_SECRET` weigert het
@@ -113,9 +118,10 @@ webhook-endpoint alles. Dat is geen storing maar het ontwerp: zie
 2. Domein verifiëren in het dashboard van de mailprovider.
 3. Webhook instellen op `https://<domein>/webhooks/resend`.
 4. Turnstile-widget aanmaken voor het productiedomein.
-5. Een beheerdersaccount maken met `php artisan user:create` en er meteen 2FA
-   op zetten. Registratie via de website staat uit, dus dit is de enige weg;
-   zie [authenticatie en 2FA](../security/authenticatie-en-2fa.md).
+5. `PORTAL_ACCOUNT_PASSWORD` zetten en seeden; daarmee bestaat het account
+   van de eigenaar. Zet er meteen 2FA op. Registratie via de website staat
+   uit, dus een extra account maak je met `php artisan user:create`. Zie
+   [rollen en rechten](../security/rollen-en-rechten.md).
 6. HTTPS afdwingen. De applicatie doet dat zelf al in productie
    (`URL::forceScheme('https')`), maar de webserver hoort ook te redirecten.
 7. `APP_DEBUG=false` controleren.

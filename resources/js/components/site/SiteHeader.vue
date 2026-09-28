@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
 import { Menu, X } from '@lucide/vue';
-import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import LocaleToggle from '@/components/site/LocaleToggle.vue';
 import { Button } from '@/components/ui/button';
-import { dashboard } from '@/routes';
+import portal from '@/routes/portal';
 
 /**
  * De kop van de publieke site.
@@ -28,6 +29,27 @@ const links: NavLink[] = [
 ];
 
 const page = usePage();
+
+/**
+ * Of de link naar het portaal getoond mag worden.
+ *
+ * Dit staat hier als één benoemde waarde en niet als losse `v-if` per plek,
+ * zodat er maar één regel is om te vergeten. De link staat op twee plekken
+ * (de kop op desktop en het uitklapmenu op mobiel); komt er een derde bij,
+ * dan hoort die deze waarde te gebruiken en niet zijn eigen controle te
+ * verzinnen.
+ *
+ * De optionele ketting is geen sierraad: `auth` is een gedeelde prop, en bij
+ * een gedeeltelijke herlading die hem niet opvraagt is hij er even niet.
+ * Zonder `?.` zou dat een fout geven; mét `?.` valt hij terug op "niet
+ * tonen", en dat is de veilige kant.
+ *
+ * Wat je hier ziet is bovendien alleen de nette weergave. De echte grendel
+ * zit op de server: /dashboard staat achter 'auth', 'verified' en
+ * 'two-factor.required', dus wie het adres raadt komt er evengoed niet in.
+ * Zie routes/web.php.
+ */
+const magPortaalZien = computed(() => Boolean(page.props.auth?.user));
 
 // Boven aan de pagina zweeft de kop over de hero heen; zodra je scrollt komt
 // er een achtergrond onder, anders loopt de tekst door het beeld.
@@ -78,12 +100,23 @@ onBeforeUnmount(() => {
 
             <div class="hidden items-center gap-3 md:flex">
                 <Link
-                    v-if="page.props.auth.user"
-                    :href="dashboard()"
+                    v-if="magPortaalZien"
+                    :href="portal.enter()"
                     class="text-sm text-muted-foreground transition-colors hover:text-brand-cyan"
                 >
                     Dashboard
                 </Link>
+                <!--
+                    Ook de publieke site is tweetalig. Dezelfde route als de
+                    knoppen in het portaal, dus wisselt de eigenaar hier
+                    terwijl hij is ingelogd, dan staat het portaal er straks
+                    ook in.
+
+                    In de kop alleen de taalcodes: daar telt elke pixel, en
+                    naast een vlag is NL of EN duidelijk genoeg.
+                -->
+                <LocaleToggle compact />
+
                 <Button as="a" href="#contact" variant="brand">
                     Neem contact op
                 </Button>
@@ -118,12 +151,18 @@ onBeforeUnmount(() => {
                     {{ link.label }}
                 </a>
                 <Link
-                    v-if="page.props.auth.user"
-                    :href="dashboard()"
+                    v-if="magPortaalZien"
+                    :href="portal.enter()"
                     class="py-2 text-muted-foreground"
                 >
                     Dashboard
                 </Link>
+
+                <!--
+                    In het uitklapmenu is er ruimte zat, dus daar staan de
+                    volledige taalnamen.
+                -->
+                <LocaleToggle class="mt-2 self-start" />
             </nav>
         </div>
     </header>

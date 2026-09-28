@@ -152,7 +152,7 @@ een melding op het scherm in plaats van een 403.
 oplettendheid van de beheerder.
 
 **Waarom:** het is geen autorisatievraag. De uitvoerder _mag_ het -- hij heeft
-`manage users` en een verse code. Het is een ongelukkenrem, en die hoort een
+`manage portal` en een verse code. Het is een ongelukkenrem, en die hoort een
 begrijpelijke melding te geven en geen 403. Een policy zou suggereren dat het
 om rechten gaat, en dan gaat iemand later de verkeerde knop omzetten.
 

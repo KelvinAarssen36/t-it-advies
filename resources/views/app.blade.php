@@ -1,23 +1,15 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}"  @class(['dark' => ($appearance ?? 'system') == 'dark'])>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['dark' => ($appearance ?? 'dark') !== 'light'])>
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        {{-- Inline script to detect system dark mode preference and apply it immediately --}}
-        <script>
-            (function() {
-                const appearance = '{{ $appearance ?? "system" }}';
-
-                if (appearance === 'system') {
-                    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-                    if (prefersDark) {
-                        document.documentElement.classList.add('dark');
-                    }
-                }
-            })();
-        </script>
+        {{--
+            Hier stond een script dat de voorkeur van het besturingssysteem
+            uitlas. Dat is niet meer nodig: er zijn nog twee thema's, licht
+            en donker, en welke het is staat hierboven al op <html> op basis
+            van de cookie. Zie docs/architecture/huisstijl-en-kleuren.md.
+        --}}
 
         @php
             // De publieke site staat altijd in het donkere thema; zie
@@ -35,7 +27,7 @@
         --}}
         <style>
             html {
-                background-color: {{ $isPublicPage ? '#061626' : '#ffffff' }};
+                background-color: {{ $isPublicPage || ($appearance ?? 'dark') !== 'light' ? '#061626' : '#ffffff' }};
             }
 
             html.dark {

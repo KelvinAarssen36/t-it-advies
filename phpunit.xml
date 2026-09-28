@@ -32,5 +32,11 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <!--
+            Uit, zodat de suite niet afhangt van wat er toevallig in de .env
+            van de ontwikkelaar staat. Een test die de verplichting nodig
+            heeft zet hem zelf aan met config(); zie TwoFactorRequiredTest.
+        -->
+        <env name="PORTAL_TWO_FACTOR_REQUIRED" value="false"/>
     </php>
 </phpunit>

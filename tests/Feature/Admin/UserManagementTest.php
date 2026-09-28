@@ -73,8 +73,9 @@ class UserManagementTest extends TestCase
 
     public function test_a_user_without_the_permission_cannot_see_the_overview(): void
     {
+        // Zonder het recht dus, en niet met een ánder recht: er is er maar
+        // één. Zie docs/security/rollen-en-rechten.md.
         $user = User::factory()->create();
-        $user->givePermissionTo('view security log');
 
         $this->actingAs($user)->get(route('admin.users.index'))->assertForbidden();
     }
@@ -96,10 +97,10 @@ class UserManagementTest extends TestCase
         $target = User::factory()->create();
 
         $this->actingAs($admin)
-            ->put(route('admin.users.roles.update', $target), ['roles' => ['developer']])
+            ->put(route('admin.users.roles.update', $target), ['roles' => ['admin']])
             ->assertRedirect(route('security.two-factor.confirm'));
 
-        $this->assertFalse($target->fresh()?->hasRole('developer'));
+        $this->assertFalse($target->fresh()?->hasRole('admin'));
     }
 
     public function test_roles_are_changed_and_logged_after_confirmation(): void
@@ -109,10 +110,10 @@ class UserManagementTest extends TestCase
 
         $this->actingAs($admin)
             ->from(route('admin.users.index'))
-            ->put(route('admin.users.roles.update', $target), ['roles' => ['developer']])
+            ->put(route('admin.users.roles.update', $target), ['roles' => ['admin']])
             ->assertRedirect(route('admin.users.index'));
 
-        $this->assertTrue($target->fresh()?->hasRole('developer'));
+        $this->assertTrue($target->fresh()?->hasRole('admin'));
 
         $this->assertDatabaseHas('security_events', [
             'event' => SecurityEventType::UserRolesChanged->value,
@@ -163,7 +164,7 @@ class UserManagementTest extends TestCase
 
         // De uitvoerder mag gebruikers beheren, maar is zelf geen beheerder.
         $actor = User::factory()->create();
-        $actor->givePermissionTo('manage users');
+        $actor->givePermissionTo('manage portal');
         $this->confirm($actor, $this->enableTwoFactor($actor));
 
         $this->actingAs($actor)

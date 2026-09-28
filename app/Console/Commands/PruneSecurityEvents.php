@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\SecurityEvent;
+use App\Support\Datum;
 use App\Support\Maintenance\RowPruner;
 use Illuminate\Console\Command;
 
@@ -48,7 +49,7 @@ class PruneSecurityEvents extends Command
 
         $this->info(__(':aantal regels uit het beveiligingslogboek verwijderd (ouder dan :datum).', [
             'aantal' => $deleted,
-            'datum' => $before->toDateString(),
+            'datum' => Datum::dag($before),
         ]));
 
         return self::SUCCESS;

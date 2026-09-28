@@ -102,7 +102,7 @@ browser en dus geen sessie aan te pas komt.
 
 ## Het mailoverzicht
 
-Te vinden onder `/admin/mail`, achter het recht `view mail log`. Je ziet per
+Te vinden onder `/admin/mail`, achter het recht `manage portal`. Je ziet per
 mail de status, de ontvangers en de volledige tijdlijn van wat de provider
 heeft teruggemeld. Regels met een probleem zijn rood.
 

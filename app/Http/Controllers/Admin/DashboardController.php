@@ -7,6 +7,7 @@ use App\Enums\SecurityOutcome;
 use App\Http\Controllers\Controller;
 use App\Models\MailLog;
 use App\Models\SecurityEvent;
+use App\Support\Datum;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -55,7 +56,7 @@ class DashboardController extends Controller
                     'label' => $event->label(),
                     'email' => $event->email ?? $event->user?->email,
                     'ip_address' => $event->ip_address,
-                    'created_at' => $event->created_at->toDateTimeString(),
+                    'created_at' => Datum::tijdstip($event->created_at),
                 ])
                 ->all(),
         ]);

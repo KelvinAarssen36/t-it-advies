@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+import ScrollProgress from '@/components/site/ScrollProgress.vue';
 import SiteFooter from '@/components/site/SiteFooter.vue';
 import SiteHeader from '@/components/site/SiteHeader.vue';
 import { revealOnScroll, startSmoothScroll } from '@/lib/motion';
@@ -54,8 +55,10 @@ onBeforeUnmount(() => {
     <div
         id="top"
         ref="root"
-        class="dark min-h-screen bg-background text-foreground"
+        class="brand-dark-page dark min-h-screen bg-background text-foreground"
     >
+        <ScrollProgress />
+
         <SiteHeader />
 
         <main>

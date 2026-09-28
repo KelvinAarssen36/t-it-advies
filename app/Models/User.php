@@ -2,6 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsActivity;
+use BaconQrCode\Renderer\Color\Rgb;
+use BaconQrCode\Renderer\Image\SvgImageBackEnd;
+use BaconQrCode\Renderer\ImageRenderer;
+use BaconQrCode\Renderer\RendererStyle\Fill;
+use BaconQrCode\Renderer\RendererStyle\RendererStyle;
+use BaconQrCode\Writer;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -19,6 +26,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property int $id
  * @property string $name
  * @property string $email
+ * @property string|null $locale
  * @property Carbon|null $email_verified_at
  * @property string $password
  * @property string|null $two_factor_secret
@@ -33,7 +41,45 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
+    use HasFactory, HasRoles, LogsActivity, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
+
+    /**
+     * Hoe dit onderdeel in het activiteitenlogboek heet.
+     */
+    public static function activityName(): string
+    {
+        return __('Account');
+    }
+
+    public function activityLabel(): string
+    {
+        return $this->name;
+    }
+
+    /**
+     * Wat niet in het activiteitenlogboek komt.
+     *
+     * Dit is **geen** beveiligingsmaatregel -- ActivityLogger schoont
+     * gevoelige sleutels hoe dan ook, en die lijst staat in
+     * config/security.php. Deze velden staan hier omdat ze in dat logboek
+     * niets toevoegen: alles rond tweestapsverificatie en wachtwoorden
+     * staat al in het beveiligingslogboek, mét de context die daarbij
+     * hoort. Twee keer hetzelfde vastleggen maakt allebei de logboeken
+     * alleen maar slechter leesbaar.
+     *
+     * @return array<int, string>
+     */
+    public function activityHidden(): array
+    {
+        return [
+            'password',
+            'remember_token',
+            'two_factor_secret',
+            'two_factor_recovery_codes',
+            'two_factor_confirmed_at',
+            'email_verified_at',
+        ];
+    }
 
     /**
      * Get the attributes that should be cast.
@@ -47,5 +93,36 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
         ];
+    }
+
+    /**
+     * De QR-code voor het instellen van tweestapsverificatie.
+     *
+     * Overschrijft de versie uit Fortify om één reden: die genereert de code
+     * met **marge 0**. De QR-standaard schrijft rondom een lichte rand van
+     * vier modules voor, de zogeheten stille zone. Zonder die rand lukt het
+     * scannen nog wel met de camera-app van een telefoon -- die is slim en
+     * vergevingsgezind -- maar de eenvoudiger scanner in een
+     * authenticator-app haakt af. Dat is precies het beeld waarmee dit aan
+     * het licht kwam: camera goed, authenticator niet.
+     *
+     * Verder alleen de kleuren uit ons palet, en een iets groter formaat
+     * zodat de modules niet kleiner worden door de marge erbij.
+     *
+     * Zie docs/security/authenticatie-en-2fa.md.
+     */
+    public function twoFactorQrCodeSvg(): string
+    {
+        $svg = (new Writer(
+            new ImageRenderer(
+                new RendererStyle(256, 4, null, null, Fill::uniformColor(
+                    new Rgb(255, 255, 255),
+                    new Rgb(6, 22, 38),
+                )),
+                new SvgImageBackEnd,
+            )
+        ))->writeString($this->twoFactorQrCodeUrl());
+
+        return trim(substr($svg, strpos($svg, "\n") + 1));
     }
 }

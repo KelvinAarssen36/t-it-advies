@@ -30,7 +30,7 @@ Zet de middleware `2fa.confirm` op de route:
 
 ```php
 Route::delete('admin/users/{user}', [UserController::class, 'destroy'])
-    ->middleware(['can:manage users', '2fa.confirm'])
+    ->middleware(['can:manage portal', '2fa.confirm'])
     ->name('admin.users.destroy');
 ```
 
@@ -67,7 +67,7 @@ elke gevoelige actie achter een formulier stuk.
 | `PUT admin/users/{user}/roles` | Rollen van een gebruiker |
 | `DELETE admin/users/{user}`    | Een account verwijderen  |
 
-Allebei met `can:manage users` ernaast. Zie
+Allebei met `can:manage portal` ernaast. Zie
 [rollen en rechten](rollen-en-rechten.md) voor de twee vangnetten die daar
 nog bovenop zitten.
 
@@ -90,6 +90,58 @@ In `config/security.php`:
 
 Houd de geldigheidsduur kort. Zet je hem op een uur, dan is de check nog maar
 weinig waard; dan is de sessie in de praktijk net zo goed.
+
+## Het slotje, en de weg terug
+
+Achter de beveiligingsinstellingen zit een wachtwoordbevestiging. Dat is
+precies het soort drempel waar je van schrikt als je hem niet ziet aankomen:
+je klikt op een menu-item en krijgt ineens een scherm dat om je wachtwoord
+vraagt. Twee dingen vangen dat op.
+
+**Een slotje naast "Beveiliging".**
+[`PasswordLock.vue`](../../resources/js/components/PasswordLock.vue) staat in
+de instellingennavigatie en is dicht wanneer er nog om je wachtwoord wordt
+gevraagd, en open wanneer je zo doorloopt. Open is het blauw van de knoppen
+met een zachte gloed; dicht is gedempt en rustig. Bewust géén rood of
+oranje: er is niets mis, er komt alleen nog een vraag.
+
+Of het slot open staat komt uit de gedeelde prop `auth.passwordConfirmed`.
+Die maakt in
+[`HandleInertiaRequests`](../../app/Http/Middleware/HandleInertiaRequests.php)
+dezelfde som als de middleware: het tijdstip uit de sessie afgezet tegen
+`config('auth.password_timeout')`. Staat die som er niet, dan blijft het
+slotje open terwijl je wél opnieuw moet bevestigen -- en dan is het erger
+dan geen slotje.
+
+**Dit is weergave, geen beveiliging.** Wie die prop in zijn browser omzet
+krijgt een open slotje te zien en verder niets: de middleware doet de
+controle opnieuw, op de sessie waar de browser niet bij kan.
+
+**Inloggen telt als bevestigen.** De `LoginResponse` zet
+`auth.password_confirmed_at`, dus binnen de bewaartermijn (`password_timeout`,
+drie uur) na het inloggen gaat de beveiligingspagina open zonder extra vraag.
+
+Zonder die regel vraagt Laravel opnieuw om je wachtwoord, ook als je dertig
+seconden eerder hebt ingelogd. Dat voelt niet als zorgvuldigheid maar als een
+fout -- en erger: het leert iemand zijn wachtwoord klakkeloos in te tikken
+zodra het gevraagd wordt, precies het gedrag dat die bevestiging moest
+voorkomen.
+
+Wat we ervoor inleveren is te overzien. De bevestiging beschermt tegen een
+sessie die onbeheerd openstaat, en die grens schuift hiermee op naar drie uur
+na het inloggen. De handelingen die je écht niet wilt terugdraaien -- rollen
+wijzigen, een account verwijderen -- zitten achter `2fa.confirm` en vragen
+sowieso om een verse code uit de authenticator, ongeacht wanneer je hebt
+ingelogd.
+
+**Een weg terug op het bevestigingsscherm.** Onder het formulier staat
+"Toch niet, terug naar het dashboard". Zonder die link is dat scherm een
+doodlopende straat: je komt er ongevraagd terecht, en uitloggen zou de enige
+uitweg zijn. Dat is buiten verhouding voor iemand die zich bedenkt.
+
+Bewust een link naar het dashboard en niet de terugknop van de browser: die
+brengt je terug op de pagina die je juist niet mag zien, waarna je meteen
+weer op het bevestigingsscherm staat.
 
 ## Rate limiting
 

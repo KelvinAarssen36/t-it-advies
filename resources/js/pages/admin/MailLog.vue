@@ -2,6 +2,7 @@
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 import { Badge } from '@/components/ui/badge';
+import BrandSelect from '@/components/BrandSelect.vue';
 import { Input } from '@/components/ui/input';
 import { dashboard } from '@/routes/admin';
 import mail from '@/routes/admin/mail';
@@ -65,43 +66,45 @@ const expanded = ref<number | null>(null);
 </script>
 
 <template>
-    <Head title="Mailoverzicht" />
+    <Head :title="$t('Mailoverzicht')" />
 
     <div class="flex flex-col gap-4 p-4">
         <div class="flex flex-wrap items-center gap-3">
             <Input
                 v-model="search"
                 type="search"
-                placeholder="Zoek op onderwerp, type of ontvanger"
+                :placeholder="$t('Zoek op onderwerp, type of ontvanger')"
                 class="max-w-xs"
             />
-            <select
+            <BrandSelect
                 v-model="status"
-                class="rounded-md border border-input bg-background px-3 py-2 text-sm"
-            >
-                <option value="">Alle statussen</option>
-                <option
-                    v-for="option in statuses"
-                    :key="option.value"
-                    :value="option.value"
-                >
-                    {{ option.label }}
-                </option>
-            </select>
+                :aria-label="$t('Filter op status')"
+                class="max-w-xs"
+                :options="[
+                    { value: '', label: $t('Alle statussen') },
+                    ...statuses,
+                ]"
+            />
             <span class="text-sm text-muted-foreground">
-                {{ logs.total }} mails
+                {{ $t(':aantal mails', { aantal: logs.total }) }}
             </span>
         </div>
 
-        <div class="overflow-x-auto rounded-xl border">
+        <div class="brand-scrollbar overflow-x-auto rounded-xl border">
             <table class="w-full text-sm">
                 <thead class="bg-muted/50 text-left">
                     <tr>
-                        <th class="px-3 py-2 font-medium">Onderwerp</th>
-                        <th class="px-3 py-2 font-medium">Type</th>
-                        <th class="px-3 py-2 font-medium">Aan</th>
-                        <th class="px-3 py-2 font-medium">Status</th>
-                        <th class="px-3 py-2 font-medium">Verzonden</th>
+                        <th class="px-3 py-2 font-medium">
+                            {{ $t('Onderwerp') }}
+                        </th>
+                        <th class="px-3 py-2 font-medium">{{ $t('Type') }}</th>
+                        <th class="px-3 py-2 font-medium">{{ $t('Aan') }}</th>
+                        <th class="px-3 py-2 font-medium">
+                            {{ $t('Status') }}
+                        </th>
+                        <th class="px-3 py-2 font-medium">
+                            {{ $t('Verzonden') }}
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -145,7 +148,11 @@ const expanded = ref<number | null>(null);
                                     v-if="row.events.length === 0"
                                     class="text-muted-foreground"
                                 >
-                                    Nog geen terugkoppeling van de provider.
+                                    {{
+                                        $t(
+                                            'Nog geen terugkoppeling van de provider.',
+                                        )
+                                    }}
                                 </p>
                                 <ol v-else class="space-y-1">
                                     <li
@@ -167,7 +174,7 @@ const expanded = ref<number | null>(null);
                             colspan="5"
                             class="px-3 py-8 text-center text-muted-foreground"
                         >
-                            Nog geen mails verstuurd.
+                            {{ $t('Nog geen mails verstuurd.') }}
                         </td>
                     </tr>
                 </tbody>

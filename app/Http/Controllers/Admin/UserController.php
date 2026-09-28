@@ -6,7 +6,9 @@ use App\Enums\SecurityEventType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UserRolesUpdateRequest;
 use App\Models\User;
+use App\Support\Datum;
 use App\Support\Security\SecurityLogger;
+use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -18,7 +20,7 @@ use Spatie\Permission\Models\Role;
  *
  * Dit is de eerste plek waar echt iets kapot kan: wie rollen mag uitdelen
  * kan zichzelf alles geven, en wie mag verwijderen kan een account weghalen.
- * Daarom zitten de twee wijzigende routes achter `can:manage users` én
+ * Daarom zitten de twee wijzigende routes achter `can:manage portal` én
  * `2fa.confirm`. Die twee beantwoorden verschillende vragen -- mag deze
  * persoon dit, en is hij het op dit moment zelf. Zie routes/admin.php en
  * docs/security/gevoelige-acties.md.
@@ -55,7 +57,7 @@ class UserController extends Controller
                 // een beheerder moet kunnen zien om iemand erop aan te spreken.
                 'two_factor' => $user->two_factor_confirmed_at !== null,
                 'email_verified' => $user->email_verified_at !== null,
-                'created_at' => $user->created_at?->toDateString(),
+                'created_at' => Datum::dag($user->created_at),
                 'is_self' => $request->user()?->is($user) ?? false,
             ]);
 
@@ -86,7 +88,9 @@ class UserController extends Controller
             'naar' => $roles,
         ]);
 
-        return back()->with('status', __('De rollen van :naam zijn bijgewerkt.', ['naam' => $user->name]));
+        Toast::bijgewerkt(__('De rollen van :naam zijn bijgewerkt.', ['naam' => $user->name]));
+
+        return back();
     }
 
     public function destroy(Request $request, User $user): RedirectResponse
@@ -108,8 +112,9 @@ class UserController extends Controller
 
         $user->delete();
 
-        return to_route('admin.users.index')
-            ->with('status', __('Het account van :naam is verwijderd.', ['naam' => $user->name]));
+        Toast::verwijderd(__('Het account van :naam is verwijderd.', ['naam' => $user->name]));
+
+        return to_route('admin.users.index');
     }
 
     /**
@@ -119,12 +124,21 @@ class UserController extends Controller
      */
     private function guard(Request $request, User $user, array $roles): ?RedirectResponse
     {
+        /*
+         * Een geweigerde handeling is een fout-melding en geen mededeling.
+         * Je dacht dat er iets zou gebeuren en dat gebeurde niet; dat moet
+         * er anders uitzien dan een bevestiging.
+         */
         if ($request->user()?->is($user) ?? false) {
-            return back()->with('status', __('Je kunt je eigen account hier niet aanpassen. Vraag een andere beheerder.'));
+            Toast::fout(__('Je kunt je eigen account hier niet aanpassen. Vraag een andere beheerder.'));
+
+            return back();
         }
 
         if ($this->wouldRemoveLastAdmin($user, $roles)) {
-            return back()->with('status', __('Dit is de laatste beheerder. Maak eerst iemand anders beheerder.'));
+            Toast::fout(__('Dit is de laatste beheerder. Maak eerst iemand anders beheerder.'));
+
+            return back();
         }
 
         return null;

@@ -29,7 +29,10 @@ class AuthenticationTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+
+        // Niet rechtstreeks naar het dashboard maar langs het laadscherm;
+        // dat pakt zelf de onthouden bestemming op. Zie PortalEntryTest.
+        $response->assertRedirect(route('portal.enter', absolute: false));
     }
 
     public function test_users_with_two_factor_enabled_are_redirected_to_two_factor_challenge()

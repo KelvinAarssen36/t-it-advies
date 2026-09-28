@@ -1,4 +1,5 @@
 import type { Directive } from 'vue';
+import type { t } from '@/lib/i18n';
 import type { Auth } from '@/types/auth';
 import type { FlashProps, HoneypotProps } from '@/types/shared';
 
@@ -20,10 +21,16 @@ declare module '@inertiajs/core' {
         sharedPageProps: {
             name: string;
             auth: Auth;
+            locale: string;
+            locales: Record<string, string>;
+            /** De woordenlijst van de actieve taal; leeg in het Nederlands. */
+            translations: Record<string, string>;
             flash: FlashProps;
             honeypot: HoneypotProps;
             turnstileSiteKey: string | null;
             sidebarOpen: boolean;
+            /** Alleen gevuld op het eerste bezoek na het inloggen. */
+            welcome: { firstName: string } | null;
             [key: string]: unknown;
         };
     }
@@ -35,6 +42,8 @@ declare module 'vue' {
     }
 
     interface ComponentCustomProperties {
+        /** Vertalen in een sjabloon. Zie resources/js/lib/i18n.ts. */
+        $t: typeof t;
         $inertia: typeof Router;
         $page: Page;
         $headManager: ReturnType<typeof createHeadManager>;

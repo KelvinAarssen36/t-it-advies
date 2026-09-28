@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { Form } from '@inertiajs/vue3';
-import { useClipboard } from '@vueuse/core';
-import { Check, Copy, ScanLine } from '@lucide/vue';
+import { ScanLine } from '@lucide/vue';
 import { computed, nextTick, ref, useTemplateRef, watch } from 'vue';
 import AlertError from '@/components/AlertError.vue';
+import CopyButton from '@/components/CopyButton.vue';
 import InputError from '@/components/InputError.vue';
+import PasteCodeButton from '@/components/PasteCodeButton.vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -19,7 +20,6 @@ import {
     InputOTPSlot,
 } from '@/components/ui/input-otp';
 import { Spinner } from '@/components/ui/spinner';
-import { useAppearance } from '@/composables/useAppearance';
 import { useTwoFactorAuth } from '@/composables/useTwoFactorAuth';
 import { confirm } from '@/routes/two-factor';
 import type { TwoFactorConfigContent } from '@/types';
@@ -29,12 +29,9 @@ type Props = {
     twoFactorEnabled: boolean;
 };
 
-const { resolvedAppearance } = useAppearance();
-
 const props = defineProps<Props>();
 const isOpen = defineModel<boolean>('isOpen');
 
-const { copy, copied } = useClipboard();
 const { qrCodeSvg, manualSetupKey, clearSetupData, fetchSetupData, errors } =
     useTwoFactorAuth();
 
@@ -43,29 +40,34 @@ const code = ref<string>('');
 
 const pinInputContainerRef = useTemplateRef('pinInputContainerRef');
 
+// Zodra het zesde cijfer staat, versturen. Zie ConfirmTwoFactor.vue voor
+// waarom dat via een verborgen knop gaat.
+const autoSubmit = useTemplateRef<HTMLButtonElement>('autoSubmit');
+
 const modalConfig = computed<TwoFactorConfigContent>(() => {
     if (props.twoFactorEnabled) {
         return {
-            title: 'Two-factor authentication enabled',
+            title: 'Tweestapsverificatie staat aan',
             description:
-                'Two-factor authentication is now enabled. Scan the QR code or enter the setup key in your authenticator app.',
-            buttonText: 'Close',
+                'Wil je een tweede apparaat toevoegen? Scan de QR-code of vul de sleutel handmatig in je authenticator-app in.',
+            buttonText: 'Sluiten',
         };
     }
 
     if (showVerificationStep.value) {
         return {
-            title: 'Verify authentication code',
-            description: 'Enter the 6-digit code from your authenticator app',
-            buttonText: 'Continue',
+            title: 'Controleer de code',
+            description:
+                'Vul de zescijferige code in die je authenticator-app nu toont.',
+            buttonText: 'Doorgaan',
         };
     }
 
     return {
-        title: 'Enable two-factor authentication',
+        title: 'Tweestapsverificatie aanzetten',
         description:
-            'To finish enabling two-factor authentication, scan the QR code or enter the setup key in your authenticator app',
-        buttonText: 'Continue',
+            'Scan de QR-code met je authenticator-app, of vul de sleutel handmatig in.',
+        buttonText: 'Doorgaan',
     };
 });
 
@@ -111,7 +113,10 @@ watch(
 
 <template>
     <Dialog :open="isOpen" @update:open="isOpen = $event">
-        <DialogContent class="sm:max-w-md">
+        <DialogContent
+            class="sm:max-w-md"
+            overlay-class="bg-brand-navy/60 backdrop-blur-md"
+        >
             <DialogHeader class="flex items-center justify-center">
                 <div
                     class="mb-3 w-auto rounded-full border border-border bg-card p-0.5 shadow-sm"
@@ -154,34 +159,32 @@ watch(
                 <template v-if="!showVerificationStep">
                     <AlertError v-if="errors?.length" :errors="errors" />
                     <template v-else>
+                        <!--
+                            Altijd op wit, ook in het donkere thema, en
+                            nooit met een invert-filter eroverheen. Een
+                            omgekeerde QR-code -- lichte modules op donker --
+                            is voor veel scanners onleesbaar; de camera-app
+                            van een telefoon trekt het meestal nog wel, de
+                            scanner in een authenticator-app niet.
+
+                            De witte rand eromheen is geen opmaak maar de
+                            stille zone die de QR-standaard voorschrijft. Hij
+                            zit ook al in de SVG zelf (zie User::twoFactorQrCodeSvg);
+                            dit is de tweede laag, voor het geval iemand het
+                            formaat ooit aanpast.
+                        -->
                         <div
-                            class="relative mx-auto flex max-w-md items-center overflow-hidden"
+                            class="relative mx-auto flex aspect-square w-60 items-center justify-center overflow-hidden rounded-xl bg-white p-4"
                         >
+                            <Spinner
+                                v-if="!qrCodeSvg"
+                                class="size-6 text-brand-navy"
+                            />
                             <div
-                                class="relative mx-auto aspect-square w-64 overflow-hidden rounded-lg border border-border"
-                            >
-                                <div
-                                    v-if="!qrCodeSvg"
-                                    class="absolute inset-0 z-10 flex aspect-square h-auto w-full animate-pulse items-center justify-center bg-background"
-                                >
-                                    <Spinner class="size-6" />
-                                </div>
-                                <div
-                                    v-else
-                                    class="relative z-10 overflow-hidden border p-5"
-                                >
-                                    <div
-                                        v-html="qrCodeSvg"
-                                        class="flex aspect-square size-full items-center justify-center"
-                                        :style="{
-                                            filter:
-                                                resolvedAppearance === 'dark'
-                                                    ? 'invert(1) brightness(1.5)'
-                                                    : undefined,
-                                        }"
-                                    />
-                                </div>
-                            </div>
+                                v-else
+                                v-html="qrCodeSvg"
+                                class="flex size-full items-center justify-center [&>svg]:size-full"
+                            />
                         </div>
 
                         <div class="flex w-full items-center space-x-5">
@@ -196,8 +199,9 @@ watch(
                             <div
                                 class="absolute inset-0 top-1/2 h-px w-full bg-border"
                             />
-                            <span class="relative bg-card px-2 py-1"
-                                >or, enter the code manually</span
+                            <span
+                                class="relative bg-card px-2 py-1 text-sm text-muted-foreground"
+                                >of vul de sleutel handmatig in</span
                             >
                         </div>
 
@@ -220,16 +224,11 @@ watch(
                                         :value="manualSetupKey"
                                         class="h-full w-full bg-background p-3 text-foreground"
                                     />
-                                    <button
-                                        @click="copy(manualSetupKey || '')"
-                                        class="relative block h-auto border-l border-border px-3 hover:bg-muted"
-                                    >
-                                        <Check
-                                            v-if="copied"
-                                            class="w-4 text-green-500"
-                                        />
-                                        <Copy v-else class="w-4" />
-                                    </button>
+                                    <CopyButton
+                                        :value="manualSetupKey || ''"
+                                        label="Kopieer de sleutel"
+                                        class="h-auto rounded-none border-0 border-l border-border px-3"
+                                    />
                                 </template>
                             </div>
                         </div>
@@ -259,6 +258,7 @@ watch(
                                     :maxlength="6"
                                     :disabled="processing"
                                     autofocus
+                                    @complete="autoSubmit?.click()"
                                 >
                                     <InputOTPGroup>
                                         <InputOTPSlot
@@ -269,6 +269,15 @@ watch(
                                     </InputOTPGroup>
                                 </InputOTP>
                                 <InputError :message="errors?.code" />
+
+                                <PasteCodeButton
+                                    @pasted="
+                                        (plakcode) => {
+                                            code = plakcode;
+                                            autoSubmit?.click();
+                                        }
+                                    "
+                                />
                             </div>
 
                             <div class="flex w-full items-center space-x-5">
@@ -279,16 +288,25 @@ watch(
                                     @click="showVerificationStep = false"
                                     :disabled="processing"
                                 >
-                                    Back
+                                    Terug
                                 </Button>
                                 <Button
                                     type="submit"
                                     class="w-auto flex-1"
                                     :disabled="processing || code.length < 6"
                                 >
-                                    Confirm
+                                    Bevestigen
                                 </Button>
                             </div>
+
+                            <button
+                                ref="autoSubmit"
+                                type="submit"
+                                class="hidden"
+                                tabindex="-1"
+                            >
+                                Bevestigen
+                            </button>
                         </div>
                     </Form>
                 </template>
