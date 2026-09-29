@@ -16,33 +16,59 @@ informatie.
 Je hoeft niet te wachten tot iemand erom vraagt. Het is jouw verantwoordelijk-
 heid om te bepalen wat er bijgewerkt moet worden.
 
+## En de tweede regel: de klant leest deze map niet
+
+> **Elk afgerond onderdeel krijgt óók een kaart in de handleiding in het
+> portaal, in dezelfde wijziging waarin het onderdeel af is.**
+
+Die handleiding staat onder Instellingen -> Documentatie, in
+[`settings/Documentatie.vue`](../../resources/js/pages/settings/Documentatie.vue).
+Deze map is voor ons: code, keuzes en valkuilen. Die pagina is voor de
+eigenaar van de website: knoppen, en wat zijn bezoekers ervan zien.
+
+De twee lopen niet vanzelf gelijk, want wij lezen de ene nooit en hij de
+andere nooit. Vandaar dat het hier apart staat en niet als voetnoot bij de
+tabel hieronder.
+
+"Afgerond" betekent: de klant kan er iets mee. Een migratie zonder scherm
+telt niet; een beheerscherm waarop hij kan toevoegen, wijzigen of
+verwijderen wel. Hoe je zo'n kaart schrijft en waar hij heen gaat, staat in
+[architecture/uitleg-voor-de-eigenaar.md](../architecture/uitleg-voor-de-eigenaar.md).
+
 ## Wanneer werk je wat bij
 
-| Je verandert                                 | Werk bij                                                                                                        |
-| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| Een route, controller of de structuur        | [architecture/overzicht.md](../architecture/overzicht.md)                                                       |
-| Iets aan Vue, Tailwind, GSAP of Lenis        | [architecture/frontend-en-animatie.md](../architecture/frontend-en-animatie.md)                                 |
-| Een kleur, gradient of iets aan het logo     | [architecture/huisstijl-en-kleuren.md](../architecture/huisstijl-en-kleuren.md)                                 |
-| Een gedeeld component of frontend-afspraak   | [architecture/frontend-en-animatie.md](../architecture/frontend-en-animatie.md)                                 |
-| Een model waarvan de klant de inhoud beheert | [security/activiteitenlogboek.md](../security/activiteitenlogboek.md)                                           |
-| Een melding na een handeling                 | [architecture/meldingen.md](../architecture/meldingen.md)                                                       |
-| Iets aan een foutpagina                      | [architecture/foutpaginas.md](../architecture/foutpaginas.md)                                                   |
-| Een component dat in het portaal komt        | Controleer licht én donker; zie [architecture/huisstijl-en-kleuren.md](../architecture/huisstijl-en-kleuren.md) |
-| Een keuzeveld of iets dat kan schuiven       | [architecture/formulieren-en-schuifbalken.md](../architecture/formulieren-en-schuifbalken.md)                   |
-| Een datum of tijd op een scherm              | [architecture/vertalingen.md](../architecture/vertalingen.md)                                                   |
-| Iets aan talen of vertalingen                | [architecture/vertalingen.md](../architecture/vertalingen.md)                                                   |
-| Mailverzending, queues of webhooks           | [architecture/mail-en-queues.md](../architecture/mail-en-queues.md)                                             |
-| Inloggen, 2FA of Fortify-instellingen        | [security/authenticatie-en-2fa.md](../security/authenticatie-en-2fa.md)                                         |
-| Welke acties een verse code vragen           | [security/gevoelige-acties.md](../security/gevoelige-acties.md)                                                 |
-| Een rol of recht                             | [security/rollen-en-rechten.md](../security/rollen-en-rechten.md)                                               |
-| Wat er wordt gelogd of geredigeerd           | [security/logging.md](../security/logging.md)                                                                   |
-| Turnstile, honeypot of rate limiting         | [security/spam-en-botbescherming.md](../security/spam-en-botbescherming.md)                                     |
-| Afzenders of DNS-records voor mail           | [security/e-mailauthenticatie.md](../security/e-mailauthenticatie.md)                                           |
-| Deploy, hosting of achtergrondtaken          | [operations/deployment.md](../operations/deployment.md)                                                         |
-| Een geplande taak of bewaartermijn           | [operations/onderhoudstaken.md](../operations/onderhoudstaken.md)                                               |
-| Een variabele in `.env`                      | `.env.example` **en** de doc waar die variabele bij hoort                                                       |
-| Een nieuw pakket                             | [architecture/overzicht.md](../architecture/overzicht.md), en zeg waarom                                        |
-| Een keuze met een reëel alternatief          | [decisions/](../decisions/README.md)                                                                            |
+| Je verandert                                 | Werk bij                                                                                                               |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Een route, controller of de structuur        | [architecture/overzicht.md](../architecture/overzicht.md)                                                              |
+| Iets aan Vue, Tailwind, GSAP of Lenis        | [architecture/frontend-en-animatie.md](../architecture/frontend-en-animatie.md)                                        |
+| Een kleur, gradient of iets aan het logo     | [architecture/huisstijl-en-kleuren.md](../architecture/huisstijl-en-kleuren.md)                                        |
+| Een gedeeld component of frontend-afspraak   | [architecture/frontend-en-animatie.md](../architecture/frontend-en-animatie.md)                                        |
+| Een model waarvan de klant de inhoud beheert | [security/activiteitenlogboek.md](../security/activiteitenlogboek.md)                                                  |
+| Een melding na een handeling                 | [architecture/meldingen.md](../architecture/meldingen.md)                                                              |
+| Een bevestiging vóór een handeling           | [architecture/meldingen.md](../architecture/meldingen.md)                                                              |
+| Een onderdeel van de landingspagina          | [architecture/pagina-indeling.md](../architecture/pagina-indeling.md)                                                  |
+| Een nieuwe module                            | Een eigen document in [architecture/modules/](../architecture/modules/), plus een regel in de index                    |
+| Iets aan het automatisch vertalen            | [architecture/automatisch-vertalen.md](../architecture/automatisch-vertalen.md)                                        |
+| Iets aan een foutpagina                      | [architecture/foutpaginas.md](../architecture/foutpaginas.md)                                                          |
+| Een component dat in het portaal komt        | Controleer licht én donker; zie [architecture/huisstijl-en-kleuren.md](../architecture/huisstijl-en-kleuren.md)        |
+| Een keuzeveld of iets dat kan schuiven       | [architecture/formulieren-en-schuifbalken.md](../architecture/formulieren-en-schuifbalken.md)                          |
+| Een datum of tijd op een scherm              | [architecture/vertalingen.md](../architecture/vertalingen.md)                                                          |
+| Iets aan talen of vertalingen                | [architecture/vertalingen.md](../architecture/vertalingen.md)                                                          |
+| Mailverzending, queues of webhooks           | [architecture/mail-en-queues.md](../architecture/mail-en-queues.md)                                                    |
+| Inloggen, 2FA of Fortify-instellingen        | [security/authenticatie-en-2fa.md](../security/authenticatie-en-2fa.md)                                                |
+| Welke acties een verse code vragen           | [security/gevoelige-acties.md](../security/gevoelige-acties.md)                                                        |
+| Een rol of recht                             | [security/rollen-en-rechten.md](../security/rollen-en-rechten.md)                                                      |
+| Wat er wordt gelogd of geredigeerd           | [security/logging.md](../security/logging.md)                                                                          |
+| Turnstile, honeypot of rate limiting         | [security/spam-en-botbescherming.md](../security/spam-en-botbescherming.md)                                            |
+| Afzenders of DNS-records voor mail           | [security/e-mailauthenticatie.md](../security/e-mailauthenticatie.md)                                                  |
+| Deploy, hosting of achtergrondtaken          | [operations/deployment.md](../operations/deployment.md)                                                                |
+| Een geplande taak of bewaartermijn           | [operations/onderhoudstaken.md](../operations/onderhoudstaken.md)                                                      |
+| Een variabele in `.env`                      | `.env.example` **en** de doc waar die variabele bij hoort                                                              |
+| Een nieuw pakket                             | [architecture/overzicht.md](../architecture/overzicht.md), en zeg waarom                                               |
+| Een keuze met een reëel alternatief          | [decisions/](../decisions/README.md)                                                                                   |
+| Een scherm met een kruimelpad of menu-item   | [architecture/frontend-en-animatie.md](../architecture/frontend-en-animatie.md)                                        |
+| Iets dat de klant op zijn scherm merkt       | Een kaart in de handleiding; zie [architecture/uitleg-voor-de-eigenaar.md](../architecture/uitleg-voor-de-eigenaar.md) |
+| Een tekst op een scherm                      | `lang/en.json`, met de Engelse kant erbij                                                                              |
 
 Staat jouw wijziging er niet bij en is er geen passend document? Maak er een,
 en zet hem in de index van [docs/README.md](../README.md).
@@ -70,6 +96,8 @@ hoofdmap. Samengevat:
 1. Lees eerst de relevante documenten in `docs/` voordat je code wijzigt.
 2. Bepaal zelf welke documentatie meemoet met je wijziging en werk die bij in
    dezelfde wijziging. Vraag daar niet eerst toestemming voor.
-3. Raak geen geheimen aan en zet nooit een wachtwoord, code, secret of
+3. Merkt de klant je wijziging op zijn scherm? Dan hoort er ook een kaart
+   bij in de handleiding onder Instellingen -> Documentatie.
+4. Raak geen geheimen aan en zet nooit een wachtwoord, code, secret of
    recovery code in een log, test of document.
-4. Draai `composer ci:check` voordat je zegt dat je klaar bent.
+5. Draai `composer ci:check` voordat je zegt dat je klaar bent.

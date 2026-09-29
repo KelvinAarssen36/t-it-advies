@@ -5,7 +5,9 @@ import {
     Globe,
     History,
     LayoutGrid,
+    LayoutList,
     Mail,
+    Milestone,
     ShieldAlert,
     Users,
 } from '@lucide/vue';
@@ -30,6 +32,8 @@ import adminMail from '@/routes/admin/mail';
 import adminSecurity from '@/routes/admin/security';
 import adminUsers from '@/routes/admin/users';
 import site from '@/routes/site';
+import ervaring from '@/routes/website/ervaring';
+import website from '@/routes/website';
 import type { NavItem } from '@/types';
 
 /**
@@ -40,8 +44,8 @@ import type { NavItem } from '@/types';
  * 1. **Zonder kopje** bovenaan: het dashboard. Een kopje boven één regel is
  *    meer ruis dan houvast.
  * 2. **Website**: alles waarmee de eigenaar zijn eigen site vult. Dit is
- *    waar hij het vaakst moet zijn, dus het staat boven het beheer. Er staat
- *    nu nog niets in; de modules komen hier één voor één bij.
+ *    waar hij het vaakst moet zijn, dus het staat boven het beheer. De
+ *    indeling is er het startpunt van; zie de toelichting daar.
  * 3. **Beheer**: de logboeken, de mail en de gebruikers. Dat kijk je na, dat
  *    gebruik je niet dagelijks.
  *
@@ -73,15 +77,39 @@ const startItems = computed<NavItem[]>(() => [
 /**
  * De inhoud van de website.
  *
- * Voorlopig alleen de weg ernaartoe. Zodra de eerste module er is --
- * pagina's, diensten, de tijdlijn -- komt die hier boven te staan, en dan
- * haal je de toelichting hieronder weg.
+ * **Elke module krijgt hier zijn eigen regel.** Dat is een expliciete
+ * keuze: het beheerscherm van een onderdeel is waar de eigenaar dagelijks
+ * moet zijn, en daar hoor je in één klik te komen. De indeling is een
+ * handige kaart van de site -- en je kunt van daaruit ook doorklikken naar
+ * elk onderdeel -- maar hij is niet de ingang.
+ *
+ * Bouw je een module, zet hem dan **hier** erbij, tussen de indeling en
+ * "Bekijk de website" in. `AppSidebarTest` valt om als je het vergeet.
+ *
+ * De indeling draagt `hoofd: true` en krijgt daarmee een sterretje: dat
+ * markeert de hoofdpagina van de groep. Per groep hoort er precies één te
+ * zijn, anders zegt het teken niets meer.
+ *
+ * "Bekijk de website" staat onderaan omdat je daar vanaf élk scherm heen
+ * wilt kunnen, en niet alleen vanaf de indeling.
  */
 const websiteItems = computed<NavItem[]>(() => [
+    {
+        title: t('Indeling'),
+        href: website.index(),
+        icon: LayoutList,
+        hoofd: true,
+    },
+    {
+        title: t('Ervaring'),
+        href: ervaring.index(),
+        icon: Milestone,
+    },
     {
         title: t('Bekijk de website'),
         href: site.enter(),
         icon: Globe,
+        verlaat: true,
     },
 ]);
 
@@ -92,6 +120,7 @@ const beheerItems = computed<NavItem[]>(() =>
                   title: t('Overzicht'),
                   href: adminDashboard(),
                   icon: Activity,
+                  hoofd: true,
               },
               {
                   title: t('Activiteit'),
@@ -135,20 +164,7 @@ const beheerItems = computed<NavItem[]>(() =>
         <SidebarContent>
             <NavMain :items="startItems" />
 
-            <!--
-                De toelichting blijft staan zolang er nog geen echte modules
-                zijn. Haal hem weg zodra de eerste pagina of dienst hier in
-                het menu komt; dan spreekt de groep voor zich.
-            -->
-            <NavMain
-                :label="$t('Website')"
-                :items="websiteItems"
-                :note="
-                    $t(
-                        'Hier komen straks de onderdelen waarmee je de inhoud van je website aanpast.',
-                    )
-                "
-            />
+            <NavMain :label="$t('Website')" :items="websiteItems" />
 
             <NavMain
                 v-if="magBeheren"

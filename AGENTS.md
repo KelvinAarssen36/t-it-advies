@@ -3,7 +3,11 @@
 Dit bestand geldt voor elke AI die aan dit project werkt (Claude Code, Codex,
 Copilot, Junie, Cursor). `CLAUDE.md` verwijst hiernaar; er is één bron.
 
-## Regel 1: documentatie gaat mee met de code
+## Regel 1: documentatie gaat mee met de code -- voor ons én voor de klant
+
+Er zijn **twee** lezers, en ze lezen niet hetzelfde.
+
+### 1a. Voor ons: `docs/`
 
 **Bij iedere wijziging bepaal je zelf welke Markdown-documentatie moet worden
 toegevoegd of bijgewerkt, en je doet dat in dezelfde wijziging.**
@@ -14,6 +18,31 @@ je waar bijwerkt staat in
 
 Staat er geen passend document, maak er dan een en zet hem in de index van
 [`docs/README.md`](docs/README.md).
+
+### 1b. Voor de klant: de handleiding in het portaal
+
+**Elk afgerond onderdeel krijgt óók een kaart in
+[`settings/Documentatie.vue`](resources/js/pages/settings/Documentatie.vue),
+in dezelfde wijziging waarin het onderdeel af is.**
+
+Dat is de handleiding die de eigenaar zelf opzoekt, onder Instellingen ->
+Documentatie. Hij leest `docs/` nooit; die map gaat over code en keuzes, en
+deze pagina gaat over knoppen: wat er gebeurt als je erop drukt, en wat zijn
+bezoekers daarna zien.
+
+Een module die de eigenaar niet kan terugvinden is geen module. "Afgerond"
+betekent hier: de klant kan er iets mee. Een migratie zonder scherm telt
+niet; een beheerscherm waarop hij kan toevoegen, wijzigen of verwijderen
+wel.
+
+Drie onderdelen, en die volgen de zijbalk: **Basis** (alles wat overal
+hetzelfde werkt), **Website** (één kaart per module) en **Beheer**. Hoe je
+zo'n kaart schrijft, welk pictogram je kiest en waar je niet over schrijft,
+staat in
+[`docs/architecture/uitleg-voor-de-eigenaar.md`](docs/architecture/uitleg-voor-de-eigenaar.md).
+
+Vergeet de Engelse kant niet: elke zin gaat door `$t()` en hoort in
+`lang/en.json`. `TranslationsTest` valt om als je dat overslaat.
 
 ## Regel 2: nooit geheimen vastleggen
 
@@ -81,7 +110,62 @@ gevoelige actie dat hij zonder verse code niet doorgaat.
 Let op één ding dat makkelijk wordt overgeslagen: de bevestigingsvensters in
 de browser zijn geen beveiliging. Test het verzoek, niet het scherm.
 
-## Regel 6: schrijf Nederlands
+Gebruik voor die vensters
+[`bevestig()`](resources/js/lib/bevestiging.ts) en verzin er geen eigen. Het
+aantal vragen ligt vast -- bewerken twee keer, aanmaken en verwijderen één
+keer -- en dat zit in die functie, juist zodat niemand het per scherm anders
+invult. Zie [meldingen](docs/architecture/meldingen.md).
+
+## Regel 6: verplichte velden krijgen een sterretje
+
+Elk formulierveld dat verplicht is, draagt een sterretje bij zijn label.
+Dat geldt overal in de applicatie -- portaal én publieke site -- en is een
+afspraak met de opdrachtgever, geen smaakkwestie. Een veld zonder sterretje
+leest de klant als optioneel, dus vergeten is niet slordig maar onjuist.
+
+Doe het met de prop op het labelcomponent en niet met een tekentje dat je
+zelf achter de tekst typt:
+
+```vue
+<Label for="role_nl" verplicht>{{ $t('Functie') }}</Label>
+```
+
+Hoe je weet welke velden het zijn: loop de `rules()` van de bijbehorende
+FormRequest langs en zet er een bij alles met `required`. Eén grens: een
+keuzelijst die al een waarde heeft kún je niet leeglaten, en daar is een
+sterretje dus ruis. Zie
+[formulieren](docs/architecture/formulieren-en-schuifbalken.md#verplichte-velden).
+
+**Let op: er is een tweede sterretje in dit project, en dat betekent iets
+anders.** In de zijbalk markeert een klein blauw sterretje de hoofdpagina
+van een groep (`hoofd: true` op het menu-item). Dat is bewust een andere
+kleur en een andere maat dan het rode sterretje bij een veld. Hang er geen
+derde betekenis aan; zie
+[frontend en animatie](docs/architecture/frontend-en-animatie.md#het-sterretje-bij-de-hoofdpagina-van-een-groep).
+
+## Regel 7: aanmaken, bewerken en verwijderen hebben elk hun eigen kleur
+
+Drie handelingen, drie kleuren, overal in het portaal dezelfde:
+
+| Handeling   | Kleur               | `variant`                           |
+| ----------- | ------------------- | ----------------------------------- |
+| Aanmaken    | merkblauw `#0787E8` | `aanmaken` / `aanmaken-zacht`       |
+| Bewerken    | oker (`--bewerken`) | `bewerken` / `bewerken-zacht`       |
+| Verwijderen | rood `#D94A4A`      | `verwijderen` / `verwijderen-zacht` |
+
+De volle vorm is voor de knop die het echt doet: de knop bovenaan een
+scherm, de opslaan-knop in een venster, de bevestigknop. De `-zacht` vorm is
+voor een knop die in een rij naast tien soortgenoten staat.
+
+Zet dus nooit een kale `<Button>` of een `variant="outline"` op iets wat
+aanmaakt, bewerkt of verwijdert -- dan is het voor de klant een knop als
+alle andere. Zie
+[huisstijl](docs/architecture/huisstijl-en-kleuren.md#de-drie-handelingen)
+voor de kleuren en
+[formulieren](docs/architecture/formulieren-en-schuifbalken.md#de-knop-van-een-handeling)
+voor waar welke vorm heen gaat.
+
+## Regel 8: schrijf Nederlands
 
 Commentaar, documentatie en commitberichten in het Nederlands. Klassenamen,
 methodenamen en variabelen blijven Engels. Gebruikersteksten in `__()`.
@@ -105,11 +189,31 @@ niet weet:
   de hand, gebruik dan `--with-form`, anders faalt `npm run types:check`.
 - **Lenis en GSAP moeten gekoppeld blijven.** Zie
   `resources/js/lib/motion.ts`; haal de ticker-koppeling niet weg.
+- **Alles op de publieke site dat zelf moet schuiven, krijgt
+  `data-lenis-prevent`.** Lenis vangt anders het muiswiel af en scrolt de
+  pagina erachter in plaats van wat je voor je hebt. Het portaal heeft er
+  geen last van; daar draait Lenis niet.
 - **Animaties ruimen zichzelf op.** Inertia vervangt de pagina zonder
   herladen. Roep de opruimfunctie aan in `onBeforeUnmount`.
 - **`prefers-reduced-motion` mag geen lege pagina opleveren.** Zet elementen
   op hun eindtoestand in plaats van de animatie over te slaan.
 - **De tests draaien op SQLite in het geheugen**, niet op MySQL.
+- **Een formulier met een bestand erin gaat als `FormData` de deur uit.**
+  Een wijziging gebruikt dan `POST` met `_method: 'put'`; Laravel leest die
+  omweg niet uit JSON. En zet `Storage::fake()` in de test, anders schrijf
+  je in `storage/app/public`.
+- **Een zoekveld dat op `LIKE` draait moet `%` en `_` ontsnappen.** Zonder
+  dat geeft "100%" de hele lijst terug. Zet de `ESCAPE`-clausule er
+  expliciet bij, want MySQL en SQLite gaan er anders mee om.
+- **De componenten in `components/ui/` komen Engels geleverd.** Loop een
+  nieuwe na op `sr-only`, `aria-label`, `title`, `alt` en `placeholder`;
+  daar zit vertaalde tekst in die je niet ziet staan. Zie
+  [vertalingen](docs/architecture/vertalingen.md).
+- **Een kruimelpad met een detailpagina erin hoort een derde kruimel te
+  krijgen.** De laatste is nooit aanklikbaar, dus zonder die derde kun je
+  vanaf een detailpagina niet terug naar het overzicht. Inertia roept
+  `layout` als functie aan met de paginaprops, dus de naam van het item
+  kan erin.
 - **PHPUnit 12 kent `@dataProvider` niet meer.** Gebruik het attribuut
   `#[DataProvider]`.
 

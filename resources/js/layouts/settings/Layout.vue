@@ -9,6 +9,7 @@ import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { t } from '@/lib/i18n';
 import { toUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
+import { show as showDocumentatie } from '@/routes/documentation';
 import { edit as editProfile } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
 import type { NavItem } from '@/types';
@@ -34,9 +35,32 @@ const sidebarNavItems = computed<Instelling[]>(() => [
         title: t('Weergave'),
         href: editAppearance(),
     },
+    /*
+     * De handleiding staat onderaan en niet bovenaan. Wie hier komt heeft
+     * een vraag, en die vraag gaat over het scherm waar hij vandaan komt
+     * -- niet over zijn profiel. Bovenaan zou hij elke keer in de weg
+     * staan van de instelling die je wél dagelijks nodig hebt.
+     */
+    {
+        title: t('Documentatie'),
+        href: showDocumentatie(),
+    },
 ]);
 
 const { isCurrentOrParentUrl } = useCurrentUrl();
+
+/*
+ * De instellingen zijn formulieren, en een formulier van 900 pixels breed
+ * leest niet prettiger dan een van 600. Daarom staat de kolom standaard
+ * smal. De handleiding is geen formulier maar een pagina met kaarten en
+ * voorbeelden, en die mag breder; zie `breed` in
+ * resources/js/pages/settings/Documentatie.vue.
+ *
+ * Inertia geeft de layout-props aan élke layout in de stapel, dus AppLayout
+ * krijgt `breed` ook binnen. Die negeert hem: ongedeclareerde props komen
+ * daar niet in de HTML terecht.
+ */
+defineProps<{ breed?: boolean }>();
 </script>
 
 <template>
@@ -89,8 +113,11 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
 
             <Separator class="my-6 lg:hidden" />
 
-            <div class="flex-1 md:max-w-2xl">
-                <section class="max-w-xl space-y-12">
+            <div class="flex-1" :class="breed ? '' : 'md:max-w-2xl'">
+                <section
+                    class="space-y-12"
+                    :class="breed ? 'max-w-3xl' : 'max-w-xl'"
+                >
                     <slot />
                 </section>
             </div>

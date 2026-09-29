@@ -14,6 +14,7 @@ import {
     SidebarMenuItem,
     useSidebar,
 } from '@/components/ui/sidebar';
+import VerlaatPortaal from '@/components/VerlaatPortaal.vue';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import type { NavItem } from '@/types';
 
@@ -24,16 +25,11 @@ import type { NavItem } from '@/types';
  * kun je inklappen, een groep zonder niet. Dat is geen toeval -- de groep
  * zonder kopje is het dashboard, en één regel wegklappen levert niets op.
  *
- * `note` is een zin onder de items, voor een groep die nog niet af is. De
- * aanroeper bepaalt wanneer hij weg mag -- niet dit component -- want alleen
- * daar weet je of wat er staat de lading al dekt.
- *
  * Zie docs/architecture/frontend-en-animatie.md.
  */
 const props = defineProps<{
     label?: string;
     items: NavItem[];
-    note?: string;
 }>();
 
 const { isCurrentUrl } = useCurrentUrl();
@@ -95,6 +91,20 @@ const uitgeklapt = computed({
                     <Link :href="item.href">
                         <component :is="item.icon" />
                         <span>{{ item.title }}</span>
+                        <span
+                            v-if="item.hoofd"
+                            class="brand-nav-hoofd"
+                            :title="$t('De hoofdpagina van dit onderdeel')"
+                        >
+                            *
+                            <span class="sr-only">
+                                {{ $t('De hoofdpagina van dit onderdeel') }}
+                            </span>
+                        </span>
+                        <VerlaatPortaal
+                            v-if="item.verlaat"
+                            class="ml-auto group-data-[collapsible=icon]:hidden"
+                        />
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
@@ -129,25 +139,46 @@ const uitgeklapt = computed({
                             :is-active="isCurrentUrl(item.href)"
                             :tooltip="item.title"
                         >
+                            <!--
+                                Het sterretje markeert de hoofdpagina van
+                                de groep. Het is bewust níet het rode
+                                sterretje van een verplicht veld: dat
+                                betekent iets anders, en twee betekenissen
+                                aan één teken hangen is vragen om
+                                verwarring. Dit is klein en in de
+                                merkkleur.
+
+                                Het pijltje erachter betekent weer iets
+                                anders: die regel brengt je buiten het
+                                portaal. Zie VerlaatPortaal.vue.
+                            -->
                             <Link :href="item.href">
                                 <component :is="item.icon" />
                                 <span>{{ item.title }}</span>
+                                <span
+                                    v-if="item.hoofd"
+                                    class="brand-nav-hoofd"
+                                    :title="
+                                        $t('De hoofdpagina van dit onderdeel')
+                                    "
+                                >
+                                    *
+                                    <span class="sr-only">
+                                        {{
+                                            $t(
+                                                'De hoofdpagina van dit onderdeel',
+                                            )
+                                        }}
+                                    </span>
+                                </span>
+                                <VerlaatPortaal
+                                    v-if="item.verlaat"
+                                    class="ml-auto group-data-[collapsible=icon]:hidden"
+                                />
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
-
-                <!--
-                    Verdwijnt zodra de zijbalk is ingeklapt tot pictogrammen:
-                    daar is geen ruimte voor een zin, en afgekapte tekst
-                    leest als een fout.
-                -->
-                <p
-                    v-if="note"
-                    class="px-2 py-1.5 text-xs text-balance text-muted-foreground group-data-[collapsible=icon]:hidden"
-                >
-                    {{ note }}
-                </p>
             </CollapsibleContent>
         </Collapsible>
     </SidebarGroup>

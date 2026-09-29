@@ -230,6 +230,9 @@ zijn. Bewust gedempt, zodat ze niet met het blauw botsen.
 | Error   | `#D94A4A` |
 | Info    | `#0787E8` |
 
+De okertoon van Warning heeft er een tweede baan bij: hij is ook de kleur
+van **bewerken**. Zie [de drie handelingen](#de-drie-handelingen).
+
 ## De definitieve kern
 
 Als er ooit een officiële brand guide komt, is dit de hoofdset:
@@ -424,6 +427,43 @@ WCAG-eis voor gewone tekst niet. Gebruik `#0787E8` daarom als vlak met witte
 tekst erop, en niet als tekstkleur op donker; daar is Cyan Accent of Ice Blue
 voor. Zie ook [frontend en animatie](frontend-en-animatie.md), waar staat dat
 beweging uit moet kunnen -- toegankelijkheid is geen sluitstuk.
+
+### De drie handelingen
+
+Aanmaken, bewerken en verwijderen zijn de drie dingen die de klant met een
+item doet, en ze hebben elk een eigen kleur. Niet een eigen vorm of een
+eigen pictogram alleen: een eigen **kleur**, zodat je aan een scherm vol
+knoppen ziet wat waar zit zonder te lezen.
+
+| Handeling   | Kleur                      | Token           | Waarom die                                                                           |
+| ----------- | -------------------------- | --------------- | ------------------------------------------------------------------------------------ |
+| Aanmaken    | Electric Blue `#0787E8`    | `--primary`     | De merkkleur. Aanmaken is op elk scherm de handeling waar je voor kwam.              |
+| Bewerken    | Oker `#8F5D0C` / `#F0B74A` | `--bewerken`    | Ver genoeg van blauw én van rood, en zit al in het huis: het is de toon van Warning. |
+| Verwijderen | Error `#D94A4A`            | `--destructive` | Rood betekent hier wat het overal betekent, en dat laten we zo.                      |
+
+**Twee waarden bij oker, want één amber is niet op beide achtergronden
+leesbaar.** `--bewerken` staat in `:root` op `#8F5D0C` (donker genoeg voor
+tekst op wit) en in `.dark` op `#F0B74A`. `--bewerken-contrast` is de kleur
+die eroverheen kan zodra het vlak volloopt: wit op licht, navy op donker.
+Gebruik dus nooit `--warning` rechtstreeks voor een knop -- die ene waarde
+zakt op wit weg.
+
+**Van elke kleur zijn er twee vormen.** Vol voor de knop die het echt doet,
+`-zacht` (geen kader, alleen de kleur, met een zachte schijf eronder zodra je
+hem aanwijst) voor een knop die in een rij naast tien soortgenoten staat. Vijftien volle vlakken onder
+elkaar is geen lijst meer maar een waarschuwing. Waar welke vorm heen gaat
+staat in
+[formulieren](formulieren-en-schuifbalken.md#de-knop-van-een-handeling).
+
+Het bevestigingsvenster draagt dezelfde drie kleuren, in zijn accentlijn en
+op zijn bevestigknop, zodat het zichtbaar bij de knop hoort waarop je
+zojuist klikte. Daar stond eerder groen bij aanmaken, geleend van de melding
+achteraf; dat was een andere vraag, want groen zegt "gelukt" en dat weet je
+op dat moment nog niet.
+
+**`variant="destructive"` blijft bestaan** voor iets wat gevaarlijk is maar
+geen item verwijdert -- tweestapsverificatie uitzetten, bijvoorbeeld.
+`verwijderen` is voor "dit ding gaat weg".
 
 ### De aurora achter het inlogscherm
 

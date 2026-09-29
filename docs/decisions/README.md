@@ -246,3 +246,138 @@ commando draait staat de mailprovider vaak nog niet ingesteld.
 `RegistrationTest` -- met opzet, zodat het een beslissing blijft. Je hebt dan
 ook `auth/Register.vue`, `Fortify::registerView` en een `CreatesNewUsers`-actie
 weer nodig; die staan in de geschiedenis van deze commit.
+
+---
+
+## 014 -- MyMemory voor het automatisch vertalen, zonder account
+
+**Keuze:** MyMemory, via een gewone HTTP-aanroep, achter het eigen contract
+`App\Support\Translation\Vertaler`.
+
+**Alternatieven:** DeepL, Google Cloud Translation, een taalmodel, of
+LibreTranslate zelf hosten.
+
+**Waarom:** de harde eis werd **geen account en geen sleutel**. Een knop die
+pas werkt nadat de eigenaar zich ergens heeft aangemeld en een sleutel in
+een configuratiebestand heeft gezet, is voor hem geen knop -- en het is ook
+niet iets wat je bij een oplevering wilt overdragen. MyMemory staat open:
+5.000 tekens per dag anoniem, 50.000 als je een adres meestuurt, zonder
+registratie.
+
+De kwaliteit is een stap minder dan die van DeepL, en dat is een bewuste
+ruil. Wat de knop oplevert is een startpunt; negen van de tien keer
+herschrijft de klant het toch in eigen woorden.
+
+Dit was eerst wél DeepL. Dat viel af op precies dat ene punt: de gratis
+laag vraagt een account. Google viel af op hetzelfde plus een
+service-account. Een taalmodel is beter in toon maar vraagt ook een sleutel
+en kost per aanroep. LibreTranslate zelf hosten vraagt Docker en een paar
+gigabyte aan modellen -- dat is een server om te onderhouden voor een knop
+die af en toe wordt gebruikt.
+
+**Terugdraaien:** eenvoudig, en dat is bewezen. Alleen `MyMemoryVertaler`
+weet iets van de dienst; de overstap vanaf DeepL was één nieuwe klasse en
+één regel in `AppServiceProvider`. Wil je ooit betere kwaliteit en is een
+account dan geen bezwaar, dan is DeepL de voor de hand liggende stap.
+
+**Let op:** met `TRANSLATE_ENABLED=false` valt de applicatie terug op
+`GeenVertaler` en verdwijnt de knop uit het scherm. Dat is ook de stand in
+elke test. Zie
+[automatisch vertalen](../architecture/automatisch-vertalen.md).
+
+---
+
+## 015 -- Toch een geüpload logo bij een ervaring, naast het pictogram
+
+**Keuze:** de klant kan per ervaring een logo uploaden. Staat er geen, dan
+gebruikt de tijdlijn een pictogram uit de vaste set.
+
+**Alternatief:** alleen pictogrammen -- de keuze die hier eerst stond.
+
+**Waarom:** de opdrachtgever wilde de echte beeldmerken van de organisaties
+op zijn tijdlijn, en dat is bij een loopbaan een redelijke wens: het maakt
+de lijst in één oogopslag herkenbaar op een manier die tien algemene
+pictogrammen niet kunnen.
+
+De bezwaren die bij de eerdere keuze hoorden -- opslag, validatie,
+opruimen, en of het wel werkt in productie -- bleken bij nader inzien geen
+argumenten tégen maar een lijst van wat er te regelen was. Elk punt heeft
+nu een antwoord, met een test erbij: de bestandsnaam van de klant wordt
+niet gebruikt, het beeld wordt door GD heen opnieuw opgebouwd, de
+afmetingen zijn begrensd zodat het geheugen niet volloopt, en het bestand
+gaat mee als de ervaring wordt verwijderd.
+
+Het pictogram **blijft** bestaan en verdwijnt niet naar de achtergrond. Een
+logo heb je of je hebt het niet, en tot die tijd hoort er iets te staan.
+Zonder die terugval zou een ervaring zonder logo een gat in de lijn zijn.
+
+Het bezwaar dat aangeleverde logo's in willekeurige kwaliteit binnenkomen
+blijft staan; dat is nu een kwestie van wat de klant aanlevert en niet meer
+van wat de applicatie ermee doet. Wat er binnenkomt wordt bijgesneden tot
+een vierkant van 256 pixels en als WebP opgeslagen.
+
+**Terugdraaien:** de kolom `logo_path` leegmaken en het uploadveld
+weghalen; de tijdlijn valt dan vanzelf terug op het pictogram, want die weg
+bestaat nog.
+
+**Let op:** in productie moet `php artisan storage:link` hebben gedraaid en
+moet de `gd`-extensie er zijn. Zonder de link geeft elk logo een 404;
+zonder GD werkt alles nog, maar wordt het bestand opgeslagen zoals het
+binnenkwam. Zie
+[de ervaringsmodule](../architecture/modules/ervaring.md#het-logo) en
+[deployment](../operations/deployment.md).
+
+---
+
+## 016 -- De loopbaan als carrousel, met de lijst ernaast
+
+**Keuze:** de tijdlijn op de publieke site staat standaard als carrousel:
+het blok blijft in beeld staan terwijl je scrolt, en de loopbaan loopt er
+in die tijd doorheen -- één functie groot, de buren kleiner eromheen. De
+lijst blijft bestaan als tweede weergave, met een knopje ertussen.
+
+**Alternatieven:** alleen de lijst houden, of hem vervangen door de
+carrousel.
+
+**Waarom de carrousel:** hoogte. Ook nadat de lijst compact was gemaakt --
+één regel per functie, beschrijving dichtgeklapt -- is vijfentwintig
+functies nog altijd meters pagina, en dan komt de bezoeker niet meer bij
+het contactformulier. De carrousel is één scherm hoog, hoeveel functies er
+ook bij komen; alleen hoe lang je erdoorheen scrolt verandert.
+
+**Waarom de lijst blijft:** hij doet iets wat de carrousel niet kan --
+alles in één blik, en vindbaar met Ctrl+F. Dat is precies wat je wilt als
+je iemands loopbaan aan het beoordelen bent. Ze naast elkaar laten staan
+kost één knopje en een component dat er toch al was.
+
+En er is een tweede reden, en die is eerlijk gezegd de belangrijkste: de
+lijst was er eerst en werkte goed. Hem weggooien voor iets nieuwers
+betekent dat terugkeren een herbouw is. Nu is het één constante in
+`ErvaringSection.vue`.
+
+De bezoeker ziet de keuze pas vanaf vier ervaringen. Daaronder staat de
+hele loopbaan toch al in beeld, en is een carrousel alleen maar extra werk.
+
+**Terugdraaien:** `STANDAARD` in
+[`ErvaringSection.vue`](../../resources/js/components/site/sections/ErvaringSection.vue)
+op `'lijst'` zetten. Wil je de carrousel helemaal weg, dan kan het
+component erbij weg en vervalt de keuzeknop vanzelf.
+
+**Hoe je erdoorheen komt is onderweg veranderd.** Eerst zat het blok vast
+in beeld terwijl de pagina eronder doorliep. Technisch prima, maar dan is
+het kader niet het gebied waar het gebeurt: je scrolt er ver vandaan en de
+kaarten schuiven mee, of je scrolt er vlak naast en er lijkt niets te
+gebeuren. Dat leest als een onnauwkeurig onderdeel. Nu vangt het vak zelf
+het muiswiel op -- alleen als je muis erin hangt, en alleen als het vak
+het midden van het scherm beslaat -- en blijft de pagina staan. De rand
+licht op zodra je erin bent, dus de afbakening is echt.
+
+De bekende val van zo'n vak is dat je er niet meer uit komt. Daarom laat
+het de scroll los zodra je aan het begin of het eind van de loopbaan
+bent, en werkt het ook met Tab plus de pijltjestoetsen en met een veeg op
+een telefoon.
+
+Bij `prefers-reduced-motion` verschijnt de carrousel niet en verdwijnt
+ook de keuzeknop: een vak dat je scroll overneemt is precies waar iemand
+met bewegingsklachten last van heeft, en de lijst is een volwaardig
+alternatief.

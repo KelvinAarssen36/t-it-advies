@@ -35,6 +35,17 @@ Route::middleware(['auth', 'verified', 'two-factor.required'])->group(function (
         ->name('user-password.update');
 
     Route::inertia('settings/appearance', 'settings/Appearance')->name('appearance.edit');
+
+    /*
+     * De handleiding voor de eigenaar. Een gewone Inertia-pagina zonder
+     * controller: alles wat erop staat beschrijft hoe het portaal werkt en
+     * komt dus uit de code, niet uit de database.
+     *
+     * Hij staat bewust in de instellingen en niet in het menu van de
+     * website: je zoekt hem op als je iets niet weet, en niet elke dag.
+     * Zie docs/architecture/uitleg-voor-de-eigenaar.md.
+     */
+    Route::inertia('settings/documentation', 'settings/Documentatie')->name('documentation.show');
 });
 
 Route::get('.well-known/passkey-endpoints', function () {

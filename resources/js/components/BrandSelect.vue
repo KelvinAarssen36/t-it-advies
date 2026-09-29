@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Check, ChevronDown, ChevronUp } from '@lucide/vue';
+import { Check, ChevronDown, ChevronUp, Search } from '@lucide/vue';
 import {
     SelectContent,
     SelectItem,
@@ -14,7 +14,7 @@ import {
     SelectViewport,
 } from 'reka-ui';
 import type { HTMLAttributes } from 'vue';
-import { computed } from 'vue';
+import { computed, nextTick, ref, useTemplateRef } from 'vue';
 import { cn } from '@/lib/utils';
 
 /**
@@ -45,6 +45,17 @@ const props = withDefaults(
         class?: HTMLAttributes['class'];
         /** Wat een schermlezer voorleest als er geen zichtbaar label is. */
         ariaLabel?: string;
+        /**
+         * Een zoekveldje boven de lijst.
+         *
+         * Vanaf een stuk of twaalf regels gaat dat vanzelf aan: scrollen
+         * door een lijst waar je het antwoord al van weet is werk dat de
+         * computer kan doen. Zet hem met `false` uit als een korte lijst
+         * toch moet kunnen zoeken -- of andersom.
+         */
+        zoekbaar?: boolean;
+        /** De tekst in het zoekveldje. */
+        zoekTekst?: string;
     }>(),
     { placeholder: 'Maak een keuze' },
 );
@@ -74,6 +85,80 @@ const opties = computed(() =>
         waarde: optie.value === '' ? LEEG : optie.value,
     })),
 );
+
+/* --- Zoeken in de lijst --------------------------------------------- */
+
+/** Vanaf hier is scrollen vervelender dan typen. */
+const VANAF = 12;
+
+const filteren = computed(() => props.zoekbaar ?? props.options.length > VANAF);
+
+const zoekterm = ref('');
+
+const zichtbaar = computed(() => {
+    const term = zoekterm.value.trim().toLowerCase();
+
+    if (!filteren.value || term === '') {
+        return opties.value;
+    }
+
+    return opties.value.filter(
+        (optie) =>
+            optie.label.toLowerCase().includes(term) ||
+            /*
+             * De gekozen optie blijft altijd staan, ook als hij niet op de
+             * zoekterm past. Reka-ui leest het opschrift van de knop af van
+             * het gekozen item; verdwijnt dat uit de lijst, dan valt de
+             * knop terug op de tijdelijke tekst en lijkt de keuze gewist.
+             */
+            optie.waarde === intern.value,
+    );
+});
+
+const zoekveld = useTemplateRef<HTMLInputElement>('zoekveld');
+
+/**
+ * Bij het openen gaat de aandacht naar het zoekveld in plaats van naar de
+ * gekozen regel.
+ *
+ * Lukt dat niet -- het veld staat er niet, of de browser doet iets anders
+ * -- dan blijft reka-ui gewoon werken zoals altijd: pijltjes, en typen
+ * springt naar de eerste regel die begint met wat je typt.
+ */
+const bijOpenen = (gebeurtenis: Event): void => {
+    if (!filteren.value) {
+        return;
+    }
+
+    gebeurtenis.preventDefault();
+    zoekterm.value = '';
+
+    nextTick(() => zoekveld.value?.focus());
+};
+
+/**
+ * Welke toetsen het zoekveld zelf houdt.
+ *
+ * Reka-ui luistert op het paneel mee om naar de regel te springen die met
+ * de ingetypte letter begint. Dat is precies wat je níet wilt terwijl je in
+ * een zoekveld typt -- dan verspringt de lijst bij elke letter. De toetsen
+ * waarmee je door de lijst beweegt en hem sluit, laten we wél door.
+ */
+const DOORLATEN = [
+    'ArrowDown',
+    'ArrowUp',
+    'Home',
+    'End',
+    'Enter',
+    'Escape',
+    'Tab',
+];
+
+const opToets = (gebeurtenis: KeyboardEvent): void => {
+    if (!DOORLATEN.includes(gebeurtenis.key)) {
+        gebeurtenis.stopPropagation();
+    }
+};
 </script>
 
 <template>
@@ -113,7 +198,21 @@ const opties = computed(() =>
                 position="popper"
                 :side-offset="6"
                 class="z-50 flex max-h-[min(20rem,var(--reka-select-content-available-height))] min-w-[var(--reka-select-trigger-width)] flex-col overflow-hidden brand-panel data-[side=bottom]:slide-in-from-top-1 data-[side=top]:slide-in-from-bottom-1 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
+                @open-auto-focus="bijOpenen"
             >
+                <div v-if="filteren" class="brand-panel-zoek">
+                    <Search class="size-4 shrink-0" aria-hidden="true" />
+                    <input
+                        ref="zoekveld"
+                        v-model="zoekterm"
+                        type="text"
+                        autocomplete="off"
+                        :placeholder="zoekTekst ?? $t('Zoeken')"
+                        :aria-label="zoekTekst ?? $t('Zoeken')"
+                        @keydown="opToets"
+                    />
+                </div>
+
                 <SelectScrollUpButton
                     class="flex cursor-default items-center justify-center py-1 text-[var(--control-muted)]"
                 >
@@ -127,8 +226,15 @@ const opties = computed(() =>
                     weer terugdraaien.
                 -->
                 <SelectViewport class="brand-scrollbar">
+                    <p
+                        v-if="zichtbaar.length === 0"
+                        class="px-3 py-4 text-center text-sm text-[var(--control-muted)]"
+                    >
+                        {{ $t('Niets gevonden.') }}
+                    </p>
+
                     <SelectItem
-                        v-for="optie in opties"
+                        v-for="optie in zichtbaar"
                         :key="optie.waarde"
                         :value="optie.waarde"
                         class="brand-option"

@@ -45,7 +45,7 @@ const user = computed(() => page.props.auth.user);
             v-slot="{ errors, processing }"
         >
             <div class="grid gap-2">
-                <Label for="name">{{ $t('Naam') }}</Label>
+                <Label for="name" verplicht>{{ $t('Naam') }}</Label>
                 <Input
                     id="name"
                     class="mt-1 block w-full"
@@ -59,7 +59,7 @@ const user = computed(() => page.props.auth.user);
             </div>
 
             <div class="grid gap-2">
-                <Label for="email">{{ $t('E-mailadres') }}</Label>
+                <Label for="email" verplicht>{{ $t('E-mailadres') }}</Label>
                 <Input
                     id="email"
                     type="email"
@@ -99,6 +99,7 @@ const user = computed(() => page.props.auth.user);
 
             <div class="flex items-center gap-4">
                 <Button
+                    variant="bewerken"
                     :disabled="processing"
                     data-test="update-profile-button"
                 >

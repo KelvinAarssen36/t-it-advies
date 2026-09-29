@@ -82,7 +82,7 @@ const handleDelete = () => {
                         <Button variant="secondary">Cancel</Button>
                     </DialogClose>
                     <Button
-                        variant="destructive"
+                        variant="verwijderen"
                         :disabled="isDeleting"
                         @click="handleDelete"
                     >

@@ -4,6 +4,7 @@ import { computed, ref, watch } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { bevestigVerwijderen } from '@/lib/bevestiging';
 import { t } from '@/lib/i18n';
 import { dashboard } from '@/routes/admin';
 import users from '@/routes/admin/users';
@@ -98,15 +99,13 @@ const saveRoles = (row: UserRow) => {
     );
 };
 
-const remove = (row: UserRow) => {
-    const confirmed = window.confirm(
-        t(
-            'Weet je zeker dat je het account van :naam verwijdert? Dit kan niet ongedaan worden gemaakt.',
-            { naam: row.name },
-        ),
-    );
+const remove = async (row: UserRow) => {
+    const akkoord = await bevestigVerwijderen({
+        titel: t('Het account van :naam verwijderen?', { naam: row.name }),
+        tekst: t('Dit kan niet ongedaan worden gemaakt.'),
+    });
 
-    if (!confirmed) {
+    if (!akkoord) {
         return;
     }
 
@@ -209,7 +208,7 @@ const remove = (row: UserRow) => {
                             <td class="px-3 py-2 text-right whitespace-nowrap">
                                 <Button
                                     v-if="!row.is_self"
-                                    variant="outline"
+                                    variant="bewerken-zacht"
                                     size="sm"
                                     class="mr-2"
                                     @click="startEditing(row)"
@@ -218,7 +217,7 @@ const remove = (row: UserRow) => {
                                 </Button>
                                 <Button
                                     v-if="!row.is_self"
-                                    variant="destructive"
+                                    variant="verwijderen-zacht"
                                     size="sm"
                                     @click="remove(row)"
                                 >
@@ -246,6 +245,7 @@ const remove = (row: UserRow) => {
                                     </label>
 
                                     <Button
+                                        variant="bewerken"
                                         size="sm"
                                         :disabled="processing"
                                         @click="saveRoles(row)"

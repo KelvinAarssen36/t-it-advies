@@ -5,6 +5,7 @@ import AppContent from '@/components/AppContent.vue';
 import AppShell from '@/components/AppShell.vue';
 import AppSidebar from '@/components/AppSidebar.vue';
 import AppSidebarHeader from '@/components/AppSidebarHeader.vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import TwoFactorNudge from '@/components/TwoFactorNudge.vue';
 import WelcomeDialog from '@/components/WelcomeDialog.vue';
 import { Toaster } from '@/components/ui/sonner';
@@ -38,6 +39,14 @@ withDefaults(defineProps<Props>(), {
 
             <WelcomeDialog v-if="welcome" :first-name="welcome.firstName" />
         </AppContent>
+
+        <!--
+            Allebei één keer voor het hele portaal, want allebei horen ze bij
+            geen enkel scherm in het bijzonder: de meldingen komen uit de
+            gedeelde props, en het bevestigingsvenster wordt vanuit code
+            geopend met bevestig() uit lib/bevestiging.ts.
+        -->
         <Toaster />
+        <ConfirmDialog />
     </AppShell>
 </template>

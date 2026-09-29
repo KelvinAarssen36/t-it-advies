@@ -142,6 +142,28 @@ weten.
 `aria-label` mee. Een keuzeveld waarvan een schermlezer alleen de gekozen
 waarde voorleest, zegt niets over waar die waarde over gaat.
 
+### Zoeken in een lange lijst
+
+Vanaf ongeveer twaalf regels zet `BrandSelect` zelf een zoekveldje boven de
+lijst. Scrollen door een lijst waarvan je het antwoord al weet is werk dat
+de computer kan doen. Met `zoekbaar` zet je hem aan of uit los van dat
+aantal, en `zoek-tekst` verandert het opschrift.
+
+Drie dingen die daarbij geregeld moesten worden:
+
+- **De aandacht gaat bij het openen naar het zoekveld** in plaats van naar
+  de gekozen regel. Lukt dat niet, dan blijft reka-ui gewoon werken zoals
+  altijd -- pijltjes, en typen springt naar de eerste regel die met die
+  letter begint. De slechtste uitkomst is dus "je moet er eerst in
+  klikken", niet een kapot veld.
+- **Het zoekveld houdt de lettertoetsen zelf.** Reka-ui luistert op het
+  paneel mee om naar een regel te springen zodra je typt, en dat is precies
+  wat je niet wilt terwijl je in een zoekveld typt. De toetsen waarmee je
+  door de lijst beweegt en hem sluit gaan wél door.
+- **De gekozen optie blijft altijd staan**, ook als hij niet op de zoekterm
+  past. Reka-ui leest het opschrift van de knop af van het gekozen item;
+  verdwijnt dat uit de lijst, dan lijkt de keuze gewist.
+
 ### Hoe het veld in elkaar zit
 
 Het component stapelt zes onderdelen van reka-ui op elkaar. Ze doen allemaal
@@ -207,6 +229,52 @@ Reka-ui zet dat attribuut zowel bij de muis als bij de pijltjestoetsen, dus
 toetsenbord en muis krijgen dezelfde markering zonder twee regels die elkaar
 in de weg zitten.
 
+## De knop van een handeling
+
+Aanmaken, bewerken en verwijderen hebben elk een eigen kleur, en die staat
+in [huisstijl en kleuren](huisstijl-en-kleuren.md#de-drie-handelingen). Hier
+staat waar welke vorm heen gaat.
+
+In [`button/index.ts`](../../resources/js/components/ui/button/index.ts)
+staan daarvoor zes varianten: drie kleuren maal twee vormen. Ze heten net
+als `bevestigAanmaken` / `bevestigBewerken` / `bevestigVerwijderen` uit
+[`lib/bevestiging.ts`](../../resources/js/lib/bevestiging.ts), zodat de knop
+en zijn bevestiging dezelfde naam dragen.
+
+| Waar de knop staat                          | Vorm     | Voorbeeld                              |
+| ------------------------------------------- | -------- | -------------------------------------- |
+| Bovenaan een scherm, één per scherm         | vol      | "Nieuwe ervaring" -> `aanmaken`        |
+| De hoofdhandeling op een detailpagina       | vol      | "Bewerken" -> `bewerken`               |
+| De opslaan-knop in een venster              | vol      | `bewerkt ? 'bewerken' : 'aanmaken'`    |
+| De bevestigknop in `ConfirmDialog`          | vol      | volgt de `soort` van de vraag          |
+| In een tabelrij, naast tien soortgenoten    | `-zacht` | het potlood en de prullenbak in de rij |
+| Een tweede handeling naast een vollere knop | `-zacht` | de prullenbak naast "Bewerken"         |
+
+**De zachte vorm heeft in rust geen kader.** Hij is alleen zijn pictogram
+of zijn tekst, in de kleur van de handeling; bij het aanwijzen komt daar
+een zachte schijf in diezelfde kleur onder, met een dunne rand van binnen,
+en zwelt hij een paar procent aan. Dat gedrag staat één keer beschreven, in
+`.brand-knop-zacht` in [`app.css`](../../resources/css/app.css), en alle
+drie de kleuren lezen het via `--knop-kleur`. Verandert de hover, dan
+verandert hij overal tegelijk.
+
+Hier stond eerst een permanente rand met een getint vlak, dat bij het
+aanwijzen helemaal volliep. Dat was te veel van het goede: twee
+dichtgetimmerde vakjes achter elke tabelregel lezen als een waarschuwing,
+en het omslaan naar een vol vlak is een grote sprong voor een knop die je
+alleen maar aanwijst.
+
+**Waar het niet voor is.** Een knop die alleen iets in het formulier
+verandert en pas bij Opslaan echt iets doet, blijft `ghost` of `outline` --
+"Logo weghalen" in
+[`LogoKiezer.vue`](../../resources/js/components/LogoKiezer.vue) wist een
+gekozen bestand en niet een ervaring. Hetzelfde geldt voor de knoppen in de
+inlog- en tweestapsschermen: dat zijn geen handelingen op een item.
+"Annuleren" is overal `ghost`.
+
+**`variant="destructive"` blijft voor gevaarlijk-maar-geen-verwijdering**,
+zoals tweestapsverificatie uitzetten.
+
 ## De segmentknop
 
 [`SegmentToggle.vue`](../../resources/js/components/SegmentToggle.vue): een
@@ -260,6 +328,187 @@ Wat erin zit en waarom:
 licht en donker. Dat is met schade geleerd: de eerste versie stond met vaste
 donkere waarden in de code omdat hij alleen op de altijd donkere landing
 stond. Zodra hij in het portaal kwam was het een wit vlak op wit.
+
+## De schakelaar
+
+[`Switch`](../../resources/js/components/ui/switch/Switch.vue): een schuifje
+voor "aan of uit". Gebruikt op het indelingsscherm om een onderdeel van de
+website aan of uit te zetten.
+
+**Wanneer een schuifje en wanneer een vinkje.** Het verschil is niet
+cosmetisch. Een schuifje zegt: dit is een toestand, en die verandert. Een
+vinkje zegt: dit is een keuze die je aankruist en later opslaat. Zet je een
+schuifje neer voor iets dat pas bij "Opslaan" ingaat, dan verwacht de
+gebruiker dat het al gebeurd is.
+
+Op het indelingsscherm staat het schuifje daarom **uitgeschakeld** buiten de
+bewerkmodus in plaats van weggehaald: het is een toestand die je daar ziet
+en die je in de bewerkmodus kunt aanpassen. Weghalen zou bovendien de hele
+regel van breedte laten verspringen zodra je gaat bewerken, en dan schuift
+het scherm onder je muis weg.
+
+Net als het keuzeveld staat hij op de primitief van reka-ui en niet op een
+`<input type="checkbox">`, om de reden die hierboven bij `BrandSelect`
+staat: een inheems element laat zich niet volledig in de huisstijl zetten.
+
+## Het tekstvak
+
+[`Textarea`](../../resources/js/components/ui/textarea/Textarea.vue) deelt
+`brand-control` met het gewone invoerveld, zodat de rand, de hoek en de
+focusring uit één blok komen en niet uit elkaar lopen. Daar komt
+`brand-textarea` overheen voor de verticale ruimte: `brand-control` zet die
+op nul, want een invoerveld centreert zijn tekst op één regel.
+
+De schuifbalk krijgt `brand-scrollbar`. De systeemschuifbalk is grijs en
+vierkant, en die valt in een donker portaal meteen op.
+
+## Verplichte velden
+
+**Elk verplicht veld krijgt een sterretje bij zijn label.** Dat is een
+afspraak voor het hele project en niet iets dat je per scherm afweegt:
+velden zonder sterretje leest de klant als optioneel, dus een vergeten
+sterretje is geen schoonheidsfoutje maar onjuiste informatie.
+
+Het staat op één plek, als prop op het labelcomponent:
+
+```vue
+<Label for="role_nl" verplicht>{{ $t('Functie') }}</Label>
+```
+
+Zou je het tekentje met de hand achter de tekst typen, dan staat het er op
+het ene scherm wel en op het andere niet, en verschilt ook nog de opmaak.
+
+Het sterretje zelf is `aria-hidden`; een schermlezer krijgt het woord
+"(verplicht)" te horen. Zou het teken worden voorgelezen, dan hoor je
+"ster" achter elk veld en weet je nog niets.
+
+**Hoe je weet welke velden het zijn:** loop de `rules()` van de
+bijbehorende FormRequest langs en zet er een bij alles met `required`. Die
+twee horen niet uit elkaar te lopen.
+
+Eén grens, en hij volgt uit waar het sterretje voor is. Het beantwoordt de
+vraag "moet ik dit invullen?", en bij een keuzelijst die al een waarde
+heeft -- het pictogram bij een ervaring bijvoorbeeld -- is die vraag al
+beantwoord: leeglaten kan er niet eens. Zo'n veld is in de validatie wel
+`required` maar voor de klant niets om op te letten, en dan is een
+sterretje ruis. Het gaat om velden die hij zélf moet invullen.
+
+## Datum kiezen: een maandkiezer, geen datumveld
+
+Waar een maand en een jaar nodig zijn -- de periode van een ervaring --
+staat
+[`MaandKiezer`](../../resources/js/components/MaandKiezer.vue) en geen
+`<input type="month">`. Dat inheemse veld tekent zijn kalender met het
+besturingssysteem, precies het probleem dat hierboven bij `BrandSelect`
+staat beschreven. En het geeft ook nog eens een dag terug die hier niets
+betekent.
+
+Het is één knop met "maart 2021" erop. Erachter zit een paneel met een
+jaarkeuze en een raster van twaalf maanden; de waarde gaat als `"2021-03"`
+naar buiten. Hiervoor stonden er twee keuzelijsten per datum, en dus vier
+op één scherm -- dan moet je voor elke datum twee lijsten opentrekken om te
+zien wat er staat.
+
+**Dagen kun je niet kiezen, en dat is het punt.** Bij een loopbaan weet
+niemand meer op welke dag hij ergens begon. Een veld dat om die precisie
+vraagt en het antwoord daarna weggooit, is erger dan een veld dat er niet
+om vraagt.
+
+De maandnamen en de jaren komen van de **server** en niet uit `Intl` in de
+browser: anders hangt de taal van de lijst af van het besturingssysteem van
+de bezoeker in plaats van van de taal die hij in het portaal heeft gekozen.
+Zie [vertalingen](vertalingen.md#niet-in-de-browser).
+
+## Een bestand kiezen
+
+Het inheemse `<input type="file">` is niet te stylen -- de knop erin tekent
+de browser. Daarom staat het veld op `sr-only` en klikt een gewone
+`Button` het aan.
+
+**Niet met `display: none`.** Dan is het veld met het toetsenbord niet meer
+te bereiken en verdwijnt het uit de voorleesvolgorde. `sr-only` houdt het
+bruikbaar en haalt het alleen van het scherm.
+
+Ernaast staat een voorbeeld van wat je koos. Dat is een `blob:`-adres uit
+`URL.createObjectURL`, en dat moet je **teruggeven** met
+`URL.revokeObjectURL` zodra je het niet meer nodig hebt -- anders blijft
+het bestand in het geheugen staan zolang het tabblad open is, en bij een
+formulier waarin je een paar plaatjes uitprobeert loopt dat op.
+
+### Te groot? Dan verkleinen we het, en keuren we het niet af
+
+Een afgekeurd bestand is bijna altijd een afgekeurd bestand voor niets.
+Wat er bewaard wordt is een vierkantje van 256 bij 256, dus van een foto
+van acht megabyte blijft sowieso niets over. Toch hoorde de klant dat pas
+ná het uploaden, ná het invullen van het hele formulier en ná een klik op
+Opslaan -- op een telefoon een minuut wachten op een nee.
+
+[`lib/beeldmerk.ts`](../../resources/js/lib/beeldmerk.ts) doet dat werk nu
+in de browser, op het moment dat het bestand gekozen wordt:
+
+| Wat er aan de hand is                | Wat er gebeurt                                                                                             |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| Past binnen de grenzen               | Niets. Het bestand gaat ongewijzigd mee.                                                                   |
+| Te groot, of breder dan 3000 pixels  | Verkleind naar hoogstens 1600 pixels en opnieuw gecodeerd, met een regel erbij die zegt wat er gebeurd is. |
+| Kortste zijde onder de 48 pixels     | Afgekeurd. Verkleinen maakt dat erger en oprekken maakt van een logo een vlek.                             |
+| Zo langgerekt dat geen maat past     | Afgekeurd, met de uitleg dat het vakje vierkant is.                                                        |
+| Geen beeld dat de browser kan openen | Afgekeurd.                                                                                                 |
+
+**1600 pixels, en dat is geen willekeurig getal.** Het bewaarde vierkant
+is 256 en de klant mag vijf keer inzoomen, dus in de uiterste stand komt
+256 / 5 ≈ 52 pixel van het origineel in beeld. Met 1600 op de langste
+zijde blijft dat ook volledig ingezoomd scherp.
+
+**WebP als de browser het kan wegschrijven, anders PNG of JPEG.** Let op
+de valkuil: geef je `toBlob` een formaat dat de browser niet kent, dan
+krijg je stilletjes een PNG terug in plaats van een foutmelding -- en dan
+klopt de extensie van het bestand niet meer met de inhoud, en struikelt de
+`mimes`-regel op de server. Daarom vraagt de module vooraf of WebP kan, in
+plaats van achteraf te hopen.
+
+**De grenzen staan op twee plekken en moeten gelijk blijven.** De echte
+staat in [`config/media.php`](../../config/media.php); de browser heeft
+zijn eigen kopie, want die kan geen PHP lezen.
+[`LogoLimietenTest`](../../tests/Feature/Website/LogoLimietenTest.php)
+leest de getallen uit het TypeScript-bestand en legt ze naast de
+configuratie. Lopen ze uiteen, dan gaat het op de vervelendste manier mis:
+de browser verkleint netjes naar een maat die de server daarna weigert.
+
+Diezelfde test controleert ook dat PHP méér toestaat dan wij. Zie
+[deployment](../operations/deployment.md#de-php-instellingen-voor-uploads)
+voor wat de server moet toestaan; dat is de instelling die op gedeelde
+hosting het vaakst te krap staat.
+
+### Een beeld bijsnijden
+
+[`LogoKiezer`](../../resources/js/components/LogoKiezer.vue) is het veld
+voor een beeldmerk: een rond voorbeeld met een zoomschuif eronder, slepen
+om te verschuiven, en een schakelaar voor een witte ondergrond.
+
+**Waarom de klant het zelf doet.** Wat er binnenkomt is niet te
+voorspellen -- een liggend logo met de bedrijfsnaam ernaast, een vierkant
+beeldmerk met veel lucht eromheen, of gewoon een foto. Elke automatische
+regel gaat bij een van die drie mis: bijsnijden knipt de naam eraf,
+passend maken laat een foto met witranden staan. Dat is hier eerst allebei
+geprobeerd. Wie het beeld voor zich ziet, kiest in twee seconden wat wij
+niet kunnen raden.
+
+Twee dingen die daarbij kloppen moeten blijven:
+
+- **Het voorbeeld en de server rekenen hetzelfde.** Bij zoom 1 past de
+  langste zijde in het vierkant, en de verschuiving is in halve
+  vierkanten. Lopen die uiteen, dan krijgt de klant iets anders dan hij
+  instelde -- en dat merkt hij pas op de website.
+- **De achtergrond wordt in het bestand gebakken.** Daardoor is elk
+  opgeslagen beeld daarna een gewoon vierkant plaatje dat overal met
+  `object-fit: cover` getoond kan worden, zonder uitzondering voor "is dit
+  een logo of een foto". Zie `App\Support\Media\Uitsnede`.
+
+Een formulier met een bestand erin gaat als `FormData` de deur uit
+(`forceFormData: true`). Een wijziging gebruikt dan `POST` met
+`_method: 'put'`: Laravel leest die omweg alleen uit formuliergegevens en
+niet uit JSON. Zie
+[`ErvaringDialoog.vue`](../../resources/js/components/website/ErvaringDialoog.vue).
 
 ## Schuifbalken
 
@@ -357,15 +606,25 @@ vermijden.
 
 ## Bij een nieuw scherm
 
-1. Een keuze uit een lijst? `BrandSelect`, met `aria-label` als er geen
-   zichtbaar label naast staat.
-2. Een invoerveld? `Input`, die draagt `brand-control` al.
-3. Kan er iets schuiven binnen de pagina? `brand-scrollbar` erop, en de plek
+1. **Loop de `rules()` van de FormRequest langs en zet `verplicht` op het
+   label van elk veld met `required`.** Dit is de stap die het vaakst
+   wordt overgeslagen, en de enige waarbij de klant verkeerde informatie
+   krijgt als je hem vergeet.
+2. Een keuze uit een lijst? `BrandSelect`, met `aria-label` als er geen
+   zichtbaar label naast staat. Lange lijst? Dan zoekt hij vanzelf.
+3. Een maand en een jaar? `MaandKiezer`, met de lijsten van de server.
+4. Een invoerveld? `Input`, die draagt `brand-control` al.
+5. Een bestand? Het inheemse veld op `sr-only` achter een `Button`, en het
+   formulier als `FormData` versturen.
+6. Kan er iets schuiven binnen de pagina? `brand-scrollbar` erop, en de plek
    erbij in de tabel hierboven.
-4. Een kleur nodig die er niet is? Die komt in `:root` én in `.dark`, en in de
+7. Een kleur nodig die er niet is? Die komt in `:root` én in `.dark`, en in de
    tabel bovenaan dit document.
-5. Controleer beide thema's, en controleer met het toetsenbord dat de
-   focusring zichtbaar is en dat de lijst met de pijltjes te bedienen is.
+8. Maakt, wijzigt of verwijdert een knop iets? Dan krijgt hij de variant
+   van zijn handeling, niet de standaardknop. Zie hierboven.
+9. Gaat een link naar de publieke site? Dan hoort `VerlaatPortaal` erachter.
+10. Controleer beide thema's, en controleer met het toetsenbord dat de
+    focusring zichtbaar is en dat de lijst met de pijltjes te bedienen is.
 
 Zie ook [huisstijl en kleuren](huisstijl-en-kleuren.md) voor het palet zelf en
 [frontend en animatie](frontend-en-animatie.md) voor de rest van de

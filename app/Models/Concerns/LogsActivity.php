@@ -84,10 +84,16 @@ trait LogsActivity
     /**
      * Velden die niet in het logboek horen.
      *
-     * Voor technische kolommen die niemand iets zeggen, zoals een
-     * sorteervolgorde die bij elke sleepactie verandert. **Niet** voor
-     * gevoelige waarden: die worden sowieso geschoond door ActivityLogger,
-     * en daar hoort dit geen tweede, vergeetbare grendel voor te zijn.
+     * Voor technische kolommen die niemand iets zeggen -- een cachesleutel,
+     * een afgeleide waarde die je toch opnieuw kunt uitrekenen. **Niet**
+     * voor gevoelige waarden: die worden sowieso geschoond door
+     * ActivityLogger, en daar hoort dit geen tweede, vergeetbare grendel
+     * voor te zijn.
+     *
+     * Let op dat "technisch" iets anders is dan "een getal". De positie van
+     * een sectie op de landingspagina staat er bijvoorbeeld bewust wél in:
+     * dat een onderdeel van plek is verschoven, is precies het soort
+     * verandering dat je een half jaar later wilt kunnen terugzien.
      *
      * @return array<int, string>
      */

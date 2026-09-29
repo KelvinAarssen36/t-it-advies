@@ -132,11 +132,27 @@ geldt dus onverkort, en
 [`ActivityLoggerTest`](../../tests/Feature/Activity/ActivityLoggerTest.php)
 bewaakt hem.
 
+### Een verplaatsing telt als wijziging
+
+De volgorde van de onderdelen op de landingspagina staat in het logboek, en
+dat is een keuze geweest. Schuif je iets van plek 3 naar plek 1, dan
+verschuiven er drie onderdelen en komen er dus drie regels. Dat is niet te
+veel, want het is precies wat er gebeurd is -- en dat een sectie ineens
+ergens anders staat, is het soort verandering dat je een half jaar later wilt
+kunnen terugzien.
+
+`activityHidden()` is dus **niet** bedoeld voor "een getal dat vaak
+verandert", maar voor wat niemand iets zegt: een cachesleutel, een
+afgeleide waarde. Zie [pagina-indeling](../architecture/pagina-indeling.md).
+
 ## Wat er níet in komt
 
 - **Een opslag zonder wijziging.** Alleen een tijdstempel die opschuift is
   geen wijziging; zonder die grens vult het logboek zich met lege regels
   waarin de echte verdwijnen.
+- **Het zaaien van de database.** `PageSectionSeeder` draait met
+  `WithoutModelEvents`: dat de onderdelen bij een deploy worden aangevuld is
+  geen handeling van de eigenaar en hoort niet in zíjn logboek.
 - **`created_at`, `updated_at` en `remember_token`.** Die veranderen bij elke
   opslag en zeggen niets.
 - **Het IP-adres bij een commando.** In een geplande taak is er geen

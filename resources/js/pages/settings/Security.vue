@@ -63,7 +63,7 @@ defineOptions({
             v-slot="{ errors, processing }"
         >
             <div class="grid gap-2">
-                <Label for="current_password">
+                <Label for="current_password" verplicht>
                     {{ $t('Huidig wachtwoord') }}
                 </Label>
                 <PasswordInput
@@ -77,7 +77,9 @@ defineOptions({
             </div>
 
             <div class="grid gap-2">
-                <Label for="password">{{ $t('Nieuw wachtwoord') }}</Label>
+                <Label for="password" verplicht>{{
+                    $t('Nieuw wachtwoord')
+                }}</Label>
                 <PasswordInput
                     id="password"
                     name="password"
@@ -90,7 +92,7 @@ defineOptions({
             </div>
 
             <div class="grid gap-2">
-                <Label for="password_confirmation">
+                <Label for="password_confirmation" verplicht>
                     {{ $t('Herhaal het wachtwoord') }}
                 </Label>
                 <PasswordInput
@@ -106,6 +108,7 @@ defineOptions({
 
             <div class="flex items-center gap-4">
                 <Button
+                    variant="bewerken"
                     :disabled="processing"
                     data-test="update-password-button"
                 >

@@ -5,9 +5,9 @@ Het `User`-model gebruikt de trait `HasRoles`.
 
 ## Eén recht, één rol
 
-| Recht           | Geeft toegang tot                                                                                                     |
-| --------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `manage portal` | Het hele beheergedeelte: `/admin`, `/admin/activiteit`, `/admin/mail`, `/admin/security`, `/admin/users` en `/pulse`. |
+| Recht           | Geeft toegang tot                                                                                                                                         |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `manage portal` | Alles achter de inlog: `/website`, het hele beheergedeelte (`/admin`, `/admin/activiteit`, `/admin/mail`, `/admin/security`, `/admin/users`) en `/pulse`. |
 
 | Rol     | Rechten         |
 | ------- | --------------- |

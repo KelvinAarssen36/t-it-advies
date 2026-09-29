@@ -52,7 +52,9 @@ defineOptions({
     >
         <div class="space-y-6">
             <div class="grid gap-2">
-                <Label htmlFor="password">{{ $t('Wachtwoord') }}</Label>
+                <Label htmlFor="password" verplicht>{{
+                    $t('Wachtwoord')
+                }}</Label>
                 <PasswordInput
                     id="password"
                     name="password"

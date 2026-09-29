@@ -3,6 +3,7 @@
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FallbackController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\Portal\SiteEntryController;
 use App\Http\Controllers\Security\ConfirmTwoFactorController;
@@ -17,7 +18,11 @@ use Spatie\Honeypot\ProtectAgainstSpam;
 |--------------------------------------------------------------------------
 */
 
-Route::inertia('/', 'Welcome')->name('home');
+/*
+ * De landingspagina. Hier stond `Route::inertia`, maar de pagina haalt nu
+ * de volgorde van zijn onderdelen uit de database; zie HomeController.
+ */
+Route::get('/', HomeController::class)->name('home');
 
 /*
  * Van taal wisselen. Open voor iedereen, want de publieke site moet ook
@@ -90,6 +95,7 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/settings.php';
+require __DIR__.'/website.php';
 require __DIR__.'/admin.php';
 require __DIR__.'/webhooks.php';
 

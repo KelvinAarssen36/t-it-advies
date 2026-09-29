@@ -146,9 +146,8 @@ class ActivityLogger
      *
      * Naast de vaste lijst mag een model zelf velden uitsluiten met
      * `activityHidden()`. Dat is voor wat technisch is en niemand iets zegt
-     * -- een sorteervolgorde die bij elke sleepactie verandert, een
-     * cachesleutel -- en niet voor gevoelige waarden: die worden hoe dan ook
-     * geschoond.
+     * -- een cachesleutel, een afgeleide waarde -- en niet voor gevoelige
+     * waarden: die worden hoe dan ook geschoond.
      */
     private function slaOver(Model $subject, string $veld): bool
     {

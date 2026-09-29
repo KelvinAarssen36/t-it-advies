@@ -4,14 +4,19 @@ De werkafspraken voor dit project staan in [`AGENTS.md`](AGENTS.md). Lees dat
 bestand voordat je iets wijzigt; er is bewust één bron voor alle
 AI-assistenten.
 
-De drie regels die je in elk geval moet kennen:
+De vier regels die je in elk geval moet kennen:
 
 1. **Documentatie gaat mee met de code.** Bij iedere wijziging bepaal je zelf
    welke Markdown in `docs/` moet worden toegevoegd of bijgewerkt, en je doet
    dat in dezelfde wijziging.
-2. **Nooit geheimen vastleggen.** Geen wachtwoord, TOTP-code, recovery code,
+2. **De klant krijgt zijn eigen uitleg.** Elk afgerond onderdeel krijgt óók
+   een kaart in de handleiding in het portaal,
+   [`settings/Documentatie.vue`](resources/js/pages/settings/Documentatie.vue),
+   in diezelfde wijziging. `docs/` is voor ons; die pagina is voor hem. Zie
+   [`docs/architecture/uitleg-voor-de-eigenaar.md`](docs/architecture/uitleg-voor-de-eigenaar.md).
+3. **Nooit geheimen vastleggen.** Geen wachtwoord, TOTP-code, recovery code,
    secret of token in een log, test, foutmelding of document.
-3. **Elke CRUD krijgt tests.** Een beheerscherm waarmee de klant iets
+4. **Elke CRUD krijgt tests.** Een beheerscherm waarmee de klant iets
    aanmaakt, wijzigt of verwijdert is niet af zonder tests. De lijst van wat
    die moeten afdekken staat in
    [`docs/development/testen.md`](docs/development/testen.md).

@@ -9,6 +9,13 @@ Er is geen aparte frontend-server en geen losse API nodig.
 - PHP 8.3 of hoger (lokaal 8.5, CI draait op 8.3), met de gebruikelijke extensies (`bcmath`, `ctype`,
   `curl`, `dom`, `fileinfo`, `json`, `mbstring`, `openssl`, `pcre`, `pdo`,
   `pdo_mysql`, `tokenizer`, `xml`)
+- **`gd`**, voor het verkleinen van geüploade logo's. Ontbreekt hij, dan
+  blijft het beheerscherm werken maar wordt een logo opgeslagen zoals het
+  binnenkwam -- en downloadt elke bezoeker dat hele bestand. Zie
+  [de ervaringsmodule](../architecture/modules/ervaring.md#het-logo).
+- Voor uploads: `upload_max_filesize` en `post_max_size`. Zie
+  [de PHP-instellingen voor uploads](#de-php-instellingen-voor-uploads)
+  hieronder; dit is de instelling die het vaakst fout staat.
 - MySQL 8
 - Node (alleen om te bouwen; de server hoeft Node niet te draaien)
 - Een **queue worker** die blijft draaien
@@ -16,6 +23,76 @@ Er is geen aparte frontend-server en geen losse API nodig.
 
 Die laatste twee worden het vaakst vergeten. Zonder worker wordt er geen mail
 verstuurd.
+
+## De PHP-instellingen voor uploads
+
+De klant uploadt logo's, en daar gaan drie PHP-instellingen over. Staan ze
+verkeerd, dan is dat niet zichtbaar als een foutmelding maar als een
+formulier dat niets doet -- PHP kapt het verzoek af vóórdat Laravel eraan
+toekomt, dus er is geen bestand om over te klagen.
+
+| Instelling            | Minimaal | Aanbevolen | Waarom                                                             |
+| --------------------- | -------- | ---------- | ------------------------------------------------------------------ |
+| `upload_max_filesize` | 2M       | **8M**     | Moet **boven** `media.logo.max_kb` (1,5 MB) liggen, niet erop.     |
+| `post_max_size`       | 8M       | **12M**    | Geldt voor het hele formulier, dus bestand plus beide talen tekst. |
+| `memory_limit`        | 128M     | **256M**   | GD pakt een beeld uit in het geheugen: vier bytes per beeldpunt.   |
+
+**De grens in de applicatie staat bewust op anderhalve megabyte**
+(`MEDIA_LOGO_MAX_KB` in `config/media.php`). Dat is geen zuinigheid maar
+een keuze voor gedeelde hosting: die staat vaak standaard op
+`upload_max_filesize = 2M`, en dan past onze grens er nog net onder. Zou
+hij er gelijk aan zijn, dan is een bestand op de grens al te groot voor PHP
+terwijl onze eigen regel hem nog goedkeurt -- precies het geval waarin de
+klant een fout krijgt die nergens beschreven staat.
+
+Ruimer hoeft ook niet. Wat er bewaard wordt is een vierkantje van 256 bij
+256, in de praktijk tien tot dertig kilobyte, en de browser verkleint een
+te groot beeld al vóór het versturen (zie
+[formulieren](../architecture/formulieren-en-schuifbalken.md#een-bestand-kiezen)).
+Wat er binnenkomt is normaal gesproken een paar honderd kilobyte.
+Anderhalve megabyte is het vangnet, niet de gewone gang van zaken.
+
+`memory_limit` is de enige die met de afmetingen te maken heeft en niet met
+de bestandsgrootte. Een beeld van 3000 bij 3000 -- onze bovengrens -- kost
+GD zo'n 36 MB, en er staat er even meer dan één tegelijk in het geheugen.
+Met 256M is er ruimte over; met 128M gaat het bij het uiterste geval net
+goed en heb je geen marge.
+
+### Op Strato
+
+Op de gedeelde pakketten van Strato zet je dit niet in een `php.ini` van
+jezelf. Twee wegen, en de eerste heeft de voorkeur:
+
+1. **In het klantenmenu**, onder de PHP-instellingen van het pakket. Daar
+   staan `upload_max_filesize`, `post_max_size` en `memory_limit` als
+   velden die je gewoon invult.
+2. **Een `.user.ini`** in de webroot -- dus naast `index.php`, in `public/`
+   en niet in de hoofdmap van het project:
+
+    ```ini
+    upload_max_filesize = 8M
+    post_max_size = 12M
+    memory_limit = 256M
+    ```
+
+    Let op: PHP leest dat bestand niet bij elk verzoek opnieuw. Standaard
+    duurt het tot vijf minuten voordat een wijziging meetelt, dus meet niet
+    meteen en concludeer niet te snel dat het niet werkt.
+
+**Controleer het na de deploy**, en niet op je woord:
+
+```bash
+php -r 'echo ini_get("upload_max_filesize"), " ", ini_get("post_max_size"), " ", ini_get("memory_limit"), PHP_EOL;'
+```
+
+De CLI van PHP kan andere instellingen hebben dan de webserver. Twijfel je,
+zet dan tijdelijk een `phpinfo()` in de webroot en kijk naar de kolom
+"Local Value" -- en haal hem daarna meteen weg.
+
+[`LogoLimietenTest`](../../tests/Feature/Website/LogoLimietenTest.php)
+controleert de verhouding tussen deze instellingen en `config/media.php`,
+maar draait op de PHP van je testomgeving. Hij bewaakt dus dat de getallen
+kloppen, niet dat de productieserver goed staat. Dat blijft deze controle.
 
 ## Deploystappen
 
@@ -125,10 +202,25 @@ webhook-endpoint alles. Dat is geen storing maar het ontwerp: zie
 6. HTTPS afdwingen. De applicatie doet dat zelf al in productie
    (`URL::forceScheme('https')`), maar de webserver hoort ook te redirecten.
 7. `APP_DEBUG=false` controleren.
-8. `SECURITY_ALERT_ADDRESS` zetten en de cronregel voor de scheduler
+8. **De PHP-instellingen voor uploads nalopen** en het resultaat meten met
+   het commando hierboven. Op Strato staat `upload_max_filesize` standaard
+   krap; laat je dat staan, dan kan de klant zijn logo niet kwijt en ziet
+   hij niet waarom.
+9. `SECURITY_ALERT_ADDRESS` zetten en de cronregel voor de scheduler
    aanzetten. Zonder die twee logt de applicatie wel alles, maar krijgt
    niemand ooit bericht. Controleer het met
    `php artisan security:report --force --window=10080`.
+10. **`TRANSLATE_EMAIL` zetten.** Zonder dat adres telt de vertaaldienst het
+    dagtegoed per **IP-adres**, en op gedeelde hosting deel je dat met alle
+    andere sites op die server -- dan kan het tegoed op zijn zonder dat er
+    bij ons iemand op de knop heeft gedrukt. Mét adres telt hij per adres,
+    en is het tegoed bovendien tien keer zo hoog. Zie
+    [automatisch vertalen](../architecture/automatisch-vertalen.md).
+11. **Controleer of de server naar buiten mag** (uitgaand https). Sommige
+    hostingpakketten staan dat niet toe. Kan het niet, dan blijft alles
+    werken -- de knop geeft dan netjes een foutmelding -- maar zet hem dan
+    liever uit met `TRANSLATE_ENABLED=false`, zodat hij niet elke keer
+    teleurstelt.
 
 ## Draait het achter een proxy of load balancer
 

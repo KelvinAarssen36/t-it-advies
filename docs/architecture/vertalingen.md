@@ -3,10 +3,11 @@
 De site en het portaal zijn tweetalig: Nederlands en Engels. Nederlands is
 de standaard.
 
-> **Stand van zaken.** Het fundament en de drie wisselknoppen staan en zijn
-> getest. De teksten zelf zijn nog grotendeels Nederlands in de code; die
-> verhuizen naar de taalbestanden zodra we daaraan toe zijn. Het plan voor
-> inhoud die de klant zelf invoert staat onderaan en is nog niet gebouwd.
+> **Stand van zaken.** Het fundament, de drie wisselknoppen en de
+> vertaallaag van de frontend staan en zijn getest. Inhoud die de klant
+> zelf invoert is tweetalig sinds de eerste module, inclusief een knop om
+> het [automatisch te laten vertalen](automatisch-vertalen.md). Alleen de
+> 2FA-schermen staan nog met vaste Nederlandse tekst in het sjabloon.
 
 ## Eén plek beslist
 
@@ -87,6 +88,25 @@ Allebei lezen ze de huidige taal uit de gedeelde Inertia-props (`locale` en
 `locales`) en niet uit een eigen toestand. De server beslist; de knop vraagt
 het alleen.
 
+## Let op de meegeleverde componenten
+
+De onderdelen in `components/ui/` komen uit shadcn en zijn **Engels
+geleverd**. Die teksten vallen niet op, want ze staan vaak in een
+`sr-only`, een `aria-label` of een `title` -- en dan zie je ze pas als je
+met een schermlezer werkt of ergens met je muis blijft hangen.
+
+In de zijbalk stonden er drie: "Toggle sidebar" als naam van de
+inklapknop, datzelfde als zichtbare tooltip op de rail, en "Displays the
+mobile sidebar" als omschrijving van het uitschuifmenu op een telefoon.
+Allemaal midden in een Nederlands portaal.
+
+**Neem zo'n component dus niet ongezien over.** Loop hem na op
+`sr-only`, `aria-label`, `title`, `alt` en `placeholder`, en zet er `$t()`
+omheen. De test in
+[`TranslationsTest`](../../tests/Feature/TranslationsTest.php) vindt de
+sleutel dan vanzelf en klaagt als hij nog niet in `lang/en.json` staat --
+maar hij kan niet zien wat je bent vergeten te vertalen.
+
 ## De segmentknop
 
 [`site/LocaleToggle.vue`](../../resources/js/components/site/LocaleToggle.vue).
@@ -139,11 +159,12 @@ die niemand nodig heeft. In Nederland komt de dag eerst.
 Alles loopt daarom via [`App\Support\Datum`](../../app/Support/Datum.php),
 met drie vormen:
 
-| Aanroep             | Nederlands            | Engels               | Waarvoor                        |
-| ------------------- | --------------------- | -------------------- | ------------------------------- |
-| `Datum::tijdstip()` | `28 sep. 2026, 10:14` | `28 Sep 2026, 10:14` | Een regel in een logboek.       |
-| `Datum::dag()`      | `28 sep. 2026`        | `28 Sep 2026`        | Iets dat een dag betreft.       |
-| `Datum::geleden()`  | `2 uur geleden`       | `2 hours ago`        | Meestal wat je écht wilt weten. |
+| Aanroep             | Nederlands            | Engels               | Waarvoor                                      |
+| ------------------- | --------------------- | -------------------- | --------------------------------------------- |
+| `Datum::tijdstip()` | `28 sep. 2026, 10:14` | `28 Sep 2026, 10:14` | Een regel in een logboek.                     |
+| `Datum::dag()`      | `28 sep. 2026`        | `28 Sep 2026`        | Iets dat een dag betreft.                     |
+| `Datum::maand()`    | `mrt. 2021`           | `Mar 2021`           | Een periode zonder dag, zoals op de tijdlijn. |
+| `Datum::geleden()`  | `2 uur geleden`       | `2 hours ago`        | Meestal wat je écht wilt weten.               |
 
 **De maand staat er met letters, in allebei de talen.** `28-09-2026` is voor
 een Nederlander duidelijk, maar een Engelstalige leest daar gemakkelijk een
@@ -346,45 +367,59 @@ nog klopt, of dat de taalcode eerlijker is.
 
 ## Wat er nog moet gebeuren
 
-### De vaste teksten
+### De laatste vaste teksten
 
-De meeste teksten staan nu als Nederlands in de Vue-componenten. Die moeten
-door een vertaallaag heen. Twee wegen:
+De vertaallaag voor de frontend staat -- zelf gedaan, met de woordenlijst
+als prop via Inertia en de kleine helper in
+[`lib/i18n.ts`](../../resources/js/lib/i18n.ts). Wat er nog niet doorheen
+is, zijn de 2FA-schermen: ongeveer 33 regels over zeven bestanden. Dat
+staat als open punt in [wat er nog open staat](../openstaand.md), inclusief
+de blinde vlek waardoor `TranslationsTest` ze niet ziet.
 
-- **Een pakket**, bijvoorbeeld `laravel-vue-i18n`, dat de bestanden uit
-  `lang/` naar de frontend brengt zodat je daar ook `__()` kunt schrijven.
-- **Zelf doen**: de vertalingen als prop meegeven via Inertia en een kleine
-  eigen helper.
+## De inhoud die de klant invoert
 
-Het eerste is minder werk en beter onderhouden. Kies dat pas als we de
-teksten daadwerkelijk gaan omzetten, en leg de keuze vast in
-[het beslislogboek](../decisions/README.md).
+Dit deel is er, sinds de eerste module. Hoe het werkt staat in
+[automatisch vertalen](automatisch-vertalen.md); hieronder alleen de drie
+regels die voor **elke volgende module** gelden.
 
-### De inhoud die de klant invoert
+### Een kolom per taal
 
-Dit is het deel dat met de CRUD's meekomt, en het plan is:
+`role_nl` en `role_en`, en niet een JSON-kolom of een vertaaltabel. Saai en
+expres: je kunt er gewoon op valideren, op zoeken en op sorteren, en het
+formulier met twee stappen volgt er vanzelf uit.
 
-De klant vult een item in -- een dienst, een tijdlijnpunt -- in het
-Nederlands. Klikt hij door, dan volgt **een tweede stap**: "en nu de Engelse
-teksten". Daar staan dezelfde velden, maar dan voor het Engels.
+De Engelse kolom mag leeg zijn. Een item dat nog niet vertaald is, hoort
+te bestaan.
 
-Vult hij die niet in, dan wordt de tekst **automatisch vertaald**, en
-krijgt hij daar een duidelijke waarschuwing bij. Automatisch vertaald Engels
-is beter dan geen Engels, maar de klant moet weten dat het er staat en dat
-het niet zijn eigen woorden zijn.
+### Wat wel en niet vertaalbaar is
 
-Wat daarbij nog beslist moet worden:
+| Soort veld                          | Hoe                                                                    |
+| ----------------------------------- | ---------------------------------------------------------------------- |
+| Vrije tekst van de klant            | Twee kolommen.                                                         |
+| Een eigennaam (bedrijf, product)    | **Eén** kolom. "Van der Valk" vertaal je niet.                         |
+| Een vaste keuze (fulltime, hybride) | Eén kolom met een enum, en die enum vertaalt zich centraal met `__()`. |
 
-- **Waar de vertaling vandaan komt.** Een vertaaldienst kost geld per teken
-  en is een externe afhankelijkheid; dat is een beslissing voor het
-  beslislogboek, niet iets om er stilletijn in te schuiven.
-- **Hoe je ziet dat iets automatisch vertaald is.** In de database hoort
-  daar een vlag bij, zodat het overzicht kan tonen wat nog nagelopen moet
-  worden.
-- **Hoe het wordt opgeslagen.** Kolommen per taal (`titel_nl`, `titel_en`)
-  zijn het voorstel: saai, makkelijk te valideren, en het formulier met twee
-  tabbladen volgt er vanzelf uit.
+Die laatste scheelt de klant het meeste werk: hij typt "Fulltime" niet vijf
+keer en daarna nog eens vijf keer in het Engels, en het Engels blijft
+consistent.
 
-Zodra de eerste CRUD er is, hoort daar een test bij die bewijst dat beide
-talen worden opgeslagen en teruggegeven. Zie
-[testen](../development/testen.md).
+### Wat er gebeurt als het Engels ontbreekt
+
+Twee regels, en ze horen op het **model** thuis en niet in de
+Vue-componenten. Welk veld terugvalt is een inhoudelijke keuze en geen
+opmaak; zou elk scherm dat zelf beslissen, dan staat er vroeg of laat half
+Nederlands op een Engelse pagina.
+
+| Veld          | Engels leeg                                                    |
+| ------------- | -------------------------------------------------------------- |
+| **Verplicht** | Terugvallen op het Nederlands. Een kaart zonder titel is stuk. |
+| **Optioneel** | Weglaten. Half Nederlands is slordiger dan niets.              |
+
+Zie [`Experience`](../../app/Models/Experience.php) voor het eerste
+voorbeeld, en [de module zelf](modules/ervaring.md) voor de uitwerking.
+
+### En een test erbij
+
+Elke module die tweetalige inhoud opslaat, krijgt een test die bewijst dat
+**beide** talen worden bewaard én teruggegeven, en dat de terugval klopt.
+Zie [testen](../development/testen.md).

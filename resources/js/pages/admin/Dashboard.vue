@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
+import { Mail, ShieldAlert } from '@lucide/vue';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { dashboard } from '@/routes/admin';
 import mail from '@/routes/admin/mail';
@@ -150,13 +152,30 @@ defineOptions({
             </CardContent>
         </Card>
 
-        <div class="flex gap-4 text-sm">
-            <Link :href="security.index()" class="underline underline-offset-4">
-                {{ $t('Volledig beveiligingslogboek') }}
-            </Link>
-            <Link :href="mail.index()" class="underline underline-offset-4">
-                {{ $t('Mailoverzicht') }}
-            </Link>
+        <!--
+            Doorverwijzingen naar de twee logboeken waarvan hierboven een
+            samenvatting staat. Dezelfde vorm als elders in het portaal:
+            een knop met de rand, een pictogram vooraan en `gap-2`. Het
+            waren onderstreepte tekstlinks, en die lazen als voetnoot
+            terwijl het de enige weg naar die schermen is.
+
+            De pictogrammen zijn dezelfde als in de zijbalk, zodat je aan
+            het teken al ziet waar je heen gaat.
+        -->
+        <div class="flex flex-wrap gap-2">
+            <Button variant="outline" as-child class="gap-2">
+                <Link :href="security.index()">
+                    <ShieldAlert class="size-4" />
+                    {{ $t('Volledig beveiligingslogboek') }}
+                </Link>
+            </Button>
+
+            <Button variant="outline" as-child class="gap-2">
+                <Link :href="mail.index()">
+                    <Mail class="size-4" />
+                    {{ $t('Mailoverzicht') }}
+                </Link>
+            </Button>
         </div>
     </div>
 </template>

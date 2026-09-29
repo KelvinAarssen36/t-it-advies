@@ -48,6 +48,19 @@ class Datum
     }
 
     /**
+     * Alleen de maand en het jaar: "mrt 2021".
+     *
+     * Voor een periode waarvan de dag niet is ingevuld en ook niets zou
+     * betekenen -- een ervaring op de tijdlijn bijvoorbeeld. Er staat een
+     * dag in de database omdat een datumkolom die nodig heeft, maar die
+     * hier tonen zou een precisie suggereren die er niet is.
+     */
+    public static function maand(?CarbonInterface $datum): ?string
+    {
+        return $datum?->isoFormat('MMM YYYY');
+    }
+
+    /**
      * Hoe lang geleden: "2 uur geleden".
      *
      * Dit is meestal wat je écht wilt weten, en het exacte tijdstip is de

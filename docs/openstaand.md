@@ -9,21 +9,6 @@ erin leest niemand meer.
 
 ## Voor de eerste module
 
-### Het bevestigingsvenster
-
-De afspraak is: een bestaand item bewerken geeft **twee** meldingen -- eerst
-"Weet je zeker dat je dit wilt aanpassen?", daarna "Weet je het 100% zeker?
-Dit staat direct live op de website." Aanmaken en verwijderen geven er één.
-En ze horen er verzorgd uit te zien, in het kleurenpalet.
-
-Dat bestaat nog niet. De enige bevestiging in de applicatie staat in
-[`Users.vue`](../resources/js/pages/admin/Users.vue) en is
-`window.confirm()` -- het grijze systeemvenster van de browser.
-
-**Waarom dit vóór de eerste module moet:** elke CRUD gaat het gebruiken. Doe
-je het erna, dan bouw je het drie keer los en moet je het daarna
-samenvoegen.
-
 ### Het dashboard
 
 Nog vier vlakken met een streepjespatroon. Er hoort in elk geval een klok in
@@ -52,6 +37,23 @@ glipt erdoorheen. Die blinde vlek is op zichzelf iets om op te lossen.
 
 Bewust uitgesteld: die teksten worden inhoud die de klant zelf beheert, en
 daarvoor geldt het plan in [vertalingen](architecture/vertalingen.md).
+
+### De inhoud van de overige onderdelen beheerbaar maken
+
+De [ervaring](architecture/modules/ervaring.md) is af. De kop, de diensten
+en de werkwijze staan nog in hun Vue-component; elk daarvan is een module
+op zich, en de vier stappen ernaartoe staan in
+[pagina-indeling](architecture/pagina-indeling.md).
+
+Zolang dat zo is, staat er op het indelingsscherm bij die onderdelen "Nog
+niet te beheren".
+
+Wie het bewerkvenster van de indeling met Escape sluit, verliest zijn
+wijzigingen zonder melding. Bewust nog niet gebouwd: het venster is een
+afgebakende handeling met een zichtbare knop "Annuleren", en een
+bevestiging om een bevestiging heen maakt het niet veiliger. Zodra er meer
+schermen met een bewerkvenster zijn en de inhoud er zwaarder in wordt, is
+het de moeite waard om het één keer goed te doen.
 
 ### Een sitemap
 

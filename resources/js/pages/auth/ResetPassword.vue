@@ -36,7 +36,7 @@ const inputEmail = ref(props.email);
     >
         <div class="grid gap-6">
             <div class="grid gap-2">
-                <Label for="email">{{ $t('E-mailadres') }}</Label>
+                <Label for="email" verplicht>{{ $t('E-mailadres') }}</Label>
                 <Input
                     id="email"
                     type="email"
@@ -50,7 +50,7 @@ const inputEmail = ref(props.email);
             </div>
 
             <div class="grid gap-2">
-                <Label for="password">{{ $t('Wachtwoord') }}</Label>
+                <Label for="password" verplicht>{{ $t('Wachtwoord') }}</Label>
                 <PasswordInput
                     id="password"
                     name="password"
@@ -64,7 +64,7 @@ const inputEmail = ref(props.email);
             </div>
 
             <div class="grid gap-2">
-                <Label for="password_confirmation">
+                <Label for="password_confirmation" verplicht>
                     {{ $t('Herhaal het wachtwoord') }}
                 </Label>
                 <PasswordInput

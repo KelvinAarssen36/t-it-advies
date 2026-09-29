@@ -50,10 +50,21 @@ Nieuw op dit project? Lees in deze volgorde:
 - [Frontend en animatie](architecture/frontend-en-animatie.md) -- Inertia, Vue, Tailwind, GSAP, Lenis, en wanneer wel of geen Three.js.
 - [Huisstijl en kleuren](architecture/huisstijl-en-kleuren.md) -- het kleurenpalet, de gradients, en hoe die in de Tailwind-tokens landen.
 - [Formulieren en schuifbalken](architecture/formulieren-en-schuifbalken.md) -- de standaard voor keuzevelden en schuifbalken in het portaal.
-- [Meldingen](architecture/meldingen.md) -- de berichtjes rechtsonder, en waarom je aan de kleur ziet wat er gebeurde.
+- [Pagina-indeling](architecture/pagina-indeling.md) -- hoe de klant de volgorde van de landing bepaalt, en hoe je er een onderdeel bij bouwt.
+- [Meldingen](architecture/meldingen.md) -- de berichtjes rechtsonder, het bevestigingsvenster, en waarom je aan de kleur ziet wat er gebeurde.
 - [Foutpagina's](architecture/foutpaginas.md) -- wat je ziet als er iets misgaat, en waarom portaal en landing verschillen.
 - [Vertalingen](architecture/vertalingen.md) -- Nederlands en Engels, waar de taal vandaan komt en hoe je wisselt.
+- [Automatisch vertalen](architecture/automatisch-vertalen.md) -- de knop waarmee de klant zijn Engelse tekst laat voorschrijven, en wat er gebeurt als dat misgaat.
 - [Mail en queues](architecture/mail-en-queues.md) -- verzending, provider, webhooks en het mailoverzicht.
+- [De handleiding voor de eigenaar](architecture/uitleg-voor-de-eigenaar.md) -- de uitlegpagina in het portaal, en de afspraak dat elk afgerond onderdeel daar een kaart krijgt.
+
+## Modules
+
+De onderdelen waarmee de klant zijn website vult. Wil je er een bijbouwen,
+lees dan eerst [pagina-indeling](architecture/pagina-indeling.md) -- daar
+staan de vijf stappen -- en daarna een bestaande module als voorbeeld.
+
+- [Ervaring](architecture/modules/ervaring.md) -- de tijdlijn met functies en organisaties. De eerste module, en daarmee het voorbeeld voor de volgende.
 
 ## Beveiliging
 

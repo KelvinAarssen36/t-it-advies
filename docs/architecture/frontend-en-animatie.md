@@ -33,6 +33,15 @@ ophaalt.
 | `components/site/SectionHeading.vue` | Bovenschrift, titel en inleiding.                       |
 | `components/site/FeatureCard.vue`    | Kaart op donker, met glow op hover.                     |
 | `components/site/ScrollProgress.vue` | De voortgangsbalk bovenaan.                             |
+| `components/site/sections/`          | De onderdelen zelf: kop, diensten, werkwijze, contact.  |
+
+**De landingspagina bepaalt niet meer welke onderdelen er staan.** Dat doet
+de klant, in het portaal. `Welcome.vue` is een `v-for` over de sleutels die
+de server meegeeft, met een getypte kaart van sleutel naar component; de kop
+staat er los boven omdat die niet te verslepen is. Wil je er een onderdeel
+bij, lees dan [pagina-indeling](pagina-indeling.md) -- een component
+toevoegen zonder de vier stappen daar levert een sectie op die nergens
+verschijnt.
 
 Daarnaast zijn er componenten die op beide helften worden gebruikt, zoals
 [`CopyButton.vue`](../../resources/js/components/CopyButton.vue) voor alles
@@ -71,14 +80,111 @@ gebruik je niet de hele dag.
 inhoudsopgave, en daar zoek je langer in dan in een lijst. Komt er een module
 bij, dan hoort die in een van deze drie en niet in een nieuwe groep.
 
-De groep Website is nu nog leeg. Er staat een zin in plaats van een gat, want
-een kopje met niets eronder leest als een fout. Zodra de eerste module er is
--- pagina's, diensten, de tijdlijn -- vervalt die zin vanzelf: `NavMain`
-toont hem alleen zolang de groep geen items heeft.
+**Elke module krijgt in de groep Website zijn eigen regel.** Het
+beheerscherm van een onderdeel is waar de eigenaar dagelijks moet zijn, en
+daar hoor je in één klik te komen -- niet via een omweg.
+
+De [indeling](pagina-indeling.md) staat bovenaan die groep. Dat is de kaart
+van de site: alle onderdelen onder elkaar, met per onderdeel ook een link
+naar zijn beheerscherm. Handig om te hebben, maar het is niet de ingang.
+
+"Bekijk de website" staat onderaan, omdat je daar vanaf élk scherm heen
+wilt kunnen.
+
+Bouw je een module, vergeet die regel dan niet.
+[`AppSidebarTest`](../../tests/Feature/Website/AppSidebarTest.php) valt om
+als een onderdeel wél een beheerscherm heeft maar niet in het menu staat --
+precies het soort ding dat je pas merkt als de klant ernaar vraagt.
 
 Het hele beheerblok hangt achter één recht; zie
 [rollen en rechten](../security/rollen-en-rechten.md). Dat is cosmetisch,
 niet de beveiliging.
+
+### Het sterretje bij de hoofdpagina van een groep
+
+Achter "Indeling" en achter "Overzicht" staat een klein sterretje in de
+merkkleur. Dat markeert de hoofdpagina van zijn groep: de plek om te
+beginnen als je niet precies weet waar je moet zijn.
+
+Zet het met `hoofd: true` op het item in
+[`AppSidebar.vue`](../../resources/js/components/AppSidebar.vue);
+[`NavMain`](../../resources/js/components/NavMain.vue) tekent het dan in
+beide takken van het menu. **Per groep hoort er precies één te zijn**,
+anders zegt het teken niets meer.
+
+Het is bewust níet het rode sterretje van een verplicht veld. Dat betekent
+iets anders, en twee betekenissen aan één teken hangen is vragen om
+verwarring; daarom is deze klein, blauw en met een eigen uitleg in zijn
+`title` en in een `sr-only`-tekst. De animatie -- langzaam pulseren, bij
+het aanwijzen aanzwellen en een kwartslag draaien -- zit in
+`.brand-nav-hoofd` in [`app.css`](../../resources/css/app.css) en gaat uit
+bij `prefers-reduced-motion`.
+
+### Het pijltje dat zegt dat je het portaal verlaat
+
+"Bekijk de website" in de zijbalk en "Bekijk het resultaat" op de indeling
+en bij Ervaring gaan naar de publieke site. Dat is geen scherm van het
+portaal: de zijbalk is weg, het thema staat vast op donker, en terugkomen
+doe je met de terugknop van de browser. Dat hoort te blijken vóórdat je
+klikt, en niet pas daarna.
+
+Daarom staat achter die links
+[`VerlaatPortaal.vue`](../../resources/js/components/VerlaatPortaal.vue):
+een klein pijltje naar rechtsboven, met een `title` en een `sr-only`-tekst
+die het uitschrijft. In de zijbalk zet `item.verlaat` het teken erbij; in
+een knop hang je het component als laatste kind achter de tekst.
+
+**Het opent geen nieuw tabblad, en dat is een keuze.** Een link die
+ongevraagd een tabblad opent neemt een beslissing over de browser van
+iemand anders, en na drie keer kijken op de site staan er vier tabbladen
+open. Het pijltje is dus een markering en geen belofte. Zet er om dezelfde
+reden ook geen `target="_blank"` bij als je het teken ergens nieuw
+gebruikt.
+
+### Het kruimelpad bovenin
+
+Boven elk scherm van het portaal staat het pad ernaartoe: "Website >
+Ervaring > Directeur". Elke kruimel behalve de laatste is een link; de
+laatste is de pagina waar je al staat en is dus geen link.
+
+De kruimels komen van de pagina zelf, via de `layout`-optie:
+
+```ts
+defineOptions({
+    layout: {
+        breadcrumbs: [
+            { title: 'Website', href: website.index() },
+            { title: 'Ervaring', href: ervaring.index() },
+        ],
+    },
+});
+```
+
+**Hangt de laatste kruimel af van wat er op het scherm staat**, zoals de
+naam van een ervaring, dan mag `layout` ook een functie zijn die de props
+van de pagina krijgt en er een object van maakt:
+
+```ts
+defineOptions({
+    layout: (props: { item: ErvaringRij }) => ({
+        breadcrumbs: [
+            { title: 'Website', href: website.index() },
+            { title: 'Ervaring', href: ervaring.index() },
+            { title: props.item.role_nl, href: ervaring.show(props.item.id) },
+        ],
+    }),
+});
+```
+
+Twee valkuilen. De eerste: **elke nieuwe pagina moet dit zelf zetten**. Er
+is geen automatische afleiding uit de URL, dus vergeet je het, dan staat
+er niets en merk je dat pas als je het scherm opent. De tweede: de titels
+gaan door `$t()` zodra ze uit de code komen, maar de naam van een ervaring
+is inhoud van de klant en blijft staan zoals hij hem heeft ingevoerd.
+
+Naast het pad staat de knop die de zijbalk in- en uitklapt. Die hoort bij
+het kruimelpad en niet bij de pagina: hij moet er ook zijn op een scherm
+dat verder leeg is.
 
 ### Het laadscherm tussen de twee helften
 
@@ -475,15 +581,67 @@ alleen maar een tweede plek opleveren waar de maten uit elkaar kunnen lopen.
 
 ## Animatie
 
-De animatielaag zit in [`resources/js/lib/motion.ts`](../../resources/js/lib/motion.ts)
-en biedt drie dingen:
+De animatielaag zit in [`resources/js/lib/motion.ts`](../../resources/js/lib/motion.ts):
 
 ```ts
 prefersReducedMotion(): boolean
-startSmoothScroll(): () => void      // geeft een opruimfunctie terug
+startSmoothScroll():              () => void   // geeft een opruimfunctie terug
 revealOnScroll(selector, scope):  () => void
+revealCards(kaarten, opties):     () => void
+drawTimeline(rail, punten):       () => void
+followYears(groepen):             () => void
+countUp(tellers):                 () => void
+scrollThrough(vak, opties):       () => void
 trackScrollProgress(element):     () => void
 ```
+
+Ze delen drie afspraken, en die gelden ook voor wat je er zelf bij zet:
+
+1. **JavaScript raakt de opmaak niet aan.** Het zet een CSS-variabele of
+   een attribuut; de kleuren en de maten staan in de stylesheet. Zo blijft
+   de huisstijl op één plek.
+2. **Elke functie geeft een opruimfunctie terug**, en die hoort in
+   `onBeforeUnmount`. Zie [Opruimen is verplicht](#opruimen-is-verplicht).
+3. **Bij `prefers-reduced-motion` staat de eindtoestand er meteen**, en
+   wordt de animatie niet alleen overgeslagen. Anders blijft de inhoud
+   onzichtbaar wachten op iets dat nooit komt.
+
+`countUp` laat getallen omhoogtellen zodra ze in beeld komen; het
+eindgetal staat al in de HTML en komt uit `data-tot`, zodat er ook zonder
+JavaScript iets goeds staat. `followYears` markeert het jaartal van de
+groep waar je doorheen scrolt. Allebei worden ze gebruikt door de
+[tijdlijn met ervaringen](modules/ervaring.md#de-tijdlijn-op-de-site).
+
+`scrollThrough` laat de bezoeker met zijn muiswiel door een reeks
+bladeren, maar **alleen binnen één vak**. De pagina blijft ondertussen
+staan waar hij staat. Dat is iets anders dan een blok vastzetten terwijl
+de pagina eronder doorloopt, en de reden is de afbakening: bij deze vorm
+is het vak ook precies het gebied waar het gebeurt, en niet een lijst die
+meebeweegt terwijl je er ver vandaan scrolt.
+
+Vier dingen die daarbij makkelijk stukgaan:
+
+- **Je moet eruit kunnen.** `onVerplaats` geeft terug of hij de beweging
+  heeft gebruikt; zo niet -- je bent aan het begin of het eind -- dan
+  laten we de gebeurtenis los en scrolt de pagina verder. Zonder die
+  uitweg zit de bezoeker vast in het vak.
+- **Het vak moet het midden van het scherm beslaan** voordat er iets
+  gebeurt. Anders pakt het je scroll af terwijl je er alleen maar
+  langsschuift.
+- **`data-lenis-prevent` hoort op het element**, anders neemt Lenis het
+  wiel als eerste af.
+
+Dat laatste geldt breder dan deze helper: **alles op de publieke site dat
+zelf moet kunnen schuiven, heeft `data-lenis-prevent` nodig.** Lenis vangt
+het muiswiel af om de pagina soepel te laten lopen, ook als je muis boven
+een venster of een eigen schuifgebied hangt -- en dan scrolt de pagina
+erachter in plaats van wat je voor je hebt. Het venster met één ervaring
+liep daar tegenaan: een lange beschrijving was niet te scrollen. Het
+portaal heeft er geen last van, want daar draait Lenis niet.
+
+- **Een vak dat alleen op de muis reageert is stuk** voor wie geen muis
+  gebruikt. Geef het `tabindex` en handel de pijltjestoetsen af; de helper
+  doet het wiel en de vinger, de rest hoort bij het onderdeel zelf.
 
 ### De voortgangsbalk
 

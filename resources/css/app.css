@@ -109,6 +109,10 @@
     --color-success: var(--success);
     --color-warning: var(--warning);
     --color-error: var(--error);
+
+    /* De eigen kleur van "bewerken". Zie de statuskleuren hieronder. */
+    --color-bewerken: var(--bewerken);
+    --color-bewerken-contrast: var(--bewerken-contrast);
 }
 
 /*
@@ -184,6 +188,24 @@
     --error: #d94a4a;
 
     /*
+      De derde handelingskleur: oker, voor **bewerken**.
+
+      Aanmaken is het merkblauw en verwijderen is rood; die twee stonden er
+      al. Bewerken had geen eigen kleur en was daardoor niet te herkennen
+      zonder de tekst te lezen. Oker is ver genoeg van allebei, zit al in
+      het huis (het is de toon van --warning) en past bij wat bewerken hier
+      betekent: je verandert iets dat al live staat, vandaar ook de twee
+      bevestigingen.
+
+      Twee waarden, omdat één amber niet op beide achtergronden leesbaar
+      is. Op wit moet hij donker (--bewerken in :root), op navy juist licht
+      (de overschrijving in .dark). --bewerken-contrast is de tekstkleur
+      die eroverheen kan zodra het vlak volloopt.
+    */
+    --amber-ink: #8f5d0c;
+    --amber-glow: #f0b74a;
+
+    /*
       Besturingselementen: keuzevelden, invoervelden, zwevende panelen en
       schuifbalken. Elk zo'n element leest **alleen** deze variabelen;
       nergens staat een kleur rechtstreeks in de regel voor een veld.
@@ -243,6 +265,8 @@
     --accent-foreground: var(--brand-navy-deep);
     --destructive: var(--error);
     --destructive-foreground: #ffffff;
+    --bewerken: var(--amber-ink);
+    --bewerken-contrast: #ffffff;
     --border: var(--brand-soft-gray);
     --input: var(--brand-border-light-strong);
     --ring: var(--brand-blue);
@@ -306,6 +330,8 @@
     --accent-foreground: #ffffff;
     --destructive: var(--error);
     --destructive-foreground: #ffffff;
+    --bewerken: var(--amber-glow);
+    --bewerken-contrast: var(--brand-navy);
     --border: var(--brand-border-dark);
     --input: var(--brand-border-dark-strong);
     /* Cyan als focusring: Electric Blue op navy is te weinig zichtbaar. */
@@ -805,6 +831,368 @@ html:has(.brand-dark-page) {
 .brand-nav-kop:hover {
     background-color: var(--sidebar-accent);
     opacity: 1;
+}
+
+/*
+  Het sterretje bij de hoofdpagina van een groep -- de indeling onder
+  "Website", het overzicht onder "Beheer".
+
+  **Bewust niet in het rood van `brand-verplicht`.** Dat sterretje
+  betekent "dit veld moet je invullen", en twee betekenissen aan één
+  teken hangen is vragen om verwarring. Dit is in de merkkleur en staat
+  losjes rechts in de regel in plaats van tegen de tekst aan.
+
+  **De animatie is CSS en geen GSAP**, en dat is geen luiheid. GSAP wordt
+  alleen voor de publieke site geladen; hem hier binnenhalen zou ruim
+  honderd kilobyte aan het portaal toevoegen voor één teken. Zie de
+  toelichting bovenin app.ts, en ConfirmDialog.vue doet het om dezelfde
+  reden zo.
+
+  Hij schuift mee naar rechts zodat hij niet tegen de tekst aan plakt, en
+  verdwijnt vanzelf in de pictogramstand -- daar is de naam er ook niet.
+*/
+.brand-nav-hoofd {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    /*
+      `line-height: 1` en het lichte zetje omlaag: een sterretje hangt in
+      zijn regel hoog tegen de bovenkant, en zonder deze twee staat hij
+      niet op één lijn met de tekst ernaast.
+    */
+    line-height: 1;
+    translate: 0 0.12em;
+    font-size: 1.15rem;
+    color: var(--sidebar-primary);
+    /*
+      De rustanimatie: heel traag aan- en afzwellen. Langzaam genoeg dat
+      je er niet naar hoeft te kijken, net genoeg dat het leeft. Sneller
+      of groter en het gaat in je ooghoek zitten zeuren, en dat is het
+      laatste wat een zijbalk moet doen.
+    */
+    animation: brand-nav-twinkel 4s ease-in-out infinite;
+    transition:
+        scale 250ms cubic-bezier(0.22, 1, 0.36, 1),
+        rotate 400ms cubic-bezier(0.22, 1, 0.36, 1),
+        color 250ms ease,
+        text-shadow 250ms ease;
+}
+
+@keyframes brand-nav-twinkel {
+    0%,
+    100% {
+        opacity: 0.55;
+        scale: 1;
+    }
+    50% {
+        opacity: 1;
+        scale: 1.12;
+    }
+}
+
+/*
+  Ga je over de regel, dan draait hij een slag en licht hij op. Dertig
+  graden en niet honderdtachtig: een sterretje heeft zes punten, dus een
+  halve slag ziet er precies hetzelfde uit.
+*/
+[data-sidebar='menu-button']:hover .brand-nav-hoofd,
+[data-sidebar='menu-button'][data-active='true'] .brand-nav-hoofd {
+    animation: none;
+    opacity: 1;
+    scale: 1.25;
+    rotate: 30deg;
+    color: var(--sidebar-primary);
+    text-shadow: 0 0 10px
+        color-mix(in srgb, var(--sidebar-primary) 60%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    /*
+      Geen aanzwellen en geen draai. De kleur blijft, dus het teken doet
+      nog steeds wat het moet doen: opvallen.
+    */
+    .brand-nav-hoofd {
+        animation: none;
+        opacity: 1;
+        transition: color 250ms ease;
+    }
+
+    [data-sidebar='menu-button']:hover .brand-nav-hoofd,
+    [data-sidebar='menu-button'][data-active='true'] .brand-nav-hoofd {
+        scale: 1;
+        rotate: 0deg;
+    }
+}
+
+/*
+  Het antwoord op het bestand dat je zojuist koos.
+
+  Twee vormen: rood als het niet kan, en een rustige getinte regel als we
+  het zelf hebben opgelost. Dat tweede is met opzet géén waarschuwingskleur
+  -- er is niets misgegaan, we vertellen alleen wat er gebeurd is. Kleurde
+  het oranje, dan gaat de klant ernaar zoeken.
+
+  Zie resources/js/components/LogoKiezer.vue.
+*/
+.brand-beeld-fout,
+.brand-beeld-melding {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    border-radius: 0.5rem;
+    padding: 0.55rem 0.7rem;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    text-wrap: pretty;
+}
+
+.brand-beeld-fout {
+    border: 1px solid color-mix(in srgb, var(--destructive) 40%, transparent);
+    background-color: color-mix(in srgb, var(--destructive) 7%, transparent);
+    color: var(--destructive);
+}
+
+.brand-beeld-melding {
+    border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
+    background-color: color-mix(in srgb, var(--primary) 7%, transparent);
+    color: var(--muted-foreground);
+}
+
+.brand-beeld-melding svg {
+    color: var(--primary);
+}
+
+/*
+  De handleiding in de instellingen.
+
+  Eén kaart per onderwerp, met een accentlijn links en een pictogram in een
+  getint vakje. Dat is geen versiering: de eigenaar komt hier met een vraag
+  en niet om te lezen, dus hij moet op de kop van een kaart al kunnen zien
+  of dit het onderwerp is dat hij zoekt.
+
+  Zie resources/js/pages/settings/Documentatie.vue.
+*/
+.brand-uitleg-kaart {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background-color: var(--card);
+    padding: 1rem 1.15rem 1.1rem 1.35rem;
+    transition:
+        border-color 250ms ease,
+        box-shadow 250ms ease,
+        translate 250ms ease;
+}
+
+/* De accentlijn: dezelfde gradient als de merkbalk op de publieke site. */
+.brand-uitleg-kaart::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    background: var(--brand-gradient);
+    opacity: 0.5;
+    transition: opacity 250ms ease;
+}
+
+.brand-uitleg-kaart:hover {
+    translate: 0 -2px;
+    border-color: color-mix(in srgb, var(--primary) 32%, var(--border));
+    box-shadow: 0 10px 22px -16px rgb(0 0 0 / 0.5);
+}
+
+.brand-uitleg-kaart:hover::before {
+    opacity: 1;
+}
+
+.brand-uitleg-merk {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.5rem;
+    background-color: color-mix(in srgb, var(--primary) 12%, transparent);
+    color: var(--primary);
+}
+
+/*
+  Het strookje waarin een knop of een tekentje echt te zien is. Gestippeld,
+  zodat je ziet dat dit een voorbeeld is en geen knop die iets doet.
+*/
+.brand-uitleg-voorbeeld {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+    border: 1px dashed var(--border);
+    border-radius: 0.6rem;
+    background-color: color-mix(in srgb, var(--muted) 55%, transparent);
+    padding: 0.75rem 0.85rem;
+}
+
+/* Het wisselen tussen de drie onderdelen. */
+.brand-uitleg-wissel-enter-active {
+    transition:
+        opacity 260ms ease,
+        translate 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.brand-uitleg-wissel-leave-active {
+    transition: opacity 120ms ease;
+    position: absolute;
+    inset-inline: 0;
+}
+
+.brand-uitleg-wissel-enter-from {
+    opacity: 0;
+    translate: 0 10px;
+}
+
+.brand-uitleg-wissel-leave-to {
+    opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .brand-uitleg-kaart:hover {
+        translate: none;
+    }
+
+    .brand-uitleg-wissel-enter-from {
+        translate: none;
+    }
+}
+
+/*
+  De zachte vorm van de drie handelingsknoppen.
+
+  Aanmaken, bewerken en verwijderen hebben elk hun eigen kleur, en in een
+  tabelrij dragen ze die in deze vorm. Hier stond eerst een rand met een
+  getint vlak eronder, dat bij het aanwijzen helemaal volliep. Dat was te
+  veel: twee dichtgetimmerde vakjes achter elke regel lezen als een
+  waarschuwing, en het omslaan naar een vol vlak is een grote sprong voor
+  een knop die je alleen maar aanwijst.
+
+  Nu is de knop in rust alleen zijn pictogram in de kleur van zijn
+  handeling. Wat hij doet zie je aan de kleur en aan het tekentje; een
+  kader eromheen voegt daar niets aan toe. Bij het aanwijzen komt er een
+  zachte schijf in diezelfde kleur onder te liggen, met een dunne rand van
+  binnen -- genoeg om te zien dat je hem te pakken hebt, te weinig om het
+  scherm te laten schrikken.
+
+  De kleur komt uit --knop-kleur, die per variant wordt gezet. Daardoor
+  staat het gedrag één keer beschreven en gaan alle drie de handelingen
+  vanzelf mee zodra het hier verandert.
+
+  Zie resources/js/components/ui/button/index.ts en
+  docs/architecture/huisstijl-en-kleuren.md.
+*/
+.brand-knop-zacht {
+    color: color-mix(in srgb, var(--knop-kleur) 88%, transparent);
+    background-color: transparent;
+    transition:
+        color 200ms ease,
+        background-color 200ms ease,
+        box-shadow 200ms ease,
+        scale 200ms ease;
+}
+
+.brand-knop-zacht:hover {
+    color: var(--knop-kleur);
+    background-color: color-mix(in srgb, var(--knop-kleur) 13%, transparent);
+    box-shadow: inset 0 0 0 1px
+        color-mix(in srgb, var(--knop-kleur) 26%, transparent);
+    scale: 1.06;
+}
+
+/*
+  Indrukken veert terug voorbij de ruststand. Dat is het verschil tussen
+  "de knop reageert" en "er gebeurde iets".
+*/
+.brand-knop-zacht:active {
+    scale: 0.94;
+    background-color: color-mix(in srgb, var(--knop-kleur) 20%, transparent);
+}
+
+.brand-knop-zacht:disabled {
+    scale: 1;
+    background-color: transparent;
+    box-shadow: none;
+}
+
+.brand-knop-aanmaken {
+    --knop-kleur: var(--primary);
+}
+
+.brand-knop-bewerken {
+    --knop-kleur: var(--bewerken);
+}
+
+.brand-knop-verwijderen {
+    --knop-kleur: var(--destructive);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    /*
+      De schijf blijft -- dat is de aanwijzing dat de knop reageert. Alleen
+      het aanzwellen gaat eraf.
+    */
+    .brand-knop-zacht,
+    .brand-knop-zacht:hover,
+    .brand-knop-zacht:active {
+        scale: 1;
+    }
+}
+
+/*
+  Het tekentje achter een link die het portaal verlaat.
+
+  Twee dingen tegelijk: je gaat weg uit het beheer, en je gaat daar níet in
+  een nieuw tabblad heen. Dat tweede is precies waarom het pijltje klein en
+  gedempt is -- een groot, opvallend teken leest als "hier gebeurt iets
+  bijzonders", terwijl er gewoon een gewone link onder zit.
+
+  Het pijltje schuift bij het aanwijzen een pixel weg van de tekst, in de
+  richting waarin het wijst. Genoeg om te merken dat het bij de link hoort,
+  te weinig om ernaar te gaan kijken.
+
+  Zie resources/js/components/VerlaatPortaal.vue.
+*/
+.brand-verlaat {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted-foreground);
+    opacity: 0.7;
+    transition:
+        translate 220ms ease,
+        opacity 220ms ease,
+        color 220ms ease;
+}
+
+a:hover > .brand-verlaat,
+button:hover > .brand-verlaat,
+[data-sidebar='menu-button']:hover .brand-verlaat,
+[data-sidebar='menu-button'][data-active='true'] .brand-verlaat {
+    translate: 1px -1px;
+    color: inherit;
+    opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .brand-verlaat {
+        transition: opacity 220ms ease;
+    }
+
+    a:hover > .brand-verlaat,
+    button:hover > .brand-verlaat,
+    [data-sidebar='menu-button']:hover .brand-verlaat,
+    [data-sidebar='menu-button'][data-active='true'] .brand-verlaat {
+        translate: none;
+    }
 }
 
 .brand-nav-kop:focus-visible {
@@ -1611,5 +1999,2835 @@ html:has(.brand-dark-page) {
             background-clip: text;
             color: transparent;
         }
+    }
+}
+
+/*
+  ---------------------------------------------------------------------------
+  Het bevestigingsvenster
+  ---------------------------------------------------------------------------
+
+  Eén venster voor aanmaken, bewerken en verwijderen. De soort bepaalt maar
+  één ding in de opmaak -- `--confirm-accent`, die het component als inline
+  stijl meegeeft -- en alle kleur hieronder leidt zich daarvan af. Dat is met
+  opzet: een vierde soort erbij is dan één regel in het component en geen
+  nieuw blok CSS dat je vergeet mee te veranderen.
+
+  Zie ConfirmDialog.vue en docs/architecture/meldingen.md.
+*/
+@layer components {
+    .brand-confirm {
+        border-radius: var(--radius-xl);
+        border-color: var(--border);
+    }
+
+    .brand-confirm-badge {
+        background-color: color-mix(
+            in srgb,
+            var(--confirm-accent) 14%,
+            transparent
+        );
+        color: var(--confirm-accent);
+    }
+
+    /*
+      De gloed licht alleen op bij de laatste stap. Bij bewerken is dat de
+      tweede vraag, en dan is een venster dat er nét iets zwaarder uitziet
+      dan een tel eerder precies de bedoeling.
+    */
+    .brand-confirm-gloed {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        height: 1px;
+        width: 60%;
+        translate: -50% 0;
+        background-image: linear-gradient(
+            to right,
+            transparent,
+            var(--confirm-accent),
+            transparent
+        );
+        opacity: 0.7;
+    }
+
+    .brand-confirm-stip {
+        height: 0.3rem;
+        width: 0.3rem;
+        border-radius: 9999px;
+        background-color: var(--border);
+        transition:
+            background-color 220ms ease,
+            width 220ms ease;
+    }
+
+    .brand-confirm-stip[data-actief] {
+        width: 1.1rem;
+        background-color: var(--confirm-accent);
+    }
+
+    /*
+      De overgang tussen stap 1 en stap 2. Hij schuift naar links weg en van
+      rechts binnen: de richting zegt dat je vooruit gaat, niet dat er iets
+      anders is verschenen.
+    */
+    .brand-confirm-stap-enter-active,
+    .brand-confirm-stap-leave-active {
+        transition:
+            opacity 160ms ease,
+            translate 220ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .brand-confirm-stap-enter-from {
+        opacity: 0;
+        translate: 0.75rem 0;
+    }
+
+    .brand-confirm-stap-leave-to {
+        opacity: 0;
+        translate: -0.75rem 0;
+    }
+}
+
+/*
+  Wie beweging heeft uitgezet, krijgt de wissel zonder schuiven. De inhoud
+  verandert nog steeds -- alleen het venster springt er niet meer mee.
+*/
+@media (prefers-reduced-motion: reduce) {
+    .brand-confirm-stap-enter-active,
+    .brand-confirm-stap-leave-active {
+        transition: none;
+    }
+
+    .brand-confirm-stip {
+        transition: none;
+    }
+}
+
+/*
+  ---------------------------------------------------------------------------
+  De indeling van de website
+  ---------------------------------------------------------------------------
+
+  Drie lagen die los van elkaar staan, en dat is met opzet:
+
+  - `brand-venster-*` is het **kader**: een browservenster met een adresbalk
+    eromheen. Dat is geen versiering. Het zegt zonder woorden dat je naar een
+    website kijkt en niet naar een instellingenlijst, en daardoor lezen de
+    regels erin als één pagina van boven naar beneden.
+  - `brand-schets-*` is het **miniatuur** per onderdeel: een paar balkjes in
+    de vorm van het echte ding. Geen schermafdruk, want die veroudert zodra
+    de klant iets aanpast, en geen pictogram, want dat zegt niets over wat er
+    op die plek staat.
+  - `brand-sorteer-*` gaat over het **verplaatsen** en weet niets van
+    secties; `brand-sectie-*` over **wat er in de regel staat**.
+
+  Die scheiding is er zodat de sorteerlaag straks net zo goed bruikbaar is
+  voor de items binnen een onderdeel.
+
+  Zie docs/architecture/pagina-indeling.md.
+*/
+
+/*
+  De maten van de greep en de pijltjes. Ze staan hier apart omdat twee lagen
+  ze nodig hebben: de knoppen zelf, en de vaste regels die er precies
+  evenveel voor inspringen zodat alle kaders op een lijn blijven staan.
+*/
+:root {
+    --sorteer-greep: 1.75rem;
+    --sorteer-pijlen: 1.5rem;
+    --sorteer-gat: 0.5rem;
+}
+
+@layer components {
+    /* --- Het venster met de adresbalk ------------------------------- */
+
+    .brand-venster {
+        overflow: hidden;
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--border);
+        background-color: var(--card);
+        box-shadow:
+            0 1px 2px rgb(0 0 0 / 0.04),
+            0 18px 40px -28px rgb(0 0 0 / 0.35);
+    }
+
+    .brand-venster-balk {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        border-bottom: 1px solid var(--border);
+        background-color: var(--muted);
+        padding: 0.6rem 0.9rem;
+    }
+
+    .brand-venster-stip {
+        height: 0.5rem;
+        width: 0.5rem;
+        flex-shrink: 0;
+        border-radius: 9999px;
+        background-color: var(--border);
+    }
+
+    /*
+      De adresbalk krijgt de merkkleur en niet grijs: het is het adres van
+      de site van de klant, en dat mag er als van hem uitzien.
+    */
+    .brand-venster-adres {
+        margin-left: 0.6rem;
+        overflow: hidden;
+        border-radius: 9999px;
+        background-color: color-mix(in srgb, var(--primary) 8%, transparent);
+        padding: 0.1rem 0.6rem;
+        font-size: 0.7rem;
+        color: var(--primary);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .brand-venster-voet {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem 0.75rem;
+        border-top: 1px solid var(--border);
+        background-color: var(--muted);
+        padding: 0.6rem 1rem;
+        font-size: 0.75rem;
+        color: var(--muted-foreground);
+    }
+
+    .brand-venster-voet-let-op {
+        color: var(--warning);
+    }
+
+    /* --- Het miniatuur ---------------------------------------------- */
+
+    .brand-schets {
+        position: relative;
+        display: flex;
+        height: 2.75rem;
+        width: 4rem;
+        flex-shrink: 0;
+        flex-direction: column;
+        gap: 0.15rem;
+        overflow: hidden;
+        border-radius: calc(var(--radius) - 2px);
+        border: 1px solid var(--border);
+        background-color: var(--background);
+        padding: 0.3rem;
+        transition:
+            opacity 200ms ease,
+            border-color 200ms ease,
+            transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .brand-schets-balk {
+        display: block;
+        height: 0.2rem;
+        border-radius: 9999px;
+        background-color: color-mix(
+            in srgb,
+            var(--muted-foreground) 35%,
+            transparent
+        );
+    }
+
+    .brand-schets-blok {
+        flex: 1 1 0;
+        border-radius: 2px;
+        background-color: color-mix(
+            in srgb,
+            var(--muted-foreground) 22%,
+            transparent
+        );
+    }
+
+    .brand-schets-veld {
+        display: block;
+        height: 0.3rem;
+        width: 100%;
+        border-radius: 2px;
+        border: 1px solid
+            color-mix(in srgb, var(--muted-foreground) 28%, transparent);
+    }
+
+    .brand-schets-knop {
+        display: block;
+        height: 0.35rem;
+        width: 0.9rem;
+        border-radius: 9999px;
+        background-color: color-mix(
+            in srgb,
+            var(--muted-foreground) 40%,
+            transparent
+        );
+    }
+
+    .brand-schets-stip {
+        display: block;
+        height: 0.2rem;
+        width: 0.2rem;
+        border-radius: 9999px;
+        background-color: var(--brand-cyan);
+    }
+
+    /* Uitgezet: gedempt, maar nog wel herkenbaar als hetzelfde onderdeel. */
+    .brand-schets[data-staat='uit'] {
+        opacity: 0.4;
+    }
+
+    /*
+      Leeg: gestippeld kader en een vage inhoud. De vorm van het onderdeel
+      blijft staan -- je moet kunnen zien wat er leeg is.
+    */
+    .brand-schets[data-staat='leeg'] {
+        border-style: dashed;
+        border-color: color-mix(in srgb, var(--warning) 55%, transparent);
+    }
+
+    .brand-schets[data-staat='leeg'] > * {
+        opacity: 0.35;
+    }
+
+    /* --- De regel ---------------------------------------------------- */
+
+    .brand-sectie-rij {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 0.9rem 1rem;
+        transition:
+            background-color 200ms ease,
+            border-color 200ms ease,
+            opacity 200ms ease;
+    }
+
+    /*
+      In het venster staan de regels tegen elkaar aan met een lijn ertussen,
+      zodat ze als een pagina lezen. In het bewerkvenster is elke regel een
+      kaart, want daar pak je er een op.
+    */
+    .brand-venster-inhoud > .brand-sectie-rij + .brand-sectie-rij {
+        border-top: 1px solid var(--border);
+    }
+
+    .brand-sectie-rij[data-kaart] {
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--border);
+        background-color: var(--card);
+    }
+
+    .brand-sectie-rij[data-compact] {
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.6rem 0.75rem;
+    }
+
+    .brand-sectie-rij[data-compact] .brand-schets {
+        height: 2.25rem;
+        width: 3.25rem;
+    }
+
+    /*
+      Alleen in het venster licht een regel op als je eroverheen gaat. In het
+      bewerkvenster zou dat afleiden van wat je aan het doen bent.
+    */
+    .brand-venster-inhoud > .brand-sectie-rij:hover {
+        background-color: color-mix(in srgb, var(--primary) 3%, transparent);
+    }
+
+    .brand-venster-inhoud > .brand-sectie-rij:hover .brand-schets {
+        transform: scale(1.04);
+    }
+
+    /*
+      Uitgezet door de eigenaar. Gedempt en verder niets: dit is een keuze en
+      geen probleem, dus er hoort geen kleur bij die om aandacht vraagt.
+    */
+    .brand-sectie-rij[data-staat='uit'] {
+        opacity: 0.6;
+    }
+
+    /*
+      Aan, maar leeg. Dit is het geval waarvan de eigenaar niet weet dat het
+      speelt: hij denkt dat het onderdeel op zijn site staat en het staat er
+      niet. Vandaar de enige gekleurde regel op dit scherm.
+    */
+    .brand-sectie-rij[data-staat='leeg'] {
+        background-color: color-mix(in srgb, var(--warning) 6%, transparent);
+    }
+
+    .brand-sectie-rij[data-kaart][data-staat='leeg'] {
+        border-color: color-mix(in srgb, var(--warning) 45%, var(--border));
+    }
+
+    .brand-sectie-merk {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        border-radius: 9999px;
+        border: 1px solid var(--border);
+        padding: 0.05rem 0.45rem;
+        font-size: 0.7rem;
+        line-height: 1.4;
+        color: var(--muted-foreground);
+        white-space: nowrap;
+    }
+
+    .brand-sectie-rij[data-staat='leeg'] .brand-sectie-merk {
+        border-color: color-mix(in srgb, var(--warning) 45%, transparent);
+        color: var(--warning);
+    }
+
+    .brand-sectie-waarschuwing {
+        margin-top: 0.15rem;
+        font-size: 0.8rem;
+        line-height: 1.45;
+        color: var(--warning);
+        text-wrap: pretty;
+    }
+
+    .brand-sectie-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        border-radius: var(--radius);
+        font-size: 0.8rem;
+        color: var(--primary);
+        white-space: nowrap;
+        transition: gap 180ms ease;
+    }
+
+    .brand-sectie-link:hover {
+        gap: 0.5rem;
+        text-decoration: underline;
+    }
+
+    /*
+      Het slotje op de plek van het schuifje bij de kop en de voettekst. Even
+      breed als dat schuifje, anders springt de rechterkolom in en uit.
+    */
+    .brand-sectie-slot {
+        display: inline-flex;
+        width: 2.25rem;
+        justify-content: center;
+        color: var(--muted-foreground);
+        opacity: 0.55;
+    }
+
+    /* --- Verplaatsen -------------------------------------------------- */
+
+    .brand-sorteer-rij {
+        display: flex;
+        align-items: center;
+        gap: var(--sorteer-gat);
+    }
+
+    .brand-sorteer-greep {
+        display: flex;
+        height: 2rem;
+        width: var(--sorteer-greep);
+        flex-shrink: 0;
+        cursor: grab;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--radius);
+        color: var(--muted-foreground);
+        /*
+          Zonder dit begint een veeg op de greep de pagina te scrollen in
+          plaats van de regel te verplaatsen, en dan is slepen op een
+          telefoon onmogelijk.
+        */
+        touch-action: none;
+        transition:
+            color 150ms ease,
+            background-color 150ms ease;
+    }
+
+    .brand-sorteer-greep:hover {
+        background-color: var(--accent);
+        color: var(--foreground);
+    }
+
+    .brand-sorteer-greep:active {
+        cursor: grabbing;
+    }
+
+    /* De greep van een vast onderdeel: een slotje, en niet te pakken. */
+    .brand-sorteer-greep-vast {
+        display: flex;
+        height: 2rem;
+        width: var(--sorteer-greep);
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        color: var(--muted-foreground);
+        opacity: 0.5;
+    }
+
+    /* De lege plek rechts waar een verplaatsbare regel zijn pijltjes heeft. */
+    .brand-sorteer-ruimte {
+        display: block;
+        width: var(--sorteer-pijlen);
+        flex-shrink: 0;
+    }
+
+    .brand-sorteer-pijl {
+        display: flex;
+        height: 1.25rem;
+        width: var(--sorteer-pijlen);
+        align-items: center;
+        justify-content: center;
+        border-radius: calc(var(--radius) - 2px);
+        color: var(--muted-foreground);
+        transition:
+            color 150ms ease,
+            background-color 150ms ease;
+    }
+
+    .brand-sorteer-pijl:hover:not(:disabled) {
+        background-color: var(--accent);
+        color: var(--foreground);
+    }
+
+    /*
+      Uitgeschakeld en niet weggehaald: de bovenste regel houdt zijn pijltje
+      omhoog, alleen doet het niets. Zou hij verdwijnen, dan verspringt de
+      hele rij zodra je iets naar boven schuift.
+    */
+    .brand-sorteer-pijl:disabled {
+        cursor: not-allowed;
+        opacity: 0.3;
+    }
+
+    /* De regel die je op dit moment vasthebt. */
+    .brand-sorteer-sleept .brand-sectie-rij {
+        border-color: var(--primary);
+        box-shadow: 0 12px 28px -12px rgb(0 0 0 / 0.45);
+        opacity: 0.9;
+    }
+
+    /* De plek waar hij terechtkomt als je nu loslaat. */
+    .brand-sorteer-doel .brand-sectie-rij {
+        border-color: color-mix(in srgb, var(--primary) 55%, transparent);
+        background-color: color-mix(in srgb, var(--primary) 6%, transparent);
+    }
+
+    /*
+      Het opschuiven van de andere regels als je de pijltjes gebruikt. Tijdens
+      het slepen zet SortableList deze overgang uit, want dan animeert de
+      bibliotheek de beweging al.
+    */
+    .brand-sorteer-move {
+        transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* --- Het bewerkvenster -------------------------------------------- */
+
+    .brand-bewerk-lijst {
+        display: flex;
+        max-height: min(55vh, 28rem);
+        flex-direction: column;
+        gap: var(--sorteer-gat);
+        overflow-y: auto;
+        /* Ruimte voor de schaduw van een opgepakte regel. */
+        padding: 0.25rem;
+    }
+}
+
+/*
+  Op een telefoon past de regel niet meer naast elkaar: de naam met zijn
+  merkje, de omschrijving en de knoppen rechts zouden allemaal in een kolom
+  van een paar tekens breed eindigen. Laat de rechterkant dan onder de tekst
+  vallen in plaats van ernaast te persen.
+
+  Het portaal is gemaakt om achter een scherm te gebruiken, maar bruikbaar op
+  een telefoon is de ondergrens -- en een regel per onderdeel die je niet
+  meer kunt lezen, haalt die ondergrens niet.
+*/
+@media (max-width: 30rem) {
+    .brand-sectie-rij {
+        flex-wrap: wrap;
+    }
+
+    .brand-sectie-rij > *:last-child {
+        margin-left: auto;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .brand-sorteer-move,
+    .brand-sectie-rij,
+    .brand-sectie-link,
+    .brand-schets {
+        transition: none;
+    }
+
+    .brand-venster-inhoud > .brand-sectie-rij:hover .brand-schets {
+        transform: none;
+    }
+}
+
+/*
+  ---------------------------------------------------------------------------
+  De tijdlijn met ervaringen
+  ---------------------------------------------------------------------------
+
+  Twee kanten van dezelfde module:
+
+  - `brand-tijdlijn-*` is de **publieke** tijdlijn: de rail, de punten en de
+    kaarten. Die staat altijd op donker.
+  - `brand-ervaring-*` is het **beheerscherm**, dat de themavoorkeur van de
+    gebruiker volgt en dus in licht en donker moet kloppen.
+
+  Zie docs/architecture/modules/ervaring.md.
+*/
+
+/*
+  Een tekstvak deelt de opmaak van het invoerveld, maar heeft wel verticale
+  ruimte nodig: `brand-control` zet die op nul omdat een invoerveld zijn
+  tekst op een regel centreert. Deze utility staat na `brand-control` zodat
+  hij die op dit punt overschrijft.
+*/
+@utility brand-textarea {
+    min-height: 6rem;
+    padding-top: 0.55rem;
+    padding-bottom: 0.55rem;
+    line-height: 1.5;
+    resize: vertical;
+}
+
+@layer components {
+    /* --- De publieke tijdlijn ---------------------------------------- */
+
+    .brand-tijdlijn {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    /*
+      De rail waar de punten op staan. Hij loopt van het midden van het
+      eerste punt tot het midden van het laatste, en niet van boven naar
+      beneden door de hele sectie: een lijn die boven het eerste punt
+      uitsteekt ziet eruit alsof er iets is afgeknipt.
+    */
+    .brand-tijdlijn-rail {
+        position: absolute;
+        top: 1.25rem;
+        bottom: 1.25rem;
+        /* Door het midden van de punten, ook als de jaarkolom erbij komt. */
+        /*
+          1,125rem is de helft van een punt van 2,25rem: zo loopt de lijn
+          precies door het midden ervan. Stond hier 1,25rem, en dan stond
+          de lijn er twee pixels naast -- wat je op een breed scherm niet
+          ziet en op een telefoon meteen.
+        */
+        left: calc(var(--tijdlijn-jaar, 0rem) + 1.125rem);
+        width: 2px;
+        background-color: color-mix(
+            in srgb,
+            var(--brand-cyan) 22%,
+            transparent
+        );
+    }
+
+    /*
+      De lijn die zichzelf tekent terwijl je scrolt. GSAP zet alleen
+      `--tijdlijn-voortgang`; de opmaak blijft hier. Zo draait de animatie
+      op de GPU en hoeft de browser bij elke scrollstap niets opnieuw door
+      te rekenen.
+    */
+    .brand-tijdlijn-rail::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: linear-gradient(
+            to bottom,
+            var(--brand-blue),
+            var(--brand-cyan)
+        );
+        transform: scaleY(var(--tijdlijn-voortgang, 0));
+        transform-origin: top;
+        box-shadow: 0 0 12px rgb(19 199 243 / 0.35);
+    }
+
+    /*
+      Een raster en geen flexbox, en dat is geen smaakkwestie.
+
+      De kaart is een `<button>`, en een knop gedraagt zich als flexitem
+      niet als een gewone doos: hij krimpt naar de breedte van zijn eigen
+      inhoud in plaats van de vrije ruimte te pakken. Op een telefoon
+      leverde dat een kaart van honderd pixels op naast een halve lege
+      regel, met elke functietitel over vier regels gebroken.
+
+      Met een raster bepaalt de **kolom** de breedte en niet de knop. De
+      `minmax(0, 1fr)` hoort erbij: zonder die nul is de ondergrens van de
+      kolom de breedte van het langste woord, en dan puilt het raster
+      alsnog buiten het scherm.
+    */
+    .brand-tijdlijn-item {
+        position: relative;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: start;
+        /* Krap op een telefoon; daar is de breedte het schaarst. */
+        gap: 0.75rem;
+    }
+
+    @media (min-width: 40rem) {
+        .brand-tijdlijn-item {
+            gap: 1rem;
+        }
+
+        .brand-tijdlijn-kaart {
+            padding: 0.7rem 1rem;
+        }
+    }
+
+    /*
+      De regel waar je muis op staat licht op, de rest zakt iets weg. Bij
+      een lijst van vijfentwintig regels van dezelfde vorm is dat het enige
+      dat zegt welke regel je te pakken hebt -- en het maakt van scrollen
+      langs de lijst een beweging in plaats van een muur.
+
+      Alleen als de muis daadwerkelijk boven de lijst hangt: zonder die
+      voorwaarde zou de hele tijdlijn standaard gedimd staan.
+    */
+    .brand-tijdlijn:hover .brand-tijdlijn-item:not(:hover) {
+        opacity: 0.55;
+    }
+
+    .brand-tijdlijn-item {
+        transition: opacity 250ms ease;
+    }
+
+    /* Het rondje met het pictogram of het logo, precies op de rail. */
+    .brand-tijdlijn-punt {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        height: 2.25rem;
+        width: 2.25rem;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        border-radius: 9999px;
+        border: 1px solid var(--brand-border-dark-strong);
+        background-color: var(--brand-navy-deep);
+        color: var(--brand-silver);
+        transition:
+            border-color 300ms ease,
+            color 300ms ease,
+            box-shadow 300ms ease;
+    }
+
+    /*
+      Een beeldmerk óf een pictogram, op dezelfde plek en in dezelfde maat.
+
+      Er is hier geen enkele uitzondering voor "is dit een logo of een
+      foto", en dat is met opzet: de server levert altijd een vierkant
+      plaatje van 256 bij 256, met de achtergrond er al in gebakken. Hoe
+      het beeld in dat vierkant komt te staan, heeft de klant zelf bepaald
+      bij het uploaden. Zie App\Support\Media\Logo en LogoKiezer.vue.
+    */
+    .brand-tijdlijn-punt img {
+        height: 100%;
+        width: 100%;
+        object-fit: cover;
+    }
+
+    /*
+      Het punt kleurt op zodra de lijn eraan toe is. GSAP zet het attribuut;
+      dat is met opzet geen klasse met een kleur erin, want dan staat de
+      huisstijl ineens in JavaScript.
+    */
+    .brand-tijdlijn-punt[data-bereikt] {
+        border-color: var(--brand-cyan);
+        color: var(--brand-cyan);
+        box-shadow: var(--brand-glow);
+    }
+
+    /*
+      Ga je over een kaart, dan krijgt zijn punt de merkgradient. Dat legt
+      het verband tussen de twee -- bij een lange tijdlijn is anders niet
+      meteen duidelijk welk punt bij welke kaart hoort.
+
+      Alleen bij een punt dat de lijn al heeft bereikt: een punt dat nog
+      grijs is, hoort niet op te lichten omdat je muis toevallig langskomt.
+    */
+    .brand-tijdlijn-item:hover .brand-tijdlijn-punt[data-bereikt] {
+        border-color: transparent;
+        background-image: var(--brand-gradient);
+        color: #fff;
+        box-shadow: var(--brand-glow-strong);
+    }
+
+    /*
+      De ervaring die nu loopt, pulseert heel zacht. Eén punt dat leeft,
+      zodat je oog daar landt; meer dan een zou het een kerstboom maken.
+    */
+    .brand-tijdlijn-punt[data-loopt]::before {
+        content: '';
+        position: absolute;
+        inset: -0.35rem;
+        border-radius: 9999px;
+        border: 1px solid color-mix(in srgb, var(--brand-cyan) 45%, transparent);
+        animation: brand-tijdlijn-puls 2.8s ease-out infinite;
+    }
+
+    @keyframes brand-tijdlijn-puls {
+        0% {
+            opacity: 0.8;
+            transform: scale(0.92);
+        }
+        70% {
+            opacity: 0;
+            transform: scale(1.25);
+        }
+        100% {
+            opacity: 0;
+            transform: scale(1.25);
+        }
+    }
+
+    .brand-tijdlijn-kaart {
+        min-width: 0;
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--brand-border-dark);
+        background-color: color-mix(
+            in srgb,
+            var(--brand-navy-raised) 70%,
+            transparent
+        );
+        padding: 0.65rem 0.8rem;
+        transition:
+            border-color 250ms ease,
+            box-shadow 250ms ease,
+            transform 250ms ease;
+    }
+
+    /*
+      De hele kaart is een knop. Vandaar deze twee regels: een `button`
+      krijgt van de browser een eigen tekstuitlijning en lettertype mee,
+      en zonder dit staat de inhoud gecentreerd in het systeemlettertype.
+    */
+    .brand-tijdlijn-kaart {
+        width: 100%;
+        cursor: pointer;
+        text-align: left;
+        font: inherit;
+        color: inherit;
+    }
+
+    .brand-tijdlijn-kaart:focus-visible {
+        outline: 2px solid var(--brand-cyan);
+        outline-offset: 2px;
+    }
+
+    .brand-tijdlijn-kaart:hover {
+        border-color: color-mix(in srgb, var(--brand-cyan) 45%, transparent);
+        box-shadow: var(--brand-glow);
+        transform: translateY(-2px);
+    }
+
+    /*
+      De regel zelf. Op een telefoon wordt de periode naar zijn eigen
+      regel geduwd met `flex-basis: 100%`: naast de titel is er te weinig
+      breedte, en dan wordt elke functietitel over vier regels gebroken.
+      Op een breder scherm staat hij weer gewoon rechts.
+    */
+    .brand-tijdlijn-kop {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 0.35rem 0.75rem;
+        text-align: left;
+    }
+
+    @media (min-width: 40rem) {
+        .brand-tijdlijn-kop {
+            flex-wrap: nowrap;
+            gap: 0.5rem 1rem;
+        }
+    }
+
+    /*
+      De organisatie is het eerste deel van de metaregel, maar wel het
+      belangrijkste. Hij krijgt daarom de lichtere kleur; de rest blijft
+      grijs.
+    */
+    .brand-tijdlijn-org {
+        color: var(--brand-ice);
+    }
+
+    /*
+      Periode en duur, rechts uitgelijnd onder elkaar. Op een telefoon is
+      daar geen ruimte voor: dan schuiven ze onder de titel en staan ze
+      naast elkaar op één regel.
+    */
+    .brand-tijdlijn-tijd {
+        display: flex;
+        flex-shrink: 0;
+        flex-wrap: wrap;
+        /* Eigen regel op een telefoon; zie de toelichting hierboven. */
+        flex-basis: 100%;
+        order: 3;
+        gap: 0 0.5rem;
+        font-size: 0.75rem;
+        color: var(--muted-foreground);
+        font-variant-numeric: tabular-nums;
+    }
+
+    @media (min-width: 40rem) {
+        .brand-tijdlijn-tijd {
+            flex-basis: auto;
+            order: 0;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0;
+            font-size: 0.8rem;
+            text-align: right;
+        }
+    }
+
+    /*
+      Het pijltje dat zegt dat er meer te lezen is. Op een telefoon is dat
+      de enige aanwijzing dat je erop kunt tikken, dus hij staat er altijd
+      -- en schuift een tikje mee als je erover gaat.
+    */
+    .brand-tijdlijn-pijl {
+        height: 1rem;
+        width: 1rem;
+        flex-shrink: 0;
+        align-self: center;
+        color: var(--brand-silver);
+        opacity: 0.55;
+        transition:
+            transform 200ms ease,
+            opacity 200ms ease,
+            color 200ms ease;
+    }
+
+    .brand-tijdlijn-kaart:hover .brand-tijdlijn-pijl {
+        transform: translateX(2px);
+        opacity: 1;
+        color: var(--brand-cyan);
+    }
+
+    /*
+      De metaregel: plaats, werkvorm en dienstverband, gescheiden door een
+      punt. De scheiding staat in CSS en niet in de tekst, zodat er nooit
+      een streepje overblijft als een van de delen er niet is.
+    */
+    .brand-tijdlijn-meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+        color: var(--brand-silver);
+    }
+
+    .brand-tijdlijn-meta > * + *::before {
+        content: '·';
+        margin-right: 0.5rem;
+        color: color-mix(in srgb, var(--brand-silver) 55%, transparent);
+    }
+
+    .brand-tijdlijn-nu {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        border-radius: 9999px;
+        border: 1px solid color-mix(in srgb, var(--brand-cyan) 45%, transparent);
+        padding: 0.05rem 0.5rem;
+        font-size: 0.7rem;
+        color: var(--brand-cyan);
+        white-space: nowrap;
+    }
+
+    /* --- Het beheerscherm -------------------------------------------- */
+
+    .brand-ervaring-merk {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        border-radius: 9999px;
+        border: 1px solid var(--border);
+        padding: 0.05rem 0.45rem;
+        font-size: 0.7rem;
+        line-height: 1.4;
+        color: var(--muted-foreground);
+        white-space: nowrap;
+    }
+
+    /* Nog geen Engelse vertaling: net als een lege sectie een waarschuwing. */
+    .brand-ervaring-merk[data-let-op] {
+        border-color: color-mix(in srgb, var(--warning) 45%, transparent);
+        color: var(--warning);
+    }
+
+    /* Automatisch vertaald: een mededeling, geen probleem. */
+    .brand-ervaring-merk[data-automatisch] {
+        border-color: color-mix(in srgb, var(--primary) 40%, transparent);
+        color: var(--primary);
+    }
+
+    /* Wat nu loopt, en wat online staat: allebei goed nieuws. */
+    .brand-ervaring-merk[data-nu] {
+        border-color: color-mix(in srgb, var(--success) 45%, transparent);
+        color: var(--success);
+    }
+
+    /*
+      Offline. Geen waarschuwing -- het is een keuze -- maar wel duidelijk
+      anders dan de rest, want het is het antwoord op "waarom zie ik dit
+      niet op mijn site".
+    */
+    .brand-ervaring-merk[data-uit] {
+        border-style: dashed;
+        color: var(--muted-foreground);
+    }
+
+    /* --- Het formulier ------------------------------------------------ */
+
+    /*
+      De twee stappen van het formulier, als stippen boven de velden. Bij
+      een formulier met twee schermen moet je kunnen zien dat er nog iets
+      komt -- anders drukt iemand op "Volgende" en denkt hij dat hij klaar
+      is.
+    */
+    .brand-stappen {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.75rem;
+        color: var(--muted-foreground);
+    }
+
+    .brand-stap {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        border-radius: 9999px;
+        border: 1px solid var(--border);
+        padding: 0.1rem 0.6rem;
+        transition:
+            border-color 200ms ease,
+            color 200ms ease,
+            background-color 200ms ease;
+    }
+
+    .brand-stap[data-actief] {
+        border-color: color-mix(in srgb, var(--primary) 45%, transparent);
+        background-color: color-mix(in srgb, var(--primary) 8%, transparent);
+        color: var(--primary);
+    }
+
+    .brand-stap[data-klaar] {
+        color: var(--success);
+    }
+
+    /*
+      De hoogte van het formulier in het venster. Ruim, want het gaat om
+      dertien velden: hoe minder je moet scrollen, hoe eerder je ziet wat
+      je nog niet hebt ingevuld. Maar niet tot de rand -- de kop en de
+      knoppen eronder moeten zichtbaar blijven, ook op een laptopscherm.
+    */
+    .brand-formulier-lijst {
+        display: flex;
+        max-height: min(62vh, 38rem);
+        flex-direction: column;
+        gap: 1rem;
+        overflow-y: auto;
+        padding: 0.25rem;
+    }
+
+    /*
+      De Nederlandse tekst naast het Engelse veld. Geen invoerveld maar een
+      citaat: je moet kunnen zien wát je aan het vertalen bent zonder naar
+      de vorige stap terug te hoeven.
+    */
+    .brand-bron {
+        border-left: 2px solid
+            color-mix(in srgb, var(--primary) 35%, transparent);
+        padding-left: 0.6rem;
+        font-size: 0.8rem;
+        line-height: 1.5;
+        color: var(--muted-foreground);
+        text-wrap: pretty;
+        white-space: pre-line;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .brand-tijdlijn-punt,
+    .brand-tijdlijn-kaart,
+    .brand-stap {
+        transition: none;
+    }
+
+    .brand-tijdlijn-kaart:hover {
+        transform: none;
+    }
+
+    /*
+      De puls is een oneindige animatie en precies het soort beweging waar
+      iemand met bewegingsklachten last van heeft. De rand blijft staan, dus
+      het lopende punt valt nog steeds op.
+    */
+    .brand-tijdlijn-punt[data-loopt]::before {
+        animation: none;
+        opacity: 0.5;
+    }
+}
+
+/*
+  Het lege beheerscherm van een module: er staat nog niets, en daardoor
+  staat het hele onderdeel niet op de website. Dezelfde waarschuwing als op
+  de indelingspagina, maar hier met de uitleg erbij -- dit is de plek waar
+  je hem oplost.
+*/
+@layer components {
+    .brand-ervaring-leeg {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        border-radius: var(--radius-xl);
+        border: 1px dashed color-mix(in srgb, var(--warning) 45%, var(--border));
+        background-color: color-mix(in srgb, var(--warning) 6%, transparent);
+        padding: 1rem 1.25rem;
+    }
+}
+
+/*
+  Het jaartal dat links meeloopt op de tijdlijn.
+
+  Het hele effect is `position: sticky` en verder niets -- geen
+  scroll-listener, geen JavaScript. Elke jaargroep is een rij in een
+  raster, en een sticky element blijft binnen zijn eigen rij hangen. Loopt
+  die rij af, dan duwt het volgende jaartal hem weg. Dat is precies het
+  gedrag dat je met code veel moeizamer nabouwt.
+
+  Twee dingen die hier makkelijk stukgaan:
+
+  - **`align-self: start` is niet cosmetisch.** Zonder die regel rekt het
+    jaartal op tot de volle hoogte van zijn groep, en dan kán het niet meer
+    schuiven: sticky verplaatst een doos binnen zijn gebied, en een doos die
+    dat gebied al vult heeft nergens heen.
+  - **De rail schuift mee met de kolombreedte.** Allebei rekenen ze met
+    `--tijdlijn-jaar`, zodat de lijn precies door het midden van de punten
+    blijft lopen als die breedte verandert. Twee losse getallen zouden hier
+    binnen een week uit elkaar lopen.
+
+  Zie docs/architecture/modules/ervaring.md.
+*/
+@layer components {
+    .brand-tijdlijn {
+        /*
+          Geen kolom op een telefoon: daar is de breedte te kostbaar, en de
+          periode staat toch al op elke kaart.
+        */
+        --tijdlijn-jaar: 0rem;
+    }
+
+    /*
+      `minmax(0, 1fr)` en niet `1fr`: dat laatste krijgt als ondergrens de
+      breedte van het langste woord, en dan schuift de hele tijdlijn
+      buiten een smal scherm.
+    */
+    .brand-tijdlijn-groep {
+        display: grid;
+        grid-template-columns: var(--tijdlijn-jaar) minmax(0, 1fr);
+    }
+
+    /*
+      **`grid-column: 2` is hier het hele verhaal, en het is de oorzaak
+      geweest van een lelijke bug op mobiel.**
+
+      Het jaartal hiernaast staat op een smal scherm op `display: none`, en
+      dan is dit de énige rij in het raster. Zonder deze regel zoekt de
+      browser er zelf een plek voor -- en dat is de eerste kolom, die op
+      mobiel nul breed is. Het gevolg: elke kaart geperst tot de breedte
+      van zijn langste woord, met de functietitel over vier regels, terwijl
+      er rechts een half scherm leeg bleef. Op een breed scherm viel er
+      niets van te merken, want daar vult het jaartal die eerste kolom.
+    */
+    .brand-tijdlijn-groep-items {
+        grid-column: 2;
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .brand-tijdlijn-jaar {
+        grid-column: 1;
+        display: none;
+    }
+
+    @media (min-width: 64rem) {
+        .brand-tijdlijn {
+            --tijdlijn-jaar: 4.5rem;
+        }
+
+        .brand-tijdlijn-jaar {
+            /*
+              5.5rem: de kop van de site is 4rem hoog en blijft staan, dus
+              daaronder plus wat lucht.
+            */
+            position: sticky;
+            top: 5.5rem;
+            display: block;
+            align-self: start;
+            padding-top: 0.45rem;
+            font-family: var(--font-mono, ui-monospace), monospace;
+            font-size: 0.8rem;
+            letter-spacing: 0.08em;
+            color: var(--brand-silver);
+            transition:
+                color 300ms ease,
+                opacity 300ms ease;
+            opacity: 0.55;
+        }
+
+        /*
+          Het jaar waar je doorheen scrolt licht op. GSAP zet alleen het
+          attribuut; de kleur staat hier, net als bij de punten op de lijn.
+          Zie followYears in motion.ts.
+        */
+        .brand-tijdlijn-jaar[data-actief] {
+            color: var(--brand-cyan);
+            opacity: 1;
+        }
+    }
+}
+
+/*
+  ---------------------------------------------------------------------------
+  De cijfers boven de tijdlijn
+  ---------------------------------------------------------------------------
+
+  Drie getallen die de lijst eronder samenvatten. Ze tellen omhoog zodra ze
+  in beeld komen; zie countUp in motion.ts.
+
+  De volgorde in de HTML is `<dd>` (het getal) en dan `<dt>` (het woord),
+  want dat is wat een definitielijst voorschrijft. Op het scherm hoort het
+  getal bovenaan, en daar is `column-reverse` voor -- niet de volgorde in de
+  HTML omdraaien, want dan klopt het voor een schermlezer niet meer.
+*/
+@layer components {
+    .brand-loopbaan-cijfers {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.5rem;
+        border-block: 1px solid var(--brand-border-dark);
+        padding-block: 1rem;
+    }
+
+    .brand-loopbaan-cijfers > div {
+        display: flex;
+        flex-direction: column-reverse;
+        gap: 0.15rem;
+    }
+
+    .brand-loopbaan-cijfers dd {
+        background-image: var(--brand-gradient);
+        background-clip: text;
+        color: transparent;
+        font-size: 1.75rem;
+        font-weight: 600;
+        line-height: 1.1;
+        font-variant-numeric: tabular-nums;
+    }
+
+    /*
+      Op een telefoon staan er drie naast elkaar in nog geen driehonderd
+      pixels. Een woord als "organisaties" past daar in hoofdletters met
+      spatiëring niet in, en breekt dan midden in het woord af.
+    */
+    .brand-loopbaan-cijfers dt {
+        font-size: 0.6rem;
+        letter-spacing: 0.04em;
+        line-height: 1.3;
+        text-transform: uppercase;
+        text-wrap: balance;
+        color: var(--brand-silver);
+    }
+
+    @media (min-width: 40rem) {
+        .brand-loopbaan-cijfers {
+            gap: 1.5rem;
+        }
+
+        .brand-loopbaan-cijfers dd {
+            font-size: 2.25rem;
+        }
+
+        .brand-loopbaan-cijfers dt {
+            font-size: 0.75rem;
+            letter-spacing: 0.08em;
+        }
+    }
+}
+
+/*
+  ---------------------------------------------------------------------------
+  De loopbaan als stapel waar je doorheen scrolt
+  ---------------------------------------------------------------------------
+
+  Het blok blijft in beeld staan terwijl de pagina eronder doorschuift; in
+  die tijd loopt de loopbaan erdoorheen. De voorste kaart draagt zijn
+  beschrijving, de buren erboven en eronder zijn kleiner maar leesbaar.
+
+  Het verplaatsen van de kaarten zet JavaScript rechtstreeks op het
+  element: bij een scrub loopt dat zestig keer per seconde, en dan is een
+  CSS-klasse per stand geen optie. Alles wat níet per beeldje verandert --
+  de kleuren, de maten, het kader -- staat hier.
+
+  Zie ErvaringCarrousel.vue en docs/architecture/modules/ervaring.md.
+*/
+@layer components {
+    /* --- Het vak ----------------------------------------------------- */
+
+    /*
+      Het vak **is** de zone: hang je hier met je muis, dan gaat je scroll
+      naar de loopbaan in plaats van naar de pagina. Daarom licht de rand
+      precies dán op -- wat je ziet klopt dan met wat er gebeurt.
+
+      De hoogte is bewust begrensd. Het vak hoeft het scherm niet te
+      vullen; het moet erop passen en eruitzien als een afgebakend gebied.
+      Zou het van rand tot rand lopen, dan is het geen gebied meer maar
+      gewoon de pagina.
+    */
+    .brand-loopbaan-vak {
+        position: relative;
+        /*
+          Een eigen stapelcontext, en dat is geen detail.
+
+          De kaarten binnen dit vak krijgen van JavaScript een `z-index`
+          tot 100, en de randvervaging en de voet zitten daar nog boven.
+          Zonder `isolation` tellen die getallen mee in de stapeling van de
+          hele pagina -- en dan staat het venster met de volledige ervaring
+          er ineens áchter. Precies dat gebeurde: je zag de kaart dwars
+          door de waas heen.
+        */
+        isolation: isolate;
+        display: flex;
+        height: min(76svh, 38rem);
+        min-height: 23rem;
+        width: 100%;
+        flex-direction: column;
+        overflow: hidden;
+        border-radius: var(--radius-2xl, 1rem);
+        border: 1px solid var(--brand-border-dark);
+        background-color: color-mix(
+            in srgb,
+            var(--brand-navy-raised) 42%,
+            transparent
+        );
+        transition:
+            border-color 300ms ease,
+            box-shadow 300ms ease;
+    }
+
+    .brand-loopbaan-vak:focus-visible {
+        outline: 2px solid var(--brand-cyan);
+        outline-offset: 3px;
+    }
+
+    .brand-loopbaan-vak[data-binnen] {
+        border-color: color-mix(in srgb, var(--brand-cyan) 38%, transparent);
+        box-shadow: var(--brand-glow);
+    }
+
+    /*
+      Een vervaging aan de boven- en onderkant, zodat de kaarten het kader
+      in en uit glijden in plaats van er hard af te worden geknipt.
+    */
+    .brand-loopbaan-vak::before,
+    .brand-loopbaan-vak::after {
+        content: '';
+        position: absolute;
+        inset-inline: 0;
+        height: 3.5rem;
+        z-index: 200;
+        pointer-events: none;
+    }
+
+    .brand-loopbaan-vak::before {
+        top: 0;
+        background: linear-gradient(
+            to bottom,
+            var(--brand-navy-deep),
+            transparent
+        );
+    }
+
+    .brand-loopbaan-vak::after {
+        bottom: 0;
+        background: linear-gradient(
+            to top,
+            var(--brand-navy-deep),
+            transparent
+        );
+    }
+
+    .brand-loopbaan-binnen {
+        display: grid;
+        min-height: 0;
+        flex: 1;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0;
+        /*
+          Krap op een telefoon: elke millimeter die hier weggaat, is een
+          regel tekst die er wél bij past.
+        */
+        padding: 0.5rem 0.65rem;
+    }
+
+    @media (min-width: 48rem) {
+        .brand-loopbaan-binnen {
+            grid-template-columns: 5rem minmax(0, 1fr);
+            gap: 1.5rem;
+            padding: 1.5rem 2rem;
+        }
+    }
+
+    /* --- De rail met de jaartallen ----------------------------------- */
+
+    /*
+      Op een telefoon is er geen ruimte voor een eigen kolom met
+      jaartallen, en de periode staat toch al op elke kaart.
+    */
+    .brand-loopbaan-rail {
+        position: relative;
+        display: none;
+        gap: 0.6rem;
+        padding-block: 2.5rem;
+    }
+
+    @media (min-width: 48rem) {
+        .brand-loopbaan-rail {
+            display: flex;
+        }
+    }
+
+    .brand-loopbaan-spoor {
+        position: relative;
+        width: 2px;
+        flex-shrink: 0;
+        border-radius: 9999px;
+        background-color: color-mix(
+            in srgb,
+            var(--brand-cyan) 18%,
+            transparent
+        );
+    }
+
+    /*
+      Het afgelegde deel. Schaalt met `transform` en niet met `height`: dat
+      draait op de GPU en kost de browser bij elke scrollstap geen
+      herberekening van de pagina.
+    */
+    .brand-loopbaan-bereik {
+        position: absolute;
+        inset: 0;
+        transform-origin: top;
+        border-radius: 9999px;
+        background-image: linear-gradient(
+            to bottom,
+            var(--brand-blue),
+            var(--brand-cyan)
+        );
+        box-shadow: 0 0 12px rgb(19 199 243 / 0.35);
+    }
+
+    .brand-loopbaan-jaren {
+        position: relative;
+        flex: 1;
+    }
+
+    /*
+      Elk jaartal staat op zijn eigen hoogte langs de lijn. `translateY`
+      van min de helft zet het midden van de tekst op die hoogte in plaats
+      van de bovenkant.
+    */
+    .brand-loopbaan-jaar {
+        position: absolute;
+        left: 0;
+        transform: translateY(-50%);
+        font-family: var(--font-mono, ui-monospace), monospace;
+        font-size: 0.7rem;
+        letter-spacing: 0.06em;
+        color: var(--brand-silver);
+        opacity: 0.4;
+        transition:
+            color 250ms ease,
+            opacity 250ms ease;
+    }
+
+    .brand-loopbaan-jaar:hover {
+        opacity: 1;
+    }
+
+    .brand-loopbaan-jaar[data-actief] {
+        color: var(--brand-cyan);
+        opacity: 1;
+    }
+
+    /* --- De stapel kaarten ------------------------------------------- */
+
+    /*
+      Alle kaarten liggen op het midden van dit vlak; vandaaruit worden ze
+      omhoog of omlaag geschoven. Daarom `relative`: zonder dat heeft "het
+      midden" geen betekenis.
+    */
+    .brand-loopbaan-stapel {
+        position: relative;
+        min-height: 0;
+    }
+
+    .brand-loopbaan-kaart {
+        position: absolute;
+        top: 50%;
+        inset-inline: 0;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.7rem;
+        border-radius: var(--radius-xl);
+        border: 1px solid transparent;
+        padding: 0.7rem 0.8rem;
+        /*
+          Het beginpunt. JavaScript overschrijft dit meteen; staat het er
+          niet, dan zit alles één beeldje lang op elkaar gestapeld.
+        */
+        transform: translateY(-50%);
+        will-change: transform, opacity;
+        transition:
+            background-color 350ms ease,
+            border-color 350ms ease,
+            box-shadow 350ms ease;
+    }
+
+    @media (min-width: 48rem) {
+        .brand-loopbaan-kaart {
+            gap: 1.25rem;
+            padding: 1.1rem 1.35rem;
+        }
+    }
+
+    /*
+      De voorste kaart krijgt een eigen vlak. Dat doet twee dingen: het
+      maakt duidelijk waar je bent, en het dekt de buren af waar de
+      beschrijving overheen valt.
+    */
+    .brand-loopbaan-kaart[data-actief] {
+        border-color: color-mix(in srgb, var(--brand-cyan) 22%, transparent);
+        background-color: color-mix(
+            in srgb,
+            var(--brand-navy-raised) 92%,
+            transparent
+        );
+        box-shadow: 0 18px 45px -22px rgb(0 0 0 / 0.75);
+    }
+
+    /* --- Het beeldmerk ----------------------------------------------- */
+
+    /*
+      Wat hier staat is altijd een vierkant plaatje van 256 bij 256, met de
+      achtergrond er al in gebakken door de server. Daardoor is er geen
+      enkele uitzondering nodig voor "is dit een logo of een foto" -- het
+      vult gewoon het rondje. Zie App\Support\Media\Logo.
+    */
+    .brand-loopbaan-bel {
+        display: flex;
+        height: 2.75rem;
+        width: 2.75rem;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        border-radius: 9999px;
+        border: 1px solid var(--brand-border-dark-strong);
+        background-color: var(--brand-navy-deep);
+        color: var(--brand-silver);
+        transition:
+            height 300ms ease,
+            width 300ms ease,
+            border-color 300ms ease,
+            color 300ms ease;
+    }
+
+    .brand-loopbaan-kaart[data-actief] .brand-loopbaan-bel {
+        height: 3.75rem;
+        width: 3.75rem;
+        border-color: color-mix(in srgb, var(--brand-cyan) 40%, transparent);
+        color: var(--brand-cyan);
+        box-shadow: var(--brand-glow);
+    }
+
+    @media (min-width: 48rem) {
+        .brand-loopbaan-bel {
+            height: 3.25rem;
+            width: 3.25rem;
+        }
+
+        .brand-loopbaan-kaart[data-actief] .brand-loopbaan-bel {
+            height: 4.75rem;
+            width: 4.75rem;
+        }
+    }
+
+    .brand-loopbaan-bel img {
+        height: 100%;
+        width: 100%;
+        object-fit: cover;
+    }
+
+    /*
+      Het pictogram schaalt mee met het rondje in plaats van een vaste
+      maat te hebben. Met een vast formaat rammelt hij in het grote rondje
+      en puilt hij uit het kleine.
+    */
+    .brand-loopbaan-bel svg {
+        height: 42%;
+        width: 42%;
+    }
+
+    /* --- De tekst op een kaart --------------------------------------- */
+
+    .brand-loopbaan-periode {
+        font-family: var(--font-mono, ui-monospace), monospace;
+        font-size: 0.7rem;
+        letter-spacing: 0.06em;
+        color: var(--brand-silver);
+        transition: color 300ms ease;
+    }
+
+    .brand-loopbaan-kaart[data-actief] .brand-loopbaan-periode {
+        color: var(--brand-cyan);
+    }
+
+    .brand-loopbaan-functie {
+        margin-top: 0.15rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-wrap: balance;
+        color: #fff;
+        transition: font-size 300ms ease;
+    }
+
+    .brand-loopbaan-kaart[data-actief] .brand-loopbaan-functie {
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    @media (min-width: 48rem) {
+        .brand-loopbaan-functie {
+            font-size: 1rem;
+        }
+
+        .brand-loopbaan-kaart[data-actief] .brand-loopbaan-functie {
+            font-size: 1.5rem;
+        }
+    }
+
+    /*
+      De beschrijving staat alleen op de voorste kaart. Hij is begrensd
+      tot een paar regels: dit onderdeel is één scherm hoog, en een lange
+      tekst zou de buren eronder wegduwen. Wie alles wil lezen, schakelt
+      boven de tijdlijn over naar "Alles op een rij".
+    */
+    .brand-loopbaan-tekst {
+        margin-top: 0.6rem;
+        font-size: 0.8rem;
+        line-height: 1.55;
+        text-wrap: pretty;
+        white-space: pre-line;
+        color: var(--muted-foreground);
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        /*
+          Op een telefoon passen er minder regels: de kaart is smaller, dus
+          dezelfde tekst wordt hoger, en het vak is niet groter.
+        */
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+        overflow: hidden;
+    }
+
+    @media (min-width: 48rem) {
+        .brand-loopbaan-tekst {
+            margin-top: 0.7rem;
+            font-size: 0.875rem;
+            line-height: 1.6;
+            -webkit-line-clamp: 4;
+            line-clamp: 4;
+        }
+    }
+
+    /* --- De voet ----------------------------------------------------- */
+
+    .brand-loopbaan-voet {
+        position: relative;
+        z-index: 210;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.35rem 1rem;
+        border-top: 1px solid var(--brand-border-dark);
+        padding: 0.5rem 0.8rem;
+        font-size: 0.7rem;
+        color: var(--brand-silver);
+    }
+
+    @media (min-width: 48rem) {
+        .brand-loopbaan-voet {
+            padding: 0.65rem 1.25rem;
+            font-size: 0.75rem;
+        }
+    }
+
+    /*
+      Het zinnetje dat zegt wat je moet doen. Het wordt duidelijker zodra
+      je muis in het vak hangt -- dan is het ook waar, en tot die tijd
+      hoeft het niet te schreeuwen.
+    */
+    .brand-loopbaan-hint {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        opacity: 0.55;
+        transition:
+            opacity 250ms ease,
+            color 250ms ease;
+    }
+
+    .brand-loopbaan-vak[data-binnen] .brand-loopbaan-hint {
+        opacity: 1;
+        color: var(--brand-cyan);
+    }
+
+    /* De voortgangsbalk, op de onderrand van het kader. */
+    .brand-loopbaan-balk {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        z-index: 220;
+        height: 2px;
+        width: 100%;
+        transform-origin: left;
+        background-image: var(--brand-gradient);
+    }
+
+    /* --- Het venster met één ervaring -------------------------------- */
+
+    /*
+      Het voorvoegsel is `brand-blad` en niet `brand-venster`, want dat
+      laatste is al de browserlijst op het indelingsscherm. "Blad" is
+      bovendien wat dit ding op een telefoon is: iets dat van onderen
+      omhoog komt.
+
+      Op een telefoon komt hij dus van onderen omhoog, op een breed scherm
+      in het midden. Dat is geen versiering maar de
+      conventie van het apparaat: op een telefoon verwacht je dat een
+      detail van onderen komt, en een venster dat daar in het midden
+      zweeft voelt als een foutmelding.
+    */
+    /*
+      De waas moet boven **alles** liggen: boven de kop van de site (50),
+      boven de voortgangsbalk (100) en boven wat de carrousel intern aan
+      stapeling gebruikt. Vandaar deze hoge getallen -- en `isolation` op
+      het carrouselvak, zodat wat daarbinnen op 200 staat niet meer
+      meetelt.
+    */
+    .brand-blad-waas {
+        position: fixed;
+        inset: 0;
+        z-index: 120;
+        background-color: rgb(2 8 18 / 0.82);
+        backdrop-filter: blur(10px) saturate(0.7);
+    }
+
+    .brand-blad-waas[data-state='open'] {
+        animation: brand-blad-waas-in 300ms ease both;
+    }
+
+    .brand-blad-waas[data-state='closed'] {
+        animation: brand-blad-waas-in 200ms ease both reverse;
+    }
+
+    @keyframes brand-blad-waas-in {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    .brand-blad {
+        position: fixed;
+        z-index: 121;
+        inset-inline: 0;
+        bottom: 0;
+        max-height: 88svh;
+        overflow-y: auto;
+        border-top: 1px solid
+            color-mix(in srgb, var(--brand-cyan) 25%, transparent);
+        border-radius: var(--radius-2xl, 1rem) var(--radius-2xl, 1rem) 0 0;
+        background-color: var(--brand-navy-raised);
+        padding: 1.25rem 1.1rem 1.75rem;
+        box-shadow: 0 -20px 60px -20px rgb(0 0 0 / 0.8);
+    }
+
+    /* Het greepje bovenaan, zoals elk blad dat van onderen komt. */
+    .brand-blad::before {
+        content: '';
+        position: absolute;
+        top: 0.5rem;
+        left: 50%;
+        height: 4px;
+        width: 2.5rem;
+        transform: translateX(-50%);
+        border-radius: 9999px;
+        background-color: color-mix(
+            in srgb,
+            var(--brand-silver) 35%,
+            transparent
+        );
+    }
+
+    .brand-blad[data-state='open'] {
+        animation: brand-blad-blad 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .brand-blad[data-state='closed'] {
+        animation: brand-blad-blad 240ms ease both reverse;
+    }
+
+    @keyframes brand-blad-blad {
+        from {
+            opacity: 0;
+            transform: translateY(100%);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @media (min-width: 40rem) {
+        .brand-blad {
+            inset: 50% auto auto 50%;
+            bottom: auto;
+            width: min(42rem, calc(100vw - 3rem));
+            max-height: 82svh;
+            transform: translate(-50%, -50%);
+            border: 1px solid
+                color-mix(in srgb, var(--brand-cyan) 22%, transparent);
+            border-radius: var(--radius-2xl, 1rem);
+            padding: 1.75rem;
+            box-shadow: 0 30px 80px -30px rgb(0 0 0 / 0.85);
+        }
+
+        .brand-blad::before {
+            display: none;
+        }
+
+        .brand-blad[data-state='open'] {
+            animation: brand-blad-midden 380ms cubic-bezier(0.22, 1, 0.36, 1)
+                both;
+        }
+
+        .brand-blad[data-state='closed'] {
+            animation: brand-blad-midden 220ms ease both reverse;
+        }
+
+        @keyframes brand-blad-midden {
+            from {
+                opacity: 0;
+                transform: translate(-50%, calc(-50% + 1.5rem)) scale(0.96);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+    }
+
+    .brand-blad-inhoud {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .brand-blad-bel {
+        display: flex;
+        height: 3.25rem;
+        width: 3.25rem;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        border-radius: 9999px;
+        border: 1px solid color-mix(in srgb, var(--brand-cyan) 35%, transparent);
+        background-color: var(--brand-navy-deep);
+        color: var(--brand-cyan);
+        box-shadow: var(--brand-glow);
+    }
+
+    @media (min-width: 40rem) {
+        .brand-blad-bel {
+            height: 4rem;
+            width: 4rem;
+        }
+    }
+
+    .brand-blad-bel img {
+        height: 100%;
+        width: 100%;
+        object-fit: cover;
+    }
+
+    .brand-blad-bel svg {
+        height: 42%;
+        width: 42%;
+    }
+
+    /* Het kleine rondje in de lijst binnen het venster. */
+    .brand-blad-bel.is-klein {
+        height: 2.25rem;
+        width: 2.25rem;
+        box-shadow: none;
+        border-color: var(--brand-border-dark-strong);
+        color: var(--brand-silver);
+    }
+
+    @media (min-width: 40rem) {
+        .brand-blad-bel.is-klein {
+            height: 2.5rem;
+            width: 2.5rem;
+        }
+    }
+
+    .brand-blad-periode {
+        font-family: var(--font-mono, ui-monospace), monospace;
+        font-size: 0.7rem;
+        letter-spacing: 0.06em;
+        color: var(--brand-cyan);
+    }
+
+    .brand-blad-titel {
+        margin-top: 0.25rem;
+        font-size: 1.25rem;
+        font-weight: 600;
+        text-wrap: balance;
+        color: #fff;
+    }
+
+    @media (min-width: 40rem) {
+        .brand-blad-titel {
+            font-size: 1.6rem;
+        }
+    }
+
+    /*
+      Ruim genoeg om met een duim te raken. Tweeëndertig pixels is voor
+      een muis prima en voor een vinger te klein; op een breed scherm mag
+      hij daarom weer kleiner.
+    */
+    .brand-blad-sluit {
+        display: flex;
+        height: 2.5rem;
+        width: 2.5rem;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9999px;
+        border: 1px solid var(--brand-border-dark-strong);
+        color: var(--brand-silver);
+        transition:
+            border-color 200ms ease,
+            color 200ms ease;
+    }
+
+    .brand-blad-sluit:hover {
+        border-color: var(--brand-cyan);
+        color: var(--brand-cyan);
+    }
+
+    @media (min-width: 40rem) {
+        .brand-blad-sluit {
+            height: 2rem;
+            width: 2rem;
+        }
+    }
+
+    /*
+      Op een telefoon schuift het hele blad en heeft de tekst geen eigen
+      schuifgebied. Twee schuifbare vlakken in elkaar is op een vinger
+      niet te doen: je veegt in de tekst terwijl je het blad wilde
+      sluiten, of andersom. Op een breed scherm is er een muis en een
+      vaste vensterhoogte, en daar is een eigen schuifgebied juist
+      prettiger dan een venster dat meegroeit.
+    */
+    .brand-blad-tekst {
+        border-top: 1px solid var(--brand-border-dark);
+        padding-top: 1rem;
+        font-size: 0.9rem;
+        line-height: 1.7;
+        text-wrap: pretty;
+        white-space: pre-line;
+        color: var(--muted-foreground);
+    }
+
+    @media (min-width: 40rem) {
+        .brand-blad-tekst {
+            max-height: 46svh;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+    }
+
+    /* --- De lijst ín het venster ------------------------------------- */
+
+    .brand-blad-lijst {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+    }
+
+    .brand-blad-rij {
+        display: flex;
+        width: 100%;
+        align-items: center;
+        gap: 0.75rem;
+        border-radius: var(--radius-xl);
+        border: 1px solid transparent;
+        padding: 0.6rem 0.7rem;
+        text-align: left;
+        font: inherit;
+        color: inherit;
+        transition:
+            background-color 200ms ease,
+            border-color 200ms ease;
+    }
+
+    .brand-blad-rij:hover {
+        border-color: color-mix(in srgb, var(--brand-cyan) 32%, transparent);
+        background-color: color-mix(
+            in srgb,
+            var(--brand-navy-deep) 60%,
+            transparent
+        );
+    }
+
+    .brand-blad-rij:focus-visible {
+        outline: 2px solid var(--brand-cyan);
+        outline-offset: 2px;
+    }
+
+    .brand-blad-rij-meta {
+        display: block;
+        margin-top: 0.1rem;
+        font-size: 0.8rem;
+        color: var(--brand-ice);
+    }
+
+    .brand-blad-rij-tijd {
+        display: block;
+        font-size: 0.7rem;
+        color: var(--muted-foreground);
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* De terugpijl, alleen als je via de lijst binnenkwam. */
+    .brand-blad-terug {
+        display: flex;
+        height: 2.5rem;
+        width: 2.5rem;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9999px;
+        border: 1px solid var(--brand-border-dark-strong);
+        color: var(--brand-silver);
+        transition:
+            border-color 200ms ease,
+            color 200ms ease;
+    }
+
+    .brand-blad-terug:hover {
+        border-color: var(--brand-cyan);
+        color: var(--brand-cyan);
+    }
+
+    /* --- Bladeren door de lijst -------------------------------------- */
+
+    .brand-bladeren {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 0.3rem;
+    }
+
+    /*
+      Minstens veertig pixels in het vierkant: dat is wat een duim nodig
+      heeft. Op een muis oogt het ruim, en dat is hier de goede kant om
+      fout te zitten.
+    */
+    .brand-bladeren-knop {
+        display: inline-flex;
+        height: 2.5rem;
+        min-width: 2.5rem;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--brand-border-dark);
+        padding-inline: 0.5rem;
+        font-size: 0.8rem;
+        color: var(--brand-silver);
+        font-variant-numeric: tabular-nums;
+        transition:
+            border-color 200ms ease,
+            background-color 200ms ease,
+            color 200ms ease;
+    }
+
+    .brand-bladeren-knop:hover:not(:disabled) {
+        border-color: color-mix(in srgb, var(--brand-cyan) 45%, transparent);
+        color: #fff;
+    }
+
+    .brand-bladeren-knop:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+    }
+
+    .brand-bladeren-knop[data-actief] {
+        border-color: transparent;
+        background-image: var(--brand-gradient);
+        color: #fff;
+    }
+
+    .brand-bladeren-gat {
+        display: inline-flex;
+        height: 2.5rem;
+        align-items: center;
+        padding-inline: 0.15rem;
+        color: var(--brand-silver);
+        opacity: 0.5;
+    }
+
+    /* --- De knop naar de hele loopbaan ------------------------------- */
+
+    .brand-toon-alles {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        border-radius: 9999px;
+        border: 1px solid var(--brand-border-dark);
+        padding: 0.45rem 0.9rem;
+        font-size: 0.75rem;
+        color: var(--brand-silver);
+        transition:
+            border-color 200ms ease,
+            color 200ms ease;
+    }
+
+    .brand-toon-alles:hover {
+        border-color: color-mix(in srgb, var(--brand-cyan) 45%, transparent);
+        color: #fff;
+    }
+
+    /* --- De keuze tussen de twee weergaven --------------------------- */
+
+    .brand-weergave {
+        display: inline-flex;
+        gap: 0.25rem;
+        border-radius: 9999px;
+        border: 1px solid var(--brand-border-dark);
+        padding: 0.2rem;
+    }
+
+    .brand-weergave button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        border-radius: 9999px;
+        padding: 0.3rem 0.8rem;
+        font-size: 0.75rem;
+        color: var(--brand-silver);
+        transition:
+            background-color 200ms ease,
+            color 200ms ease;
+    }
+
+    .brand-weergave button:hover {
+        color: #fff;
+    }
+
+    .brand-weergave button[data-actief] {
+        background-image: var(--brand-gradient);
+        color: #fff;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    /*
+      De carrousel wordt bij reduced motion helemaal niet getoond -- zie
+      ErvaringSection. Deze regels zijn er voor de weergavekeuze en voor
+      het geval iemand hem toch in beeld krijgt.
+    */
+    .brand-loopbaan-kaart,
+    .brand-loopbaan-jaar,
+    .brand-loopbaan-bel,
+    .brand-loopbaan-functie,
+    .brand-loopbaan-periode,
+    .brand-loopbaan-vak,
+    .brand-weergave button {
+        transition: none;
+    }
+
+    .brand-loopbaan-hint svg {
+        animation: none;
+    }
+}
+
+/*
+  ---------------------------------------------------------------------------
+  Het beheerscherm van een module
+  ---------------------------------------------------------------------------
+
+  Anders dan de publieke tijdlijn volgt dit de themavoorkeur van de
+  gebruiker: alles hieronder moet in licht én donker kloppen.
+*/
+@layer components {
+    /* --- Het sterretje bij een verplicht veld ------------------------ */
+
+    /*
+      Zie de `verplicht`-prop op Label.vue. Het is een projectafspraak dat
+      elk verplicht veld er een krijgt.
+    */
+    .brand-verplicht {
+        color: var(--destructive);
+        line-height: 1;
+    }
+
+    /* --- Een regel in het overzicht ---------------------------------- */
+
+    .brand-ervaring-regel {
+        cursor: pointer;
+        transition: background-color 150ms ease;
+    }
+
+    .brand-ervaring-regel:hover {
+        background-color: color-mix(in srgb, var(--muted) 60%, transparent);
+    }
+
+    /*
+      Wat offline staat is lichter. Niet doorgestreept of grijs weggezet --
+      het is geen fout, het is een keuze -- maar wel duidelijk anders dan
+      wat er wél op de website staat.
+    */
+    .brand-ervaring-regel[data-offline] {
+        opacity: 0.6;
+    }
+
+    /* --- Het rondje met het logo of het pictogram -------------------- */
+
+    .brand-logo-rondje {
+        display: flex;
+        height: 2.5rem;
+        width: 2.5rem;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        border-radius: 9999px;
+        border: 1px solid var(--border);
+        background-color: var(--muted);
+        color: var(--muted-foreground);
+    }
+
+    /*
+      Geen uitzondering voor een logo met doorzichtige randen: de server
+      bakt de achtergrond al in het bestand, dus wat hier binnenkomt is
+      altijd een gewoon vierkant plaatje. Zie App\Support\Media\Logo.
+    */
+    .brand-logo-rondje img {
+        height: 100%;
+        width: 100%;
+        object-fit: cover;
+    }
+
+    .brand-logo-rondje.is-klein {
+        height: 1.75rem;
+        width: 1.75rem;
+    }
+
+    .brand-logo-rondje.is-groot {
+        height: 3.5rem;
+        width: 3.5rem;
+    }
+
+    /* --- Het beeldmerk kiezen en bijsnijden -------------------------- */
+
+    .brand-logo-kiezer {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 1rem;
+        border-radius: var(--radius-xl);
+        border: 1px dashed var(--border);
+        padding: 1rem;
+    }
+
+    .brand-uitsnede {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    /*
+      Het ronde voorbeeld. Wat je hier ziet is precies wat er straks op de
+      website staat -- de server rekent met dezelfde verhoudingen. De maat
+      staat ook in LogoKiezer.vue, want die rekent de stand van het beeld
+      erin uit.
+    */
+    .brand-uitsnede-vak {
+        position: relative;
+        height: 11rem;
+        width: 11rem;
+        flex-shrink: 0;
+        overflow: hidden;
+        border-radius: 9999px;
+        border: 1px solid var(--border);
+        background-color: var(--muted);
+        touch-action: none;
+        user-select: none;
+    }
+
+    /* De witte ondergrond zoals hij straks in het bestand komt te zitten. */
+    .brand-uitsnede-vak[data-plaat] {
+        background-color: #fff;
+    }
+
+    .brand-uitsnede-vak[data-sleepbaar] {
+        cursor: grab;
+    }
+
+    .brand-uitsnede-vak[data-sleepbaar]:active {
+        cursor: grabbing;
+    }
+
+    .brand-uitsnede-vak img {
+        position: absolute;
+        max-width: none;
+    }
+
+    /*
+      Staat er een beeld dat niet bijgesneden kan worden -- het is al door
+      de server verwerkt -- dan vult het gewoon het rondje.
+    */
+    .brand-uitsnede-vak > img:only-child {
+        inset: 0;
+        height: 100%;
+        width: 100%;
+        object-fit: cover;
+    }
+
+    .brand-uitsnede-leeg {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        text-align: center;
+        font-size: 0.75rem;
+        color: var(--muted-foreground);
+    }
+
+    .brand-uitsnede-hint {
+        font-size: 0.7rem;
+        color: var(--muted-foreground);
+    }
+
+    /*
+      Een ingevuld cijfer dat achterloopt op wat wij tellen. Geen fout --
+      de klant mag het zelf weten -- maar wel iets dat hij moet zien,
+      want anders staat er een verouderd getal op zijn voorpagina.
+    */
+    .brand-cijfer-waarschuwing {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.4rem;
+        font-size: 0.75rem;
+        text-wrap: pretty;
+        color: var(--warning);
+    }
+
+    /* --- De schuif om in te zoomen ----------------------------------- */
+
+    .brand-schuif {
+        position: relative;
+        display: flex;
+        height: 1.25rem;
+        width: 100%;
+        align-items: center;
+        touch-action: none;
+        user-select: none;
+    }
+
+    .brand-schuif-spoor {
+        position: relative;
+        height: 4px;
+        width: 100%;
+        overflow: hidden;
+        border-radius: 9999px;
+        background-color: var(--muted);
+    }
+
+    .brand-schuif-bereik {
+        position: absolute;
+        height: 100%;
+        border-radius: 9999px;
+        background-image: var(--brand-gradient);
+    }
+
+    .brand-schuif-greep {
+        display: block;
+        height: 1rem;
+        width: 1rem;
+        border-radius: 9999px;
+        border: 2px solid var(--primary);
+        background-color: var(--background);
+        cursor: grab;
+        transition: transform 150ms ease;
+    }
+
+    .brand-schuif-greep:hover {
+        transform: scale(1.15);
+    }
+
+    .brand-schuif-greep:focus-visible {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+    }
+
+    /* --- De detailpagina --------------------------------------------- */
+
+    .brand-detail-kop {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 1rem;
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--border);
+        background-color: var(--card);
+        padding: 1.25rem;
+    }
+
+    .brand-detail-vak {
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--border);
+        background-color: var(--card);
+        padding: 1.25rem;
+    }
+
+    .brand-detail-taal {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+
+    .brand-detail-lijst {
+        margin-top: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.9rem;
+        font-size: 0.875rem;
+    }
+
+    .brand-detail-lijst dt {
+        font-size: 0.7rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted-foreground);
+    }
+
+    .brand-detail-lijst dd {
+        margin-top: 0.2rem;
+        text-wrap: pretty;
+    }
+
+    /*
+      Een veld dat leeg is. Cursief en grijs, zodat je in één blik ziet dat
+      er niets staat in plaats van dat er iets raars staat -- en met de
+      uitleg erbij wat dat op de website betekent.
+    */
+    .brand-detail-lijst dd.is-leeg {
+        font-style: italic;
+        color: var(--muted-foreground);
+    }
+
+    /*
+      De knoppen naar de vorige en de volgende ervaring.
+
+      **Ze mogen niet op de vakken erboven lijken.** Dat was precies wat er
+      misging: met dezelfde vulling en dezelfde rand als een inhoudsblok
+      las je ze als nóg een blok met gegevens in plaats van als iets waar
+      je op drukt. Vier dingen zetten dat recht:
+
+      1. **Geen vulling.** De inhoudsblokken zijn gevuld, deze niet -- en
+         dat verschil zie je als eerste.
+      2. **Een streep erboven.** Daarmee horen ze bij de voet van de
+         pagina en niet bij de inhoud erboven.
+      3. **Een gevuld rondje met een pijl**, in de merkkleur. Eén element
+         met kleur is genoeg om "hier gebeurt iets" te zeggen; twee zou
+         het een reclamebanner maken.
+      4. **Het opschrift in de merkkleur**, klein en in hoofdletters. Dat
+         leest als een label bij een knop, niet als een kopje boven
+         gegevens.
+
+      Bij het aanwijzen vullen ze zich alsnog, komen ze een pixel omhoog
+      en schuift de pijl de kant op waar hij heen wijst.
+    */
+    .brand-detail-buren {
+        display: grid;
+        gap: 0.75rem;
+        border-top: 1px solid var(--border);
+        padding-top: 1.25rem;
+    }
+
+    @media (min-width: 40rem) {
+        .brand-detail-buren {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    .brand-detail-buur {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        gap: 0.7rem;
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--border);
+        background-color: transparent;
+        padding: 0.55rem 0.65rem;
+        transition:
+            border-color 200ms ease,
+            background-color 200ms ease,
+            box-shadow 200ms ease,
+            transform 200ms ease;
+    }
+
+    .brand-detail-buur:hover {
+        border-color: color-mix(in srgb, var(--primary) 50%, transparent);
+        background-color: color-mix(in srgb, var(--primary) 7%, transparent);
+        box-shadow: 0 8px 20px -14px
+            color-mix(in srgb, var(--primary) 70%, transparent);
+        transform: translateY(-1px);
+    }
+
+    .brand-detail-buur:focus-visible {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+    }
+
+    .brand-detail-buur.is-rechts {
+        text-align: right;
+    }
+
+    /*
+      Het pijltje in een gevuld rondje. Dit is het enige gekleurde vlak op
+      de knop, en daarmee het teken dat je hier op kunt drukken.
+    */
+    .brand-detail-buur-pijl {
+        display: flex;
+        height: 2.25rem;
+        width: 2.25rem;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9999px;
+        background-color: color-mix(in srgb, var(--primary) 12%, transparent);
+        color: var(--primary);
+        transition:
+            background-color 200ms ease,
+            color 200ms ease,
+            transform 200ms ease;
+    }
+
+    .brand-detail-buur:hover .brand-detail-buur-pijl {
+        background-image: var(--brand-gradient);
+        color: #fff;
+        transform: translateX(-2px);
+    }
+
+    .brand-detail-buur.is-rechts:hover .brand-detail-buur-pijl {
+        transform: translateX(2px);
+    }
+
+    .brand-detail-buur-kop {
+        display: block;
+        font-size: 0.65rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--primary);
+    }
+
+    .brand-detail-buur-titel {
+        display: block;
+        overflow: hidden;
+        font-size: 0.875rem;
+        font-weight: 500;
+        line-height: 1.35;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .brand-detail-buur-meta {
+        display: block;
+        overflow: hidden;
+        font-size: 0.7rem;
+        line-height: 1.35;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--muted-foreground);
+    }
+
+    /* --- Het zoekveldje in een keuzelijst ---------------------------- */
+
+    .brand-panel-zoek {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        border-bottom: 1px solid var(--control-border, var(--border));
+        padding: 0.45rem 0.7rem;
+        color: var(--control-muted);
+    }
+
+    .brand-panel-zoek input {
+        width: 100%;
+        min-width: 0;
+        border: 0;
+        background: transparent;
+        font-size: 0.875rem;
+        color: var(--control-text, inherit);
+        outline: none;
+    }
+
+    /* --- De maandkiezer ---------------------------------------------- */
+
+    .brand-maand {
+        border-radius: var(--radius-md);
+        padding: 0.4rem 0.25rem;
+        font-size: 0.75rem;
+        color: var(--control-text, inherit);
+        transition:
+            background-color 150ms ease,
+            color 150ms ease;
+    }
+
+    .brand-maand:hover {
+        background-color: color-mix(in srgb, var(--primary) 12%, transparent);
+    }
+
+    .brand-maand[data-gekozen] {
+        background-image: var(--brand-gradient);
+        color: #fff;
+    }
+
+    /* --- Het schuifje in het bevestigingsvenster --------------------- */
+
+    .brand-confirm-keuze {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border);
+        background-color: color-mix(in srgb, var(--muted) 45%, transparent);
+        padding: 0.7rem 0.85rem;
+        cursor: pointer;
+    }
+
+    /* --- De laadstaat van het automatisch vertalen ------------------- */
+
+    /*
+      Een laag over de Engelse velden zolang de vertaling onderweg is. Dat
+      die velden onbruikbaar zijn is de bedoeling: ze worden zo overschreven,
+      en typen in iets dat straks verdwijnt is het ergste wat een formulier
+      je kan aandoen.
+    */
+    .brand-vertaalt {
+        position: absolute;
+        inset: 0;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        border-radius: var(--radius-xl);
+        background-color: color-mix(
+            in srgb,
+            var(--background) 82%,
+            transparent
+        );
+        backdrop-filter: blur(2px);
+        text-align: center;
+        color: var(--primary);
+    }
+
+    /*
+      Een balkje dat heen en weer loopt. Het zegt niets over hoe ver we
+      zijn -- dat weten we niet, de server is stukje voor stukje bezig --
+      maar wel dat er nog iets gebeurt. Bij een vertaling die twintig
+      seconden duurt is dat het verschil tussen wachten en afhaken.
+    */
+    .brand-vertaalt-balk {
+        position: relative;
+        display: block;
+        margin-top: 0.4rem;
+        height: 2px;
+        width: 7rem;
+        overflow: hidden;
+        border-radius: 9999px;
+        background-color: color-mix(in srgb, var(--primary) 18%, transparent);
+    }
+
+    .brand-vertaalt-balk::after {
+        content: '';
+        position: absolute;
+        inset-block: 0;
+        width: 40%;
+        border-radius: 9999px;
+        background-image: var(--brand-gradient);
+        animation: brand-vertaalt-loop 1.4s ease-in-out infinite;
+    }
+
+    @keyframes brand-vertaalt-loop {
+        0% {
+            transform: translateX(-100%);
+        }
+        100% {
+            transform: translateX(250%);
+        }
+    }
+
+    .brand-vertaalt-enter-active,
+    .brand-vertaalt-leave-active {
+        transition: opacity 200ms ease;
+    }
+
+    .brand-vertaalt-enter-from,
+    .brand-vertaalt-leave-to {
+        opacity: 0;
+    }
+
+    /* --- De twee stappen van het formulier --------------------------- */
+
+    /*
+      Het streepje tussen de twee stappen. Het maakt van twee losse hokjes
+      een weg met een richting, en dat is precies wat een formulier in
+      stappen moet uitstralen.
+    */
+    .brand-stap-lijn {
+        height: 1px;
+        width: 1.5rem;
+        flex-shrink: 0;
+        background-color: var(--border);
+    }
+
+    /*
+      Het schuiven tussen stap 1 en stap 2. De richting hangt af van welke
+      kant je op loopt; zonder dat onderscheid voelt "Terug" hetzelfde als
+      "Volgende" en zegt de beweging niets.
+    */
+    .brand-stap-vooruit-enter-active,
+    .brand-stap-vooruit-leave-active,
+    .brand-stap-terug-enter-active,
+    .brand-stap-terug-leave-active {
+        transition:
+            opacity 180ms ease,
+            transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .brand-stap-vooruit-enter-from,
+    .brand-stap-terug-leave-to {
+        opacity: 0;
+        transform: translateX(1.5rem);
+    }
+
+    .brand-stap-vooruit-leave-to,
+    .brand-stap-terug-enter-from {
+        opacity: 0;
+        transform: translateX(-1.5rem);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    /*
+      Alles wat hierboven beweegt, staat hier stil. Een uitklappende
+      beschrijving blijft gewoon werken -- hij springt alleen open in plaats
+      van te groeien.
+    */
+    .brand-tijdlijn-item,
+    .brand-tijdlijn-jaar,
+    .brand-ervaring-regel,
+    .brand-detail-buur,
+    .brand-detail-buur-pijl,
+    .brand-maand {
+        transition: none;
+    }
+
+    /*
+      De kleur en de vulling blijven; alleen het verschuiven gaat eruit.
+      Zo blijft de knop even duidelijk een knop.
+    */
+    .brand-detail-buur:hover,
+    .brand-detail-buur:hover .brand-detail-buur-pijl,
+    .brand-detail-buur.is-rechts:hover .brand-detail-buur-pijl {
+        transform: none;
+    }
+
+    .brand-stap-vooruit-enter-active,
+    .brand-stap-vooruit-leave-active,
+    .brand-stap-terug-enter-active,
+    .brand-stap-terug-leave-active {
+        transition: opacity 120ms ease;
+    }
+
+    .brand-stap-vooruit-enter-from,
+    .brand-stap-terug-leave-to,
+    .brand-stap-vooruit-leave-to,
+    .brand-stap-terug-enter-from {
+        transform: none;
+    }
+
+    /*
+      De jaartallen blijven allemaal even leesbaar: zonder beweging is er
+      geen "waar ben ik nu" om aan te wijzen.
+    */
+    .brand-tijdlijn-jaar {
+        opacity: 1;
+    }
+
+    .brand-tijdlijn:hover .brand-tijdlijn-item:not(:hover) {
+        opacity: 1;
     }
 }

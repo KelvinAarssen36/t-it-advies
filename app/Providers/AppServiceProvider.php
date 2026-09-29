@@ -2,10 +2,16 @@
 
 namespace App\Providers;
 
+use App\Enums\PageSectionKey;
 use App\Enums\SecurityEventType;
 use App\Listeners\RecordSecurityEvents;
+use App\Models\Experience;
 use App\Models\User;
+use App\Support\Page\SectionContent;
 use App\Support\Security\SecurityLogger;
+use App\Support\Translation\GeenVertaler;
+use App\Support\Translation\MyMemoryVertaler;
+use App\Support\Translation\Vertaler;
 use Carbon\CarbonImmutable;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -26,7 +32,28 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Eén register voor de hele aanvraag, want de tellers worden er in
+        // boot() in gezet en moeten er in de controller nog in zitten.
+        $this->app->singleton(SectionContent::class);
+
+        /*
+         * Staat het vertalen uit, dan komt de lege vertaler in de
+         * container. De applicatie heeft dus altijd een vertaler; hij kan
+         * alleen niets, en dan verdwijnt de knop uit het scherm. Zie
+         * GeenVertaler.
+         */
+        $this->app->singleton(Vertaler::class, function (): Vertaler {
+            if (! config('services.translate.enabled')) {
+                return new GeenVertaler;
+            }
+
+            return new MyMemoryVertaler(
+                true,
+                (string) config('services.translate.endpoint'),
+                config('services.translate.email'),
+                (int) config('services.translate.timeout', 6),
+            );
+        });
     }
 
     /**
@@ -38,6 +65,44 @@ class AppServiceProvider extends ServiceProvider
         $this->configureEvents();
         $this->configureRateLimiting();
         $this->configureAuthorization();
+        $this->configurePageSections();
+    }
+
+    /**
+     * Welke onderdelen van de landingspagina hun eigen inhoud tellen.
+     *
+     * **Dit is de plek waar een nieuwe module zich aanmeldt.** Eén regel per
+     * module, en daarmee verdwijnt dat onderdeel vanzelf van de website
+     * zolang de klant er nog niets in heeft gezet -- met een uitroepteken op
+     * het indelingsscherm, zodat hij weet waaróm hij het niet ziet:
+     *
+     *     $this->app->make(SectionContent::class)->telt(
+     *         PageSectionKey::Timeline,
+     *         fn () => TimelineItem::query()->count(),
+     *     );
+     *
+     * De tellers zijn bewust functies en geen getallen: ze mogen alleen
+     * draaien als er echt naar gevraagd wordt, en niet bij elke aanvraag
+     * die met deze pagina niets te maken heeft.
+     *
+     * Onderdelen waarvan de tekst in de code staat -- de kop, de voettekst
+     * -- melden zich niet aan. Die zijn nooit leeg. Zie
+     * docs/architecture/pagina-indeling.md.
+     */
+    protected function configurePageSections(): void
+    {
+        /*
+         * `online()` en niet gewoon `count()`: een tijdlijn waarvan alles
+         * offline staat is voor de bezoeker net zo leeg als een tijdlijn
+         * zonder ervaringen. Zou hier het totaal staan, dan meldt het
+         * indelingsscherm dat het onderdeel gevuld is terwijl er op de
+         * website niets verschijnt -- en dan is die melding erger dan geen
+         * melding.
+         */
+        $this->app->make(SectionContent::class)->telt(
+            PageSectionKey::Ervaring,
+            fn () => Experience::query()->online()->count(),
+        );
     }
 
     /**
@@ -103,6 +168,16 @@ class AppServiceProvider extends ServiceProvider
                 ->response(fn () => $this->tooManyAttempts($request, 'contact')),
             Limit::perDay(20)->by((string) $request->ip()),
         ]);
+
+        /*
+         * Automatisch vertalen kost tekens van een maandtegoed. Twintig
+         * keer per minuut is ruim voor iemand die zit te werken, en het
+         * houdt een knop die per ongeluk in een lus staat tegen voordat het
+         * tegoed op is.
+         */
+        RateLimiter::for('vertalen', fn (Request $request) => Limit::perMinute(20)
+            ->by((string) ($request->user()?->getAuthIdentifier() ?? $request->ip()))
+            ->response(fn () => $this->tooManyAttempts($request, 'vertalen')));
 
         RateLimiter::for('webhook', fn (Request $request) => Limit::perMinute(120)->by((string) $request->ip()));
     }
