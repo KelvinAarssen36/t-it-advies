@@ -150,7 +150,7 @@ withDefaults(
                     <LocaleToggle />
 
                     <p class="text-center text-xs text-muted-foreground">
-                        Alleen voor de beheerder van deze website.
+                        {{ $t('Alleen voor de beheerder van deze website.') }}
                     </p>
                 </div>
             </div>

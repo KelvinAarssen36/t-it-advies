@@ -80,7 +80,7 @@ class ExperienceCrudTest extends TestCase
         $this->post(route('website.ervaring.store'), $this->invoer())->assertRedirect(route('login'));
         $this->put(route('website.ervaring.update', $ervaring), $this->invoer())->assertRedirect(route('login'));
         $this->patch(route('website.ervaring.online', $ervaring), ['published' => false])->assertRedirect(route('login'));
-        $this->put(route('website.ervaring.cijfers'), ['waarden' => []])->assertRedirect(route('login'));
+        $this->put(route('website.ervaring.kop'), ['waarden' => []])->assertRedirect(route('login'));
         $this->delete(route('website.ervaring.destroy', $ervaring))->assertRedirect(route('login'));
         $this->post(route('website.ervaring.vertalen'))->assertRedirect(route('login'));
 
@@ -98,7 +98,7 @@ class ExperienceCrudTest extends TestCase
         $this->actingAs($user)->post(route('website.ervaring.store'), $this->invoer())->assertForbidden();
         $this->actingAs($user)->put(route('website.ervaring.update', $ervaring), $this->invoer())->assertForbidden();
         $this->actingAs($user)->patch(route('website.ervaring.online', $ervaring), ['published' => false])->assertForbidden();
-        $this->actingAs($user)->put(route('website.ervaring.cijfers'), ['waarden' => []])->assertForbidden();
+        $this->actingAs($user)->put(route('website.ervaring.kop'), ['waarden' => []])->assertForbidden();
         $this->actingAs($user)->delete(route('website.ervaring.destroy', $ervaring))->assertForbidden();
         $this->actingAs($user)->post(route('website.ervaring.vertalen'))->assertForbidden();
     }

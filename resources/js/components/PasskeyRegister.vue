@@ -61,11 +61,11 @@ const handleCancel = () => {
 
 <template>
     <div v-if="!isSupported" class="text-sm text-muted-foreground">
-        Passkeys are not supported in this browser.
+        {{ $t('Deze browser kan niet met passkeys overweg.') }}
     </div>
 
-    <Button v-else-if="!showForm" variant="outline" @click="showForm = true">
-        Add passkey
+    <Button v-else-if="!showForm" variant="aanmaken" @click="showForm = true">
+        {{ $t('Passkey toevoegen') }}
     </Button>
 
     <form
@@ -74,17 +74,19 @@ const handleCancel = () => {
         class="space-y-4 rounded-lg border border-border bg-muted/50 p-4"
     >
         <div class="grid gap-2">
-            <Label for="passkey-name">Passkey name</Label>
+            <Label for="passkey-name" verplicht>
+                {{ $t('Naam van de passkey') }}
+            </Label>
             <Input
                 id="passkey-name"
                 type="text"
                 v-model="name"
-                placeholder="e.g., MacBook Pro, iPhone"
+                :placeholder="$t('Bijvoorbeeld: MacBook Pro, iPhone')"
                 class="mt-1 block w-full border-foreground/20"
                 v-focus
             />
             <p class="text-xs text-muted-foreground">
-                A name helps you identify this passkey later.
+                {{ $t('Aan die naam herken je later welk apparaat dit was.') }}
             </p>
         </div>
 
@@ -96,10 +98,10 @@ const handleCancel = () => {
                 type="submit"
                 :disabled="isLoading || !name.trim()"
             >
-                {{ isLoading ? 'Registering...' : 'Register passkey' }}
+                {{ isLoading ? $t('Bezig...') : $t('Passkey vastleggen') }}
             </Button>
             <Button type="button" variant="ghost" @click="handleCancel">
-                Cancel
+                {{ $t('Annuleren') }}
             </Button>
         </div>
     </form>

@@ -51,7 +51,7 @@ const onPasted = (plakcode: string) => {
 </script>
 
 <template>
-    <Head title="Bevestig met je authenticator" />
+    <Head :title="$t('Bevestig met je authenticator')" />
 
     <Form
         v-bind="confirmTwoFactor.store.form()"
@@ -89,18 +89,21 @@ const onPasted = (plakcode: string) => {
             >
                 <ShieldCheck class="mt-0.5 size-4 shrink-0 text-brand-cyan" />
                 <p>
-                    Recovery codes werken hier niet. Die zijn alleen bedoeld om
-                    weer in te loggen als je je authenticator kwijt bent.
+                    {{
+                        $t(
+                            'Recovery codes werken hier niet. Die zijn alleen bedoeld om weer in te loggen als je je authenticator kwijt bent.',
+                        )
+                    }}
                 </p>
             </div>
 
             <Button class="w-full" :disabled="processing || code.length < 6">
                 <Spinner v-if="processing" />
-                Bevestigen
+                {{ $t('Bevestigen') }}
             </Button>
 
             <button ref="autoSubmit" type="submit" class="hidden" tabindex="-1">
-                Bevestigen
+                {{ $t('Bevestigen') }}
             </button>
         </div>
     </Form>

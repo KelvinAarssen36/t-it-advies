@@ -179,6 +179,33 @@ dat vroeg of laat.
 Dingen die niet vanzelfsprekend zijn en waar je op zult stuklopen als je ze
 niet weet:
 
+- **`v-model` op `<input type="number">` levert een getal, geen tekst.**
+  Vue zet dat stilzwijgend om zodra je iets typt: het veld begint als een
+  lege string en wordt daarna een `number`, in hetzelfde vakje. Doe je er
+  dan `.trim()` op -- en dat is de voor de hand liggende manier om "leeg"
+  te herkennen -- dan valt er een `TypeError` middenin het sjabloon, en
+  Vue breekt de hele pagina af. Je ziet een leeg scherm en geen
+  foutmelding.
+
+    Dat is hier gebeurd bij de cijfers boven de tijdlijn. Lees zo'n veld
+    altijd via een hulpfunctie die allebei aankan:
+    `String(waarde ?? '').trim()`. Type het ook zo (`string | number`), dan
+    ziet TypeScript het de volgende keer aankomen.
+
+- **Een `hidden` van Tailwind kan een eigen `brand-*`-klasse niet
+  overschrijven.** Die utility zit in `@layer utilities`, en een gewone
+  regel in `app.css` staat buiten alle lagen. **Ongelaagde CSS wint altijd
+  van gelaagde**, hoe specifiek die laatste ook is -- dus
+  `class="brand-visitekaartje tablet:hidden"` doet niets zodra
+  `.brand-visitekaartje` zelf `display: flex` zet. Er komt geen
+  foutmelding; het element blijft gewoon staan.
+
+    Dit is al twee keer misgegaan: bij het groepskopje in de zijbalk en bij
+    het visitekaartje in de hero. Zet je `display` in een ongelaagde regel,
+    dan hoort alles wat hem overschrijft dat óók ongelaagd te doen --
+    bijvoorbeeld met een mediaquery of een `[data-...]`-selector naast de
+    klasse zelf. Zie de voorbeelden in `app.css`.
+
 - **Listeners worden automatisch ontdekt.** Laravel registreert elke klasse in
   `app/Listeners` met een methode die met `handle` begint. Meld je die
   daarnaast ook aan in een service provider, dan draait hij twee keer. Daarom

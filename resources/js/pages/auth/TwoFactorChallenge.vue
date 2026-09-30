@@ -11,6 +11,7 @@ import {
     InputOTPSlot,
 } from '@/components/ui/input-otp';
 import { Spinner } from '@/components/ui/spinner';
+import { t } from '@/lib/i18n';
 import { store } from '@/routes/two-factor/login';
 import type { TwoFactorConfigContent } from '@/types';
 
@@ -26,20 +27,25 @@ import type { TwoFactorConfigContent } from '@/types';
 const showRecoveryInput = ref(false);
 const code = ref('');
 
+/*
+ * De titel en de omschrijving gaan naar de layout, en die vertaalt ze bij
+ * het tekenen -- dat is hoe alle schermen hier het doen. De knoptekst
+ * staat midden in een zin op déze pagina, dus die vertalen we hier.
+ */
 const authConfigContent = computed<TwoFactorConfigContent>(() => {
     if (showRecoveryInput.value) {
         return {
             title: 'Recovery code',
             description:
                 'Vul een van je recovery codes in om weer binnen te komen.',
-            buttonText: 'inloggen met een code uit je app',
+            buttonText: t('inloggen met een code uit je app'),
         };
     }
 
     return {
         title: 'Tweestapsverificatie',
         description: 'Vul de zescijferige code uit je authenticator-app in.',
-        buttonText: 'inloggen met een recovery code',
+        buttonText: t('inloggen met een recovery code'),
     };
 });
 
@@ -71,7 +77,7 @@ const onPasted = (plakcode: string) => {
 </script>
 
 <template>
-    <Head title="Tweestapsverificatie" />
+    <Head :title="$t('Tweestapsverificatie')" />
 
     <div class="space-y-6">
         <Form
@@ -113,15 +119,15 @@ const onPasted = (plakcode: string) => {
                 :disabled="processing || code.length < 6"
             >
                 <Spinner v-if="processing" />
-                Doorgaan
+                {{ $t('Doorgaan') }}
             </Button>
 
             <button ref="autoSubmit" type="submit" class="hidden" tabindex="-1">
-                Doorgaan
+                {{ $t('Doorgaan') }}
             </button>
 
             <p class="text-center text-sm text-muted-foreground">
-                Authenticator niet bij de hand? Je kunt ook
+                {{ $t('Authenticator niet bij de hand? Je kunt ook') }}
                 <button
                     type="button"
                     class="text-brand-cyan underline-offset-4 hover:underline"
@@ -143,25 +149,28 @@ const onPasted = (plakcode: string) => {
                 <Input
                     name="recovery_code"
                     type="text"
-                    placeholder="Bijvoorbeeld: abcdefghij-klmnopqrst"
+                    :placeholder="$t('Bijvoorbeeld: abcdefghij-klmnopqrst')"
                     autocomplete="one-time-code"
                     v-focus
                     required
                 />
                 <InputError :message="errors.recovery_code" />
                 <p class="text-sm text-muted-foreground">
-                    Elke recovery code werkt één keer. Maak er nieuwe aan zodra
-                    je weer binnen bent.
+                    {{
+                        $t(
+                            'Elke recovery code werkt één keer. Maak er nieuwe aan zodra je weer binnen bent.',
+                        )
+                    }}
                 </p>
             </div>
 
             <Button type="submit" class="w-full" :disabled="processing">
                 <Spinner v-if="processing" />
-                Doorgaan
+                {{ $t('Doorgaan') }}
             </Button>
 
             <p class="text-center text-sm text-muted-foreground">
-                Of
+                {{ $t('Of') }}
                 <button
                     type="button"
                     class="text-brand-cyan underline-offset-4 hover:underline"

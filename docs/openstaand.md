@@ -23,21 +23,6 @@ Het portaal heeft er een; de landing krijgt voorlopig de standaardpagina van
 Laravel. Wat die variant anders moet doen staat in
 [foutpagina's](architecture/foutpaginas.md).
 
-### De 2FA-schermen vertalen
-
-Het instelscherm, de challenge, het bevestigingsscherm met de code en de
-2FA-instellingen staan nog met vaste Nederlandse tekst in het sjabloon --
-ongeveer 33 regels over zeven bestanden.
-
-Let op: `TranslationsTest` ziet dit **niet**. Die controleert of elke sleutel
-die al in `$t()` staat een vertaling heeft; een kale zin in een sjabloon
-glipt erdoorheen. Die blinde vlek is op zichzelf iets om op te lossen.
-
-### De landing vertalen
-
-Bewust uitgesteld: die teksten worden inhoud die de klant zelf beheert, en
-daarvoor geldt het plan in [vertalingen](architecture/vertalingen.md).
-
 ### De inhoud van de overige onderdelen beheerbaar maken
 
 De [ervaring](architecture/modules/ervaring.md) is af. De kop, de diensten

@@ -42,7 +42,12 @@ enum ExperienceIcon: string
             self::Company => __('Bedrijf'),
             self::Development => __('Ontwikkeling'),
             self::Infrastructure => __('Infrastructuur'),
-            self::Maintenance => __('Beheer'),
+            // "Onderhoud" en niet "Beheer": dat tweede is in dit
+            // portaal de naam van een menugroep, en één Nederlands woord
+            // met twee betekenissen levert in het Engels één vertaling op
+            // voor allebei. Bij een moersleutel past onderhoud sowieso
+            // beter. Zie docs/architecture/vertalingen.md.
+            self::Maintenance => __('Onderhoud'),
             self::Security => __('Beveiliging'),
             self::Advice => __('Advies'),
             self::Education => __('Opleiding'),

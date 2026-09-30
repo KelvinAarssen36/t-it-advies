@@ -27,9 +27,15 @@ withDefaults(
             {{ eyebrow }}
         </p>
 
+        <!--
+            De titel splitst per regel; het bovenschrift en de inleiding
+            niet. SplitText meet en hersplitst bij elke maatverandering, en
+            dat is werk dat je op een kop van drie woorden wilt doen en niet
+            op elke alinea op de pagina.
+        -->
         <component
             :is="level"
-            data-reveal
+            data-split
             class="text-3xl font-semibold tracking-tight text-balance text-white opacity-0 sm:text-4xl"
         >
             {{ title }}

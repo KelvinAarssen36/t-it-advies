@@ -9,22 +9,36 @@ import type { LucideIcon } from '@lucide/vue';
  * deze pagina in het portaal staat en niet in een PDF: een knop uitleggen
  * met de knop ernaast scheelt een alinea.
  *
+ * **`onder` zegt bij welk scherm dit hoort.** Zonder dat staat een kaart
+ * als "De kop en de cijfers" er als los onderwerp bij, en dan zoekt de
+ * eigenaar zich suf: hij weet niet dat het achter een knop op de
+ * ervaringenpagina zit. Met dat label leest de kaart als een onderdeel
+ * van dat scherm en niet als iets ernaast.
+ *
  * Zie resources/js/pages/settings/Documentatie.vue en
  * docs/architecture/uitleg-voor-de-eigenaar.md.
  */
 defineProps<{
     titel: string;
     icoon: LucideIcon;
+    /** Het scherm waar dit onderwerp onder valt, als het er een heeft. */
+    onder?: string;
 }>();
 </script>
 
 <template>
-    <article class="brand-uitleg-kaart">
+    <article class="brand-uitleg-kaart" :data-onder="onder ? '' : undefined">
         <header class="flex items-center gap-3">
             <span class="brand-uitleg-merk" aria-hidden="true">
                 <component :is="icoon" class="size-4" />
             </span>
-            <h3 class="text-sm font-semibold">{{ titel }}</h3>
+
+            <div class="min-w-0">
+                <p v-if="onder" class="brand-uitleg-onder">
+                    {{ $t('Onderdeel van :scherm', { scherm: onder }) }}
+                </p>
+                <h3 class="text-sm font-semibold">{{ titel }}</h3>
+            </div>
         </header>
 
         <div class="mt-3 space-y-2.5 text-sm text-pretty text-muted-foreground">

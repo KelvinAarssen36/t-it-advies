@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\PageSectionKey;
 use App\Models\Experience;
+use App\Models\ExperienceHeading;
 use App\Models\PageSection;
 use App\Support\Loopbaan;
 use App\Support\Page\SectionContent;
@@ -43,6 +44,27 @@ class HomeController extends Controller
         return Inertia::render('Welcome', [
             'sections' => $secties,
 
+            /*
+             * Dezelfde lijst, met de labels erbij, voor het menu in de kop.
+             *
+             * Die stond daar hardgecodeerd, en liep dus niet mee met wat
+             * de klant aan- of uitzet of versleept: een uitgezet onderdeel
+             * hield zijn link naar een anker dat niet meer bestaat, en na
+             * een herordening stond het menu in de oude volgorde. Nu komt
+             * hij uit dezelfde bron als de pagina zelf, dus kan dat niet
+             * meer uiteenlopen.
+             *
+             * De labels komen van de server en niet uit een tabel in de
+             * frontend, want ze zijn vertaald. Zie PageSectionKey::label().
+             */
+            'navigation' => array_map(
+                fn (string $sleutel) => [
+                    'key' => $sleutel,
+                    'label' => PageSectionKey::from($sleutel)->label(),
+                ],
+                $secties,
+            ),
+
             'experiences' => $loopbaan
                 ->map(fn (Experience $ervaring) => $this->ervaring($ervaring))
                 ->all(),
@@ -54,7 +76,36 @@ class HomeController extends Controller
              * want het beheerscherm moet hem ook kennen.
              */
             'experienceSummary' => $loopbaanCijfers->cijfers($loopbaan),
+
+            /*
+             * De kop boven die tijdlijn. Stond eerst in het Vue-component;
+             * nu beheert de klant hem zelf, samen met de cijfers. Alleen
+             * meesturen als het onderdeel er staat -- dezelfde regel als
+             * hierboven.
+             */
+            'experienceHeading' => in_array(PageSectionKey::Ervaring->value, $secties, true)
+                ? $this->koptekst()
+                : null,
         ]);
+    }
+
+    /**
+     * De kop boven de tijdlijn, in de taal van de bezoeker.
+     *
+     * De terugval tussen de talen is hier al beslist, net als bij een
+     * ervaring: de titel valt terug op het Nederlands, de inleiding niet.
+     * Zie App\Models\ExperienceHeading.
+     *
+     * @return array<string, string|null>
+     */
+    private function koptekst(): array
+    {
+        $kop = ExperienceHeading::huidige();
+
+        return [
+            'titel' => $kop->titel(),
+            'inleiding' => $kop->inleiding(),
+        ];
     }
 
     /**

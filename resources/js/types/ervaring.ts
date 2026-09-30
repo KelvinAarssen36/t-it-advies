@@ -128,18 +128,48 @@ export type ErvaringCijfer = {
 };
 
 /**
- * Hetzelfde cijfer, zoals het beheerscherm het toont.
+ * Eén cijfer boven de tijdlijn, zoals het beheerscherm hem nodig heeft.
  *
- * `waarde` is wat de klant zelf invulde en mag `null` zijn -- dat betekent
- * "reken het uit". `berekend` is wat er dan komt te staan, en dat staat als
- * tijdelijke tekst in het lege veld.
+ * **Alleen wat de klant zelf heeft ingesteld.** Het woord van het soort,
+ * de uitleg erbij en wat wij zouden tellen staan hier bewust níet in: die
+ * horen bij het *soort* en niet bij deze rij, en het scherm zoekt ze op in
+ * `ErvaringCijferSoort`.
+ *
+ * Dat onderscheid is met schade en schande geleerd. Toen die gegevens hier
+ * wél in stonden, klopten ze niet meer zodra de klant in het venster een
+ * ander soort koos -- en dan stond er "nu zouden wij er 0 tellen" boven een
+ * tijdlijn van vijfendertig jaar.
+ *
+ * `id` is null bij een cijfer dat zojuist is toegevoegd en dus nog niet in
+ * de database staat. `label_nl` leeg betekent: gebruik het standaardwoord
+ * van het soort. Dat is de stand waarin het woord vanzelf meegaat met de
+ * taal van de bezoeker.
  */
 export type ErvaringCijferRij = {
+    id: number | null;
     key: string;
+    label_nl: string | null;
+    label_en: string | null;
+    modus: string;
+    waarde: number | null;
+};
+
+/** Een keuze in een lijst: de waarde, het woord en wat het betekent. */
+export type ErvaringKeuze = {
+    value: string;
     label: string;
     omschrijving: string;
-    waarde: number | null;
-    berekend: number;
+};
+
+/**
+ * Een soort cijfer, met wat wij er nu voor zouden tellen.
+ *
+ * `berekend` is null bij een eigen cijfer: dat kunnen wij niet uitrekenen,
+ * en nul zou suggereren dat we het geprobeerd hebben.
+ */
+export type ErvaringCijferSoort = ErvaringKeuze & {
+    berekenbaar: boolean;
+    berekend: number | null;
 };
 
 export type ErvaringOpties = {
@@ -148,4 +178,27 @@ export type ErvaringOpties = {
     workplace: Optie[];
     maanden: Optie[];
     jaren: Optie[];
+};
+
+/**
+ * De kop boven de tijdlijn, zoals de bezoeker hem krijgt.
+ *
+ * De keuze tussen Nederlands en Engels is op de server al gemaakt; hier
+ * staat wat er komt te staan. Zie App\Models\ExperienceHeading.
+ */
+export type ErvaringKop = {
+    titel: string;
+    inleiding: string | null;
+};
+
+/**
+ * Dezelfde kop, maar dan zoals het beheerscherm hem nodig heeft: allebei
+ * de talen los, want de klant vult ze allebei zelf in.
+ */
+export type ErvaringKopRij = {
+    title_nl: string;
+    title_en: string | null;
+    intro_nl: string | null;
+    intro_en: string | null;
+    automatisch_vertaald: boolean;
 };

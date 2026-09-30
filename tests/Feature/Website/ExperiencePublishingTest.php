@@ -5,6 +5,7 @@ namespace Tests\Feature\Website;
 use App\Enums\PageSectionKey;
 use App\Models\Experience;
 use App\Models\User;
+use Database\Seeders\ExperienceStatSeeder;
 use Database\Seeders\PageSectionSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -31,6 +32,12 @@ class ExperiencePublishingTest extends TestCase
 
         $this->seed(RolesAndPermissionsSeeder::class);
         $this->seed(PageSectionSeeder::class);
+
+        // De cijfers boven de tijdlijn zijn rijen in de database geworden
+        // die de klant beheert. Zonder deze seeder staat die lijst leeg, en
+        // dan rekent de website terecht niets uit -- ook niet in een test
+        // die juist over dat rekenen gaat.
+        $this->seed(ExperienceStatSeeder::class);
     }
 
     private function beheerder(): User

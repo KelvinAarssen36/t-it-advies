@@ -113,8 +113,10 @@ const expanded = ref<number | null>(null);
             </span>
         </div>
 
-        <div class="brand-scrollbar overflow-x-auto rounded-xl border">
-            <table class="w-full text-sm">
+        <div
+            class="brand-tabelvak brand-scrollbar overflow-x-auto rounded-xl border"
+        >
+            <table class="brand-tabel-kaarten w-full text-sm">
                 <thead class="bg-muted/50 text-left">
                     <tr>
                         <th class="px-3 py-2 font-medium">
@@ -138,11 +140,19 @@ const expanded = ref<number | null>(null);
                                 expanded = expanded === row.id ? null : row.id
                             "
                         >
-                            <td class="px-3 py-2 tabular-nums">
+                            <td
+                                :data-label="$t('Wanneer')"
+                                class="px-3 py-2 tabular-nums"
+                            >
                                 {{ row.created_at }}
                             </td>
-                            <td class="px-3 py-2">{{ row.label }}</td>
-                            <td class="px-3 py-2">
+                            <td
+                                :data-label="$t('Gebeurtenis')"
+                                class="px-3 py-2"
+                            >
+                                {{ row.label }}
+                            </td>
+                            <td :data-label="$t('Uitkomst')" class="px-3 py-2">
                                 <Badge
                                     :variant="
                                         row.outcome === 'failure'
@@ -153,10 +163,13 @@ const expanded = ref<number | null>(null);
                                     {{ row.outcome_label }}
                                 </Badge>
                             </td>
-                            <td class="px-3 py-2">
+                            <td :data-label="$t('Wie')" class="px-3 py-2">
                                 {{ row.user?.email ?? row.email ?? '-' }}
                             </td>
-                            <td class="px-3 py-2 font-mono text-xs">
+                            <td
+                                :data-label="$t('IP')"
+                                class="px-3 py-2 font-mono text-xs"
+                            >
                                 {{ row.ip_address ?? '-' }}
                             </td>
                         </tr>

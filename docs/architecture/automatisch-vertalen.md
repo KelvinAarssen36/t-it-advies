@@ -23,6 +23,36 @@ er voor de keren dat hij daar geen zin in heeft.
 automatisch vertaald Engels op de website voordat iemand het heeft gezien.
 Nu is er altijd een mens tussen.
 
+### Twee maten: een grote knop en een klein knopje
+
+De grote knop hierboven hoort bij een blok tekst -- een functietitel met
+een beschrijving, of de titel boven de tijdlijn met de zin eronder. Bij de
+**cijfers** boven de tijdlijn staat er een tweede vorm: een klein knopje
+per cijfer, naast het Engelse woordveld.
+
+Dat is dezelfde route met een eigen veld (`woord_nl`), en drie dingen zijn
+er bewust anders:
+
+- **Geen bevestiging vooraf.** De grote knop waarschuwt eerst als er
+  Engels staat dat hij zou overschrijven, want daar kan een zorgvuldig
+  geschreven alinea verdwijnen. Hier gaat het om één woord, en dat typt de
+  eigenaar sneller terug dan hij een venster wegklikt.
+- **Geen merkje "automatisch vertaald".** Dat merkje gaat over de titel en
+  de zin eronder. Zou een vertaald woord het ook zetten, dan staat er
+  "automatisch vertaald" bij tekst die de eigenaar zelf heeft geschreven.
+- **Het venster blijft open**, en het knopje verschijnt pas als er
+  Nederlands staat om te vertalen.
+
+Welk cijfer om de vertaling vroeg weet de server niet, en hoeft hij niet
+te weten: één woord erin, één woord eruit. Het venster heeft de knop zelf
+ingedrukt en onthoudt de rest. Er kan er maar één tegelijk lopen, want de
+knoppen staan ondertussen uit.
+
+> **De regel voor een volgende module:** één route, meerdere velden. Een
+> tweede route ernaast zou dezelfde begrenzing, dezelfde foutafhandeling
+> en dezelfde sleutelvertaling moeten herhalen, en dat is precies waar
+> twee dingen uiteen gaan lopen.
+
 ## Het merkje "automatisch vertaald"
 
 In de database staat `machine_translated_at`. Die wordt gezet als de klant

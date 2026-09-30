@@ -8,7 +8,11 @@ import ErvaringCarrousel from '@/components/site/sections/ErvaringCarrousel.vue'
 import ErvaringLijst from '@/components/site/sections/ErvaringLijst.vue';
 import SiteSection from '@/components/site/SiteSection.vue';
 import { countUp } from '@/lib/motion';
-import type { ErvaringCijfer, ErvaringOpDeSite } from '@/types/ervaring';
+import type {
+    ErvaringCijfer,
+    ErvaringKop,
+    ErvaringOpDeSite,
+} from '@/types/ervaring';
 import type { SectieProps } from '@/types/secties';
 
 /**
@@ -57,6 +61,25 @@ const items = computed<ErvaringOpDeSite[]>(
 
 const cijfers = computed<ErvaringCijfer[]>(
     () => (page.props.experienceSummary as ErvaringCijfer[] | undefined) ?? [],
+);
+
+/**
+ * De kop boven de tijdlijn.
+ *
+ * Die stond hier als vaste tekst, en dat betekende dat de klant het enige
+ * onderdeel van dit blok niet kon aanpassen terwijl de rest wel van hem
+ * is. Nu komt hij van de server, uit dezelfde knop als de cijfers.
+ *
+ * De terugval hier is er voor het geval de prop ontbreekt -- een oude
+ * pagina in de cache, of een verse database zonder seeder. Dan staat er
+ * een kop in plaats van een gat.
+ */
+const kop = computed<ErvaringKop>(
+    () =>
+        (page.props.experienceHeading as ErvaringKop | undefined) ?? {
+            titel: 'Waar dit vandaan komt',
+            inleiding: 'De weg ernaartoe, van nu naar toen.',
+        },
 );
 
 /*
@@ -113,7 +136,7 @@ onMounted(() => {
      * Alleen de **beginstand** hangt hiervan af. Wisselen kan daarna
      * altijd, met de knop erboven.
      */
-    if (!window.matchMedia('(min-width: 48rem)').matches) {
+    if (!window.matchMedia('(min-width: 50rem)').matches) {
         weergave.value = 'lijst';
     }
 
@@ -132,8 +155,8 @@ onBeforeUnmount(() => stopTellen?.());
     <SiteSection id="ervaring" :tone="tone" :divided="divided">
         <SectionHeading
             eyebrow="Ervaring"
-            title="Waar dit vandaan komt"
-            intro="De weg ernaartoe, van nu naar toen."
+            :title="kop.titel"
+            :intro="kop.inleiding ?? undefined"
         />
 
         <!--

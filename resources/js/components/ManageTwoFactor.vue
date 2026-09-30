@@ -34,7 +34,7 @@ onUnmounted(() => clearTwoFactorAuthData());
     <div v-if="canManageTwoFactor" class="space-y-6">
         <Heading
             variant="small"
-            title="Tweestapsverificatie"
+            :title="$t('Tweestapsverificatie')"
             description="Een extra slot op je account, naast je wachtwoord"
         />
 
@@ -43,14 +43,16 @@ onUnmounted(() => clearTwoFactorAuthData());
             class="flex flex-col items-start justify-start space-y-4"
         >
             <p class="text-sm text-muted-foreground">
-                Met tweestapsverificatie vraagt het portaal bij het inloggen om
-                een zescijferige code uit een authenticator-app op je telefoon.
-                Alleen je wachtwoord is dan niet meer genoeg.
+                {{
+                    $t(
+                        'Met tweestapsverificatie vraagt het portaal bij het inloggen om een zescijferige code uit een authenticator-app op je telefoon. Alleen je wachtwoord is dan niet meer genoeg.',
+                    )
+                }}
             </p>
 
             <div>
                 <Button v-if="hasSetupData" @click="showSetupModal = true">
-                    <ShieldCheck />Verder met instellen
+                    <ShieldCheck />{{ $t('Verder met instellen') }}
                 </Button>
                 <Form
                     v-else
@@ -59,7 +61,7 @@ onUnmounted(() => clearTwoFactorAuthData());
                     #default="{ processing }"
                 >
                     <Button type="submit" :disabled="processing">
-                        Tweestapsverificatie aanzetten
+                        {{ $t('Tweestapsverificatie aanzetten') }}
                     </Button>
                 </Form>
             </div>
@@ -67,14 +69,19 @@ onUnmounted(() => clearTwoFactorAuthData());
 
         <div v-else class="flex flex-col items-start justify-start space-y-4">
             <p class="text-sm text-muted-foreground">
-                Bij elke keer inloggen vraagt het portaal om een code uit je
-                authenticator-app.
+                {{
+                    $t(
+                        'Bij elke keer inloggen vraagt het portaal om een code uit je authenticator-app.',
+                    )
+                }}
             </p>
 
             <p v-if="twoFactorRequired" class="text-sm text-muted-foreground">
-                Tweestapsverificatie is verplicht in dit portaal en kan niet
-                worden uitgezet. Nieuwe telefoon? Zet hem daar eerst op met een
-                recovery code.
+                {{
+                    $t(
+                        'Tweestapsverificatie is verplicht in dit portaal en kan niet worden uitgezet. Nieuwe telefoon? Zet hem daar eerst op met een recovery code.',
+                    )
+                }}
             </p>
 
             <div v-else class="relative inline">
@@ -84,7 +91,7 @@ onUnmounted(() => clearTwoFactorAuthData());
                         type="submit"
                         :disabled="processing"
                     >
-                        Uitzetten
+                        {{ $t('Uitzetten') }}
                     </Button>
                 </Form>
             </div>

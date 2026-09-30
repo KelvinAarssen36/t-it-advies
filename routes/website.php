@@ -65,11 +65,15 @@ Route::middleware(['auth', 'verified', 'two-factor.required', 'can:manage portal
                 ->name('vertalen');
 
             /*
-             * De cijfers boven de tijdlijn. Staat óók vóór `{experience}`,
-             * en hier is dat geen voorzorg maar noodzaak: allebei zijn het
-             * een PUT, en de eerste die past wint.
+             * De kop boven de tijdlijn: de tekst én de cijfers. Eén
+             * scherm en één opslag, want het is op de website ook één
+             * blok.
+             *
+             * Staat óók vóór `{experience}`, en hier is dat geen voorzorg
+             * maar noodzaak: allebei zijn het een PUT, en de eerste die
+             * past wint.
              */
-            Route::put('cijfers', [ExperienceController::class, 'cijfers'])->name('cijfers');
+            Route::put('kop', [ExperienceController::class, 'kop'])->name('kop');
 
             Route::get('{experience}', [ExperienceController::class, 'show'])->name('show');
             Route::put('{experience}', [ExperienceController::class, 'update'])->name('update');

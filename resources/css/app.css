@@ -111,6 +111,21 @@
     --color-error: var(--error);
 
     /* De eigen kleur van "bewerken". Zie de statuskleuren hieronder. */
+    /*
+      Waar de publieke site van de telefoonvorm naar de bredere vorm gaat.
+
+      Vijftig rem is 800 pixels, en dat getal is gekozen op een apparaat:
+      een iPad mini staat rechtop op 768 en valt er dus nét onder. Met
+      Tailwinds eigen `md` (48rem = 768) viel hij er precies bovenop, en
+      dan kreeg hij het volledige menu en de tweekoloms hero op een
+      breedte waar dat niet past. Een iPad Air (820) en alles daarboven
+      krijgt wél de bredere vorm.
+
+      Gebruik `tablet:` in plaats van `md:` voor alles op de publieke
+      site dat met die omslag te maken heeft.
+    */
+    --breakpoint-tablet: 50rem;
+
     --color-bewerken: var(--bewerken);
     --color-bewerken-contrast: var(--bewerken-contrast);
 }
@@ -828,6 +843,65 @@ html:has(.brand-dark-page) {
         background-color 200ms ease;
 }
 
+/*
+  Wat er in de pictogramstand verdwijnt.
+
+  **Dit staat hier en niet als `group-data-[collapsible=icon]:hidden` in
+  het sjabloon, en dat is geen smaak.** Die Tailwind-klasse zit in
+  `@layer utilities`, en `.brand-nav-kop` en `.brand-verlaat` hieronder
+  staan ongelaagd. Ongelaagde CSS wint altijd van gelaagde, hoe specifiek
+  die laatste ook is -- dus `display: none` kwam er nooit doorheen en
+  bleef het groepskopje half afgekapt in de smalle balk staan.
+
+  Dezelfde val als bij `@utility` elders in dit bestand: zet je een regel
+  buiten een laag, dan moet alles wat hem overschrijft dat ook doen.
+
+  Het attribuut komt van de zijbalk zelf; zie
+  resources/js/components/ui/sidebar/Sidebar.vue.
+*/
+[data-collapsible='icon'] .brand-verlaat {
+    display: none;
+}
+
+/*
+  Het groepskopje in de smalle balk.
+
+  Hij verdwijnt hier **niet**, maar krimpt tot alleen zijn pijltje,
+  gecentreerd. Dat is wat de keuze van de gebruiker overeind houdt: liet
+  je hem verdwijnen, dan is er in die stand geen manier meer om een
+  groep te openen, en dan moet er iets voor je beslist worden -- alles
+  openklappen, en dan springt een dichtgeklapte groep weer open zodra je
+  de balk versmalt.
+
+  De naam staat in het `aria-label` van de knop, want de tekst is hier
+  verborgen. Zie NavMain.vue.
+*/
+[data-collapsible='icon'] .brand-nav-kop {
+    /*
+      Exact hetzelfde vakje als een menuknop: twee bij twee rem, links
+      uitgelijnd, zonder padding. Daarmee valt het midden van het
+      pijltje op precies dezelfde plek als het midden van de
+      pictogrammen eronder.
+
+      Dat is met opzet niet "centreren in de beschikbare breedte". Dan
+      hangt de uitlijning af van de marges van de zijbalk, de groep én
+      de menulijst samen, en klopt hij alleen zolang die drie niet
+      veranderen. Nu klopt hij per constructie.
+
+      De maat komt uit `size-8` op SidebarMenuButton; zie
+      resources/js/components/ui/sidebar/index.ts.
+    */
+    width: 2rem;
+    height: 2rem;
+    flex-shrink: 0;
+    justify-content: center;
+    padding: 0;
+}
+
+[data-collapsible='icon'] .brand-nav-kop > span {
+    display: none;
+}
+
 .brand-nav-kop:hover {
     background-color: var(--sidebar-accent);
     opacity: 1;
@@ -1004,6 +1078,265 @@ html:has(.brand-dark-page) {
 
 .brand-uitleg-kaart:hover::before {
     opacity: 1;
+}
+
+/*
+  Het label boven de titel van een kaart die bij een scherm hoort.
+
+  Zonder dit staat "De kop en de cijfers" er als los onderwerp bij, en
+  dan zoekt de eigenaar zich suf: hij weet niet dat het achter een
+  knop op de ervaringenpagina zit. De inspringing links maakt het
+  bovendien zichtbaar een onderdeel van iets in plaats van een gelijke.
+*/
+/*
+  Het visitekaartje onder de titel, op een telefoon.
+
+  Een strook in plaats van een blok: de foto klein en rond links, de naam
+  en de functie ernaast. Dat kost zo'n zestig pixels hoogte waar de grote
+  cirkel er tweehonderdvijftig kostte, en daarmee komen de knoppen boven
+  de vouw.
+
+  De foto krijgt hier ook een reden om er te staan. Als losse cirkel was
+  het een plaatje; naast een naam is het wie het werk doet, en dat is
+  precies wat een eenmanszaak onderscheidt van een anoniem bureau.
+
+  Zie HeroSection.vue; hij staat er alleen onder de tabletgrens.
+*/
+.brand-visitekaartje {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.75rem;
+    width: fit-content;
+    max-width: 100%;
+    border: 1px solid color-mix(in srgb, var(--brand-cyan) 25%, transparent);
+    border-radius: 999px;
+    background-color: color-mix(
+        in srgb,
+        var(--brand-navy-deep) 55%,
+        transparent
+    );
+    padding: 0.5rem 1.4rem 0.5rem 0.5rem;
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+}
+
+/*
+  Vanaf een tablet is hij weg; daar staat het medaillon ernaast.
+
+  **Dit staat hier en niet als `tablet:hidden` in het sjabloon.** Die
+  Tailwind-klasse zit in `@layer utilities` en de regel hierboven staat
+  ongelaagd -- en ongelaagde CSS wint altijd van gelaagde, hoe specifiek
+  die laatste ook is. Het kaartje bleef daardoor ook op een breed scherm
+  staan, náást het medaillon, terwijl het juist de vervanging ervan is.
+
+  Dezelfde val als bij het groepskopje in de zijbalk, een paar honderd
+  regels hierboven. De regel: zet je `display` in een ongelaagde regel,
+  dan moet alles wat hem overschrijft dat ook doen.
+*/
+@media (min-width: 50rem) {
+    .brand-visitekaartje {
+        display: none;
+    }
+}
+
+.brand-visitekaartje img {
+    width: 3.75rem;
+    height: 3.75rem;
+    flex-shrink: 0;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--brand-cyan) 35%, transparent);
+}
+
+.brand-visitekaartje > span {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+}
+
+.brand-visitekaartje-naam {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.brand-visitekaartje-functie {
+    font-size: 0.8125rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--brand-cyan);
+}
+
+/*
+  Zonder naam is de functie het enige dat er staat, en dan hoort hij niet
+  als onderschrift te lezen maar als de regel zelf.
+*/
+.brand-visitekaartje-naam + .brand-visitekaartje-functie {
+    color: var(--brand-silver);
+    letter-spacing: 0.06em;
+}
+
+/*
+  Een beheertabel op een telefoon.
+
+  Een tabel van vier tot zes kolommen past daar niet, en zijwaarts scrollen
+  in een tabel die zelf al in een scrollende pagina zit is geen oplossing --
+  dan weet je nooit of je alles gezien hebt. Onder de tabletgrens wordt elke
+  rij daarom een kaart.
+
+  **De eerste versie hiervan stapelde alleen de cellen met hun kolomnaam
+  ervoor.** Leesbaar, maar niet mooi: alles even zwaar, alles even ver
+  ingesprongen, en een rij van vijf cellen werd een lijstje van vijf regels
+  waarin niets eruit sprong. Nu is er hiërarchie:
+
+  - De **eerste cel** is de kop van de kaart. Geen label ervoor -- dat het
+    om een tijdstip of een naam gaat zie je zelf -- en groter gezet, want
+    dat is waar je op zoekt.
+  - De **rest** staat eronder als naam-en-waarde, met de naam smal en
+    gedempt zodat de waarden een kolom vormen die je langs kunt lezen.
+  - Een cel **zonder naam** -- de knoppenrij, en de cellen met een
+    `colspan` -- vult de hele breedte.
+
+  **Alles staat in deze mediaquery, dus de tabel op een breed scherm
+  verandert er geen pixel van.** Op desktop was er niets mis met een tabel.
+
+  De uitlijning en het niet-afbreken uit Tailwind worden hier overschreven,
+  en dat lukt alleen omdat deze regels ongelaagd staan; zie de valkuil
+  daarover in AGENTS.md.
+*/
+@media (max-width: 49.999rem) {
+    /*
+      Het omhulsel verliest zijn rand: anders staat er een kader om een
+      stapel kaarten die zelf al een kader hebben.
+    */
+    .brand-tabelvak:has(.brand-tabel-kaarten) {
+        border: 0;
+        border-radius: 0;
+        overflow: visible;
+    }
+
+    .brand-tabel-kaarten thead {
+        display: none;
+    }
+
+    .brand-tabel-kaarten,
+    .brand-tabel-kaarten tbody,
+    .brand-tabel-kaarten tr {
+        display: block;
+        width: 100%;
+    }
+
+    .brand-tabel-kaarten tbody tr {
+        margin-bottom: 0.6rem;
+        border: 1px solid var(--border);
+        border-radius: 0.75rem;
+        background-color: var(--card);
+        padding: 0.85rem 1rem;
+    }
+
+    /*
+      De uitgeklapte detailrij hoort bij de kaart erboven en niet ernaast.
+      Hij schuift omhoog tegen zijn eigen kaart aan en verliest zijn
+      bovenrand, zodat het één blok wordt.
+    */
+    .brand-tabel-kaarten tbody tr:has(td[colspan]) {
+        margin-top: -0.6rem;
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+        background-color: color-mix(in srgb, var(--muted) 55%, transparent);
+    }
+
+    .brand-tabel-kaarten td {
+        display: grid;
+        grid-template-columns: minmax(0, 5.5rem) minmax(0, 1fr);
+        align-items: baseline;
+        gap: 0.75rem;
+        padding: 0.15rem 0;
+        text-align: left;
+        white-space: normal;
+    }
+
+    .brand-tabel-kaarten td::before {
+        content: attr(data-label);
+        font-size: 0.6875rem;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--muted-foreground);
+    }
+
+    /* De kop van de kaart: geen naam ervoor, en groter. */
+    .brand-tabel-kaarten td:first-child {
+        display: block;
+        margin-bottom: 0.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid
+            color-mix(in srgb, var(--border) 60%, transparent);
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: var(--foreground);
+    }
+
+    .brand-tabel-kaarten td:first-child::before {
+        content: none;
+    }
+
+    .brand-tabel-kaarten td:not([data-label]) {
+        display: block;
+        margin-top: 0.4rem;
+        padding-top: 0.6rem;
+        border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+    }
+
+    .brand-tabel-kaarten td:not([data-label])::before {
+        content: none;
+    }
+
+    /* Een cel met een colspan is een heel blok en geen naam-en-waarde. */
+    .brand-tabel-kaarten td[colspan] {
+        display: block;
+        margin: 0;
+        border: 0;
+        padding: 0;
+    }
+}
+
+/*
+  Eén cijfer in het bewerkvenster.
+
+  Een kaart en geen rij, omdat er per cijfer nogal wat te kiezen valt:
+  het soort, wat ermee gebeurt, het getal en het woord in twee talen.
+  Zonder kader lopen die van het ene cijfer in het andere over.
+
+  Zie resources/js/components/website/CijfersDialoog.vue.
+*/
+.brand-cijferkaart {
+    display: grid;
+    gap: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background-color: color-mix(in srgb, var(--muted) 35%, transparent);
+    padding: 0.9rem 1rem;
+}
+
+.brand-uitleg-onder {
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--brand-cyan);
+}
+
+.brand-uitleg-kaart[data-onder] {
+    margin-left: 1rem;
+}
+
+@media (max-width: 40rem) {
+    /* Op een telefoon is elke pixel breedte er een; daar geen inspringing. */
+    .brand-uitleg-kaart[data-onder] {
+        margin-left: 0;
+    }
 }
 
 .brand-uitleg-merk {
@@ -1394,17 +1727,28 @@ button:hover > .brand-verlaat,
     animation: brand-segment-sweep 600ms ease-out;
 }
 
+/*
+  De veeg loopt dezelfde kant op als de indicator zelf.
+
+  `--veeg-richting` is 1 of -1 en komt van SegmentToggle.vue. Hier stond
+  eerst een vaste beweging van links naar rechts, en die klopte dus maar
+  bij één van de twee wissels: de andere kant op liep de veeg dwars tegen
+  de beweging in, wat leest als een hapering in plaats van een keuze.
+
+  De standaardwaarde 1 is er voor het geval de variabele ontbreekt --
+  dan is het gedrag hetzelfde als voorheen en niet stuk.
+*/
 @keyframes brand-segment-sweep {
     0% {
         opacity: 0;
-        transform: translateX(-60%);
+        transform: translateX(calc(-60% * var(--veeg-richting, 1)));
     }
     35% {
         opacity: 1;
     }
     100% {
         opacity: 0;
-        transform: translateX(60%);
+        transform: translateX(calc(60% * var(--veeg-richting, 1)));
     }
 }
 
@@ -1943,6 +2287,681 @@ button:hover > .brand-verlaat,
 @media (prefers-reduced-motion: reduce) {
     .brand-aurora > span {
         animation: none;
+    }
+}
+
+@layer components {
+    /*
+      De heroscène: tekst links, portret rechts, gloed erachter.
+
+      Eén raster met twee kolommen, en op een telefoon één kolom met het
+      portret bovenaan. Dat het portret daar eerst komt is geen toeval:
+      op een klein scherm is het gezicht het eerste wat je herkent, en de
+      kop leest daarna alsof hij van hem is.
+
+      In de HTML staat de tekst wél eerst. Een schermlezer en een
+      zoekmachine krijgen dus de kop voor het beeld; alleen de volgorde op
+      het scherm draait om, met `order`.
+    */
+    .brand-hero-raster {
+        display: grid;
+        gap: 1.5rem;
+        align-items: center;
+    }
+
+    /*
+      Op een telefoon staat de titel bovenaan en het portret eronder.
+
+      Dat was eerst andersom -- gezicht eerst, want dat herken je het
+      snelst. In de praktijk duwde die cirkel de kop naar beneden en
+      viel hij half buiten beeld, en dan is het eerste wat je leest een
+      afgekapte zin. De titel is waarvoor iemand hier komt; het portret
+      staat er een schermlengte later nog steeds.
+
+      De maat is begrensd op de hoogte van het venster en niet alleen op
+      de breedte: 74vw is op een breed maar laag scherm -- een telefoon
+      in de zij -- meteen het hele beeld.
+    */
+    .brand-hero-portret {
+        justify-self: center;
+        width: min(62vw, 16rem, 32vh);
+    }
+
+    /*
+      Vanaf een tablet naast elkaar.
+
+      Dit stond op 64rem, en daar zat een gat: tussen de omslag van de
+      kop en 64 rem toonde de kop al zijn volledige menu terwijl de hero
+      nog in de smalle stand stond, met een cirkel over de volle breedte.
+      Op een tablet las dat als een vergrote telefoon in plaats van een
+      eigen ontwerp.
+
+      Vijftig rem en niet 48: dezelfde grens als --breakpoint-tablet, en
+      om dezelfde reden. Een iPad mini staat rechtop op 768 pixels en
+      hoort nog de telefoonvorm te krijgen. Verander je er één, verander
+      dan allebei -- anders krijgt één schermbreedte het menu van de ene
+      vorm en de hero van de andere.
+    */
+    @media (min-width: 50rem) {
+        .brand-hero-raster {
+            grid-template-columns: minmax(0, 1fr) minmax(0, 18rem);
+            gap: 2.5rem;
+        }
+
+        .brand-hero-portret {
+            justify-self: end;
+            width: min(18rem, 40vh);
+        }
+    }
+
+    @media (min-width: 64rem) {
+        .brand-hero-raster {
+            grid-template-columns: minmax(0, 1fr) 28rem;
+            gap: 3rem;
+        }
+
+        /*
+          Begrensd op hóógte en niet alleen op breedte.
+
+          Het portret is staand (4:5), dus 24rem breed is 30rem hoog, en
+          daar komt de padding van de sectie nog bij. Op een laptop met
+          weinig verticale ruimte duwt dat de knoppen onder de vouw --
+          precies de twee dingen waarvoor iemand hier komt. Met een
+          bovengrens op de hoogte krimpt hij daar mee in plaats van de
+          hele hero uit te rekken.
+        */
+        /*
+          Begrensd op hóógte én breedte.
+
+          Het medaillon is vierkant, dus zijn breedte is meteen zijn
+          hoogte. Op een laptop met weinig verticale ruimte zou een
+          cirkel van 22 rem de knoppen onder de vouw duwen -- precies
+          waarvoor iemand hier komt. De `vh` erin laat hem daar
+          meekrimpen.
+        */
+        .brand-hero-portret {
+            justify-self: end;
+            width: min(28rem, 58vh);
+        }
+    }
+
+    /*
+      De gloed achter de scène.
+
+      Twee wolken in de merkkleuren, een flink stuk groter dan het vak
+      zelf, met een zware blur. Ze liggen achter de inhoud en vangen niets
+      af. De verschuiving met de cursor komt uit `--muis-x` en `--muis-y`,
+      die JavaScript tussen -1 en 1 zet; hier bepalen we hoeveel pixels dat
+      waard is. Twintig is genoeg om te merken en te weinig om naar te
+      gaan kijken.
+
+      De standaardwaarden staan hier en niet alleen in JavaScript, want
+      GSAP moet een beginwaarde kunnen lezen voordat hij eraan kan
+      rekenen -- en op een aanraakscherm wordt er nooit iets gezet.
+
+      Zie volgDeMuis() in resources/js/lib/motion.ts.
+    */
+    .brand-hero-gloed {
+        --muis-x: 0;
+        --muis-y: 0;
+
+        position: absolute;
+        inset: -30% -10%;
+        z-index: -1;
+        /*
+          Zestig pixels en niet twintig. De gloed is zwaar geblurd en
+          beslaat het halve scherm; op die maat is twintig pixels
+          verschuiving letterlijk niet te zien, en dan lijkt het effect
+          kapot terwijl het gewoon te klein is.
+
+          Het naijlen staat hier en niet in JavaScript. Dat schrijft
+          alleen de variabele; deze overgang maakt er een zachte
+          beweging van, en dan is er geen bibliotheek nodig om een
+          getal te laten volgen.
+        */
+        translate: calc(var(--muis-x) * 60px) calc(var(--muis-y) * 45px);
+        transition: translate 700ms cubic-bezier(0.16, 1, 0.3, 1);
+        background:
+            radial-gradient(
+                38% 42% at 22% 38%,
+                color-mix(in srgb, var(--brand-blue) 38%, transparent) 0%,
+                transparent 70%
+            ),
+            radial-gradient(
+                34% 38% at 78% 62%,
+                color-mix(in srgb, var(--brand-cyan) 26%, transparent) 0%,
+                transparent 72%
+            );
+        filter: blur(40px);
+    }
+
+    /*
+      Een kaart die meekantelt met de cursor.
+
+      De kanteling zelf zet GSAP op het element; hier staat alleen wat
+      daarvoor nodig is (`perspective` en een eigen laag) en de glans die
+      de cursor volgt. Die glans is een pseudo-element, zodat de kaart
+      zijn eigen achtergrond houdt.
+
+      `--glans-x` en `--glans-y` komen uit kantelKaarten() in motion.ts.
+      Staan ze er niet -- aanraakscherm, of reduced motion -- dan staat de
+      glans in het midden en op nul doorzichtigheid, dus onzichtbaar.
+    */
+    .brand-kantel {
+        --glans-x: 50%;
+        --glans-y: 50%;
+
+        position: relative;
+    }
+
+    .brand-kantel::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: radial-gradient(
+            18rem 18rem at var(--glans-x) var(--glans-y),
+            color-mix(in srgb, var(--brand-cyan) 22%, transparent) 0%,
+            transparent 70%
+        );
+        opacity: 0;
+        transition: opacity 320ms ease;
+        pointer-events: none;
+    }
+
+    .brand-kantel:hover::after {
+        opacity: 1;
+    }
+
+    /*
+      De lijn boven de werkwijze.
+
+      Hij ligt achter de nummers en loopt met een flauwe golf door de rij.
+      `preserveAspectRatio="none"` in het sjabloon laat hem meerekken met
+      de breedte; `vector-effect: non-scaling-stroke` zorgt dat de dikte
+      daar niet in meegaat, anders is de lijn op een breed scherm dun en
+      op een smal scherm dik.
+
+      Alleen vanaf 64rem. Daaronder staan de stappen onder elkaar en zou
+      een horizontale lijn nergens meer langs lopen.
+
+      Zie tekenPad() in resources/js/lib/motion.ts.
+    */
+    /*
+      De merkintro bij binnenkomst.
+
+      Een navy laag over het hele scherm met de merkgloed en het logo. Hij
+      haalt zichzelf na acht tienden seconde uit de DOM; zie SiteIntro.vue.
+
+      De z-index ligt boven de voortgangsbalk en de kop, maar bewust onder
+      niets anders -- er is op dit moment ook nog niets anders. Zou er ooit
+      een melding overheen moeten, dan hoort die hoger en niet deze lager.
+
+      `position: fixed` en niet `absolute`: de bezoeker kan meteen gaan
+      scrollen, en dan hoort het gordijn te blijven waar het is in plaats
+      van mee omhoog te schuiven.
+    */
+    .brand-intro {
+        position: fixed;
+        inset: 0;
+        z-index: 200;
+        display: grid;
+        place-items: center;
+        background-color: var(--brand-navy);
+    }
+
+    .brand-intro-gloed {
+        position: absolute;
+        width: min(70vw, 34rem);
+        aspect-ratio: 1;
+        border-radius: 50%;
+        background: radial-gradient(
+            circle,
+            color-mix(in srgb, var(--brand-blue) 45%, transparent) 0%,
+            color-mix(in srgb, var(--brand-cyan) 18%, transparent) 45%,
+            transparent 70%
+        );
+        filter: blur(30px);
+    }
+
+    .brand-intro-merk {
+        position: relative;
+        width: min(38vw, 9rem);
+        height: auto;
+    }
+
+    /*
+      De bevestiging onder het contactformulier.
+
+      Groen en met een vinkje, in tegenstelling tot de kale grijze regel
+      die hier stond. Dit is het enige moment op de landing waarop de
+      bezoeker iets heeft gedaan en antwoord krijgt; dan mag het er ook
+      uitzien als antwoord en niet als een mededeling.
+
+      Zie ContactSection.vue voor de animatie erbij.
+    */
+    .brand-bevestiging {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.6rem;
+        border: 1px solid color-mix(in srgb, var(--success) 45%, transparent);
+        border-radius: 0.5rem;
+        background-color: color-mix(in srgb, var(--success) 10%, transparent);
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        text-wrap: pretty;
+        color: var(--brand-text-on-dark);
+    }
+
+    .brand-bevestiging svg {
+        color: var(--success);
+    }
+
+    /*
+      Het ronde portret in de hero.
+
+      Een cirkel met het samengestelde beeld erin, een ring eromheen die
+      zichzelf tekent, en een gloed erachter die er net buiten uitsteekt.
+      De gloed zit op een pseudo-element en niet op de cirkel zelf: een
+      `box-shadow` op iets met `overflow: hidden` wordt aan de binnenkant
+      afgekapt.
+    */
+    .brand-medaillon {
+        position: relative;
+        aspect-ratio: 1;
+        width: 100%;
+        isolation: isolate;
+    }
+
+    .brand-medaillon::before {
+        content: '';
+        position: absolute;
+        inset: -12%;
+        z-index: -1;
+        border-radius: 50%;
+        background: radial-gradient(
+            circle,
+            color-mix(in srgb, var(--brand-blue) 40%, transparent) 40%,
+            transparent 70%
+        );
+        filter: blur(26px);
+    }
+
+    .brand-medaillon img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+        /* Een zachte binnenrand, zodat de foto niet kaal tegen de navy staat. */
+        box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+    }
+
+    /*
+      De ring. Hij staat los van de foto zodat hij kan overlopen buiten
+      de cirkel, en vangt geen klikken af.
+    */
+    /*
+      De draaiende lichtboog. Hij staat op nul doorzichtigheid tot de
+      vaste ring klaar is met tekenen; tekenRing() laat hem daarna
+      verschijnen. Zonder deze regel flitst hij bij het laden even in
+      beeld voordat GSAP eraan toekomt.
+    */
+    .brand-medaillon-baan {
+        opacity: 0;
+        filter: drop-shadow(0 0 5px var(--brand-cyan));
+    }
+
+    .brand-medaillon-ring {
+        position: absolute;
+        inset: 0;
+        overflow: visible;
+        pointer-events: none;
+        filter: drop-shadow(
+            0 0 6px color-mix(in srgb, var(--brand-cyan) 55%, transparent)
+        );
+    }
+
+    /*
+      De cursor van de typemachine.
+
+      Een streepje dat door de kop wandelt en knippert. Hij staat in de
+      tekst -- typMachine() zet hem telkens achter het zojuist getikte
+      teken -- en niet los eroverheen: dan zou zijn plek uitgerekend
+      moeten worden, en klopt hij niet meer zodra de regel anders
+      afbreekt.
+
+      De maten zijn in `em`, zodat hij meeschaalt met de kop waar hij in
+      staat. `steps(1)` in plaats van een zachte overgang, want een
+      knipperende cursor dooft niet: hij is aan of uit.
+
+      Zie typMachine() in resources/js/lib/motion.ts.
+    */
+    .brand-typcursor {
+        display: inline-block;
+        width: 0.055em;
+        height: 0.82em;
+        margin-inline-start: 0.06em;
+        translate: 0 0.04em;
+        background-color: var(--brand-cyan);
+        box-shadow: 0 0 10px
+            color-mix(in srgb, var(--brand-cyan) 70%, transparent);
+        animation: brand-typcursor-knipper 900ms steps(1) infinite;
+    }
+
+    @keyframes brand-typcursor-knipper {
+        0%,
+        49% {
+            opacity: 1;
+        }
+        50%,
+        100% {
+            opacity: 0;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        /* Zonder typen is er geen cursor, maar voor de zekerheid. */
+        .brand-typcursor {
+            display: none;
+        }
+    }
+
+    /*
+      De stand "3 / 7" in plaats van losse nummers, op een smal scherm.
+
+      Vaste breedte via `tabular-nums` en een minimum, zodat de twee
+      pijlen niet heen en weer schuiven zodra het paginanummer van één
+      naar twee cijfers gaat.
+    */
+    .brand-bladeren-stand {
+        min-width: 4rem;
+        text-align: center;
+        font-size: 0.875rem;
+        font-variant-numeric: tabular-nums;
+        color: var(--muted-foreground);
+    }
+
+    /*
+      De kop van de publieke site.
+
+      **De achtergrondvervaging staat er altijd op, ook bovenaan de
+      pagina.** Dat lijkt verspilling en is het niet: `backdrop-filter`
+      laat de browser een eigen compositielaag maken, en die laag bij
+      elke scroll opbouwen en weer weggooien is precies wat je als
+      trillende tekst ziet. Nu staat de laag er vanaf het begin en
+      verandert alleen de kleur erin.
+
+      Om dezelfde reden staat de onderrand er altijd, en verandert alleen
+      zijn kleur. Een rand die verschijnt is een pixel die erbij komt, en
+      dan verschuift alles eronder.
+
+      Zie onScroll() in SiteHeader.vue voor de twee grenzen waarmee de
+      omslag zelf niet heen en weer klapt.
+    */
+    .brand-sitekop {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        border-bottom: 1px solid transparent;
+        background-color: transparent;
+        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(12px);
+        transition:
+            background-color 300ms ease,
+            border-color 300ms ease;
+    }
+
+    .brand-sitekop[data-vast] {
+        border-bottom-color: var(--border);
+        background-color: color-mix(
+            in srgb,
+            var(--background) 85%,
+            transparent
+        );
+    }
+
+    /*
+      Het merk in de kop: het teken plus de naam.
+
+      Op een smal scherm blijft alleen het teken over. Daar heeft het menu
+      de ruimte nodig, en het teken alleen is herkenbaar genoeg -- dat is
+      hetzelfde beeldmerk als de favicon in het tabblad.
+    */
+    .brand-merk {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        font-size: 1.125rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+    }
+
+    .brand-merk-teken {
+        width: 1.75rem;
+        height: auto;
+        flex-shrink: 0;
+        transition:
+            scale 300ms cubic-bezier(0.16, 1, 0.3, 1),
+            filter 300ms ease;
+    }
+
+    .brand-merk:hover .brand-merk-teken {
+        scale: 1.08;
+        filter: drop-shadow(
+            0 0 8px color-mix(in srgb, var(--brand-cyan) 65%, transparent)
+        );
+    }
+
+    .brand-merk-naam {
+        display: none;
+    }
+
+    @media (min-width: 26rem) {
+        .brand-merk-naam {
+            display: inline;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .brand-merk:hover .brand-merk-teken {
+            scale: 1;
+        }
+    }
+
+    /*
+      Het menu in de kop.
+
+      De links liggen in een baan met een markering eronder die ertussen
+      door schuift. Die markering is één element en niet een rand per
+      link: zo glijdt hij van het ene item naar het andere in plaats van
+      op de ene plek uit te gaan en op de andere aan.
+
+      `--streep-x` en `--streep-w` worden gemeten in SiteHeader.vue, want
+      de items zijn zo breed als hun tekst.
+    */
+    .brand-navbalk {
+        position: relative;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    /*
+      **Hij schaalt en wordt niet breder.**
+
+      Hier stond `width` in de overgang, en dat is precies de val: breedte
+      is een eigenschap waarvoor de browser de opmaak opnieuw doorrekent,
+      elk beeldje van de 420 milliseconden dat de markering onderweg is.
+      Op een ruime kop merk je dat niet; op een krappe -- een tablet, waar
+      het menu, de taalknop en de contactknop elkaar verdringen -- gaat de
+      tekst ernaast zichtbaar trillen.
+
+      Nu is hij één pixel breed en rekt `scale` hem op. Schalen en
+      verschuiven gebeuren allebei op de GPU en raken de opmaak niet aan,
+      dus er valt niets meer te herberekenen.
+
+      `--streep-w` is daarom een getal zonder eenheid: het is een
+      vermenigvuldiging en geen maat.
+    */
+    .brand-navstreep {
+        position: absolute;
+        bottom: -0.35rem;
+        left: 0;
+        height: 2px;
+        width: 1px;
+        transform-origin: left center;
+        border-radius: 2px;
+        background-image: var(--brand-gradient);
+        box-shadow: 0 0 10px
+            color-mix(in srgb, var(--brand-cyan) 60%, transparent);
+        translate: var(--streep-x, 0) 0;
+        scale: var(--streep-w, 0) 1;
+
+        /* Geen markering zolang er niets actief is: dan zit je in de hero. */
+        opacity: min(var(--streep-w, 0), 1);
+        transition:
+            translate 420ms cubic-bezier(0.16, 1, 0.3, 1),
+            scale 420ms cubic-bezier(0.16, 1, 0.3, 1),
+            opacity 250ms ease;
+    }
+
+    .brand-navlink {
+        border-radius: 0.375rem;
+        padding: 0.35rem 0.6rem;
+        font-size: 0.875rem;
+        color: var(--foreground);
+        transition:
+            color 250ms ease,
+            background-color 250ms ease;
+    }
+
+    .brand-navlink:hover {
+        color: var(--brand-cyan);
+        background-color: color-mix(in srgb, var(--brand-cyan) 8%, transparent);
+    }
+
+    .brand-navlink.is-active {
+        color: var(--brand-cyan);
+    }
+
+    .brand-navlink:focus-visible {
+        outline: 2px solid var(--brand-cyan);
+        outline-offset: 2px;
+    }
+
+    /*
+      Op mobiel geen schuivende markering maar een streepje links van de
+      regel. Een baan met een glijdende onderstreping werkt niet in een
+      kolom, en een tweede mechaniek bouwen voor hetzelfde idee is meer
+      code dan het waard is.
+    */
+    .brand-navlink-mobiel {
+        position: relative;
+        border-radius: 0.375rem;
+        padding: 0.6rem 0.6rem 0.6rem 0.9rem;
+        color: var(--foreground);
+        transition:
+            color 250ms ease,
+            background-color 250ms ease;
+    }
+
+    .brand-navlink-mobiel::before {
+        content: '';
+        position: absolute;
+        top: 0.65rem;
+        bottom: 0.65rem;
+        left: 0;
+        width: 2px;
+        border-radius: 2px;
+        background-image: var(--brand-gradient);
+        opacity: 0;
+        transition: opacity 250ms ease;
+    }
+
+    .brand-navlink-mobiel.is-active {
+        color: var(--brand-cyan);
+        background-color: color-mix(in srgb, var(--brand-cyan) 7%, transparent);
+    }
+
+    .brand-navlink-mobiel.is-active::before {
+        opacity: 1;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .brand-navstreep {
+            transition: opacity 250ms ease;
+        }
+    }
+
+    .brand-werkwijze-lijn {
+        display: none;
+    }
+
+    @media (min-width: 64rem) {
+        .brand-werkwijze-lijn {
+            display: block;
+            position: absolute;
+            top: 0;
+            right: 0;
+            left: 0;
+            height: 3.75rem;
+            overflow: visible;
+        }
+    }
+
+    /* Het lichtpuntje dat over de lijn reist. */
+    .brand-werkwijze-punt {
+        fill: var(--brand-ice);
+        filter: drop-shadow(0 0 6px var(--brand-cyan));
+    }
+
+    /*
+      Het nummer van een stap. Gedempt tot de lijn hem bereikt, daarna in
+      de merkkleur met een zachte gloed. JavaScript zet alleen het
+      attribuut; de kleur hoort hier.
+    */
+    .brand-werkwijze-nummer {
+        display: inline-block;
+        color: var(--brand-silver);
+        transition:
+            color 350ms ease,
+            text-shadow 350ms ease,
+            scale 350ms ease;
+    }
+
+    .brand-werkwijze-stap[data-bereikt] .brand-werkwijze-nummer {
+        color: var(--brand-cyan);
+        text-shadow: 0 0 12px
+            color-mix(in srgb, var(--brand-cyan) 55%, transparent);
+        scale: 1.1;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        /*
+          Geen kanteling en geen glans. De kaart houdt zijn eigen
+          hover-gloed uit FeatureCard; die is een kleurverandering en geen
+          beweging, en die mag blijven.
+        */
+        .brand-kantel::after {
+            display: none;
+        }
+
+        .brand-hero-gloed {
+            translate: none;
+            transition: none;
+        }
+
+        /*
+          Het nummer kleurt nog wel op -- dat is de aanwijzing dat de stap
+          aan de beurt is -- maar zwelt niet aan.
+        */
+        .brand-werkwijze-nummer {
+            transition: color 350ms ease;
+        }
+
+        .brand-werkwijze-stap[data-bereikt] .brand-werkwijze-nummer {
+            scale: 1;
+        }
     }
 }
 
@@ -4374,6 +5393,115 @@ button:hover > .brand-verlaat,
         font-size: 0.75rem;
         text-wrap: pretty;
         color: var(--warning);
+    }
+
+    /*
+      Dezelfde vorm, maar rustig: dit is geen waarschuwing maar een
+      geruststelling -- "wij tellen er nu 35". Zou het in dezelfde
+      waarschuwingskleur staan, dan lijkt de gewone gang van zaken een
+      probleem.
+    */
+    .brand-cijfer-telling {
+        display: flex;
+        align-self: flex-end;
+        align-items: flex-start;
+        gap: 0.4rem;
+        padding-bottom: 0.5rem;
+        font-size: 0.8125rem;
+        text-wrap: pretty;
+        color: var(--muted-foreground);
+    }
+
+    .brand-cijfer-telling svg {
+        margin-top: 0.15rem;
+        color: var(--brand-cyan);
+    }
+
+    /* --- De kop van een cijferkaart ---------------------------------- */
+
+    .brand-cijferkaart-kop {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+
+    /*
+      Het nummer van de kaart. Het staat er zodat de klant deze kaart
+      terugvindt in de rij tegeltjes op zijn website: de derde kaart is
+      het derde getal.
+    */
+    .brand-cijferkaart-nummer {
+        display: inline-flex;
+        height: 1.5rem;
+        width: 1.5rem;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        background-color: color-mix(
+            in srgb,
+            var(--brand-cyan) 18%,
+            transparent
+        );
+        font-size: 0.75rem;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        color: var(--brand-cyan);
+    }
+
+    .brand-cijferkaart-titel {
+        flex: 1;
+        font-size: 0.8125rem;
+        font-weight: 600;
+    }
+
+    /* --- Het voorbeeld van het tegeltje ------------------------------ */
+
+    /*
+      Precies wat er op de website komt te staan, in dezelfde opbouw: het
+      getal groot, het woord eronder. Dit is het antwoord op de vraag die
+      de klant heeft, dus het staat bovenaan de kaart en niet onderaan.
+    */
+    .brand-cijfervoorbeeld {
+        display: grid;
+        gap: 0.1rem;
+        border-radius: 0.6rem;
+        border: 1px dashed var(--border);
+        background-color: var(--background);
+        padding: 0.7rem 0.9rem;
+        text-align: center;
+    }
+
+    .brand-cijfervoorbeeld-opschrift {
+        margin-bottom: 0.15rem;
+        font-size: 0.625rem;
+        font-weight: 500;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted-foreground);
+    }
+
+    .brand-cijfervoorbeeld-getal {
+        font-size: 1.75rem;
+        font-weight: 600;
+        line-height: 1.1;
+        font-variant-numeric: tabular-nums;
+        color: var(--brand-cyan);
+    }
+
+    .brand-cijfervoorbeeld-woord {
+        font-size: 0.8125rem;
+        color: var(--muted-foreground);
+    }
+
+    .brand-cijfervoorbeeld-leeg {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        padding: 0.35rem 0;
+        font-size: 0.8125rem;
+        color: var(--muted-foreground);
     }
 
     /* --- De schuif om in te zoomen ----------------------------------- */

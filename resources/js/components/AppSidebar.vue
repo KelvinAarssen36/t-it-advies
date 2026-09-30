@@ -39,18 +39,28 @@ import type { NavItem } from '@/types';
 /**
  * De zijbalk van het portaal.
  *
- * Drie groepen, en die indeling volgt waar iemand naar op zoek is:
+ * Vier groepen, en die indeling volgt waar iemand naar op zoek is:
  *
  * 1. **Zonder kopje** bovenaan: het dashboard. Een kopje boven één regel is
  *    meer ruis dan houvast.
  * 2. **Website**: alles waarmee de eigenaar zijn eigen site vult. Dit is
- *    waar hij het vaakst moet zijn, dus het staat boven het beheer. De
- *    indeling is er het startpunt van; zie de toelichting daar.
- * 3. **Beheer**: de logboeken, de mail en de gebruikers. Dat kijk je na, dat
- *    gebruik je niet dagelijks.
+ *    waar hij het vaakst moet zijn, dus het staat bovenaan. De indeling is
+ *    er het startpunt van; zie de toelichting daar.
+ * 3. **Administratie**: de zakelijke kant. Nu alleen de mail; dit is de
+ *    groep die gaat groeien.
+ * 4. **Beheer**: de logboeken en de gebruikers. Dat kijk je na, dat gebruik
+ *    je niet dagelijks, dus het staat onderaan.
  *
- * Meer kopjes dan dit worden het niet. Een zijbalk met zeven secties is een
- * inhoudsopgave, en daar zoek je langer in dan in een lijst.
+ * **Het verschil tussen 3 en 4 is niet willekeurig.** Beheer gaat over het
+ * portaal zelf -- wie wat wijzigde, wie probeerde in te loggen, welke
+ * accounts er zijn. Administratie gaat over het bedrijf: wat eruit is
+ * gegaan, en straks aan wie en waarvoor. Weet je van iets nieuws niet waar
+ * het hoort, stel dan die vraag: gaat het over de website, over de zaak,
+ * of over het portaal?
+ *
+ * **Vier is het maximum.** Een zijbalk met zeven secties is een
+ * inhoudsopgave, en daar zoek je langer in dan in een lijst. Komt er iets
+ * bij, dan hoort het in een van deze vier.
  */
 const page = usePage();
 
@@ -113,6 +123,37 @@ const websiteItems = computed<NavItem[]>(() => [
     },
 ]);
 
+/**
+ * De zakelijke kant: correspondentie en wat daar later bij komt.
+ *
+ * **Dit is geen beheer en dat onderscheid is de reden dat het een eigen
+ * groep is.** Beheer gaat over het portaal zelf -- wie wat wijzigde, wie
+ * probeerde in te loggen, welke accounts er zijn. Administratie gaat over
+ * het bedrijf: wat eruit is gegaan, en straks aan wie en waarvoor.
+ *
+ * Nu staat er alleen de mail in en lijkt een eigen kopje overdreven. Dat
+ * is het ook, tot het tweede onderdeel erbij komt -- en dan is het
+ * prettiger dat de plek er al is dan dat de mail van groep verhuist
+ * terwijl de eigenaar hem net had gevonden.
+ */
+const administratieItems = computed<NavItem[]>(() =>
+    magBeheren.value
+        ? [
+              {
+                  title: t('Mail'),
+                  href: adminMail.index(),
+                  icon: Mail,
+              },
+          ]
+        : [],
+);
+
+/**
+ * Het portaal zelf in de gaten houden.
+ *
+ * De logboeken en de accounts. Dit kijk je na; je gebruikt het niet
+ * dagelijks, en daarom staat deze groep onderaan.
+ */
 const beheerItems = computed<NavItem[]>(() =>
     magBeheren.value
         ? [
@@ -131,11 +172,6 @@ const beheerItems = computed<NavItem[]>(() =>
                   title: t('Beveiliging'),
                   href: adminSecurity.index(),
                   icon: ShieldAlert,
-              },
-              {
-                  title: t('Mail'),
-                  href: adminMail.index(),
-                  icon: Mail,
               },
               {
                   title: t('Gebruikers'),
@@ -165,6 +201,12 @@ const beheerItems = computed<NavItem[]>(() =>
             <NavMain :items="startItems" />
 
             <NavMain :label="$t('Website')" :items="websiteItems" />
+
+            <NavMain
+                v-if="magBeheren"
+                :label="$t('Administratie')"
+                :items="administratieItems"
+            />
 
             <NavMain
                 v-if="magBeheren"

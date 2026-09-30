@@ -134,6 +134,47 @@ class ExperienceTranslationTest extends TestCase
         ], $vertaling);
     }
 
+    /**
+     * Het woord onder één cijfer boven de tijdlijn.
+     *
+     * Hetzelfde adres als de grote knop, met een eigen veld. Een tweede
+     * route ernaast zou dezelfde begrenzing en dezelfde foutafhandeling
+     * moeten herhalen, en dat is precies waar twee dingen uiteen gaan
+     * lopen.
+     *
+     * Bij welk cijfer het woord hoort weet de server niet, en hoeft hij
+     * niet te weten: één woord erin, één woord eruit. Het venster heeft
+     * de knop zelf ingedrukt en onthoudt de rest.
+     */
+    public function test_a_single_word_can_be_translated_on_its_own(): void
+    {
+        $this->werkendeVertaler();
+
+        $this->actingAs($this->beheerder())
+            ->from(route('website.ervaring.index'))
+            ->post(route('website.ervaring.vertalen'), ['woord_nl' => 'opdrachten'])
+            ->assertRedirect(route('website.ervaring.index'));
+
+        $this->assertSame(
+            ['woord_en' => 'EN: opdrachten'],
+            session(SessionKey::FLASH_DATA)['vertaling'] ?? null,
+        );
+    }
+
+    public function test_a_word_that_is_too_long_is_refused(): void
+    {
+        // Veertig tekens, want zo lang mag het woord onder een cijfer in
+        // de database ook zijn. Zou dit langer mogen, dan kost een lange
+        // zin tegoed voor iets dat straks toch niet wordt opgeslagen.
+        $this->werkendeVertaler();
+
+        $this->actingAs($this->beheerder())
+            ->post(route('website.ervaring.vertalen'), [
+                'woord_nl' => str_repeat('a', 41),
+            ])
+            ->assertSessionHasErrors('woord_nl');
+    }
+
     public function test_an_empty_field_is_not_sent_along(): void
     {
         // Lege velden vertalen kost tekens van het tegoed en levert een

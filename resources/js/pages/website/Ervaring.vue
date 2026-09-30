@@ -26,6 +26,9 @@ import website from '@/routes/website';
 import ervaringRoutes from '@/routes/website/ervaring';
 import type {
     ErvaringCijferRij,
+    ErvaringCijferSoort,
+    ErvaringKeuze,
+    ErvaringKopRij,
     ErvaringOpties,
     ErvaringRij,
 } from '@/types/ervaring';
@@ -59,8 +62,21 @@ const props = defineProps<{
     /** Staat er werkelijk niets, of levert alleen de zoekterm niets op? */
     leeg: boolean;
     opties: ErvaringOpties;
-    /** De drie cijfers boven de tijdlijn, met hun berekende waarde erbij. */
+    /** De cijfers boven de tijdlijn, zoals de klant ze heeft ingesteld. */
     cijfers: ErvaringCijferRij[];
+    /** De tekst boven diezelfde tijdlijn, in allebei de talen. */
+    kop: ErvaringKopRij;
+    /**
+     * De keuzelijsten voor een cijfer, plus hoeveel er mogen staan.
+     *
+     * Bij elk soort staat wat wij er nu voor zouden tellen. Dat hoort bij
+     * het soort en niet bij een rij; zie ErvaringCijferRij.
+     */
+    cijferKeuzes: {
+        soort: ErvaringCijferSoort[];
+        modus: ErvaringKeuze[];
+        maximum: number;
+    };
     kanVertalen: boolean;
 }>();
 
@@ -145,11 +161,28 @@ const cijferVenster = ref(false);
  * er een functie bij, of gaat er een jaar voorbij, dan loopt het achter --
  * en dat merkt niemand, want het staat op de voorpagina waar hij zelf
  * nooit naar kijkt. Vandaar dit teken op de knop.
+ *
+ * Wat wij zouden tellen wordt bij het *soort* opgezocht en niet bij de
+ * rij. Alleen zo klopt het ook nadat de klant het soort heeft gewijzigd;
+ * zie de toelichting bij ErvaringCijferRij.
+ *
+ * Een verborgen cijfer telt niet mee: dat staat niet op de website, dus
+ * er kan daar ook niets verouderen.
  */
 const cijferLooptAchter = computed(() =>
-    props.cijfers.some(
-        (cijfer) => cijfer.waarde !== null && cijfer.waarde !== cijfer.berekend,
-    ),
+    props.cijfers.some((cijfer) => {
+        if (cijfer.modus !== 'eigen' || cijfer.waarde === null) {
+            return false;
+        }
+
+        const berekend = props.cijferKeuzes.soort.find(
+            (soort) => soort.value === cijfer.key,
+        )?.berekend;
+
+        return berekend !== null && berekend !== undefined
+            ? cijfer.waarde !== berekend
+            : false;
+    }),
 );
 
 /* --- Online of offline ----------------------------------------------- */
@@ -219,9 +252,13 @@ const bekijk = (item: ErvaringRij): void => {
                 </Button>
 
                 <!--
-                    De cijfers staan op de website boven de tijdlijn, maar
-                    het zijn geen ervaringen. Daarom een eigen knop en een
-                    eigen venster, en geen rij in de tabel hieronder.
+                    De kop en de cijfers staan op de website boven de
+                    tijdlijn, maar het zijn geen ervaringen. Daarom een
+                    eigen knop en een eigen venster, en geen rij in de
+                    tabel hieronder.
+
+                    Eén knop voor allebei, want op de website is het
+                    hetzelfde blok. Zie CijfersDialoog.vue.
                 -->
                 <Button
                     variant="outline"
@@ -229,7 +266,7 @@ const bekijk = (item: ErvaringRij): void => {
                     @click="cijferVenster = true"
                 >
                     <Hash class="size-4" />
-                    {{ $t('Cijfers') }}
+                    {{ $t('Kop en cijfers') }}
 
                     <!--
                         Een ingevuld cijfer werkt niet vanzelf bij. Loopt er
@@ -548,5 +585,11 @@ const bekijk = (item: ErvaringRij): void => {
         :kan-vertalen="props.kanVertalen"
     />
 
-    <CijfersDialoog v-model:open="cijferVenster" :cijfers="props.cijfers" />
+    <CijfersDialoog
+        v-model:open="cijferVenster"
+        :cijfers="props.cijfers"
+        :kop="props.kop"
+        :keuzes="props.cijferKeuzes"
+        :kan-vertalen="props.kanVertalen"
+    />
 </template>

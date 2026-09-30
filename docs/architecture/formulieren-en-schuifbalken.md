@@ -510,6 +510,40 @@ Een formulier met een bestand erin gaat als `FormData` de deur uit
 niet uit JSON. Zie
 [`ErvaringDialoog.vue`](../../resources/js/components/website/ErvaringDialoog.vue).
 
+## Een beheertabel op een telefoon
+
+De drie logboeken -- gebruikers, beveiliging en activiteit -- zijn tabellen
+van vier tot zes kolommen. Die passen niet op een telefoon, en zijwaarts
+scrollen in een tabel die zelf al in een scrollende pagina zit is geen
+oplossing: dan weet je nooit of je alles gezien hebt.
+
+Zet `brand-tabel-kaarten` op de `<table>` en geef elke `<td>` een
+`:data-label`. Onder de tabletgrens wordt elke rij dan een kaartje: de
+cellen onder elkaar, met de kolomnaam ervoor.
+
+```vue
+<table class="brand-tabel-kaarten w-full text-sm">
+    ...
+    <td :data-label="$t('Wanneer')" class="px-3 py-2">…</td>
+```
+
+Drie dingen die hierbij horen:
+
+- **De tabel op een breed scherm verandert geen pixel.** Alles staat in
+  één mediaquery. Op desktop was er niets mis met een tabel, en dat is de
+  reden dat dit geen herbouw is maar een laag eroverheen.
+- **Een cel zonder `data-label` blijft een blok over de volle breedte.**
+  Dat is precies goed voor de knoppenkolom en voor de cellen met een
+  `colspan` -- de lege lijst, en de rij die uitklapt als je er een
+  aanklikt.
+- **De eerste cel wordt zwaarder gezet.** Dat is waar je op zoekt: de
+  naam, of het tijdstip.
+
+De uitlijning en het niet-afbreken uit Tailwind worden hier overschreven,
+en dat lukt alleen omdat deze regels ongelaagd staan. Zie de valkuil
+daarover in [`AGENTS.md`](../../AGENTS.md); hier werkt hij een keer in ons
+voordeel, maar reken er niet op.
+
 ## Schuifbalken
 
 ### De schuifbalk van de pagina zelf

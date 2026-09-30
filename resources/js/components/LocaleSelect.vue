@@ -49,7 +49,7 @@ const kies = (gekozen: string) => {
         <BrandSelect
             :model-value="current"
             :options="opties"
-            aria-label="Kies een taal"
+            :aria-label="$t('Kies een taal')"
             @update:model-value="kies"
         />
     </div>

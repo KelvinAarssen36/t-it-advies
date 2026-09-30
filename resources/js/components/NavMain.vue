@@ -65,17 +65,21 @@ watch(open, (waarde) => {
 });
 
 /**
- * Ingeklapt tot pictogrammen staat alles open.
+ * Je keuze blijft staan, ook als de zijbalk smal wordt.
  *
- * In die stand is er geen kopje om op te klikken, dus een dichtgeklapte
- * groep zou onbereikbaar zijn: je ziet hem niet en je kunt hem niet openen.
+ * Dat was eerst niet zo: in de pictogramstand klapte alles open, omdat
+ * er dan geen kopje was om op te klikken en een dichte groep dus
+ * onbereikbaar zou zijn. Het gevolg was dat een groep die je net had
+ * dichtgeklapt weer opensprong zodra je de balk versmalde -- en dat
+ * leest als een instelling die niet blijft hangen.
+ *
+ * De oplossing zit niet hier maar in het kopje zelf: dat verdwijnt in
+ * de smalle stand niet, maar krimpt tot een knopje van één pictogram.
+ * Daarmee is de groep daar nog steeds open en dicht te klappen, en hoeft
+ * niemand iets voor je te beslissen. Zie `[data-collapsible='icon']` in
+ * app.css.
  */
-const uitgeklapt = computed({
-    get: () => state.value === 'collapsed' || open.value,
-    set: (waarde: boolean) => {
-        open.value = waarde;
-    },
-});
+const uitgeklapt = open;
 </script>
 
 <template>
@@ -101,10 +105,7 @@ const uitgeklapt = computed({
                                 {{ $t('De hoofdpagina van dit onderdeel') }}
                             </span>
                         </span>
-                        <VerlaatPortaal
-                            v-if="item.verlaat"
-                            class="ml-auto group-data-[collapsible=icon]:hidden"
-                        />
+                        <VerlaatPortaal v-if="item.verlaat" class="ml-auto" />
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
@@ -116,13 +117,16 @@ const uitgeklapt = computed({
                 een doelwit van twaalf pixels naast een tekst die er niets
                 mee doet, is een raadsel dat je niet hoeft op te geven.
 
-                In de pictogramstand verdwijnt het kopje helemaal. Alleen een
-                pijltje zonder tekst zou een knop zijn waarvan je niet kunt
-                zien wat hij doet -- en de groep staat daar toch al open.
+                In de pictogramstand krimpt hij tot alleen dat pijltje,
+                gecentreerd in de smalle balk. Zo blijft de groep daar ook
+                open en dicht te klappen -- en blijft je keuze dus staan
+                in plaats van dat de balk hem voor je omgooit. Het
+                `aria-label` draagt daar de naam van de groep, want de
+                tekst is dan verborgen.
             -->
             <CollapsibleTrigger
-                class="brand-nav-kop group/kop group-data-[collapsible=icon]:hidden"
-                :disabled="state === 'collapsed'"
+                class="brand-nav-kop group/kop"
+                :aria-label="label"
             >
                 <span>{{ label }}</span>
                 <ChevronDown
@@ -173,7 +177,7 @@ const uitgeklapt = computed({
                                 </span>
                                 <VerlaatPortaal
                                     v-if="item.verlaat"
-                                    class="ml-auto group-data-[collapsible=icon]:hidden"
+                                    class="ml-auto"
                                 />
                             </Link>
                         </SidebarMenuButton>

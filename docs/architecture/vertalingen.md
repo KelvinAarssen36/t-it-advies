@@ -6,8 +6,10 @@ de standaard.
 > **Stand van zaken.** Het fundament, de drie wisselknoppen en de
 > vertaallaag van de frontend staan en zijn getest. Inhoud die de klant
 > zelf invoert is tweetalig sinds de eerste module, inclusief een knop om
-> het [automatisch te laten vertalen](automatisch-vertalen.md). Alleen de
-> 2FA-schermen staan nog met vaste Nederlandse tekst in het sjabloon.
+> het [automatisch te laten vertalen](automatisch-vertalen.md). **Alle
+> vaste tekst gaat nu door de vertaling** -- de landingspagina, de
+> inlogschermen, de 2FA-schermen en de passkeys inbegrepen -- en er is een
+> test die bewaakt dat er geen kale Nederlandse zin meer bij komt.
 
 ## Eén plek beslist
 
@@ -16,7 +18,8 @@ verzoek de taal, in deze volgorde:
 
 1. `$user->locale` -- de voorkeur van de ingelogde gebruiker
 2. `session('locale')` -- voor bezoekers zonder account
-3. `config('app.locale')` -- en anders de standaard
+3. **`Accept-Language`** -- wat de browser van de bezoeker vraagt
+4. `config('app.locale')` -- en anders de standaard
 
 Met bij elke stap een toets tegen de witte lijst in
 `config('app.available_locales')`.
@@ -28,12 +31,76 @@ kiest en van de rest afwijkt.
 
 **De volgorde is betekenisvol.** Ben je ingelogd, dan wint je profiel altijd
 van de sessie. Anders zou iemand die op een gedeelde computer even naar
-Engels wisselt daarmee de voorkeur van de eigenaar overschrijven.
+Engels wisselt daarmee de voorkeur van de eigenaar overschrijven. En de
+sessie wint van de browser: wie zelf op de knop drukt heeft het laatste
+woord, ook al staat zijn browser op iets anders.
+
+### De taal van de browser
+
+Een bezoeker die nog nooit iets gekozen heeft, krijgt de site in zijn eigen
+taal: **Nederlands als zijn browser om Nederlands vraagt, Engels in alle
+andere gevallen.** Zonder die stap kreeg iedereen Nederlands en moest een
+buitenlandse bezoeker zelf ontdekken dat er een knop is.
+
+Twee dingen die hier bewust zo zijn:
+
+- **Engels staat vooraan in de lijst die aan `getPreferredLanguage` wordt
+  gegeven.** Die geeft het eerste element terug zodra er niets matcht, dus
+  een Duitse, Franse of Poolse bezoeker krijgt Engels. Zet je `nl` vooraan,
+  dan krijgt de halve wereld ineens Nederlands. `nl-BE` en `nl-NL` tellen
+  allebei als Nederlands; Symfony kijkt naar het taaldeel en niet naar het
+  land.
+- **De taal van de browser en niet het land van het IP-adres.** Dat laatste
+  vraagt een dienst van buiten, is bij een VPN meteen fout, en zegt sowieso
+  minder: iemand die op vakantie in Spanje zit wil nog steeds Nederlands
+  lezen.
+
+Het antwoord hangt daarmee af van een verzoekkop, dus zet de middleware
+`Vary: Accept-Language` op de respons. Zonder die kop kan een proxy de
+Nederlandse pagina teruggeven aan een Engelse bezoeker -- precies het soort
+fout dat je zelf nooit ziet, want jouw browser vraagt altijd hetzelfde.
+
+**In tests stuurt `TestCase` standaard een Nederlandse `Accept-Language`
+mee.** Anders zou elke test die naar een Nederlandse zin zoekt ineens
+Engels terugkrijgen, en dat heeft niets met zijn onderwerp te maken. Wie de
+onderhandeling zelf test zet de kop expliciet of haalt hem weg met
+`flushHeaders()`.
 
 De middleware hangt in de `web`-groep, ná die van Laravel zelf. Hij leest de
 sessie en de ingelogde gebruiker, en die bestaan pas nadat `StartSession`
 heeft gedraaid -- met `prepend` krijg je op elke pagina een 500. Wel vóór
 `HandleInertiaRequests`, want die deelt de gekozen taal met de frontend.
+
+## Eén Nederlands woord, twee betekenissen
+
+De keerzijde van de Nederlandse zin als sleutel: twee plekken die
+toevallig hetzelfde woord gebruiken, delen één vertaling. Dat valt in het
+Nederlands niet op en in het Engels wel.
+
+Dat ging hier al twee keer mis met **"Beheer"**. Dat was de naam van een
+menugroep in het portaal én het label van een pictogram bij een ervaring;
+allebei kregen ze "Administration", en toen er een tweede groep
+"Administratie" bij kwam stonden er twee kopjes met dezelfde naam onder
+elkaar in de zijbalk.
+
+De oplossing is niet een aparte sleutel verzinnen -- dan zijn we terug bij
+`portal.nav.beheer` en is het hele ontwerp weg. **Geef het Nederlands een
+eigen woord.** Het pictogram heet nu "Onderhoud", wat bij een moersleutel
+sowieso beter past, en de groep heet "Beheer" met "Management" ernaast.
+
+**Let hierop bij korte teksten**: menu-items, labels, knoppen. Bij hele
+zinnen komt het niet voor, en een hoofdletter tegenover een kleine letter
+-- "Functie" voor het label, "functie" voor de validatiemelding -- is
+geen botsing maar met opzet.
+
+Een korte controle op dubbele Engelse teksten:
+
+```bash
+php -r '$t = json_decode(file_get_contents("lang/en.json"), true);
+foreach (array_count_values($t) as $en => $n) {
+    if ($n > 1 && mb_strlen($en) < 26) echo $en, PHP_EOL;
+}'
+```
 
 ## Wisselen
 
@@ -343,12 +410,38 @@ valt de Engelse vertaling terug op het Nederlands. Daarom bewaakt
 Verander je een zin zonder de vertaling bij te werken, dan valt die test om
 en noemt hij de sleutel bij naam.
 
-### Wat nog niet vertaald is
+### Drie tests, en waarom het er drie zijn
 
-Vertaald: het hele portaal -- de zijbalk, het accountmenu, het dashboard, de
-instellingen en het beheergedeelte -- en de inlogschermen. De statuslabels
-van mail en beveiliging komen uit enums die al `__()` gebruikten, dus die
-liepen vanzelf mee.
+Die ene test was niet genoeg, en dat bleek pas toen de helft van de
+applicatie in het Engels gewoon Nederlands bleef.
+
+1. **Elke sleutel uit de frontend heeft Engels.** Zoekt naar `$t('…')` en
+   `t('…')` in `resources/js`, in allebei de soorten aanhalingstekens, plus
+   de koppen uit `defineOptions({ layout: … })` en uit `setLayoutProps({ … })`.
+2. **Elke zin die de server vertaalt heeft Engels.** Zoekt naar `__()` en
+   `trans()` in `app/` en `database/seeders`. Toasts, validatiemeldingen en
+   de labels van enums vielen buiten de eerste test, en daar zat een gat:
+   de meldingen bij het bewaren van de cijfers stonden in het Nederlands
+   midden in een verder Engels scherm. `app/Console` valt er bewust buiten;
+   die tekst verschijnt op een terminal bij ons en niet bij de klant.
+3. **Geen kale Nederlandse zin in een sjabloon.** Dit was de blinde vlek.
+   De eerste twee tests controleren of een _bestaande_ sleutel Engels
+   heeft; een zin die nooit in een `$t()` is gezet glipt daar per definitie
+   doorheen -- het is geen sleutel, dus er ontbreekt ook niets. Zo bleven
+   de hele landingspagina en de 2FA-schermen maandenlang Nederlands
+   terwijl de rest netjes meeging. Deze derde test kijkt de andere kant op:
+   welke tekst komt er op het scherm zonder langs `$t()` te gaan. Ze
+   herkent Nederlands aan een handvol woorden die in het Engels niet zo
+   voorkomen -- niet waterdicht, maar het vangt hele zinnen, en dat zijn de
+   gevallen die opvallen.
+
+### Wat vertaald is
+
+Alles wat vaste tekst is: het hele portaal, de inlogschermen, de
+2FA-schermen, het passkeybeheer, en sinds kort ook de **publieke
+landingspagina** -- de kop, de diensten, de werkwijze en het
+contactformulier. De statuslabels van mail en beveiliging komen uit enums
+die al `__()` gebruikten, dus die liepen vanzelf mee.
 
 De koppen van de inlogschermen staan in `defineOptions({ layout: … })` en
 worden vertaald door
@@ -356,25 +449,30 @@ worden vertaald door
 om dezelfde reden als bij de kruimelpaden: de moduleruimte heeft nog geen
 taal.
 
-Nog niet vertaald is de publieke site. Dat heeft een reden: die teksten
-worden inhoud die de klant zelf beheert, en daarvoor geldt het plan
-hieronder.
+De teksten van de landing zijn vertaald **en** blijven op de rol om
+inhoud te worden die de klant zelf beheert; zie het plan hieronder. Tot
+die tijd is een vertaalde vaste tekst beter dan een Nederlandse zin op een
+Engelse pagina.
+
+### De taal wisselen op de publieke site
+
+`<main>` in
+[`PublicLayout.vue`](../../resources/js/layouts/PublicLayout.vue) heeft de
+taal als `:key`, en dat is geen voorzorg maar een reparatie.
+
+SplitText knipt een kop in losse regels en onthoudt de oorspronkelijke
+opmaak om later te kunnen terugdraaien. Wisselt de bezoeker van taal, dan
+vervangt Vue de tekst in diezelfde elementen -- en zet `revert()` daarna de
+tekst van vóór de wissel terug. Je klikt dan op EN en leest nog steeds
+Nederlands. Met een sleutel op de taal gooit Vue de hele pagina weg en
+bouwt hem opnieuw op: de koppen zijn nieuwe elementen, de animaties
+beginnen schoon, en de typmachine in de hero tikt de nieuwe zin gewoon
+opnieuw.
 
 Voeg je een taal toe, dan hoort daar een bestand bij, een regel in
 `config('app.available_locales')`, een SVG in `public/flags/` en een regel in
 de tabel in `LocaleFlag.vue`. Overweeg bij een derde taal meteen of een vlag
 nog klopt, of dat de taalcode eerlijker is.
-
-## Wat er nog moet gebeuren
-
-### De laatste vaste teksten
-
-De vertaallaag voor de frontend staat -- zelf gedaan, met de woordenlijst
-als prop via Inertia en de kleine helper in
-[`lib/i18n.ts`](../../resources/js/lib/i18n.ts). Wat er nog niet doorheen
-is, zijn de 2FA-schermen: ongeveer 33 regels over zeven bestanden. Dat
-staat als open punt in [wat er nog open staat](../openstaand.md), inclusief
-de blinde vlek waardoor `TranslationsTest` ze niet ziet.
 
 ## De inhoud die de klant invoert
 

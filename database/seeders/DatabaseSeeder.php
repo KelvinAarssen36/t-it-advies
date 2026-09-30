@@ -33,6 +33,7 @@ class DatabaseSeeder extends Seeder
             PageSectionSeeder::class,
             ExperienceSeeder::class,
             ExperienceStatSeeder::class,
+            ExperienceHeadingSeeder::class,
         ]);
     }
 }

@@ -98,6 +98,21 @@ const klaar = ref(false);
 const veegt = ref(false);
 let veegTimer: ReturnType<typeof setTimeout> | undefined;
 
+/**
+ * Welke kant de veeg op loopt: 1 naar rechts, -1 naar links.
+ *
+ * De veeg hoort tegen de indicator in te lopen, niet ermee mee. Schuif je
+ * naar rechts, dan trekt het licht naar links weg -- alsof je er met je
+ * duim overheen veegt en de glans achterblijft. Meelopen leest als een
+ * tweede ding dat dezelfde kant op gaat, en dan zie je twee bewegingen
+ * in plaats van één.
+ *
+ * Hier liep hij eerst altijd dezelfde kant op, ongeacht de wissel, en
+ * daarna een ronde lang de verkeerde kant op. Vandaar deze uitleg: de
+ * richting is min de looprichting, en niet plus.
+ */
+const richting = ref(1);
+
 let waarnemer: ResizeObserver | undefined;
 
 onMounted(async () => {
@@ -146,6 +161,13 @@ const kies = (waarde: string) => {
         return;
     }
 
+    // De richting wordt bepaald vóórdat de nieuwe waarde doorgaat, want
+    // daarna is er geen "waar kwam hij vandaan" meer.
+    const vanaf = props.options.findIndex((o) => o.value === actief.value);
+    const naar = props.options.findIndex((o) => o.value === waarde);
+
+    richting.value = naar >= vanaf ? -1 : 1;
+
     vooruit.value = waarde;
     veegt.value = true;
 
@@ -174,6 +196,7 @@ defineExpose({ herstel });
         :style="{
             '--vak-x': `${positie.x}px`,
             '--vak-w': `${positie.breedte}px`,
+            '--veeg-richting': richting,
         }"
         role="group"
         :aria-label="groepLabel"

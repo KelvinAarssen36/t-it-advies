@@ -201,7 +201,9 @@ watch(
                             />
                             <span
                                 class="relative bg-card px-2 py-1 text-sm text-muted-foreground"
-                                >of vul de sleutel handmatig in</span
+                                >{{
+                                    $t('of vul de sleutel handmatig in')
+                                }}</span
                             >
                         </div>
 
@@ -288,14 +290,14 @@ watch(
                                     @click="showVerificationStep = false"
                                     :disabled="processing"
                                 >
-                                    Terug
+                                    {{ $t('Terug') }}
                                 </Button>
                                 <Button
                                     type="submit"
                                     class="w-auto flex-1"
                                     :disabled="processing || code.length < 6"
                                 >
-                                    Bevestigen
+                                    {{ $t('Bevestigen') }}
                                 </Button>
                             </div>
 
@@ -305,7 +307,7 @@ watch(
                                 class="hidden"
                                 tabindex="-1"
                             >
-                                Bevestigen
+                                {{ $t('Bevestigen') }}
                             </button>
                         </div>
                     </Form>

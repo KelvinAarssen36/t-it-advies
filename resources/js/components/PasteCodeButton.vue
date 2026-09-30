@@ -31,15 +31,19 @@ const { supported, failed, paste } = usePasteCode((code) =>
             @click="paste"
         >
             <ClipboardPaste class="size-3.5" />
-            Code plakken
+            {{ $t('Code plakken') }}
         </button>
 
         <p v-else class="text-xs text-muted-foreground">
-            Tip: plakken met Ctrl+V vult alle zes de vakjes in één keer.
+            {{
+                $t(
+                    'Tip: plakken met Ctrl+V vult alle zes de vakjes in één keer.',
+                )
+            }}
         </p>
 
         <p v-if="failed" class="text-xs text-muted-foreground">
-            Geen zescijferige code op het klembord gevonden.
+            {{ $t('Geen zescijferige code op het klembord gevonden.') }}
         </p>
     </div>
 </template>

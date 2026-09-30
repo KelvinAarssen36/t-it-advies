@@ -162,8 +162,10 @@ const velden = (regel: Regel): string => {
             </span>
         </div>
 
-        <div class="brand-scrollbar overflow-x-auto rounded-xl border">
-            <table class="w-full text-sm">
+        <div
+            class="brand-tabelvak brand-scrollbar overflow-x-auto rounded-xl border"
+        >
+            <table class="brand-tabel-kaarten w-full text-sm">
                 <thead class="bg-muted/50 text-left">
                     <tr>
                         <th class="px-3 py-2 font-medium">
@@ -193,7 +195,10 @@ const velden = (regel: Regel): string => {
                                 exacte tijd hangt eronder voor als het er
                                 echt op aankomt.
                             -->
-                            <td class="px-3 py-2 whitespace-nowrap">
+                            <td
+                                :data-label="$t('Wanneer')"
+                                class="px-3 py-2 whitespace-nowrap"
+                            >
                                 <span>{{ row.created_at_diff }}</span>
                                 <span
                                     class="block text-xs text-muted-foreground tabular-nums"
@@ -201,12 +206,12 @@ const velden = (regel: Regel): string => {
                                     {{ row.created_at }}
                                 </span>
                             </td>
-                            <td class="px-3 py-2">
+                            <td :data-label="$t('Handeling')" class="px-3 py-2">
                                 <Badge :variant="kleur(row.action)">
                                     {{ row.action_label }}
                                 </Badge>
                             </td>
-                            <td class="px-3 py-2">
+                            <td :data-label="$t('Onderdeel')" class="px-3 py-2">
                                 <span class="text-muted-foreground">
                                     {{ row.subject_name }}
                                 </span>
@@ -214,7 +219,10 @@ const velden = (regel: Regel): string => {
                                     — {{ row.subject_label }}
                                 </span>
                             </td>
-                            <td class="px-3 py-2 text-muted-foreground">
+                            <td
+                                :data-label="$t('Wat er veranderde')"
+                                class="px-3 py-2 text-muted-foreground"
+                            >
                                 {{ velden(row) }}
                             </td>
                         </tr>

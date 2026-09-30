@@ -26,7 +26,7 @@ defineProps<{
 </script>
 
 <template>
-    <Head title="Inloggen" />
+    <Head :title="$t('Inloggen')" />
 
     <div
         v-if="status"
@@ -45,7 +45,7 @@ defineProps<{
     >
         <div class="grid gap-6">
             <div class="grid gap-2">
-                <Label for="email" verplicht>E-mailadres</Label>
+                <Label for="email" verplicht>{{ $t('E-mailadres') }}</Label>
                 <Input
                     id="email"
                     type="email"
@@ -61,14 +61,16 @@ defineProps<{
 
             <div class="grid gap-2">
                 <div class="flex items-center justify-between">
-                    <Label for="password" verplicht>Wachtwoord</Label>
+                    <Label for="password" verplicht>
+                        {{ $t('Wachtwoord') }}
+                    </Label>
                     <TextLink
                         v-if="canResetPassword"
                         :href="request()"
                         class="text-sm"
                         :tabindex="5"
                     >
-                        Wachtwoord vergeten?
+                        {{ $t('Wachtwoord vergeten?') }}
                     </TextLink>
                 </div>
                 <PasswordInput
@@ -77,7 +79,7 @@ defineProps<{
                     required
                     :tabindex="2"
                     autocomplete="current-password"
-                    placeholder="Je wachtwoord"
+                    :placeholder="$t('Je wachtwoord')"
                 />
                 <InputError :message="errors.password" />
             </div>
@@ -85,7 +87,7 @@ defineProps<{
             <div class="flex items-center justify-between">
                 <Label for="remember" class="flex items-center space-x-3">
                     <Checkbox id="remember" name="remember" :tabindex="3" />
-                    <span>Ingelogd blijven</span>
+                    <span>{{ $t('Ingelogd blijven') }}</span>
                 </Label>
             </div>
 
@@ -97,7 +99,7 @@ defineProps<{
                 data-test="login-button"
             >
                 <Spinner v-if="processing" />
-                Inloggen
+                {{ $t('Inloggen') }}
             </Button>
         </div>
     </Form>

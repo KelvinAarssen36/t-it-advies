@@ -381,3 +381,42 @@ Bij `prefers-reduced-motion` verschijnt de carrousel niet en verdwijnt
 ook de keuzeknop: een vak dat je scroll overneemt is precies waar iemand
 met bewegingsklachten last van heeft, en de lijst is een volwaardig
 alternatief.
+
+## 017 -- Lenis blijft de scrollmotor, ScrollSmoother komt er niet in
+
+**Sinds GSAP 3.13 zitten de vroegere Club-plugins gewoon in het pakket**,
+en daarmee ook ScrollSmoother. Die doet wat Lenis hier doet, maar dan van
+dezelfde makers als ScrollTrigger: geen koppelcode om de twee dezelfde
+scrollpositie te laten zien, en parallax die je met één attribuut
+(`data-speed`) op een element zet in plaats van met een tween.
+
+Toch blijft Lenis staan, om één reden die zwaarder weegt dan dat gemak.
+
+**ScrollSmoother zet de hele pagina in een `transform`.** Dat is hoe hij
+werkt: een `#smooth-content` die hij verschuift binnen een vaste wrapper.
+Een `transform` op een voorouder maakt van elke `position: fixed`
+daarbinnen een `position: absolute` -- dat is geen fout in GSAP maar hoe
+CSS werkt. Op deze site raakt dat de plakkende kop, de voortgangsbalk, de
+introlaag en het detailvenster van de ervaring. Stuk voor stuk op te
+lossen door ze buiten de wrapper te tillen, en stuk voor stuk een plek
+waar de volgende die eraan werkt overheen kan struikelen.
+
+Daar staat weinig tegenover. De koppelcode tussen Lenis en ScrollTrigger
+is twaalf regels en staat op één plek, in `startSmoothScroll()`. En
+parallax is `parallax()` in
+[`motion.ts`](../../resources/js/lib/motion.ts): dertig regels, één keer
+geschreven, en hij doet precies wat `data-speed` doet.
+
+**Wat we wél overnemen van die gratis plugins:** SplitText, DrawSVG en
+MotionPath. Die voegen iets toe dat we anders niet konden -- tekst per
+regel maskeren, een pad zichzelf laten tekenen, iets langs dat pad laten
+reizen -- en ze raken de structuur van de pagina niet aan. Samen kosten ze
+13 kB gzip, en ze zitten in de chunk van de publieke site; het portaal
+laadt er geen byte van.
+
+**Terugdraaien:** ScrollSmoother alsnog nemen betekent `startSmoothScroll()`
+vervangen, de wrapper-structuur in
+[`PublicLayout.vue`](../../resources/js/layouts/PublicLayout.vue) toevoegen
+en elk vastgezet element daarbuiten hangen. Doe dat dan in één keer en niet
+half -- half is precies de toestand waarin de kop soms wel en soms niet
+blijft staan.

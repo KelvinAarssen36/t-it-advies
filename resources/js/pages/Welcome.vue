@@ -54,7 +54,7 @@ const toonVoor = (index: number): 'base' | 'raised' =>
 </script>
 
 <template>
-    <Head title="IT-advies dat blijft staan" />
+    <Head :title="$t('IT-advies dat blijft staan')" />
 
     <HeroSection :sections="props.sections" />
 

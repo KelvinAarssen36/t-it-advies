@@ -66,12 +66,14 @@ onMounted(async () => {
         <CardHeader>
             <CardTitle class="flex items-center gap-2 text-base">
                 <LockKeyhole class="size-4 text-brand-cyan" />
-                Recovery codes
+                {{ $t('Recovery codes') }}
             </CardTitle>
             <CardDescription>
-                Met een recovery code kom je weer binnen als je je telefoon
-                kwijt bent. Bewaar ze in een wachtwoordmanager, niet in je
-                mailbox.
+                {{
+                    $t(
+                        'Met een recovery code kom je weer binnen als je je telefoon kwijt bent. Bewaar ze in een wachtwoordmanager, niet in je mailbox.',
+                    )
+                }}
             </CardDescription>
         </CardHeader>
 
@@ -113,7 +115,7 @@ onMounted(async () => {
                         type="submit"
                         :disabled="processing"
                     >
-                        <RefreshCw /> Nieuwe codes
+                        <RefreshCw /> {{ $t('Nieuwe codes') }}
                     </Button>
                 </Form>
             </div>
@@ -150,7 +152,9 @@ onMounted(async () => {
                     </div>
 
                     <p class="text-xs text-muted-foreground select-none">
-                        Elke code werkt één keer en verdwijnt daarna.
+                        {{
+                            $t('Elke code werkt één keer en verdwijnt daarna.')
+                        }}
                     </p>
                 </div>
             </div>

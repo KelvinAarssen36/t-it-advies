@@ -8,6 +8,48 @@ aan- en uitgaat en verplaatst wordt, staat in
 [pagina-indeling](../pagina-indeling.md); hoe het automatisch vertalen
 werkt, in [automatisch vertalen](../automatisch-vertalen.md).
 
+## Wat er allemaal onder deze module valt
+
+Niet alleen de losse ervaringen. **Het hele blok op de website is van deze
+module**, en dat is precies één scherm in het portaal:
+
+| Onderdeel                                      | Waar de klant het beheert              | Waar het vandaan komt                  |
+| ---------------------------------------------- | -------------------------------------- | -------------------------------------- |
+| De **kop** erboven: de titel en de zin eronder | Knop "Kop en cijfers" op het overzicht | `experience_headings`, één rij         |
+| De **cijfers** erboven: hoogstens vier         | Diezelfde knop                         | `experience_stats`, één rij per cijfer |
+| De **ervaringen** zelf                         | De tabel op het overzicht              | `experiences`                          |
+
+Dat de kop en de cijfers in hetzelfde venster zitten is geen gemak maar
+een gevolg: op de website staan ze in hetzelfde blok. Los opslaan zou
+betekenen dat de eigenaar twee keer bevestigt voor één zichtbare
+verandering, en dat er een tussenstand kan bestaan waarin de helft live
+staat. Eén scherm, één opslag, één regel in het activiteitenlogboek per
+ding dat veranderde.
+
+**De koptekst stond eerst in het Vue-component.** Daarmee was het het enige
+deel van dat blok dat de klant níet kon aanpassen, terwijl de rest wel van
+hem is -- precies het soort halve module waar het uitgangspunt van dit
+project tegen is. Zie
+[de beheerbare klantsite](../pagina-indeling.md).
+
+**Het opschrift "Ervaring" hoort er niet bij.** Dat is de naam van het
+onderdeel zelf: hij staat ook in het menu van de site en op het
+indelingsscherm. Zou de klant hem hier kunnen wijzigen, dan heet hetzelfde
+onderdeel op drie plekken anders.
+
+### Voor de volgende module
+
+`experience_headings` is bewust een tabel met **één rij** en zonder
+`key`-kolom. Er is één tijdlijn, dus één kop; een sleutelkolom zou
+suggereren dat er meer bij kunnen komen, en een tabel die liegt over wat
+hij bevat is erger dan een tabel met één rij.
+
+Krijgt de volgende module óók een beheerbare kop -- en dat is
+waarschijnlijk -- dan is dát het moment om te bedenken of het naar
+`page_sections` moet, als tekstkolommen bij het onderdeel waar de kop bij
+hoort. Nu zou dat een tabel aanpassen die alle onderdelen deelt, voor één
+module die hem als enige gebruikt.
+
 ## De velden, en waarom die
 
 | Veld          | Verplicht | Vertaalbaar | Waarom zo                                                                 |
@@ -600,6 +642,14 @@ prettiger dan langer scrollen. Een `matchMedia`-luisteraar houdt dat bij,
 en begrenst meteen het paginanummer: word je scherm smaller, dan kun je
 anders op pagina 7 van 5 blijven staan.
 
+**Op een telefoon staan er geen nummers maar de stand: "3 / 7".** Met
+zeven pagina's stonden er negen knopjes naast elkaar, en die vielen op
+een smal scherm op twee regels -- waarbij de laatste pagina onderaan
+losraakte van de rest. Een vaste rij van drie past altijd, hoeveel
+pagina's er ook zijn. Je verliest daarmee het rechtstreeks naar pagina
+vijf springen, en dat is op een telefoon ook geen echte handeling: die
+knopjes zijn daar zo klein dat je ze toch niet gericht raakt.
+
 Dat was eerst één knop "Toon alles" die de rest uitklapte. Bladeren is
 hier beter: elke pagina is even hoog, dus de rest van de landingspagina
 blijft op zijn plek staan, en je ziet hoeveel er nog komt. Boven de zeven
@@ -614,43 +664,119 @@ je die knopjes kwijt en moet je ze terugzoeken voor de volgende pagina.
 Wie tóch alles in één keer wil zien, drukt op **"Toon alles"** links boven
 de tijdlijn. Dat opent het venster op zijn lijstweergave.
 
+### De kop erboven
+
+De titel en de zin eronder komen uit `experience_headings` en niet uit het
+Vue-component. De terugval tussen de talen werkt hier net als bij een
+ervaring, en om dezelfde reden:
+
+- **De titel valt terug op het Nederlands.** Een blok zonder kop is stuk.
+- **De inleiding niet.** Half Nederlands op een Engelse pagina is
+  slordiger dan geen zin, en zonder die zin ziet het blok er ook goed uit.
+
+Ontbreekt de prop helemaal -- een verse database zonder seeder, of een
+oude pagina uit de cache -- dan valt
+[`ErvaringSection`](../../../resources/js/components/site/sections/ErvaringSection.vue)
+terug op de oorspronkelijke tekst. Dan staat er een kop in plaats van een
+gat.
+
 ### De cijfers erboven
 
-Drie getallen: jaren, functies, organisaties. Ze tellen omhoog zodra je ze
-in beeld scrolt, en het eindgetal staat al in de HTML -- gaat er iets mis
-met het tellen, dan staat er nog steeds het goede getal.
+Hoogstens vier getallen boven de tijdlijn. Ze tellen omhoog zodra je ze in
+beeld scrolt, en het eindgetal staat al in de HTML -- gaat er iets mis met
+het tellen, dan staat er nog steeds het goede getal.
 
-**Ze worden berekend uit de tijdlijn, tenzij de klant er zelf een getal
-neerzet.** Die regel -- ingevuld wint, leeg wordt berekend -- staat in
+**De klant beheert de lijst zelf.** Hij bepaalt hoeveel cijfers er staan,
+in welke volgorde, hoe ze heten en waar het getal vandaan komt. Vier is
+geen technische grens maar een ontwerpkeuze: vijf getallen naast elkaar
+boven een lijst is geen samenvatting meer. De grens wordt afgedwongen in
+de validatie en staat als `ExperienceStat::MAXIMUM`.
+
+#### Drie dingen bepalen wat er komt te staan
+
+| Veld                    | Wat het zegt                                                                    |
+| ----------------------- | ------------------------------------------------------------------------------- |
+| `key`                   | Het **soort**: jaren, functies, organisaties, of `eigen`.                       |
+| `modus`                 | **Wat ermee gebeurt**: automatisch, een eigen getal, of niet tonen.             |
+| `label_nl` / `label_en` | Het **woord eronder**. Leeg betekent: gebruik het standaardwoord van het soort. |
+
+De modus is er later bij gekomen, en dat loste een echt probleem op. Eerst
+betekende een leeg getalveld "reken het uit", en dus kon de klant een
+cijfer helemaal niet weglaten: één veld met twee betekenissen kan geen
+derde aan. Nu zegt de modus wat er hoort te gebeuren en zegt `value`
+alleen nog hoeveel. Zie
+[`ExperienceStatModus`](../../../app/Enums/ExperienceStatModus.php).
+
+Bij **automatisch** rekenen wij het uit de tijdlijn. Die rekensom staat in
 [`Loopbaan`](../../../app/Support/Loopbaan.php), want twee plekken moeten
 hem kennen: de website die de cijfers toont, en het beheerscherm dat laat
-zien wat er zou staan als je het veld leeglaat. Zou elk scherm het zelf
-uitrekenen, dan belooft het portaal iets anders dan de site laat zien.
+zien wat er zou komen te staan. Zou elk scherm het zelf uitrekenen, dan
+belooft het portaal iets anders dan de site laat zien.
 
-Leeg is hier dus geen ontbrekende waarde maar een **keuze**, en het is de
-keuze die je wilt: zolang een veld leeg is, klopt het cijfer vanzelf zodra
-er een functie bij komt. Wélke cijfers er bestaan staat in
+Wélke soorten er bestaan staat in
 [`ExperienceStatKey`](../../../app/Enums/ExperienceStatKey.php) en niet in
-de database -- dat is code, geen inhoud, net als bij `PageSectionKey`.
+de database -- dat is code, geen inhoud, net als bij `PageSectionKey`. Van
+een soort dat wij tellen mag er precies één zijn; van `eigen` meerdere,
+want daarmee komt de klant aan een getal dat niets met de tijdlijn te
+maken heeft ("12 certificeringen").
+
+Het woord leeg laten is hier de betere keuze dan het overtypen: het
+standaardwoord is vertaald, dus het blijft ook op de Engelse site
+kloppen. Zie `ExperienceStat::woord()`. Vult de eigenaar er tóch zelf een
+woord in, dan staat er een klein vertaalknopje naast het Engelse veld;
+waarom dat een andere vorm heeft dan de grote knop bij de tekst staat in
+[automatisch vertalen](../automatisch-vertalen.md).
 
 De jaren lopen van de vroegste startdatum tot het laatste einde en zijn
 **niet** de som van alle periodes: functies overlappen, en dan tel je
 jezelf rijk. Loopt er nog iets, dan wordt er tot **vandaag** gerekend --
 dus het getal gaat vanzelf omhoog zodra er een jaar volgemaakt is. Niet op
 1 januari: begon de loopbaan in juni, dan springt het in juni. Er staan
-geen cijfers als er geen ervaringen zijn; drie nullen boven een lege lijst
-is erger dan geen cijfers.
+geen cijfers als er geen ervaringen zijn; nullen boven een lege lijst zijn
+erger dan geen cijfers.
 
-Beheren gebeurt via de knop "Cijfers" op het overzicht. Het berekende getal
-staat als tijdelijke tekst in het lege veld, zodat "automatisch" geen
-belofte is die de klant moet geloven.
+#### Wat er bij het soort hoort, staat niet in de rij
+
+Dit is de belangrijkste regel in dit onderdeel, en hij is met schade en
+schande geleerd.
+
+Het beheerscherm kreeg eerst per rij mee wat er bij dat soort hoort: het
+standaardwoord, de uitleg erbij, en wat wij op dat moment voor dát soort
+zouden tellen. Zodra de eigenaar in het venster een ander soort koos,
+klopte die meegestuurde bagage niet meer -- het scherm wist niet wat er
+bij het nieuwe soort hoort en zette er nul neer. Je zag dan "nu zouden wij
+er 0 tellen" boven een tijdlijn van vijfendertig jaar.
+
+Daarom draagt een rij nu alleen nog wat de klant zelf heeft ingesteld:
+`id`, `key`, de twee woorden, `modus` en `waarde`. Alles wat uit het soort
+volgt zit in `cijferKeuzes.soort`, en het scherm zoekt het daar op. Dan
+klopt het bij elke keuze -- ook bij een keuze die nog niet is opgeslagen.
+`ExperienceStatsTest` bewaakt allebei de kanten van die afspraak.
+
+#### Beheren
+
+Via de knop "Kop en cijfers" op het overzicht -- dezelfde knop als voor de
+titel erboven, want het is op de website hetzelfde blok.
+
+Elke kaart in dat venster toont bovenaan **een voorbeeld van het tegeltje**
+zoals het op de website komt te staan: het getal groot, het woord eronder.
+Dat is de kortste weg naar begrip. De keuzelijsten eronder zeggen wát er
+gebeurt, maar pas het voorbeeld laat zien wát er komt te staan -- en het
+verandert meteen mee.
+
+Een cijfer weghalen vraagt om een bevestiging, ook al gebeurt het pas echt
+bij Opslaan. Een prullenbakje dat een ingevuld cijfer meteen laat
+verdwijnen voelt als iets kwijtraken, en er is geen ongedaan maken in dit
+formulier. De bevestiging wijst ook de weg naar het alternatief: wil je
+het alleen even niet tonen, kies dan "Niet tonen" -- dan blijven het woord
+en het getal bewaard.
 
 **Een ingevuld cijfer werkt niet vanzelf bij, en dat is de val.** Typt de
 klant er 27 in en komt er daarna een functie bij, dan blijft er 27 staan
 -- op de voorpagina, waar hij zelf nooit kijkt. Daarom meldt het scherm
-het: naast het veld staat "Wij tellen er 28", en op de knop "Cijfers" komt
-een waarschuwingsteken zodra een van de drie achterloopt. Leegmaken zet
-het weer op automatisch.
+het: onder het veld staat "Wij tellen er 28", en op de knop komt een
+waarschuwingsteken zodra een cijfer achterloopt. Terug op automatisch zetten
+lost het op.
 
 ### De animaties van de lijst
 
@@ -747,16 +873,17 @@ zodat de pagina waar hij heen gaat geen greep krijgt op de onze.
 
 ## Tests
 
-| Bestand                                                                                   | Wat het bewaakt                                                                                                                                                                                        |
-| ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [ExperienceCrudTest](../../../tests/Feature/Website/ExperienceCrudTest.php)               | Rechten per route -- **de volledige lijst staat hier en nergens anders** -- beide talen opslaan, een lege waarde die `null` wordt en geen `""`, een omgekeerde periode, en wat er in het logboek komt. |
-| [ExperienceOverviewTest](../../../tests/Feature/Website/ExperienceOverviewTest.php)       | Zoeken (inclusief een zoekterm met een jokerteken erin), bladeren, het verschil tussen "nog niets" en "niets gevonden", de detailpagina met zijn buren, en waar je belandt na het verwijderen.         |
-| [ExperiencePublishingTest](../../../tests/Feature/Website/ExperiencePublishingTest.php)   | Online en offline: het schuifje, dat offline werk niet op de site komt, dat de hele sectie verdwijnt als alles offline staat, en de cijfers erboven.                                                   |
-| [ExperienceStatsTest](../../../tests/Feature/Website/ExperienceStatsTest.php)             | De cijfers: dat leeg terugvalt op de berekening, dat een ingevuld getal wint, dat je het weer leeg kunt maken, en dat de route niet door de detailpagina wordt opgeslokt.                              |
-| [ExperienceLogoTest](../../../tests/Feature/Website/ExperienceLogoTest.php)               | De upload: dat er een vierkantje van 256 uit komt, dat de naam van de klant niet wordt gebruikt, dat rommel wordt geweigerd, en dat er niets blijft slingeren.                                         |
-| [ExperienceTimelineTest](../../../tests/Feature/Website/ExperienceTimelineTest.php)       | Wat de bezoeker krijgt: de volgorde, de terugval op het Nederlands, en dat een leeg veld niets oplevert.                                                                                               |
-| [ExperienceTranslationTest](../../../tests/Feature/Website/ExperienceTranslationTest.php) | De vertaalknop, met een dubbel in plaats van de echte dienst.                                                                                                                                          |
-| [ExperienceSeederTest](../../../tests/Feature/Database/ExperienceSeederTest.php)          | De echte loopbaan die met elke deploy meegaat: twee keer draaien verandert niets, en de seeder overschrijft nooit wat de klant zelf aanpaste.                                                          |
+| Bestand                                                                                   | Wat het bewaakt                                                                                                                                                                                                                                                                            |
+| ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [ExperienceCrudTest](../../../tests/Feature/Website/ExperienceCrudTest.php)               | Rechten per route -- **de volledige lijst staat hier en nergens anders** -- beide talen opslaan, een lege waarde die `null` wordt en geen `""`, een omgekeerde periode, en wat er in het logboek komt.                                                                                     |
+| [ExperienceOverviewTest](../../../tests/Feature/Website/ExperienceOverviewTest.php)       | Zoeken (inclusief een zoekterm met een jokerteken erin), bladeren, het verschil tussen "nog niets" en "niets gevonden", de detailpagina met zijn buren, en waar je belandt na het verwijderen.                                                                                             |
+| [ExperiencePublishingTest](../../../tests/Feature/Website/ExperiencePublishingTest.php)   | Online en offline: het schuifje, dat offline werk niet op de site komt, dat de hele sectie verdwijnt als alles offline staat, en de cijfers erboven.                                                                                                                                       |
+| [ExperienceHeadingTest](../../../tests/Feature/Website/ExperienceHeadingTest.php)         | De kop: allebei de talen opslaan, een verplichte titel, een lege inleiding die `null` wordt, de terugval die de titel wél en de inleiding niet doet, en dat een deploy de tekst van de klant niet terugzet.                                                                                |
+| [ExperienceStatsTest](../../../tests/Feature/Website/ExperienceStatsTest.php)             | De cijfers: de drie modussen, hoogstens vier, geen dubbel soort, een eigen getal dat een getal nodig heeft, hernoemen met terugval op het standaardwoord, dat wat wij zouden tellen bij het **soort** hoort en niet bij de rij, en dat de route niet door de detailpagina wordt opgeslokt. |
+| [ExperienceLogoTest](../../../tests/Feature/Website/ExperienceLogoTest.php)               | De upload: dat er een vierkantje van 256 uit komt, dat de naam van de klant niet wordt gebruikt, dat rommel wordt geweigerd, en dat er niets blijft slingeren.                                                                                                                             |
+| [ExperienceTimelineTest](../../../tests/Feature/Website/ExperienceTimelineTest.php)       | Wat de bezoeker krijgt: de volgorde, de terugval op het Nederlands, en dat een leeg veld niets oplevert.                                                                                                                                                                                   |
+| [ExperienceTranslationTest](../../../tests/Feature/Website/ExperienceTranslationTest.php) | De vertaalknop, met een dubbel in plaats van de echte dienst.                                                                                                                                                                                                                              |
+| [ExperienceSeederTest](../../../tests/Feature/Database/ExperienceSeederTest.php)          | De echte loopbaan die met elke deploy meegaat: twee keer draaien verandert niets, en de seeder overschrijft nooit wat de klant zelf aanpaste.                                                                                                                                              |
 
 De twee die je bij een volgende module niet moet vergeten: **de spiegel van
 de lege sectie** (verschijnt hij ook weer zodra er iets in staat) en **het

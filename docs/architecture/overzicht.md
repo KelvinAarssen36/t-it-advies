@@ -110,6 +110,10 @@ Naast de tabellen van Laravel, Fortify en spatie/laravel-permission:
   tijdlijn", en dat is de normale toestand. Wélke cijfers er bestaan staat
   net als bij `page_sections` in code.
 
+- **`experience_headings`** -- de titel en de zin boven die tijdlijn. Eén
+  rij, want er is één tijdlijn. Stond eerst als vaste tekst in het
+  Vue-component; nu beheert de klant hem, samen met de cijfers.
+
 Geüploade bestanden staan **niet** in de database maar op de `public`-schijf
 uit `config/filesystems.php`, met alleen hun pad in de tabel. Verhuizen ze
 ooit naar een andere opslag, dan verandert er één regel in de configuratie

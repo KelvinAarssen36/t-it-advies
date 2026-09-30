@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Website;
 use App\Enums\EmploymentType;
 use App\Enums\ExperienceIcon;
 use App\Enums\ExperienceStatKey;
+use App\Enums\ExperienceStatModus;
 use App\Enums\WorkplaceType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Website\ExperienceRequest;
 use App\Models\Experience;
+use App\Models\ExperienceHeading;
 use App\Models\ExperienceStat;
 use App\Support\Datum;
 use App\Support\Loopbaan;
@@ -21,6 +23,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -85,10 +89,29 @@ class ExperienceController extends Controller
 
             'opties' => $this->opties(),
 
-            // De cijfers boven de tijdlijn, met erbij wat er zou staan als
-            // de klant het veld leeglaat. Zonder dat tweede getal is
-            // "automatisch" een belofte die hij niet kan controleren.
-            'cijfers' => $this->cijferrij($loopbaan),
+            // De cijfers boven de tijdlijn, kaal: alleen wat de klant zelf
+            // heeft ingesteld. Alles wat uit het soort volgt -- het woord,
+            // de uitleg, wat wij zouden tellen -- staat in `cijferKeuzes`
+            // en wordt in het scherm opgezocht. Zie cijferrij().
+            'cijfers' => $this->cijferrij(),
+
+            /*
+             * De tekst boven de tijdlijn. Hoort bij dezelfde knop als de
+             * cijfers, want op de website is het hetzelfde blok.
+             */
+            'kop' => $this->koptekst(),
+
+            /*
+             * De keuzelijsten voor een cijfer: welk soort het is en wat
+             * ermee gebeurt. Ze komen van de server omdat de woorden
+             * vertaald zijn; een lijst in de frontend zou een tweede
+             * woordenlijst worden.
+             */
+            'cijferKeuzes' => [
+                'soort' => $this->soortKeuzes($loopbaan),
+                'modus' => ExperienceStatModus::keuzes(),
+                'maximum' => ExperienceStat::MAXIMUM,
+            ],
 
             // Zonder werkende vertaaldienst verdwijnt de knop uit het
             // scherm in plaats van een fout te geven als je erop drukt.
@@ -97,39 +120,92 @@ class ExperienceController extends Controller
     }
 
     /**
-     * De cijfers opslaan die boven de tijdlijn komen te staan.
+     * De kop zoals het beheerscherm hem nodig heeft.
      *
-     * Een leeg veld is hier een **betekenisvolle** waarde en geen
+     * Allebei de talen los, want dit is een bewerkvenster en geen
+     * weergave: de klant vult ze allebei zelf in en moet dus zien wat er
+     * in allebei staat.
+     *
+     * @return array<string, mixed>
+     */
+    private function koptekst(): array
+    {
+        $kop = ExperienceHeading::huidige();
+
+        return [
+            'title_nl' => $kop->title_nl,
+            'title_en' => $kop->title_en,
+            'intro_nl' => $kop->intro_nl,
+            'intro_en' => $kop->intro_en,
+            'automatisch_vertaald' => $kop->machine_translated_at !== null,
+        ];
+    }
+
+    /**
+     * De kop boven de tijdlijn opslaan: de tekst én de cijfers.
+     *
+     * **Dit is één scherm en dus één opslag.** De titel, de zin eronder en
+     * de drie getallen staan op de website in hetzelfde blok; ze los
+     * opslaan zou betekenen dat de klant twee keer bevestigt voor één
+     * zichtbare verandering, en dat er een tussenstand kan bestaan waarin
+     * de helft live staat.
+     *
+     * Een leeg cijferveld is hier een **betekenisvolle** waarde en geen
      * ontbrekende: het betekent "reken het zelf uit". Daarom slaat dit ook
      * `null` op in plaats van het veld over te slaan -- anders kun je een
      * ingevuld cijfer nooit meer terugzetten op automatisch.
      */
-    public function cijfers(Request $request): RedirectResponse
+    public function kop(Request $request): RedirectResponse
     {
-        $regels = ['waarden' => ['required', 'array']];
+        $gegevens = $request->validate([
+            /*
+             * De titel is verplicht en de inleiding niet. Zonder titel
+             * staat er een blok zonder kop op de website; zonder
+             * inleiding staat er gewoon geen zin onder.
+             *
+             * De lengtes zijn die van de kolommen, en ze zijn krap met
+             * reden: dit is een kop en geen alinea. Een titel van
+             * tweehonderd tekens breekt het ontwerp op een telefoon.
+             */
+            'title_nl' => ['required', 'string', 'max:120'],
+            'title_en' => ['nullable', 'string', 'max:120'],
+            'intro_nl' => ['nullable', 'string', 'max:300'],
+            'intro_en' => ['nullable', 'string', 'max:300'],
 
-        foreach (ExperienceStatKey::cases() as $cijfer) {
+            /*
+             * Of het Engels van de vertaaldienst kwam. De frontend zet
+             * dit; hij weet als enige of de klant de Engelse tekst daarna
+             * nog met de hand heeft aangeraakt.
+             */
+            'automatisch_vertaald' => ['boolean'],
+
+            /*
+             * De cijfers als lijst en niet meer als vaste drie. De klant
+             * bepaalt nu zelf hoeveel het er zijn, hoe ze heten en wat er
+             * met elk gebeurt.
+             *
+             * Hoogstens vier, en dat is een keuze over het ontwerp: vijf
+             * getallen naast elkaar boven een lijst is geen samenvatting
+             * meer. Nul mag ook -- dan staat er niets boven de tijdlijn,
+             * en dat is een geldige keuze.
+             */
+            'cijfers' => ['present', 'array', 'max:'.ExperienceStat::MAXIMUM],
+            'cijfers.*.key' => ['required', Rule::enum(ExperienceStatKey::class)],
+            'cijfers.*.label_nl' => ['nullable', 'string', 'max:40'],
+            'cijfers.*.label_en' => ['nullable', 'string', 'max:40'],
+            'cijfers.*.modus' => ['required', Rule::enum(ExperienceStatModus::class)],
+
             // Een bovengrens, want dit staat groot op de voorpagina. Een
             // typefout van één cijfer te veel is daar meteen zichtbaar.
-            $regels["waarden.{$cijfer->value}"] = ['nullable', 'integer', 'min:0', 'max:9999'];
-        }
+            'cijfers.*.waarde' => ['nullable', 'integer', 'min:0', 'max:9999'],
+        ]);
 
-        $request->validate($regels);
+        $this->controleerCijfers($request, $gegevens['cijfers']);
 
-        $veranderd = false;
+        $veranderd = $this->bewaarCijfers($gegevens['cijfers']);
 
-        foreach (ExperienceStatKey::cases() as $cijfer) {
-            $rij = ExperienceStat::query()->firstOrNew(['key' => $cijfer]);
-
-            $rij->value = $request->input("waarden.{$cijfer->value}") === null
-                ? null
-                : (int) $request->input("waarden.{$cijfer->value}");
-
-            if ($rij->isDirty()) {
-                $veranderd = true;
-            }
-
-            $rij->save();
+        if ($this->bewaarKoptekst($request, $gegevens)) {
+            $veranderd = true;
         }
 
         if (! $veranderd) {
@@ -138,9 +214,129 @@ class ExperienceController extends Controller
             return back();
         }
 
-        Toast::bijgewerkt(__('De cijfers zijn aangepast.'));
+        Toast::bijgewerkt(__('De kop boven de tijdlijn is aangepast.'));
 
         return back();
+    }
+
+    /**
+     * Twee regels die geen losse validatieregel kunnen zijn.
+     *
+     * De eerste: een **eigen** cijfer kunnen wij niet uitrekenen, dus
+     * "automatisch" bestaat daar niet en er moet een getal in. De tweede:
+     * van de soorten die wij wél tellen mag er maar één zijn -- twee keer
+     * "jaar ervaring" boven dezelfde lijst slaat nergens op.
+     *
+     * @param  array<int, array<string, mixed>>  $cijfers
+     */
+    private function controleerCijfers(Request $request, array $cijfers): void
+    {
+        $gezien = [];
+        $fouten = [];
+
+        foreach ($cijfers as $index => $cijfer) {
+            $soort = ExperienceStatKey::from($cijfer['key']);
+            $modus = ExperienceStatModus::from($cijfer['modus']);
+
+            if (! $soort->berekenbaar() && $modus === ExperienceStatModus::Automatisch) {
+                $fouten["cijfers.{$index}.modus"] = __('Dit cijfer kunnen wij niet uitrekenen. Kies een eigen getal of zet het uit.');
+            }
+
+            if ($modus === ExperienceStatModus::Eigen && $cijfer['waarde'] === null) {
+                $fouten["cijfers.{$index}.waarde"] = __('Vul een getal in, of zet dit cijfer op automatisch.');
+            }
+
+            if ($soort->berekenbaar() && in_array($soort->value, $gezien, true)) {
+                $fouten["cijfers.{$index}.key"] = __('Dit cijfer staat er al een keer bij.');
+            }
+
+            $gezien[] = $soort->value;
+        }
+
+        if ($fouten !== []) {
+            throw ValidationException::withMessages($fouten);
+        }
+    }
+
+    /**
+     * De cijfers gelijktrekken met wat het scherm stuurde.
+     *
+     * Wat er niet meer bij zit is weg: de klant heeft het verwijderd. Dat
+     * is iets anders dan verbergen -- daar is de modus voor, en dan blijft
+     * de naam en het getal bewaard.
+     *
+     * De volgorde komt uit de lijst zelf, want zo staat hij ook in het
+     * scherm.
+     *
+     * @param  array<int, array<string, mixed>>  $cijfers
+     * @return bool of er iets veranderd is
+     */
+    private function bewaarCijfers(array $cijfers): bool
+    {
+        $veranderd = false;
+
+        $behouden = [];
+
+        foreach (array_values($cijfers) as $plek => $cijfer) {
+            $rij = filled($cijfer['id'] ?? null)
+                ? ExperienceStat::query()->find((int) $cijfer['id'])
+                : null;
+
+            $rij ??= new ExperienceStat;
+
+            $rij->fill([
+                'key' => $cijfer['key'],
+                'label_nl' => blank($cijfer['label_nl'] ?? null) ? null : $cijfer['label_nl'],
+                'label_en' => blank($cijfer['label_en'] ?? null) ? null : $cijfer['label_en'],
+                'modus' => $cijfer['modus'],
+                'value' => $cijfer['waarde'],
+                'position' => $plek,
+            ]);
+
+            if ($rij->isDirty()) {
+                $veranderd = true;
+            }
+
+            $rij->save();
+
+            $behouden[] = $rij->id;
+        }
+
+        $weg = ExperienceStat::query()->whereNotIn('id', $behouden ?: [0])->get();
+
+        foreach ($weg as $rij) {
+            $veranderd = true;
+            $rij->delete();
+        }
+
+        return $veranderd;
+    }
+
+    /**
+     * De titel en de zin eronder bewaren.
+     *
+     * @param  array<string, mixed>  $gegevens
+     * @return bool of er iets veranderd is
+     */
+    private function bewaarKoptekst(Request $request, array $gegevens): bool
+    {
+        $tekst = ExperienceHeading::query()->firstOrNew([]);
+
+        $tekst->fill([
+            'title_nl' => $gegevens['title_nl'],
+            'title_en' => blank($gegevens['title_en'] ?? null) ? null : $gegevens['title_en'],
+            'intro_nl' => blank($gegevens['intro_nl'] ?? null) ? null : $gegevens['intro_nl'],
+            'intro_en' => blank($gegevens['intro_en'] ?? null) ? null : $gegevens['intro_en'],
+            'machine_translated_at' => $request->boolean('automatisch_vertaald')
+                ? ($tekst->machine_translated_at ?? now())
+                : null,
+        ]);
+
+        $veranderd = $tekst->isDirty();
+
+        $tekst->save();
+
+        return $veranderd;
     }
 
     /**
@@ -271,10 +467,27 @@ class ExperienceController extends Controller
             abort(404);
         }
 
+        /*
+         * Twee schermen gebruiken deze knop: het venster van één ervaring
+         * en dat van de kop boven de tijdlijn. Vandaar dat hier de velden
+         * van allebei staan -- ze zijn allemaal `nullable`, dus elk scherm
+         * stuurt alleen wat het heeft.
+         *
+         * Een tweede route ernaast zou dezelfde begrenzing, dezelfde
+         * foutafhandeling en dezelfde sleutelvertaling moeten herhalen, en
+         * dat is precies waar twee dingen uiteen gaan lopen.
+         */
         $bron = $request->validate([
             'role_nl' => ['nullable', 'string', 'max:120'],
             'location_nl' => ['nullable', 'string', 'max:120'],
             'description_nl' => ['nullable', 'string', 'max:5000'],
+            'title_nl' => ['nullable', 'string', 'max:120'],
+            'intro_nl' => ['nullable', 'string', 'max:300'],
+
+            // Het woord onder één cijfer boven de tijdlijn. Eén veld en
+            // niet een lijst: de knop staat per cijfer, en het venster
+            // onthoudt zelf welk cijfer het vroeg. Zie CijfersDialoog.vue.
+            'woord_nl' => ['nullable', 'string', 'max:40'],
         ]);
 
         try {
@@ -390,29 +603,64 @@ class ExperienceController extends Controller
     }
 
     /**
-     * De cijfers voor het beheerscherm.
+     * De cijfers voor het beheerscherm: alleen wat de klant zelf instelde.
      *
-     * Elk cijfer krijgt er zowel de **ingevulde** waarde bij als de
-     * **berekende**. Dat tweede getal staat als tijdelijke tekst in het
-     * lege veld: zo ziet de klant wat er komt te staan als hij het zo
-     * laat, en is "automatisch" geen belofte die hij moet geloven.
+     * **Hier stond eerst meer in, en dat was de fout.** Elke rij droeg ook
+     * het woord van zijn soort, de uitleg erbij en wat wij voor dát soort
+     * zouden tellen. Zodra de klant in het venster een ander soort koos,
+     * klopte die meegestuurde bagage niet meer -- het scherm wist niet wat
+     * er bij het nieuwe soort hoort en zette er nul neer. Je zag dan "nu
+     * zouden wij er 0 tellen" boven een tijdlijn van vijfendertig jaar.
+     *
+     * Wat uit het soort volgt hoort dus niet in de rij maar bij het soort,
+     * en dat staat in soortKeuzes(). Het scherm zoekt het daar op, en dan
+     * klopt het bij elke keuze -- ook bij een keuze die nog niet is
+     * opgeslagen.
      *
      * @return array<int, array<string, mixed>>
      */
-    private function cijferrij(Loopbaan $loopbaan): array
+    private function cijferrij(): array
+    {
+        return ExperienceStat::query()->opVolgorde()->get()->map(
+            fn (ExperienceStat $rij) => [
+                'id' => $rij->id,
+                'key' => $rij->key->value,
+
+                // Leeg betekent: gebruik het standaardwoord. Dat woord
+                // gaat vanzelf mee met de taal van de bezoeker.
+                'label_nl' => $rij->label_nl,
+                'label_en' => $rij->label_en,
+
+                'modus' => $rij->modus->value,
+                'waarde' => $rij->value,
+            ],
+        )->all();
+    }
+
+    /**
+     * De soorten cijfer, met wat wij er nu voor zouden tellen.
+     *
+     * Dat getal hoort hier en niet bij de rij: het hangt aan het soort en
+     * niet aan de instelling van de klant. Zo kan het scherm bij elke
+     * keuze in de lijst laten zien wat automatisch zou opleveren, ook
+     * voordat er iets is opgeslagen.
+     *
+     * Een eigen cijfer krijgt `null`: dat kunnen wij niet tellen, en nul
+     * zou suggereren dat we het geprobeerd hebben.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function soortKeuzes(Loopbaan $loopbaan): array
     {
         $berekend = $loopbaan->berekend($loopbaan->online());
-        $ingevuld = $loopbaan->ingevuld();
 
         return array_map(
-            fn (ExperienceStatKey $cijfer) => [
-                'key' => $cijfer->value,
-                'label' => $cijfer->label(),
-                'omschrijving' => $cijfer->omschrijving(),
-                'waarde' => $ingevuld[$cijfer->value] ?? null,
-                'berekend' => $berekend[$cijfer->value] ?? 0,
+            fn (array $keuze) => [
+                ...$keuze,
+                'berekenbaar' => ExperienceStatKey::from($keuze['value'])->berekenbaar(),
+                'berekend' => $berekend[$keuze['value']] ?? null,
             ],
-            ExperienceStatKey::opVolgorde(),
+            ExperienceStatKey::keuzes(),
         );
     }
 

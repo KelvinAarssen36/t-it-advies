@@ -137,8 +137,10 @@ const remove = async (row: UserRow) => {
             }}
         </p>
 
-        <div class="brand-scrollbar overflow-x-auto rounded-xl border">
-            <table class="w-full text-sm">
+        <div
+            class="brand-tabelvak brand-scrollbar overflow-x-auto rounded-xl border"
+        >
+            <table class="brand-tabel-kaarten w-full text-sm">
                 <thead class="bg-muted/50 text-left">
                     <tr>
                         <th class="px-3 py-2 font-medium">{{ $t('Naam') }}</th>
@@ -158,7 +160,7 @@ const remove = async (row: UserRow) => {
                 <tbody>
                     <template v-for="row in props.users.data" :key="row.id">
                         <tr class="border-t">
-                            <td class="px-3 py-2">
+                            <td :data-label="$t('Naam')" class="px-3 py-2">
                                 {{ row.name }}
                                 <span
                                     v-if="row.is_self"
@@ -167,7 +169,10 @@ const remove = async (row: UserRow) => {
                                     {{ $t('(jij)') }}
                                 </span>
                             </td>
-                            <td class="px-3 py-2">
+                            <td
+                                :data-label="$t('E-mailadres')"
+                                class="px-3 py-2"
+                            >
                                 {{ row.email }}
                                 <Badge
                                     v-if="!row.email_verified"
@@ -176,7 +181,7 @@ const remove = async (row: UserRow) => {
                                     {{ $t('niet geverifieerd') }}
                                 </Badge>
                             </td>
-                            <td class="px-3 py-2">
+                            <td :data-label="$t('Rollen')" class="px-3 py-2">
                                 <span
                                     v-if="row.roles.length === 0"
                                     class="text-muted-foreground"
@@ -191,7 +196,7 @@ const remove = async (row: UserRow) => {
                                     {{ role }}
                                 </Badge>
                             </td>
-                            <td class="px-3 py-2">
+                            <td :data-label="$t('2FA')" class="px-3 py-2">
                                 <Badge
                                     :variant="
                                         row.two_factor
@@ -202,7 +207,10 @@ const remove = async (row: UserRow) => {
                                     {{ row.two_factor ? $t('aan') : $t('uit') }}
                                 </Badge>
                             </td>
-                            <td class="px-3 py-2 tabular-nums">
+                            <td
+                                :data-label="$t('Sinds')"
+                                class="px-3 py-2 tabular-nums"
+                            >
                                 {{ row.created_at ?? '-' }}
                             </td>
                             <td class="px-3 py-2 text-right whitespace-nowrap">

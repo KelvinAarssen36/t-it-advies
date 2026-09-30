@@ -50,10 +50,18 @@ const handleDelete = () => {
                     </span>
                 </div>
                 <p class="text-sm text-muted-foreground">
-                    Added {{ passkey.created_at_diff }}
+                    {{
+                        $t('Toegevoegd :wanneer', {
+                            wanneer: passkey.created_at_diff,
+                        })
+                    }}
                     <template v-if="passkey.last_used_at_diff">
                         <span class="mx-1 text-muted-foreground/50">/</span>
-                        Last used {{ passkey.last_used_at_diff }}
+                        {{
+                            $t('laatst gebruikt :wanneer', {
+                                wanneer: passkey.last_used_at_diff,
+                            })
+                        }}
                     </template>
                 </p>
             </div>
@@ -61,32 +69,38 @@ const handleDelete = () => {
 
         <Dialog>
             <DialogTrigger as-child>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    class="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                >
-                    <Trash2 class="h-4 w-4" />
-                    <span class="sr-only">Remove</span>
+                <Button variant="verwijderen-zacht" size="icon-sm">
+                    <Trash2 class="size-4" />
+                    <span class="sr-only">{{ $t('Verwijderen') }}</span>
                 </Button>
             </DialogTrigger>
 
             <DialogContent>
-                <DialogTitle>Remove passkey</DialogTitle>
+                <DialogTitle>{{ $t('Passkey verwijderen') }}</DialogTitle>
                 <DialogDescription>
-                    Are you sure you want to remove the "{{ passkey.name }}"
-                    passkey? You will no longer be able to use it to sign in.
+                    {{
+                        $t(
+                            'Weet je zeker dat je de passkey ":naam" verwijdert? Je kunt er daarna niet meer mee inloggen.',
+                            { naam: passkey.name },
+                        )
+                    }}
                 </DialogDescription>
                 <DialogFooter class="gap-2">
                     <DialogClose as-child>
-                        <Button variant="secondary">Cancel</Button>
+                        <Button variant="secondary">
+                            {{ $t('Annuleren') }}
+                        </Button>
                     </DialogClose>
                     <Button
                         variant="verwijderen"
                         :disabled="isDeleting"
                         @click="handleDelete"
                     >
-                        {{ isDeleting ? 'Removing...' : 'Remove passkey' }}
+                        {{
+                            isDeleting
+                                ? $t('Bezig...')
+                                : $t('Passkey verwijderen')
+                        }}
                     </Button>
                 </DialogFooter>
             </DialogContent>

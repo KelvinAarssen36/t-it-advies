@@ -66,6 +66,20 @@ const zichtbaar = computed(() =>
  * gaten -- anders staat er op een telefoon een rij knopjes die zelf twee
  * regels in beslag neemt.
  */
+/**
+ * Op een smal scherm geen nummers maar "3 / 7".
+ *
+ * Met zeven pagina's stonden er negen knopjes naast elkaar, en die vielen
+ * op een telefoon op twee regels -- waarbij de laatste pagina onderaan
+ * losraakte van de rest. Een vaste rij van drie past altijd, hoeveel
+ * pagina's er ook zijn.
+ *
+ * Je verliest daarmee het rechtstreeks naar pagina vijf springen. Dat is
+ * op een telefoon ook geen echte handeling: die knopjes zijn daar zo klein
+ * dat je ze toch niet gericht raakt.
+ */
+const compact = ref(false);
+
 const nummers = computed<(number | '…')[]>(() => {
     const totaal = paginas.value;
 
@@ -179,11 +193,12 @@ let breedte: MediaQueryList | undefined;
 
 const meetPagina = (): void => {
     perPagina.value = breedte?.matches ? BREED : SMAL;
+    compact.value = !(breedte?.matches ?? true);
     pagina.value = Math.min(pagina.value, paginas.value);
 };
 
 onMounted(() => {
-    breedte = window.matchMedia('(min-width: 48rem)');
+    breedte = window.matchMedia('(min-width: 50rem)');
     breedte.addEventListener('change', meetPagina);
     meetPagina();
 
@@ -365,26 +380,37 @@ const naarPagina = async (nieuw: number): Promise<void> => {
                 <ChevronLeft class="size-4" />
             </button>
 
-            <template v-for="(nummer, index) in nummers">
-                <span
-                    v-if="nummer === '…'"
-                    :key="`gat-${index}`"
-                    class="brand-bladeren-gat"
-                    aria-hidden="true"
-                >
-                    …
-                </span>
-                <button
-                    v-else
-                    :key="nummer"
-                    type="button"
-                    class="brand-bladeren-knop"
-                    :data-actief="nummer === pagina ? '' : undefined"
-                    :aria-current="nummer === pagina ? 'page' : undefined"
-                    @click="naarPagina(nummer)"
-                >
-                    {{ nummer }}
-                </button>
+            <!--
+                Op een smal scherm alleen de stand, zodat de rij nooit
+                omvalt. Als tekst en niet als knoppen: er valt hier
+                niets te kiezen, het zegt alleen waar je bent.
+            -->
+            <span v-if="compact" class="brand-bladeren-stand">
+                {{ pagina }} / {{ paginas }}
+            </span>
+
+            <template v-else>
+                <template v-for="(nummer, index) in nummers">
+                    <span
+                        v-if="nummer === '…'"
+                        :key="`gat-${index}`"
+                        class="brand-bladeren-gat"
+                        aria-hidden="true"
+                    >
+                        …
+                    </span>
+                    <button
+                        v-else
+                        :key="nummer"
+                        type="button"
+                        class="brand-bladeren-knop"
+                        :data-actief="nummer === pagina ? '' : undefined"
+                        :aria-current="nummer === pagina ? 'page' : undefined"
+                        @click="naarPagina(nummer)"
+                    >
+                        {{ nummer }}
+                    </button>
+                </template>
             </template>
 
             <button

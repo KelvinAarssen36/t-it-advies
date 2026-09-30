@@ -54,7 +54,8 @@ import ervaring from '@/routes/website/ervaring';
  *    knop, de sterretjes, de twee talen, online en offline. Wie dit ene
  *    onderdeel leest, kan met elk scherm overweg dat er later bij komt.
  * 2. **Website** -- de schermen waarmee hij zijn eigen site vult.
- * 3. **Beheer** -- de logboeken en de gebruikers.
+ * 3. **Administratie** -- de zakelijke kant; nu alleen de mail.
+ * 4. **Beheer** -- de logboeken en de gebruikers.
  *
  * **Bij elk afgerond onderdeel hoort hier een kaart bij.** Een module die
  * de eigenaar niet kan vinden is geen module. Zie
@@ -69,6 +70,7 @@ const onderdeel = ref<string>('basis');
 const onderdelen = computed(() => [
     { value: 'basis', label: t('Basis') },
     { value: 'website', label: t('Website') },
+    { value: 'administratie', label: t('Administratie') },
     { value: 'beheer', label: t('Beheer') },
 ]);
 
@@ -427,6 +429,33 @@ defineOptions({
                     </UitlegKaart>
 
                     <UitlegKaart
+                        :titel="$t('Je website beweegt mee')"
+                        :icoon="Sparkles"
+                    >
+                        <p>
+                            {{
+                                $t(
+                                    'Op je publieke website komt tekst op terwijl je scrolt, tekent er een lijn mee met de stappen van je werkwijze, en verschuift de gloed op de achtergrond licht met de muis. Bij binnenkomst is er kort een merkintro; die zie je één keer per bezoek en niet bij elke pagina opnieuw.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Het is versiering en nooit een voorwaarde. Alles staat er ook als er niets beweegt, en de pagina houdt je nergens tegen -- je kunt altijd gewoon doorscrollen.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Heeft een bezoeker in zijn systeeminstellingen aangegeven minder beweging te willen, dan zetten we het vanzelf uit en ziet hij dezelfde site zonder animaties. Dat is geen uitzondering die wij per geval regelen; het gaat overal automatisch.',
+                                )
+                            }}
+                        </p>
+                    </UitlegKaart>
+
+                    <UitlegKaart
                         :titel="$t('Licht of donker')"
                         :icoon="SunMoon"
                     >
@@ -537,6 +566,7 @@ defineOptions({
                     <UitlegKaart
                         :titel="$t('Een logo bijsnijden')"
                         :icoon="Image"
+                        :onder="$t('Ervaring')"
                     >
                         <p>
                             {{
@@ -557,6 +587,7 @@ defineOptions({
                     <UitlegKaart
                         :titel="$t('Je hoeft niet op de grootte te letten')"
                         :icoon="Sparkles"
+                        :onder="$t('Ervaring')"
                     >
                         <p>
                             {{
@@ -581,18 +612,71 @@ defineOptions({
                         </p>
                     </UitlegKaart>
 
-                    <UitlegKaart :titel="$t('De cijfers')" :icoon="Hash">
+                    <UitlegKaart
+                        :titel="$t('De kop en de cijfers boven je tijdlijn')"
+                        :icoon="Hash"
+                        :onder="$t('Ervaring')"
+                    >
                         <p>
                             {{
                                 $t(
-                                    'Boven je tijdlijn staan drie getallen: jaren ervaring, functies en organisaties. Normaal rekenen wij die zelf uit je tijdlijn uit, dus ze kloppen vanzelf zodra er een ervaring bij komt of er een jaar voorbijgaat.',
+                                    'Achter de knop "Kop en cijfers" zit alles wat bóven je tijdlijn staat: de titel, de zin eronder en de getallen. Dat zit in één venster omdat het op je website ook één blok is -- je slaat het dus in één keer op.',
                                 )
                             }}
                         </p>
                         <p>
                             {{
                                 $t(
-                                    "Wil je er iets anders neerzetten, dan vul je het getal met de hand in. Wijkt zo'n ingevuld getal later af van wat wij tellen, dan zie je een waarschuwing bij de knop Cijfers -- anders staat er een verouderd getal op je voorpagina waar niemand meer naar kijkt.",
+                                    'De titel en de zin vul je in het Nederlands en het Engels in, net als bij een ervaring, en ook hier kun je het Engels automatisch laten vertalen.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'De getallen eronder bepaal je zelf: je zet er maximaal vier neer en je haalt weg wat je niet wilt. Per getal kies je wat er gebeurt. Op "Automatisch" tellen wij het uit je tijdlijn -- jaren ervaring, functies of organisaties -- en dan klopt het vanzelf zodra er een ervaring bij komt of er een jaar voorbijgaat.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Op "Eigen getal" vul je het zelf in. Dat is ook hoe je aan een cijfer komt dat niets met je tijdlijn te maken heeft, zoals het aantal certificeringen. Wijkt zo\'n ingevuld getal later af van wat wij zouden tellen, dan zeggen we dat erbij -- anders staat er een verouderd getal op je voorpagina waar niemand meer naar kijkt.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Op "Niet tonen" verdwijnt het getal van je website, maar blijft het hier gewoon staan. Zo kun je het later weer aanzetten zonder alles opnieuw in te vullen.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Het woord onder een getal mag je overschrijven -- "opdrachten" in plaats van "functies", bijvoorbeeld. Laat je het leeg, dan gebruiken we ons eigen woord, en dat is meteen vertaald: je Engelse bezoeker ziet dan vanzelf het Engelse woord.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Vul je er zelf een woord in, dan verschijnt er een klein knopje "Vertaal" naast het Engelse veld. Eén klik en het staat er; je kunt het daarna nog gewoon aanpassen.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Boven in elk kaartje staat een voorbeeld van het tegeltje zoals het op je website komt te staan. Kies je iets anders, dan verandert dat voorbeeld meteen mee -- je hoeft dus niet te gokken wat er gebeurt.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Een getal weghalen vraagt eerst om een bevestiging, net als overal. Wil je het eigenlijk alleen even niet laten zien, kies dan "Niet tonen": dan blijft alles bewaard.',
                                 )
                             }}
                         </p>
@@ -609,6 +693,40 @@ defineOptions({
                                 )
                             }}
                         </p>
+                    </UitlegKaart>
+                </div>
+
+                <!-- ---------------------- Administratie --------------------- -->
+                <div
+                    v-else-if="onderdeel === 'administratie'"
+                    key="administratie"
+                    class="space-y-3"
+                >
+                    <p class="text-sm text-pretty text-muted-foreground">
+                        {{
+                            $t(
+                                'De zakelijke kant: wat er de deur uit gaat. Voorlopig is dat alleen je mail; hier komt later meer bij.',
+                            )
+                        }}
+                    </p>
+
+                    <UitlegKaart :titel="$t('Mail')" :icoon="Mail">
+                        <p>
+                            {{
+                                $t(
+                                    'Elke mail die het portaal verstuurt komt hier te staan, met onderwerp, ontvanger en status. Zegt iemand dat hij een bericht niet ontvangen heeft, dan zie je hier of het weg is en of het is aangekomen.',
+                                )
+                            }}
+                        </p>
+
+                        <template #voorbeeld>
+                            <Button variant="outline" size="sm" as-child>
+                                <Link :href="adminMail.index()">
+                                    <Mail class="size-4" />
+                                    {{ $t('Open Mail') }}
+                                </Link>
+                            </Button>
+                        </template>
                     </UitlegKaart>
                 </div>
 
@@ -698,25 +816,6 @@ defineOptions({
                                 <Link :href="adminSecurity.index()">
                                     <ShieldAlert class="size-4" />
                                     {{ $t('Open Beveiliging') }}
-                                </Link>
-                            </Button>
-                        </template>
-                    </UitlegKaart>
-
-                    <UitlegKaart :titel="$t('Mail')" :icoon="Mail">
-                        <p>
-                            {{
-                                $t(
-                                    'Elke mail die het portaal verstuurt komt hier te staan, met onderwerp, ontvanger en status. Zegt iemand dat hij een bericht niet ontvangen heeft, dan zie je hier of het weg is en of het is aangekomen.',
-                                )
-                            }}
-                        </p>
-
-                        <template #voorbeeld>
-                            <Button variant="outline" size="sm" as-child>
-                                <Link :href="adminMail.index()">
-                                    <Mail class="size-4" />
-                                    {{ $t('Open Mail') }}
                                 </Link>
                             </Button>
                         </template>

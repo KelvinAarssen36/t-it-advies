@@ -3,22 +3,22 @@
 namespace App\Support;
 
 use App\Enums\ExperienceStatKey;
+use App\Enums\ExperienceStatModus;
 use App\Models\Experience;
 use App\Models\ExperienceStat;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
- * De cijfers boven de tijdlijn: uitrekenen, en wat de klant zelf invulde.
+ * De cijfers boven de tijdlijn: uitrekenen, en wat de klant zelf instelde.
  *
  * Dit staat in een eigen klasse en niet in een controller, omdat er twee
  * plekken zijn die het nodig hebben en ze niet uit elkaar mogen lopen: de
  * **website** toont de cijfers, en het **beheerscherm** toont wat er zou
- * staan als je het veld leeglaat. Zou elk scherm het zelf uitrekenen, dan
+ * staan als je op automatisch zet. Zou elk scherm het zelf uitrekenen, dan
  * belooft het portaal iets anders dan de site laat zien.
  *
- * De regel is simpel: **ingevuld wint, leeg wordt berekend.** Zo klopt een
- * cijfer vanzelf zodra er een functie bij komt, en kan de klant er toch
- * overheen als hij het anders wil.
+ * De klant bepaalt per cijfer wat er gebeurt -- uitrekenen, een eigen
+ * getal, of niet tonen -- en hoe het heet. Zie App\Enums\ExperienceStatModus.
  *
  * Zie docs/architecture/modules/ervaring.md.
  */
@@ -27,8 +27,10 @@ class Loopbaan
     /**
      * De cijfers zoals ze op de website komen te staan.
      *
-     * Leeg als er geen ervaringen zijn: drie nullen boven een lege lijst
-     * is erger dan geen cijfers.
+     * Leeg als er geen ervaringen zijn: nullen boven een lege lijst is
+     * erger dan geen cijfers. Verborgen cijfers zitten er niet bij, en een
+     * eigen cijfer zonder getal ook niet -- dat is een half ingevuld ding
+     * en geen nul.
      *
      * @param  Collection<int, Experience>  $loopbaan  de ervaringen die online staan
      * @return array<int, array{waarde: int, label: string}>
@@ -40,19 +42,58 @@ class Loopbaan
         }
 
         $berekend = $this->berekend($loopbaan);
-        $ingevuld = $this->ingevuld();
 
-        return array_map(
-            fn (ExperienceStatKey $cijfer) => [
-                'waarde' => $ingevuld[$cijfer->value] ?? $berekend[$cijfer->value],
-                'label' => $cijfer->label(),
-            ],
-            ExperienceStatKey::opVolgorde(),
-        );
+        $uitkomst = [];
+
+        foreach ($this->rijen()->where('modus', '!=', ExperienceStatModus::Verborgen) as $rij) {
+            $waarde = $this->waardeVan($rij, $berekend);
+
+            if ($waarde === null) {
+                continue;
+            }
+
+            $uitkomst[] = ['waarde' => $waarde, 'label' => $rij->woord()];
+        }
+
+        return $uitkomst;
+    }
+
+    /**
+     * Welk getal er bij dit cijfer hoort, of null als er geen te tonen is.
+     *
+     * Een eigen cijfer zonder getal levert `null`: de klant heeft het soort
+     * gekozen maar nog niets ingevuld, en dan is er niets om te laten zien.
+     * Dat kan niet gebeuren via het beheerscherm -- daar is het getal
+     * verplicht -- maar wel via een oude rij of een handmatige wijziging.
+     *
+     * @param  array<string, int>  $berekend
+     */
+    public function waardeVan(ExperienceStat $rij, array $berekend): ?int
+    {
+        if ($rij->modus === ExperienceStatModus::Eigen) {
+            return $rij->value;
+        }
+
+        return $rij->key->berekenbaar()
+            ? ($berekend[$rij->key->value] ?? 0)
+            : $rij->value;
+    }
+
+    /**
+     * Alle cijfers die de klant heeft staan, op volgorde.
+     *
+     * @return Collection<int, ExperienceStat>
+     */
+    public function rijen(): Collection
+    {
+        return ExperienceStat::query()->opVolgorde()->get();
     }
 
     /**
      * Wat de cijfers zijn volgens de tijdlijn zelf.
+     *
+     * Alleen de soorten die wij kunnen tellen staan erin; een eigen cijfer
+     * heeft hier niets te zoeken.
      *
      * @param  Collection<int, Experience>  $loopbaan
      * @return array<string, int>
@@ -60,10 +101,11 @@ class Loopbaan
     public function berekend(Collection $loopbaan): array
     {
         if ($loopbaan->isEmpty()) {
-            return array_fill_keys(
-                array_map(fn (ExperienceStatKey $cijfer) => $cijfer->value, ExperienceStatKey::cases()),
-                0,
-            );
+            return [
+                ExperienceStatKey::Years->value => 0,
+                ExperienceStatKey::Roles->value => 0,
+                ExperienceStatKey::Organisations->value => 0,
+            ];
         }
 
         return [
@@ -74,23 +116,6 @@ class Loopbaan
                 ->unique()
                 ->count(),
         ];
-    }
-
-    /**
-     * Wat de klant zelf heeft ingevuld, op sleutel.
-     *
-     * Een rij die er nog niet is -- de seeder heeft nog niet gedraaid --
-     * telt als niet ingevuld. Dat is de veilige kant op: dan rekenen we
-     * het gewoon uit.
-     *
-     * @return array<string, int>
-     */
-    public function ingevuld(): array
-    {
-        return ExperienceStat::query()
-            ->whereNotNull('value')
-            ->pluck('value', 'key')
-            ->all();
     }
 
     /**

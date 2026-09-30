@@ -80,7 +80,7 @@ onUnmounted(() => clearTwoFactorAuthData());
 </script>
 
 <template>
-    <Head title="Beveilig je account" />
+    <Head :title="$t('Beveilig je account')" />
 
     <!--
         Stap 2. Je komt hier terug nadat Fortify je wachtwoord heeft
@@ -94,15 +94,17 @@ onUnmounted(() => clearTwoFactorAuthData());
                 class="flex gap-3 rounded-lg border border-success/40 bg-success/10 p-3 text-sm"
             >
                 <CheckCircle2 class="mt-0.5 size-5 shrink-0 text-success" />
-                <p>Je wachtwoord is bevestigd.</p>
+                <p>{{ $t('Je wachtwoord is bevestigd.') }}</p>
             </div>
 
             <div class="flex gap-3 text-sm text-muted-foreground">
                 <QrCode class="mt-0.5 size-5 shrink-0 text-brand-cyan" />
                 <p>
-                    Nu koppelen we je authenticator-app. Je krijgt een QR-code
-                    te zien die je scant, en daarna vul je één keer de code uit
-                    de app in.
+                    {{
+                        $t(
+                            'Nu koppelen we je authenticator-app. Je krijgt een QR-code te zien die je scant, en daarna vul je één keer de code uit de app in.',
+                        )
+                    }}
                 </p>
             </div>
         </div>
@@ -113,7 +115,7 @@ onUnmounted(() => clearTwoFactorAuthData());
             @click="showSetupModal = true"
         >
             <QrCode />
-            Verder met instellen
+            {{ $t('Verder met instellen') }}
         </Button>
 
         <Form
@@ -125,20 +127,23 @@ onUnmounted(() => clearTwoFactorAuthData());
             <Button type="submit" class="w-full" :disabled="processing">
                 <Spinner v-if="processing" />
                 <QrCode v-else />
-                Verder met instellen
+                {{ $t('Verder met instellen') }}
             </Button>
         </Form>
 
         <p class="text-center text-xs text-muted-foreground">
-            Houd je telefoon bij de hand.
+            {{ $t('Houd je telefoon bij de hand.') }}
         </p>
     </div>
 
     <div v-else-if="!twoFactorConfirmed" class="space-y-6">
         <div class="space-y-3">
             <p class="text-sm text-muted-foreground">
-                Je hebt hier een authenticator-app voor nodig. Bij elke volgende
-                keer inloggen vul je daaruit een zescijferige code in.
+                {{
+                    $t(
+                        'Je hebt hier een authenticator-app voor nodig. Bij elke volgende keer inloggen vul je daaruit een zescijferige code in.',
+                    )
+                }}
             </p>
 
             <!--
@@ -157,8 +162,11 @@ onUnmounted(() => clearTwoFactorAuthData());
             </ul>
 
             <p class="text-xs text-muted-foreground">
-                Heb je er al een op je telefoon? Dan kun je die gewoon
-                gebruiken.
+                {{
+                    $t(
+                        'Heb je er al een op je telefoon? Dan kun je die gewoon gebruiken.',
+                    )
+                }}
             </p>
         </div>
 
@@ -168,7 +176,7 @@ onUnmounted(() => clearTwoFactorAuthData());
             @click="showSetupModal = true"
         >
             <ShieldCheck />
-            Verder met instellen
+            {{ $t('Verder met instellen') }}
         </Button>
 
         <Form
@@ -180,14 +188,17 @@ onUnmounted(() => clearTwoFactorAuthData());
             <Button type="submit" class="w-full" :disabled="processing">
                 <Spinner v-if="processing" />
                 <ShieldCheck v-else />
-                Tweestapsverificatie aanzetten
+                {{ $t('Tweestapsverificatie aanzetten') }}
             </Button>
         </Form>
 
         <div class="space-y-2 text-center">
             <p class="text-xs text-muted-foreground">
-                Dit is eenmalig. Zonder tweestapsverificatie kun je het portaal
-                niet gebruiken.
+                {{
+                    $t(
+                        'Dit is eenmalig. Zonder tweestapsverificatie kun je het portaal niet gebruiken.',
+                    )
+                }}
             </p>
 
             <!--
@@ -203,7 +214,7 @@ onUnmounted(() => clearTwoFactorAuthData());
                 type="button"
                 class="text-xs text-muted-foreground underline-offset-4 transition-colors hover:text-brand-cyan hover:underline"
             >
-                Nu even niet, terug naar het inlogscherm
+                {{ $t('Nu even niet, terug naar het inlogscherm') }}
             </Link>
         </div>
     </div>
@@ -214,8 +225,11 @@ onUnmounted(() => clearTwoFactorAuthData());
         >
             <CheckCircle2 class="mt-0.5 size-5 shrink-0 text-success" />
             <p>
-                Tweestapsverificatie staat aan. Vanaf nu vraagt het portaal bij
-                elke keer inloggen om een code uit je app.
+                {{
+                    $t(
+                        'Tweestapsverificatie staat aan. Vanaf nu vraagt het portaal bij elke keer inloggen om een code uit je app.',
+                    )
+                }}
             </p>
         </div>
 
@@ -228,7 +242,7 @@ onUnmounted(() => clearTwoFactorAuthData());
         <TwoFactorRecoveryCodes always-visible :allow-regenerate="false" />
 
         <Button as-child class="w-full">
-            <Link :href="finish()">Doorgaan naar het portaal</Link>
+            <Link :href="finish()">{{ $t('Doorgaan naar het portaal') }}</Link>
         </Button>
     </div>
 

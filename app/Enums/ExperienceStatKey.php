@@ -30,6 +30,17 @@ enum ExperienceStatKey: string
     case Roles = 'functies';
     case Organisations = 'organisaties';
 
+    /**
+     * Een cijfer dat wij niet kunnen uitrekenen.
+     *
+     * Hiermee komt de klant aan een vierde cijfer dat niets met de
+     * tijdlijn te maken heeft -- "12 certificeringen", bijvoorbeeld. Er
+     * mogen er meer van dit soort zijn; van de andere drie precies één,
+     * want twee keer "jaar ervaring" boven dezelfde lijst slaat nergens
+     * op.
+     */
+    case Eigen = 'eigen';
+
     /** Het woord onder het getal, op de website. */
     public function label(): string
     {
@@ -37,6 +48,7 @@ enum ExperienceStatKey: string
             self::Years => __('jaar ervaring'),
             self::Roles => __('functies'),
             self::Organisations => __('organisaties'),
+            self::Eigen => __('eigen cijfer'),
         };
     }
 
@@ -47,6 +59,7 @@ enum ExperienceStatKey: string
             self::Years => __('Van je eerste startdatum tot vandaag. Niet de som van alle periodes, want functies overlappen.'),
             self::Roles => __('Het aantal ervaringen dat op je website staat.'),
             self::Organisations => __('Het aantal verschillende organisaties in die lijst.'),
+            self::Eigen => __('Een cijfer dat je zelf bepaalt. Dit kunnen wij niet uitrekenen, dus vul er een getal bij in.'),
         };
     }
 
@@ -58,5 +71,28 @@ enum ExperienceStatKey: string
     public static function opVolgorde(): array
     {
         return self::cases();
+    }
+
+    /** Of wij dit soort uit de tijdlijn kunnen tellen. */
+    public function berekenbaar(): bool
+    {
+        return $this !== self::Eigen;
+    }
+
+    /**
+     * De soorten die de klant aan een nieuw cijfer kan hangen.
+     *
+     * @return array<int, array{value: string, label: string, omschrijving: string}>
+     */
+    public static function keuzes(): array
+    {
+        return array_map(
+            fn (self $soort) => [
+                'value' => $soort->value,
+                'label' => $soort->label(),
+                'omschrijving' => $soort->omschrijving(),
+            ],
+            self::cases(),
+        );
     }
 }

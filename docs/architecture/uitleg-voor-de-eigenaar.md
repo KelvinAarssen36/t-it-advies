@@ -73,6 +73,22 @@ de sterretjes, de twee talen, online en offline, zoeken. Gaat het maar over
 5. Elke zin door `$t()`, en de Engelse kant in `lang/en.json`.
    `TranslationsTest` valt om als je dat vergeet.
 
+### Een kaart die bij een scherm hoort
+
+Niet elk onderwerp is een scherm. Het bijsnijden van een logo, het
+automatisch verkleinen en de kop boven de tijdlijn zitten alle drie
+achter een knop op de ervaringenpagina -- maar als kaart stonden ze er
+als los onderwerp bij, en dan zoekt de eigenaar zich suf.
+
+Geef zo'n kaart daarom `:onder="$t('Ervaring')"`. Er komt dan een klein
+label boven de titel ("Onderdeel van Ervaring") en de kaart springt een
+stukje in, zodat hij ook zichtbaar een onderdeel van iets is in plaats
+van een gelijke.
+
+**Doe dat voor elk onderwerp dat achter een knop op een ander scherm
+zit.** De vuistregel: kun je er niet komen zonder eerst ergens anders
+heen te gaan, dan hoort dat "ergens anders" in het label.
+
 ## Waarover je niet schrijft
 
 - **Geen techniek.** Geen Laravel, geen Inertia, geen tabelnamen. De

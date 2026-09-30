@@ -3,23 +3,25 @@
 namespace Database\Seeders;
 
 use App\Enums\ExperienceStatKey;
+use App\Enums\ExperienceStatModus;
 use App\Models\ExperienceStat;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 /**
- * Zet de drie cijfers boven de tijdlijn klaar, allemaal op automatisch.
+ * Zet de drie standaardcijfers boven de tijdlijn klaar, op automatisch.
  *
  * Dit is productiedata en geen testdata: zonder deze rijen heeft het
  * beheerscherm niets om te tonen.
  *
- * **De seeder is aanvullend, niet leidend.** Een cijfer dat de klant zelf
- * heeft ingevuld blijft staan. Zou de seeder het terugzetten op
- * automatisch, dan gooit elke deploy zijn werk weg -- en dat ziet hij op
- * zijn eigen voorpagina.
+ * **Alleen op een lege tabel, en dat is anders dan hoe deze seeder eerst
+ * werkte.** Toen waren het drie vaste rijen die niet konden verdwijnen en
+ * vulde hij aan wat ontbrak. Nu is het een lijst die de klant beheert --
+ * hij mag cijfers hernoemen, verbergen en weghalen -- en dan is aanvullen
+ * hetzelfde als opdringen: elke deploy zou zijn verwijderde cijfer
+ * terugzetten, op zijn eigen voorpagina.
  *
- * Zie ook PageSectionSeeder; dat is hetzelfde patroon en om dezelfde
- * redenen.
+ * Zie ook ExperienceHeadingSeeder; hetzelfde patroon en om dezelfde reden.
  */
 class ExperienceStatSeeder extends Seeder
 {
@@ -33,26 +35,30 @@ class ExperienceStatSeeder extends Seeder
 
     public function run(): void
     {
-        foreach (ExperienceStatKey::cases() as $cijfer) {
-            ExperienceStat::query()->firstOrCreate(
-                ['key' => $cijfer],
-                // Leeg betekent: uitrekenen op basis van de tijdlijn. Dat
-                // is de stand waarin een cijfer vanzelf blijft kloppen.
-                ['value' => null],
-            );
+        if (ExperienceStat::query()->exists()) {
+            return;
         }
 
-        $this->ruimOp();
-    }
+        $plek = 0;
 
-    /** Weg met rijen waarvan het cijfer niet meer bestaat. */
-    private function ruimOp(): void
-    {
-        $bestaand = array_map(
-            fn (ExperienceStatKey $cijfer) => $cijfer->value,
-            ExperienceStatKey::cases(),
-        );
+        foreach (ExperienceStatKey::cases() as $cijfer) {
+            // Een eigen cijfer heeft geen standaardwaarde: dat verzint de
+            // klant zelf, en tot die tijd hoort het er niet te staan.
+            if (! $cijfer->berekenbaar()) {
+                continue;
+            }
 
-        ExperienceStat::query()->whereNotIn('key', $bestaand)->delete();
+            ExperienceStat::query()->create([
+                'key' => $cijfer,
+                // Leeg betekent: gebruik het standaardwoord van dit soort.
+                // Dat is de stand waarin het woord vanzelf meegaat met de
+                // taal van de bezoeker.
+                'label_nl' => null,
+                'label_en' => null,
+                'value' => null,
+                'modus' => ExperienceStatModus::Automatisch,
+                'position' => $plek++,
+            ]);
+        }
     }
 }
