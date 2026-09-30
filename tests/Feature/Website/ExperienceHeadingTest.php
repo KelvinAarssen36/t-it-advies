@@ -2,12 +2,14 @@
 
 namespace Tests\Feature\Website;
 
+use App\Enums\PageSectionKey;
 use App\Models\Experience;
-use App\Models\ExperienceHeading;
+use App\Models\SectionHeading;
 use App\Models\User;
-use Database\Seeders\ExperienceHeadingSeeder;
 use Database\Seeders\PageSectionSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Database\Seeders\SectionHeadingSeeder;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\TestResponse;
 use Inertia\Testing\AssertableInertia;
@@ -38,7 +40,21 @@ class ExperienceHeadingTest extends TestCase
 
         $this->seed(RolesAndPermissionsSeeder::class);
         $this->seed(PageSectionSeeder::class);
-        $this->seed(ExperienceHeadingSeeder::class);
+        $this->seed(SectionHeadingSeeder::class);
+    }
+
+    /**
+     * Alleen de rij van dít onderdeel.
+     *
+     * De koppen staan sinds het samenvoegen in één tabel, dus een kale
+     * `SectionHeading::query()` raakt hier ook die van de landingspagina
+     * en de diensten. Zie docs/architecture/kopteksten.md.
+     *
+     * @return Builder<SectionHeading>
+     */
+    private function kopRij(): Builder
+    {
+        return SectionHeading::query()->where('section', PageSectionKey::Ervaring);
     }
 
     private function beheerder(): User
@@ -81,7 +97,7 @@ class ExperienceHeadingTest extends TestCase
 
         $this->assertSame(
             'Waar dit vandaan komt',
-            ExperienceHeading::query()->value('title_nl'),
+            $this->kopRij()->value('title_nl'),
         );
     }
 
@@ -94,7 +110,7 @@ class ExperienceHeadingTest extends TestCase
             'intro_en' => 'From now back to then.',
         ])->assertSessionHasNoErrors();
 
-        $kop = ExperienceHeading::query()->firstOrFail();
+        $kop = $this->kopRij()->firstOrFail();
 
         $this->assertSame('Mijn loopbaan', $kop->title_nl);
         $this->assertSame('My career', $kop->title_en);
@@ -107,7 +123,7 @@ class ExperienceHeadingTest extends TestCase
 
         $this->assertSame(
             'Waar dit vandaan komt',
-            ExperienceHeading::query()->value('title_nl'),
+            $this->kopRij()->value('title_nl'),
         );
     }
 
@@ -121,7 +137,7 @@ class ExperienceHeadingTest extends TestCase
         $this->bewaar(['intro_nl' => '', 'intro_en' => ''])
             ->assertSessionHasNoErrors();
 
-        $kop = ExperienceHeading::query()->firstOrFail();
+        $kop = $this->kopRij()->firstOrFail();
 
         $this->assertNull($kop->intro_nl);
         $this->assertNull($kop->intro_en);
@@ -184,7 +200,7 @@ class ExperienceHeadingTest extends TestCase
         ]);
 
         $this->assertNotNull(
-            ExperienceHeading::query()->value('machine_translated_at'),
+            $this->kopRij()->value('machine_translated_at'),
         );
     }
 
@@ -195,7 +211,7 @@ class ExperienceHeadingTest extends TestCase
         $this->bewaar(['title_en' => 'My own career', 'automatisch_vertaald' => false]);
 
         $this->assertNull(
-            ExperienceHeading::query()->value('machine_translated_at'),
+            $this->kopRij()->value('machine_translated_at'),
         );
     }
 
@@ -208,11 +224,11 @@ class ExperienceHeadingTest extends TestCase
          */
         $this->bewaar(['title_nl' => 'Mijn loopbaan']);
 
-        $this->seed(ExperienceHeadingSeeder::class);
+        $this->seed(SectionHeadingSeeder::class);
 
         $this->assertSame(
             'Mijn loopbaan',
-            ExperienceHeading::query()->value('title_nl'),
+            $this->kopRij()->value('title_nl'),
         );
     }
 }

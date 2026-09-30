@@ -226,13 +226,18 @@ korte pauze van 200 ms, precies zolang als de sluitanimatie duurt.
 nog in hun Vue-component; daar staat op het scherm nog "Nog niet te
 beheren".
 
-Er zijn drie voorbeelden om uit te kiezen als je de volgende bouwt. De
+Er zijn vier voorbeelden om uit te kiezen als je de volgende bouwt. De
 [ervaring](modules/ervaring.md) is het voorbeeld voor een module met een
 lijst en een detailpagina; de [kop](modules/kop.md) voor een onderdeel dat
 alleen uit wat vaste tekst bestaat; de [diensten](modules/diensten.md)
 voor allebei tegelijk -- een lijst met een eigen volgorde, een venster per
 item, en een beheerbare kop erboven. Die laatste lijkt het meest op wat de
-werkwijze nodig heeft.
+werkwijze nodig heeft. De [certificaten](modules/certificaten.md) laten
+zien hoe je er twee lijsten in één onderdeel kwijt kunt.
+
+**De kop erboven kost geen werk meer.** Sinds de koptabellen zijn
+samengevoegd heeft elk onderdeel er gratis een; je hoeft er geen migratie
+en geen venster voor te maken. Zie [kopteksten](kopteksten.md).
 
 **Er is geen waarschuwing als je het bewerkvenster wegklikt met
 onopgeslagen wijzigingen.** Escape of naast het venster klikken gooit je

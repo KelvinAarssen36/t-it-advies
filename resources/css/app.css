@@ -2023,8 +2023,21 @@ button:hover > .brand-verlaat,
     font-weight: 500;
 }
 
+/*
+  De tweede regel van een melding.
+
+  Hier stond `--muted-foreground`, en dat was te zwak om te lezen. Die
+  kleur is afgestemd op de gewone paginakleur, en een melding ligt op
+  `--popover` -- een ander vlak, met een ander contrast. De tekst viel
+  daardoor bijna weg tegen de achtergrond.
+
+  Nu volgt hij de tekstkleur van het vlak waar hij écht op ligt, met
+  twintig procent eraf. Daarmee blijft hij duidelijk de tweede regel
+  zonder onleesbaar te worden, en klopt het in allebei de thema's zonder
+  twee waarden.
+*/
 [data-sonner-toast].brand-toast [data-description] {
-    color: var(--muted-foreground);
+    color: color-mix(in srgb, var(--popover-foreground) 80%, transparent);
 }
 
 /*
@@ -6201,6 +6214,281 @@ button:hover > .brand-verlaat,
         letter-spacing: 0.08em;
         text-transform: uppercase;
         color: var(--muted-foreground);
+    }
+
+    /* --- De certificaten --------------------------------------------- */
+
+    /*
+      Het raster. Twee kolommen op een telefoon en vier vanaf een breed
+      scherm -- dus allebei de keren twee rijen van de paginagrootte. Zie
+      BREED en SMAL in CertificatenSection.vue; die getallen en dit
+      raster horen bij elkaar.
+    */
+    .brand-certificaten {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+
+    /*
+      Vanaf 40rem meteen naar vier en niet eerst naar drie. Drie
+      kolommen met vier tegels per pagina laat een halve rij over, en
+      een raster met een gat erin ziet eruit als een fout.
+    */
+    @media (min-width: 40rem) {
+        .brand-certificaten {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 1rem;
+        }
+    }
+
+    /*
+      De tegel. Het logo bovenaan en groot, de naam eronder, en de
+      uitgever met het jaar er klein onder -- dat is de leesvolgorde van
+      iemand die scant.
+
+      `text-align: center` en niet links: een raster van vier smalle
+      tegels met links uitgelijnde tekst leest als een tabel die scheef
+      staat. Gecentreerd hangt alles aan het logo erboven.
+    */
+    .brand-certificaat {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        border-radius: 0.9rem;
+        border: 1px solid var(--border);
+        background-color: color-mix(in srgb, var(--card) 70%, transparent);
+        padding: 1rem 0.75rem 1.1rem;
+        text-align: center;
+        transition:
+            border-color 300ms ease,
+            background-color 300ms ease,
+            translate 300ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    @media (min-width: 40rem) {
+        .brand-certificaat {
+            gap: 0.6rem;
+            padding: 1.35rem 1rem 1.5rem;
+        }
+    }
+
+    /*
+      **Elke tegel reageert hetzelfde op aanwijzen, ook die zonder
+      venster erachter.** Dat was eerst niet zo: alleen een tegel met
+      iets te lezen kwam op. In een raster van negen zag je dan vier
+      tegels bewegen en vijf niet, en dat leest als kapot in plaats van
+      als een verschil met betekenis.
+
+      Wat er wél alleen bij een klikbare tegel hoort is het handje en de
+      focusrand. Dat zijn de twee dingen die zeggen "hier gebeurt iets
+      als je klikt"; het oplichten zegt alleen "ik zie je".
+    */
+    .brand-certificaat:hover {
+        border-color: color-mix(in srgb, var(--brand-cyan) 40%, transparent);
+        background-color: color-mix(in srgb, var(--card) 90%, transparent);
+        translate: 0 -3px;
+    }
+
+    .brand-certificaat.is-klikbaar {
+        cursor: pointer;
+    }
+
+    .brand-certificaat.is-klikbaar:focus-visible {
+        outline: 2px solid var(--brand-cyan);
+        outline-offset: 2px;
+    }
+
+    /*
+      De plaat waar het logo in staat. Licht en niet doorzichtig, zodat
+      een donker merkteken op de donkere pagina niet verdwijnt -- precies
+      zoals bij de logo's in de tijdlijn.
+    */
+    .brand-certificaat-plaat {
+        display: flex;
+        height: 3rem;
+        width: 3rem;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        border-radius: 0.75rem;
+        border: 1px solid var(--border);
+        background-color: var(--muted);
+        color: var(--brand-cyan);
+        transition: box-shadow 300ms ease;
+    }
+
+    @media (min-width: 40rem) {
+        .brand-certificaat-plaat {
+            height: 3.75rem;
+            width: 3.75rem;
+        }
+    }
+
+    /*
+      Bij het aanwijzen licht de plaat op en niet de hele tegel. Het logo
+      is waar je naar kijkt; de rest hoeft niet mee te doen.
+    */
+    .brand-certificaat:hover .brand-certificaat-plaat {
+        box-shadow: 0 0 22px
+            color-mix(in srgb, var(--brand-cyan) 30%, transparent);
+    }
+
+    /*
+      Geen uitzondering voor een logo met doorzichtige randen: de server
+      bakt de achtergrond al in het bestand, dus wat hier binnenkomt is
+      altijd een gewoon vierkant plaatje. Zie App\Support\Media\Logo.
+    */
+    .brand-certificaat-logo {
+        height: 100%;
+        width: 100%;
+        object-fit: cover;
+    }
+
+    .brand-certificaat-teken {
+        height: 1.5rem;
+        width: 1.5rem;
+    }
+
+    .brand-certificaat-naam {
+        font-size: 0.8125rem;
+        font-weight: 500;
+        line-height: 1.35;
+        text-wrap: balance;
+        color: var(--foreground);
+    }
+
+    @media (min-width: 40rem) {
+        .brand-certificaat-naam {
+            font-size: 0.9375rem;
+        }
+    }
+
+    .brand-certificaat-uitgever {
+        font-size: 0.6875rem;
+        color: var(--muted-foreground);
+    }
+
+    /*
+      Hier stond `.brand-certificaat-verlopen`, een label op de tegel.
+      Dat is eruit: op de website staat nooit dat een certificaat
+      verlopen is. Zie CertificaatTegel.vue.
+    */
+
+    /* De harde feiten in het detailvenster. */
+    .brand-certificaat-feiten {
+        display: grid;
+        gap: 0.75rem;
+        border-radius: 0.75rem;
+        border: 1px solid var(--border);
+        background-color: var(--muted);
+        padding: 0.85rem 1rem;
+    }
+
+    @media (min-width: 30rem) {
+        .brand-certificaat-feiten {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    .brand-certificaat-feiten dt {
+        font-size: 0.6875rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted-foreground);
+    }
+
+    .brand-certificaat-feiten dd {
+        margin-top: 0.15rem;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.875rem;
+        color: var(--foreground);
+    }
+
+    /* --- De opleidingen onder de certificaten ------------------------ */
+
+    /*
+      Een streep en een lijstje, geen tweede raster. Dit is de
+      aanvulling en niet het onderwerp; zie CertificatenSection.vue.
+    */
+    .brand-opleidingen {
+        margin-top: 2.5rem;
+        border-top: 1px solid var(--border);
+        padding-top: 1.75rem;
+    }
+
+    .brand-opleidingen-kopje {
+        font-size: 0.6875rem;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--brand-cyan);
+    }
+
+    .brand-opleidingen-lijst {
+        margin-top: 0.9rem;
+        display: grid;
+        gap: 0.9rem;
+    }
+
+    /*
+      Op een telefoon onder elkaar, op een breed scherm de periode
+      rechts. `grid` en geen `flex` met `justify-between`: zo staan de
+      periodes van meerdere regels onder elkaar uitgelijnd in plaats van
+      elk op hun eigen plek.
+    */
+    .brand-opleiding {
+        display: grid;
+        gap: 0.15rem;
+    }
+
+    @media (min-width: 40rem) {
+        .brand-opleiding {
+            grid-template-columns: 1fr auto;
+            align-items: baseline;
+            column-gap: 1.5rem;
+        }
+    }
+
+    .brand-opleiding-naam {
+        font-size: 0.9375rem;
+        font-weight: 500;
+        color: var(--foreground);
+    }
+
+    .brand-opleiding-instelling {
+        font-size: 0.8125rem;
+        color: var(--muted-foreground);
+    }
+
+    @media (min-width: 40rem) {
+        .brand-opleiding-instelling {
+            grid-column: 1;
+            grid-row: 2;
+        }
+    }
+
+    .brand-opleiding-periode {
+        font-size: 0.8125rem;
+        color: var(--muted-foreground);
+    }
+
+    @media (min-width: 40rem) {
+        .brand-opleiding-periode {
+            grid-column: 2;
+            grid-row: 1 / span 2;
+            text-align: right;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .brand-certificaat:hover {
+            translate: none;
+        }
     }
 
     /* --- Het voorbeeld van de kop ------------------------------------ */

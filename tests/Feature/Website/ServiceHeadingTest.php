@@ -2,12 +2,14 @@
 
 namespace Tests\Feature\Website;
 
+use App\Enums\PageSectionKey;
+use App\Models\SectionHeading;
 use App\Models\Service;
-use App\Models\ServiceHeading;
 use App\Models\User;
 use Database\Seeders\PageSectionSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
-use Database\Seeders\ServiceHeadingSeeder;
+use Database\Seeders\SectionHeadingSeeder;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\TestResponse;
 use Inertia\Testing\AssertableInertia;
@@ -32,12 +34,26 @@ class ServiceHeadingTest extends TestCase
 
         $this->seed(RolesAndPermissionsSeeder::class);
         $this->seed(PageSectionSeeder::class);
-        $this->seed(ServiceHeadingSeeder::class);
+        $this->seed(SectionHeadingSeeder::class);
 
         // Zonder een online dienst staat het onderdeel niet op de
         // pagina, en dan komt de kop er ook niet -- terecht, maar dan
         // valt er hier niets te toetsen.
         Service::factory()->create();
+    }
+
+    /**
+     * Alleen de rij van dít onderdeel.
+     *
+     * De koppen staan sinds het samenvoegen in één tabel, dus een kale
+     * `SectionHeading::query()` raakt hier ook de kop van de tijdlijn en
+     * die van de landingspagina. Zie docs/architecture/kopteksten.md.
+     *
+     * @return Builder<SectionHeading>
+     */
+    private function kopRij(): Builder
+    {
+        return SectionHeading::query()->where('section', PageSectionKey::Diensten);
     }
 
     private function beheerder(): User
@@ -127,7 +143,7 @@ class ServiceHeadingTest extends TestCase
     {
         $this->bewaar(['intro_nl' => '', 'intro_en' => '']);
 
-        $kop = ServiceHeading::query()->firstOrFail();
+        $kop = $this->kopRij()->firstOrFail();
 
         $this->assertNull($kop->intro_nl);
         $this->assertNull($kop->intro_en);
@@ -139,43 +155,43 @@ class ServiceHeadingTest extends TestCase
             ->assertSessionHasErrors(['eyebrow_nl', 'title_nl']);
 
         // En er is niets gewijzigd.
-        $this->assertSame('Diensten', ServiceHeading::query()->value('eyebrow_nl'));
+        $this->assertSame('Diensten', $this->kopRij()->value('eyebrow_nl'));
     }
 
     public function test_saving_the_same_text_changes_nothing(): void
     {
         $this->bewaar();
 
-        $gewijzigd = ServiceHeading::query()->value('updated_at');
+        $gewijzigd = $this->kopRij()->value('updated_at');
 
         $this->travel(1)->minute();
         $this->bewaar()->assertSessionHasNoErrors();
 
-        $this->assertEquals($gewijzigd, ServiceHeading::query()->value('updated_at'));
+        $this->assertEquals($gewijzigd, $this->kopRij()->value('updated_at'));
     }
 
     public function test_the_website_works_without_a_seeded_row(): void
     {
         /*
          * Een vergeten seeder mag geen blok zonder kop opleveren. De
-         * standaardtekst uit huidige() vangt dat op, en die mag bij het
-         * tonen van de site niets wegschrijven.
+         * standaardtekst uit SectionHeading::standaard() vangt dat op, en
+         * die mag bij het tonen van de site niets wegschrijven.
          */
-        ServiceHeading::query()->delete();
+        $this->kopRij()->delete();
 
         $kop = $this->opDeSite();
 
         $this->assertSame('Diensten', $kop['opschrift']);
-        $this->assertSame(0, ServiceHeading::query()->count());
+        $this->assertSame(0, $this->kopRij()->count());
     }
 
     public function test_seeding_again_keeps_what_the_owner_wrote(): void
     {
         $this->bewaar(['title_nl' => 'Mijn eigen kop']);
 
-        $this->seed(ServiceHeadingSeeder::class);
+        $this->seed(SectionHeadingSeeder::class);
 
-        $this->assertSame(1, ServiceHeading::query()->count());
-        $this->assertSame('Mijn eigen kop', ServiceHeading::query()->value('title_nl'));
+        $this->assertSame(1, $this->kopRij()->count());
+        $this->assertSame('Mijn eigen kop', $this->kopRij()->value('title_nl'));
     }
 }

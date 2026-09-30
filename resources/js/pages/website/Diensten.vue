@@ -16,7 +16,7 @@ import {
 import { computed, ref } from 'vue';
 import VerlaatPortaal from '@/components/VerlaatPortaal.vue';
 import DienstDialoog from '@/components/website/DienstDialoog.vue';
-import DienstenKopDialoog from '@/components/website/DienstenKopDialoog.vue';
+import KoptekstDialoog from '@/components/website/KoptekstDialoog.vue';
 import DienstIcoon from '@/components/site/DienstIcoon.vue';
 import VolgordeDialoog from '@/components/website/VolgordeDialoog.vue';
 import { Button } from '@/components/ui/button';
@@ -405,9 +405,18 @@ const verwijder = async (item: DienstRij): Promise<void> => {
         :kan-vertalen="props.kanVertalen"
     />
 
-    <DienstenKopDialoog
+    <KoptekstDialoog
         v-model:open="kopVenster"
         :kop="props.kop"
+        :actie="diensten.kop().url"
+        :titel="$t('De kop boven je diensten')"
+        :uitleg="
+            $t(
+                'Het opschrift, de titel en de zin eronder. Op je website staat dit boven de kaarten.',
+            )
+        "
+        :bevestiging="$t('De kop boven je diensten aanpassen?')"
+        sleutel="diensten"
         :kan-vertalen="props.kanVertalen"
     />
 

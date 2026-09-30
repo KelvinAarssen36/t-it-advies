@@ -26,29 +26,26 @@ Laravel. Wat die variant anders moet doen staat in
 ### De inhoud van de overige onderdelen beheerbaar maken
 
 De [ervaring](architecture/modules/ervaring.md), de
-[kop](architecture/modules/kop.md) en de
-[diensten](architecture/modules/diensten.md) zijn af. Alleen de werkwijze
-staat nog in zijn Vue-component; de stappen ernaartoe staan in
-[pagina-indeling](architecture/pagina-indeling.md).
+[kop](architecture/modules/kop.md), de
+[diensten](architecture/modules/diensten.md) en de
+[certificaten](architecture/modules/certificaten.md) zijn af. Alleen de
+werkwijze staat nog in zijn Vue-component; de stappen ernaartoe staan in
+[pagina-indeling](architecture/pagina-indeling.md). Op het
+indelingsscherm staat bij dat onderdeel "Nog niet te beheren".
 
-### De drie koptabellen samenvoegen
+### Een opschrift boven de tijdlijn
 
-`hero_headings`, `experience_headings` en `service_headings` zijn drie
-bijna identieke tabellen met één rij: een opschrift, een titel, een zin
-eronder en een merkje voor automatisch vertaald. Elke volgende module met
-een beheerbare kop maakt er een vierde bij.
+Sinds het samenvoegen van de koptabellen heeft élk onderdeel een kolom
+voor een opschrift -- ook de tijdlijn, die er nooit een had. Het
+bewerkvenster van de tijdlijn laat dat veld niet zien, en de seeder vult
+het niet, want dat samenvoegen was een verhuizing en geen herontwerp van
+de voorpagina.
 
-Eén `section_headings` met een regel per `PageSectionKey` is de betere
-vorm: dan heeft elk toekomstig onderdeel gratis een beheerbare kop, en is
-er één model, één controller-methode en één test in plaats van drie.
+Wil de klant er later een, dan is het één veld in het bewerkvenster en
+`opschriftVerplicht()` op `false` laten staan. Zie
+[kopteksten](architecture/kopteksten.md).
 
-**Dit is bewust uitgesteld tot de volgende module.** De winst komt pas
-zodra er een vierde bij zou komen, en het verhuizen raakt drie schermen
-die nu werken. De werkwijze is het eerstvolgende onderdeel dat zo'n kop
-krijgt; dat is het moment.
-
-Zolang dat zo is, staat er op het indelingsscherm bij die onderdelen "Nog
-niet te beheren".
+### Een venster dat met Escape dichtgaat
 
 Wie het bewerkvenster van de indeling met Escape sluit, verliest zijn
 wijzigingen zonder melding. Bewust nog niet gebouwd: het venster is een

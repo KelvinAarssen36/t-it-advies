@@ -33,10 +33,11 @@ class DatabaseSeeder extends Seeder
             PageSectionSeeder::class,
             ExperienceSeeder::class,
             ExperienceStatSeeder::class,
-            ExperienceHeadingSeeder::class,
-            HeroHeadingSeeder::class,
             ServiceSeeder::class,
-            ServiceHeadingSeeder::class,
+
+            // Eén seeder voor de koppen van alle onderdelen; die stonden
+            // hier eerst als drie losse regels. Zie SectionHeadingSeeder.
+            SectionHeadingSeeder::class,
         ]);
     }
 }

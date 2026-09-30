@@ -91,6 +91,20 @@ class TranslateController extends Controller
             // geen lijst: de knop staat per cijfer, en het venster
             // onthoudt zelf welk cijfer het vroeg.
             'woord_nl' => ['nullable', 'string', 'max:40'],
+
+            /*
+             * Het niveau van een opleiding: "MBO niveau 4". Het enige
+             * nieuwe veld dat de certificaten nodig hadden -- de naam
+             * van een certificaat gaat door `title_nl` en de
+             * toelichting door `body_nl`, allebei velden die er al
+             * waren. Zie docs/architecture/automatisch-vertalen.md.
+             */
+            'niveau_nl' => ['nullable', 'string', 'max:60'],
+
+            // De toelichting bij een certificaat. Apart van
+            // `description_nl`, want die hoort bij een ervaring en het
+            // scherm moet weten waar het antwoord heen moet.
+            'body_nl' => ['nullable', 'string', 'max:2000'],
         ]);
 
         /** @var array<int, string|null> $punten */

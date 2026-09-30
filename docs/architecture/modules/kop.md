@@ -9,11 +9,11 @@ en de zin daar weer onder. Drie teksten, en meer is het niet.
 > precies omgekeerd aan het uitgangspunt van dit project: inhoud is data,
 > geen code.
 
-| Onderdeel                        | Waar de klant het beheert | Waar het vandaan komt    |
-| -------------------------------- | ------------------------- | ------------------------ |
-| Het **opschrift** boven de titel | Website → Kop             | `hero_headings`, één rij |
-| De **titel**                     | Diezelfde knop            | Dezelfde rij             |
-| De **zin** eronder               | Diezelfde knop            | Dezelfde rij             |
+| Onderdeel                        | Waar de klant het beheert | Waar het vandaan komt          |
+| -------------------------------- | ------------------------- | ------------------------------ |
+| Het **opschrift** boven de titel | Website → Kop             | `section_headings`, rij `hero` |
+| De **titel**                     | Diezelfde knop            | Dezelfde rij                   |
+| De **zin** eronder               | Diezelfde knop            | Dezelfde rij                   |
 
 De knoppen ("Neem contact op", "Bekijk de diensten") en de foto horen er
 bewust níet bij; zie [Wat er bewust niet in zit](#wat-er-bewust-niet-in-zit).
@@ -33,7 +33,7 @@ opzet:
   kijk" en "ik wijzig" hoort zichtbaar te zijn.
 - **Twee bevestigingen**, want dit is een bestaand item wijzigen.
 - **Allebei de talen los**, met de vertaalknop ernaast.
-- **Het activiteitenlogboek** loopt mee via `HeroHeading`.
+- **Het activiteitenlogboek** loopt mee via `SectionHeading`.
 
 Één opslag voor alle drie de teksten, want op de website is het één blok.
 Ze los kunnen bewerken zou betekenen dat de eigenaar drie keer bevestigt
@@ -68,7 +68,7 @@ optioneel veld wordt weggelaten.** Zie
 [vertalingen](../vertalingen.md).
 
 De keuze tussen de talen wordt op de server gemaakt, in
-`App\Models\HeroHeading`. De Vue-component krijgt drie kant-en-klare
+`App\Models\SectionHeading`. De Vue-component krijgt drie kant-en-klare
 teksten en beslist niets meer. Zou de site dezelfde vorm krijgen als het
 portaal, dan moet elk component zelf bedenken welk veld terugvalt -- en
 dan staat er vroeg of laat half Nederlands op een Engelse pagina.
@@ -91,22 +91,28 @@ die kan achterlopen.
 De zin eronder is optioneel en verdwijnt met `v-if` als hij leeg is --
 geen lege alinea die de knoppen omlaag duwt.
 
-## Eén rij, en dat is geen tabel die groeit
+## De kop staat in de gedeelde tabel
 
-`hero_headings` heeft één rij en geen `key`-kolom. Dezelfde afweging als
-bij `experience_headings`: een sleutelkolom zou suggereren dat er meer bij
-kunnen komen, en een tabel die liegt over wat hij bevat is erger dan een
-tabel met één rij.
+Hier stond `hero_headings`, een tabel met één rij. Die is met de komst
+van de certificaten samengevoegd met die van de tijdlijn en de diensten
+tot één `section_headings`, met een regel per onderdeel. Hoe dat werkt
+en waarom staat in [kopteksten](../kopteksten.md).
 
-Gebruik `HeroHeading::huidige()` en niet `find(1)`. Die eerste geeft ook
-op een verse database iets bruikbaars terug, zodat een vergeten seeder
-geen lege voorpagina oplevert. Hij **slaat niets op** als de rij er nog
-niet is: dit wordt ook aangeroepen bij het tonen van de publieke site, en
-een GET hoort niets weg te schrijven.
+Voor dit scherm verandert er niets aan de buitenkant: hetzelfde adres,
+hetzelfde venster, dezelfde drie teksten. Wat wél veranderde:
 
-De tekst staat daardoor op twee plekken: in `huidige()` als vangnet, en in
-`HeroHeadingSeeder` als de rij die er echt hoort te staan. Dat is bewust
-dubbel.
+- `SectionHeading::voor(PageSectionKey::Hero)` in plaats van
+  het oude `HeroHeading::huidige()`. Die geeft ook op een verse database
+  iets bruikbaars terug, zodat een vergeten seeder geen lege voorpagina
+  oplevert, en **slaat niets op** als de rij er nog niet is -- dit wordt
+  ook aangeroepen bij het tonen van de publieke site, en een GET hoort
+  niets weg te schrijven.
+- De standaardtekst staat nog maar op **één** plek, in
+  `SectionHeading::standaard()`. Die stond eerst dubbel -- in het model
+  als vangnet en in de seeder als de echte rij -- en dat was bewust,
+  maar met één model kan het beter.
+- Het bewerkvenster is `KoptekstDialoog.vue` en wordt gedeeld met de
+  diensten en de certificaten.
 
 ## De seeddata is een startpunt
 
@@ -156,13 +162,13 @@ kop voegde daar `eyebrow_nl` aan toe. Zie
 
 ## Wat waar staat
 
-| Bestand                                                                                | Wat het doet                                             |
-| -------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| [`HeroHeading`](../../../app/Models/HeroHeading.php)                                   | De rij, de terugval tussen de talen, het logboek.        |
-| [`HeroController`](../../../app/Http/Controllers/Website/HeroController.php)           | Het scherm en de opslag.                                 |
-| [`TranslateController`](../../../app/Http/Controllers/Website/TranslateController.php) | De vertaalknop, voor alle modules.                       |
-| [`HeroHeadingSeeder`](../../../database/seeders/HeroHeadingSeeder.php)                 | De starttekst.                                           |
-| [`Kop.vue`](../../../resources/js/pages/website/Kop.vue)                               | Het overzicht met het voorbeeld in twee talen.           |
-| [`KopDialoog.vue`](../../../resources/js/components/website/KopDialoog.vue)            | Het bewerkvenster.                                       |
-| [`HeroSection.vue`](../../../resources/js/components/site/sections/HeroSection.vue)    | Wat de bezoeker ziet.                                    |
-| [`HeroHeadingTest`](../../../tests/Feature/Website/HeroHeadingTest.php)                | De rechten, de terugval per veld, de lengtes, de seeder. |
+| Bestand                                                                                | Wat het doet                                                                                   |
+| -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| [`SectionHeading`](../../../app/Models/SectionHeading.php)                             | De rij, de terugval tussen de talen, het logboek. Gedeeld; zie [kopteksten](../kopteksten.md). |
+| [`HeroController`](../../../app/Http/Controllers/Website/HeroController.php)           | Het scherm en de opslag.                                                                       |
+| [`TranslateController`](../../../app/Http/Controllers/Website/TranslateController.php) | De vertaalknop, voor alle modules.                                                             |
+| [`SectionHeadingSeeder`](../../../database/seeders/SectionHeadingSeeder.php)           | De starttekst, voor alle onderdelen.                                                           |
+| [`Kop.vue`](../../../resources/js/pages/website/Kop.vue)                               | Het overzicht met het voorbeeld in twee talen.                                                 |
+| [`KoptekstDialoog.vue`](../../../resources/js/components/website/KoptekstDialoog.vue)  | Het bewerkvenster, gedeeld met de andere modules.                                              |
+| [`HeroSection.vue`](../../../resources/js/components/site/sections/HeroSection.vue)    | Wat de bezoeker ziet.                                                                          |
+| [`HeroHeadingTest`](../../../tests/Feature/Website/HeroHeadingTest.php)                | De rechten, de terugval per veld, de lengtes, de seeder.                                       |

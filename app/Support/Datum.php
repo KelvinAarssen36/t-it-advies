@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 
 /**
@@ -58,6 +59,51 @@ class Datum
     public static function maand(?CarbonInterface $datum): ?string
     {
         return $datum?->isoFormat('MMM YYYY');
+    }
+
+    /**
+     * De twaalf maanden, in de taal van het portaal.
+     *
+     * Voor `MaandKiezer.vue`. Die namen komen van de server en niet uit
+     * `Intl` in de browser, om dezelfde reden als alle andere datums:
+     * anders hangt de taal van de lijst af van het besturingssysteem van
+     * de bezoeker in plaats van van de taal die hij in het portaal heeft
+     * gekozen. Zie docs/architecture/vertalingen.md.
+     *
+     * @return array<int, array{value: string, label: string}>
+     */
+    public static function maanden(): array
+    {
+        return array_map(
+            fn (int $maand) => [
+                'value' => str_pad((string) $maand, 2, '0', STR_PAD_LEFT),
+                'label' => (string) CarbonImmutable::create(2000, $maand, 1)?->isoFormat('MMMM'),
+            ],
+            range(1, 12),
+        );
+    }
+
+    /**
+     * De jaren waaruit je kunt kiezen, aflopend.
+     *
+     * Aflopend omdat je meestal iets recents invoert; een lijst die bij
+     * 1965 begint laat je elke keer helemaal doorscrollen.
+     *
+     * `$vooruit` is er voor de geldigheidsdatum van een certificaat: die
+     * ligt per definitie in de toekomst, en dan is een lijst die bij dit
+     * jaar ophoudt onbruikbaar. Overal elders blijft hij nul, want een
+     * ervaring die volgend jaar begint bestaat niet.
+     *
+     * @return array<int, array{value: string, label: string}>
+     */
+    public static function jaren(int $vooruit = 0, int $terug = 60): array
+    {
+        $nu = (int) now()->format('Y');
+
+        return array_map(
+            fn (int $jaar) => ['value' => (string) $jaar, 'label' => (string) $jaar],
+            range($nu + $vooruit, $nu - $terug),
+        );
     }
 
     /**

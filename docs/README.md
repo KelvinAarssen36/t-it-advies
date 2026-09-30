@@ -51,6 +51,7 @@ Nieuw op dit project? Lees in deze volgorde:
 - [Huisstijl en kleuren](architecture/huisstijl-en-kleuren.md) -- het kleurenpalet, de gradients, en hoe die in de Tailwind-tokens landen.
 - [Formulieren en schuifbalken](architecture/formulieren-en-schuifbalken.md) -- de standaard voor keuzevelden en schuifbalken in het portaal.
 - [Pagina-indeling](architecture/pagina-indeling.md) -- hoe de klant de volgorde van de landing bepaalt, en hoe je er een onderdeel bij bouwt.
+- [Kopteksten](architecture/kopteksten.md) -- de gedeelde tabel met het opschrift, de titel en de zin boven elk onderdeel.
 - [Meldingen](architecture/meldingen.md) -- de berichtjes rechtsonder, het bevestigingsvenster, en waarom je aan de kleur ziet wat er gebeurde.
 - [Foutpagina's](architecture/foutpaginas.md) -- wat je ziet als er iets misgaat, en waarom portaal en landing verschillen.
 - [Vertalingen](architecture/vertalingen.md) -- Nederlands en Engels, waar de taal vandaan komt en hoe je wisselt.
@@ -67,6 +68,7 @@ staan de vijf stappen -- en daarna een bestaande module als voorbeeld.
 - [Ervaring](architecture/modules/ervaring.md) -- de tijdlijn met functies en organisaties. De eerste module, en daarmee het voorbeeld voor de volgende.
 - [Kop](architecture/modules/kop.md) -- de drie teksten bovenaan de landingspagina. De kleinste module: één rij, één venster, geen lijst.
 - [Diensten](architecture/modules/diensten.md) -- wat de klant aanbiedt, met expertisepunten en een eigen volgorde. Combineert een lijst met beheerbare vaste tekst.
+- [Certificaten](architecture/modules/certificaten.md) -- wat de klant heeft gehaald en bij wie, als raster van badges, met optioneel zijn opleiding eronder.
 - [LinkedIn](architecture/modules/linkedin.md) -- geen module maar een blok: één vaste link, wel te verslepen en uit te zetten.
 
 ## Beveiliging

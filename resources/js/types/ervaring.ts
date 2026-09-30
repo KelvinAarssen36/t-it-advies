@@ -184,7 +184,7 @@ export type ErvaringOpties = {
  * De kop van de landingspagina, zoals de bezoeker hem krijgt.
  *
  * De keuze tussen Nederlands en Engels is op de server al gemaakt; hier
- * staat wat er komt te staan. Zie App\Models\HeroHeading.
+ * staat wat er komt te staan. Zie App\Models\SectionHeading.
  */
 export type SiteKop = {
     opschrift: string;
@@ -210,7 +210,7 @@ export type SiteKopRij = {
  * De kop boven de tijdlijn, zoals de bezoeker hem krijgt.
  *
  * De keuze tussen Nederlands en Engels is op de server al gemaakt; hier
- * staat wat er komt te staan. Zie App\Models\ExperienceHeading.
+ * staat wat er komt te staan. Zie App\Models\SectionHeading.
  */
 export type ErvaringKop = {
     titel: string;

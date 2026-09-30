@@ -7,10 +7,10 @@ use App\Enums\ExperienceStatModus;
 use App\Models\Experience;
 use App\Models\ExperienceStat;
 use App\Models\User;
-use Database\Seeders\ExperienceHeadingSeeder;
 use Database\Seeders\ExperienceStatSeeder;
 use Database\Seeders\PageSectionSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Database\Seeders\SectionHeadingSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\TestResponse;
 use Inertia\Testing\AssertableInertia;
@@ -41,7 +41,7 @@ class ExperienceStatsTest extends TestCase
         $this->seed(RolesAndPermissionsSeeder::class);
         $this->seed(PageSectionSeeder::class);
         $this->seed(ExperienceStatSeeder::class);
-        $this->seed(ExperienceHeadingSeeder::class);
+        $this->seed(SectionHeadingSeeder::class);
     }
 
     private function beheerder(): User

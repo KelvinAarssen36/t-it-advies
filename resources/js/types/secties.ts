@@ -25,8 +25,30 @@ export type SectieSleutel =
     | 'diensten'
     | 'werkwijze'
     | 'ervaring'
+    | 'certificaten'
     | 'contact'
     | 'linkedin';
+
+/**
+ * De kop boven een onderdeel, zoals het beheerscherm hem bewerkt.
+ *
+ * Allebei de talen los, want het formulier vult ze allebei. Eén vorm
+ * voor alle onderdelen, net als de tabel erachter -- zie
+ * `App\Models\SectionHeading` en KoptekstDialoog.vue.
+ *
+ * Het opschrift mag hier `null` zijn, want niet elk onderdeel heeft er
+ * een: de tijdlijn heeft nooit een opschrift gehad. Of het verplicht is
+ * staat per onderdeel in de FormRequest, niet in dit type.
+ */
+export type KoptekstRij = {
+    eyebrow_nl: string | null;
+    eyebrow_en: string | null;
+    title_nl: string;
+    title_en: string | null;
+    intro_nl: string | null;
+    intro_en: string | null;
+    automatisch_vertaald: boolean;
+};
 
 /**
  * Eén regel op het indelingsscherm in het portaal.

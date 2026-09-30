@@ -110,9 +110,17 @@ Naast de tabellen van Laravel, Fortify en spatie/laravel-permission:
   tijdlijn", en dat is de normale toestand. Wélke cijfers er bestaan staat
   net als bij `page_sections` in code.
 
-- **`experience_headings`** -- de titel en de zin boven die tijdlijn. Eén
-  rij, want er is één tijdlijn. Stond eerst als vaste tekst in het
-  Vue-component; nu beheert de klant hem, samen met de cijfers.
+- **`certificates`** -- de behaalde certificaten, met de uitgever, de
+  datums, een certificaatnummer en het pad naar het logo van die
+  uitgever. Zie [de module](modules/certificaten.md).
+- **`educations`** -- de opleidingen die onder die certificaten staan.
+  Bewust kaler: geen logo, geen nummer, en een volgorde die zichzelf op
+  periode regelt.
+
+- **`section_headings`** -- het opschrift, de titel en de zin boven élk
+  onderdeel, met een regel per `PageSectionKey`. Dit waren drie bijna
+  identieke tabellen (`hero_headings`, `experience_headings`,
+  `service_headings`); zie [kopteksten](kopteksten.md).
 
 Geüploade bestanden staan **niet** in de database maar op de `public`-schijf
 uit `config/filesystems.php`, met alleen hun pad in de tabel. Verhuizen ze

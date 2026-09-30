@@ -2,6 +2,7 @@
 import { Link, usePage } from '@inertiajs/vue3';
 import {
     Activity,
+    Award,
     Globe,
     Heading,
     History,
@@ -34,6 +35,7 @@ import adminMail from '@/routes/admin/mail';
 import adminSecurity from '@/routes/admin/security';
 import adminUsers from '@/routes/admin/users';
 import site from '@/routes/site';
+import certificaten from '@/routes/website/certificaten';
 import diensten from '@/routes/website/diensten';
 import ervaring from '@/routes/website/ervaring';
 import kop from '@/routes/website/kop';
@@ -128,6 +130,11 @@ const websiteItems = computed<NavItem[]>(() => [
         title: t('Ervaring'),
         href: ervaring.index(),
         icon: Milestone,
+    },
+    {
+        title: t('Certificaten'),
+        href: certificaten.index(),
+        icon: Award,
     },
     {
         title: t('Bekijk de website'),

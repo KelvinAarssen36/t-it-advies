@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Enums\PageSectionKey;
+use App\Models\Certificate;
+use App\Models\Education;
 use App\Models\Experience;
-use App\Models\ExperienceHeading;
-use App\Models\HeroHeading;
 use App\Models\PageSection;
+use App\Models\SectionHeading;
 use App\Models\Service;
-use App\Models\ServiceHeading;
 use App\Support\Loopbaan;
 use App\Support\Page\SectionContent;
 use Illuminate\Database\Eloquent\Collection;
@@ -50,6 +50,20 @@ class HomeController extends Controller
             ? Service::query()->with('points')->online()->opVolgorde()->get()
             : new Collection;
 
+        /*
+         * De certificaten en de opleidingen hangen aan hetzelfde
+         * onderdeel, dus ze staan er allebei of geen van beide.
+         */
+        $heeftCertificaten = in_array(PageSectionKey::Certificaten->value, $secties, true);
+
+        $certificaten = $heeftCertificaten
+            ? Certificate::query()->online()->opVolgorde()->get()
+            : new Collection;
+
+        $opleidingen = $heeftCertificaten
+            ? Education::query()->online()->opPeriode()->get()
+            : new Collection;
+
         return Inertia::render('Welcome', [
             'sections' => $secties,
 
@@ -61,10 +75,10 @@ class HomeController extends Controller
              * onderdeel -- hij kan niet uit en niet verplaatst worden --
              * dus de vraag "staat hij er?" bestaat hier niet.
              *
-             * Zie App\Models\HeroHeading voor welke tekst terugvalt op het
-             * Nederlands en welke niet.
+             * Zie App\Models\SectionHeading voor welke tekst terugvalt op
+             * het Nederlands en welke niet.
              */
-            'heroHeading' => $this->heroKop(),
+            'heroHeading' => SectionHeading::voor(PageSectionKey::Hero)->voorDeSite(),
 
             /*
              * Dezelfde lijst, met de labels erbij, voor het menu in de kop.
@@ -101,7 +115,7 @@ class HomeController extends Controller
              * er staat; dezelfde regel als bij de tijdlijn hieronder.
              */
             'serviceHeading' => in_array(PageSectionKey::Diensten->value, $secties, true)
-                ? $this->dienstenKop()
+                ? SectionHeading::voor(PageSectionKey::Diensten)->voorDeSite()
                 : null,
 
             'experiences' => $loopbaan
@@ -123,29 +137,27 @@ class HomeController extends Controller
              * hierboven.
              */
             'experienceHeading' => in_array(PageSectionKey::Ervaring->value, $secties, true)
-                ? $this->koptekst()
+                ? SectionHeading::voor(PageSectionKey::Ervaring)->voorDeSite()
+                : null,
+
+            /*
+             * De certificaten, in de taal van de bezoeker. Leeg als het
+             * onderdeel niet op de pagina staat -- dan is de query
+             * hierboven ook niet gedaan.
+             */
+            'certificates' => $certificaten
+                ->map(fn (Certificate $certificaat) => $this->certificaat($certificaat))
+                ->all(),
+
+            // De opleidingen staan in hetzelfde blok, onder het raster.
+            'educations' => $opleidingen
+                ->map(fn (Education $opleiding) => $this->opleiding($opleiding))
+                ->all(),
+
+            'certificateHeading' => $heeftCertificaten
+                ? SectionHeading::voor(PageSectionKey::Certificaten)->voorDeSite()
                 : null,
         ]);
-    }
-
-    /**
-     * De kop van de pagina, in de taal van de bezoeker.
-     *
-     * De terugval tussen de talen is hier al beslist: het opschrift en de
-     * titel vallen terug op het Nederlands, de zin eronder niet. Zie
-     * App\Models\HeroHeading.
-     *
-     * @return array<string, string|null>
-     */
-    private function heroKop(): array
-    {
-        $kop = HeroHeading::huidige();
-
-        return [
-            'opschrift' => $kop->opschrift(),
-            'titel' => $kop->titel(),
-            'inleiding' => $kop->inleiding(),
-        ];
     }
 
     /**
@@ -174,37 +186,72 @@ class HomeController extends Controller
     }
 
     /**
-     * De kop boven de diensten, in de taal van de bezoeker.
+     * Eén certificaat, in de taal van de bezoeker.
      *
-     * @return array<string, string|null>
+     * Alles is hier al beslist: wat terugvalt op het Nederlands, wat er
+     * wordt weggelaten, of de geldigheid voorbij is en hoe de datum
+     * eruitziet. De Vue-component toont alleen nog wat er is. Zie
+     * App\Models\Certificate.
+     *
+     * @return array<string, mixed>
      */
-    private function dienstenKop(): array
+    private function certificaat(Certificate $certificaat): array
     {
-        $kop = ServiceHeading::huidige();
-
         return [
-            'opschrift' => $kop->opschrift(),
-            'titel' => $kop->titel(),
-            'inleiding' => $kop->inleiding(),
+            'id' => $certificaat->id,
+            'naam' => $certificaat->naam(),
+            'uitgever' => $certificaat->issuer,
+
+            // Het logo van de uitgever. Staat er geen, dan valt de tegel
+            // terug op een pictogram.
+            'logo' => $certificaat->logo(),
+
+            'jaar' => $certificaat->issued_on->format('Y'),
+            'behaald' => $certificaat->behaald(),
+
+            /*
+             * De geldigheidsdatum gaat alleen mee zolang hij nog moet
+             * komen.
+             *
+             * **Op de website staat nooit dat een certificaat verlopen
+             * is.** Er stond eerst een label op de tegel; dat is eruit
+             * gehaald, omdat een bezoeker die op een etalage kijkt niet
+             * hoeft te weten dat één papiertje aan vernieuwing toe is.
+             * Dan is een datum in het verleden naast "geldig tot"
+             * dezelfde mededeling in andere woorden, en hoort die er
+             * ook niet te zijn.
+             *
+             * In het beheerscherm staat het nadrukkelijk wél: daar is
+             * het iets om over te beslissen. Zie CertificateController.
+             */
+            'geldigTot' => $certificaat->verlopen()
+                ? null
+                : $certificaat->geldigTot(),
+
+            'nummer' => $certificaat->credential_id,
+
+            // Null betekent: geen tekst in het venster. Is er ook geen
+            // nummer, dan is de tegel helemaal niet aanklikbaar; zie
+            // `details` hieronder.
+            'toelichting' => $certificaat->toelichting(),
+
+            'details' => $certificaat->heeftDetails(),
         ];
     }
 
     /**
-     * De kop boven de tijdlijn, in de taal van de bezoeker.
+     * Eén opleiding, in de taal van de bezoeker.
      *
-     * De terugval tussen de talen is hier al beslist, net als bij een
-     * ervaring: de titel valt terug op het Nederlands, de inleiding niet.
-     * Zie App\Models\ExperienceHeading.
-     *
-     * @return array<string, string|null>
+     * @return array<string, mixed>
      */
-    private function koptekst(): array
+    private function opleiding(Education $opleiding): array
     {
-        $kop = ExperienceHeading::huidige();
-
         return [
-            'titel' => $kop->titel(),
-            'inleiding' => $kop->inleiding(),
+            'id' => $opleiding->id,
+            'naam' => $opleiding->naam(),
+            'instelling' => $opleiding->institution,
+            'niveau' => $opleiding->niveau(),
+            'periode' => $opleiding->periode(),
         ];
     }
 

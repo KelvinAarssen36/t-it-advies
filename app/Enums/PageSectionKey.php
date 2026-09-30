@@ -32,6 +32,7 @@ enum PageSectionKey: string
     case Diensten = 'diensten';
     case Werkwijze = 'werkwijze';
     case Ervaring = 'ervaring';
+    case Certificaten = 'certificaten';
     case Contact = 'contact';
     case Linkedin = 'linkedin';
     case Footer = 'footer';
@@ -48,6 +49,7 @@ enum PageSectionKey: string
             self::Diensten => __('Diensten'),
             self::Werkwijze => __('Werkwijze'),
             self::Ervaring => __('Ervaring'),
+            self::Certificaten => __('Certificaten'),
             self::Contact => __('Contact'),
             self::Linkedin => __('LinkedIn'),
             self::Footer => __('Voettekst'),
@@ -62,6 +64,7 @@ enum PageSectionKey: string
             self::Diensten => __('De diensten die je aanbiedt, elk met een korte toelichting en de expertise die eronder valt.'),
             self::Werkwijze => __('De stappen van kennismaken tot overdragen.'),
             self::Ervaring => __('De tijdlijn met functies en organisaties, van nu naar vroeger.'),
+            self::Certificaten => __('De certificaten die je hebt gehaald, en eventueel je opleiding.'),
             self::Contact => __('Het contactformulier.'),
             self::Linkedin => __('De uitnodiging om je op LinkedIn te volgen, met een knop naar je profiel.'),
             self::Footer => __('De afsluiting onderaan elke pagina.'),
@@ -130,11 +133,17 @@ enum PageSectionKey: string
             self::Diensten => 1,
             self::Werkwijze => 2,
             self::Ervaring => 3,
-            self::Contact => 4,
+
+            // Direct ná de tijdlijn: die vertelt wat hij heeft gedaan,
+            // dit is het bewijs erbij. Uit elkaar trekken maakt van twee
+            // halve verhalen twee losse blokken.
+            self::Certificaten => 4,
+
+            self::Contact => 5,
 
             // Ná het contactformulier: "en volg me verder op LinkedIn"
             // is een afsluiter en geen uitnodiging om te mailen.
-            self::Linkedin => 5,
+            self::Linkedin => 6,
 
             self::Footer => 1000,
         };
@@ -154,6 +163,7 @@ enum PageSectionKey: string
             self::Hero => 'website.kop.index',
             self::Diensten => 'website.diensten.index',
             self::Ervaring => 'website.ervaring.index',
+            self::Certificaten => 'website.certificaten.index',
             default => null,
         };
     }

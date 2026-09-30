@@ -18,23 +18,56 @@ import { Label } from '@/components/ui/label';
 import { bevestigBewerken, bevestigVerwijderen } from '@/lib/bevestiging';
 import { t } from '@/lib/i18n';
 import website from '@/routes/website';
-import diensten from '@/routes/website/diensten';
-import type { DienstenKopRij } from '@/types/diensten';
+import type { KoptekstRij } from '@/types/secties';
 
 /**
- * De kop boven de diensten: het opschrift, de titel en de zin eronder.
+ * De kop boven een onderdeel: het opschrift, de titel en de zin eronder.
  *
- * Dezelfde opzet als KopDialoog voor de landingspagina -- één scherm,
- * eerst het Nederlands en dan het Engels, met de vertaalknop eronder.
- * Het zijn drie korte regels; een stap ervoor bouwen kost meer klikken
- * dan het scheelt.
+ * **Eén venster voor alle onderdelen.** Dit stond drie keer bijna
+ * identiek in evenveel bestanden -- de landingspagina, de diensten en de
+ * tijdlijn -- en met de certificaten erbij zou het vier keer worden. Het
+ * is de tegenhanger van wat er in de database gebeurde: daar werden drie
+ * koptabellen één `section_headings`. Zie docs/architecture/kopteksten.md.
  *
- * Zie docs/architecture/modules/diensten.md.
+ * **Waarom dit één venster is en niet drie stappen.** Op de website
+ * staan de drie teksten in hetzelfde blok. Ze los laten bewerken zou
+ * betekenen dat de eigenaar drie keer bevestigt voor één zichtbare
+ * verandering, en dat er een tussenstand kan bestaan waarin een deel
+ * live staat.
+ *
+ * Het Engels staat eronder en niet in een tweede stap zoals bij een
+ * ervaring: het zijn drie korte regels, en een stap ervoor bouwen kost
+ * meer klikken dan het scheelt.
+ *
+ * De aanroeper zegt vier dingen: waar het heen moet, hoe het venster
+ * heet, wat er in de bevestiging komt te staan, en of het opschrift
+ * verplicht is. Dat laatste verschilt echt per onderdeel -- de tijdlijn
+ * heeft nooit een opschrift gehad.
  */
-const props = defineProps<{
-    kop: DienstenKopRij;
-    kanVertalen: boolean;
-}>();
+const props = withDefaults(
+    defineProps<{
+        /** De rij zoals de server hem meestuurt. */
+        kop: KoptekstRij;
+        /** Waar de PUT heen gaat, bijvoorbeeld `diensten.kop().url`. */
+        actie: string;
+        /** De titel van dit venster. */
+        titel: string;
+        /** De zin eronder, die zegt waar deze kop op de site staat. */
+        uitleg: string;
+        /** Wat er in de bevestiging staat: ":naam aanpassen?" */
+        bevestiging: string;
+        /**
+         * Voor de `id`-attributen van de velden. Twee vensters op
+         * dezelfde pagina zouden anders dezelfde `id` krijgen, en dan
+         * wijst het label van het ene naar het veld van het andere.
+         */
+        sleutel: string;
+        kanVertalen: boolean;
+        /** Heeft dit onderdeel een opschrift, en is dat verplicht? */
+        opschrift?: boolean;
+    }>(),
+    { opschrift: true },
+);
 
 const open = defineModel<boolean>('open', { required: true });
 
@@ -81,7 +114,7 @@ const openOpnieuw = (): void => {
 
 const vulIn = (): void => {
     tekst.value = {
-        eyebrow_nl: props.kop.eyebrow_nl,
+        eyebrow_nl: props.kop.eyebrow_nl ?? '',
         eyebrow_en: props.kop.eyebrow_en ?? '',
         title_nl: props.kop.title_nl,
         title_en: props.kop.title_en ?? '',
@@ -217,9 +250,7 @@ const opslaan = async (): Promise<void> => {
     open.value = false;
     await adem();
 
-    const akkoord = await bevestigBewerken({
-        titel: t('De kop boven je diensten aanpassen?'),
-    });
+    const akkoord = await bevestigBewerken({ titel: props.bevestiging });
 
     if (!akkoord) {
         await adem();
@@ -236,7 +267,7 @@ const opslaan = async (): Promise<void> => {
         tekst.value.intro_en === engelsBijOpenen.intro_en;
 
     router.put(
-        diensten.kop().url,
+        props.actie,
         {
             ...tekst.value,
             automatisch_vertaald: automatisch.value && engelsOngemoeid,
@@ -264,24 +295,18 @@ const adem = (): Promise<void> =>
             class="max-h-[85vh] brand-scrollbar overflow-y-auto sm:max-w-2xl"
         >
             <DialogHeader>
-                <DialogTitle>{{ $t('De kop boven je diensten') }}</DialogTitle>
-                <DialogDescription>
-                    {{
-                        $t(
-                            'Het opschrift, de titel en de zin eronder. Op je website staat dit boven de kaarten.',
-                        )
-                    }}
-                </DialogDescription>
+                <DialogTitle>{{ props.titel }}</DialogTitle>
+                <DialogDescription>{{ props.uitleg }}</DialogDescription>
             </DialogHeader>
 
             <div class="grid gap-4">
-                <div class="grid gap-1.5">
-                    <Label for="diensten-eyebrow-nl" verplicht>
+                <div v-if="props.opschrift" class="grid gap-1.5">
+                    <Label :for="`${props.sleutel}-eyebrow-nl`" verplicht>
                         <LocaleFlag locale="nl" size="sm" />
                         {{ $t('Opschrift') }}
                     </Label>
                     <Input
-                        id="diensten-eyebrow-nl"
+                        :id="`${props.sleutel}-eyebrow-nl`"
                         v-model="tekst.eyebrow_nl"
                         maxlength="60"
                     />
@@ -289,12 +314,12 @@ const adem = (): Promise<void> =>
                 </div>
 
                 <div class="grid gap-1.5">
-                    <Label for="diensten-title-nl" verplicht>
+                    <Label :for="`${props.sleutel}-title-nl`" verplicht>
                         <LocaleFlag locale="nl" size="sm" />
                         {{ $t('Titel') }}
                     </Label>
                     <Input
-                        id="diensten-title-nl"
+                        :id="`${props.sleutel}-title-nl`"
                         v-model="tekst.title_nl"
                         maxlength="120"
                     />
@@ -302,12 +327,12 @@ const adem = (): Promise<void> =>
                 </div>
 
                 <div class="grid gap-1.5">
-                    <Label for="diensten-intro-nl">
+                    <Label :for="`${props.sleutel}-intro-nl`">
                         <LocaleFlag locale="nl" size="sm" />
                         {{ $t('Zin eronder') }}
                     </Label>
                     <Input
-                        id="diensten-intro-nl"
+                        :id="`${props.sleutel}-intro-nl`"
                         v-model="tekst.intro_nl"
                         maxlength="300"
                     />
@@ -321,26 +346,34 @@ const adem = (): Promise<void> =>
                     <InputError :message="fouten.intro_nl" />
                 </div>
 
-                <div class="grid gap-1.5 border-t border-border pt-4">
-                    <Label for="diensten-eyebrow-en">
+                <div
+                    v-if="props.opschrift"
+                    class="grid gap-1.5 border-t border-border pt-4"
+                >
+                    <Label :for="`${props.sleutel}-eyebrow-en`">
                         <LocaleFlag locale="en" size="sm" />
                         {{ $t('Opschrift') }}
                     </Label>
                     <Input
-                        id="diensten-eyebrow-en"
+                        :id="`${props.sleutel}-eyebrow-en`"
                         v-model="tekst.eyebrow_en"
                         maxlength="60"
                     />
                     <InputError :message="fouten.eyebrow_en" />
                 </div>
 
-                <div class="grid gap-1.5">
-                    <Label for="diensten-title-en">
+                <div
+                    class="grid gap-1.5"
+                    :class="
+                        props.opschrift ? '' : 'border-t border-border pt-4'
+                    "
+                >
+                    <Label :for="`${props.sleutel}-title-en`">
                         <LocaleFlag locale="en" size="sm" />
                         {{ $t('Titel') }}
                     </Label>
                     <Input
-                        id="diensten-title-en"
+                        :id="`${props.sleutel}-title-en`"
                         v-model="tekst.title_en"
                         maxlength="120"
                     />
@@ -348,12 +381,12 @@ const adem = (): Promise<void> =>
                 </div>
 
                 <div class="grid gap-1.5">
-                    <Label for="diensten-intro-en">
+                    <Label :for="`${props.sleutel}-intro-en`">
                         <LocaleFlag locale="en" size="sm" />
                         {{ $t('Zin eronder') }}
                     </Label>
                     <Input
-                        id="diensten-intro-en"
+                        :id="`${props.sleutel}-intro-en`"
                         v-model="tekst.intro_en"
                         maxlength="300"
                     />

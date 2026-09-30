@@ -49,7 +49,7 @@ const props = defineProps<{
      * Ze stonden hier hardgecodeerd, en daarmee was dit het enige stuk
      * van de voorpagina dat de klant níet kon aanpassen -- terwijl het
      * het eerste is wat iedereen leest. De keuze tussen Nederlands en
-     * Engels is op de server al gemaakt; zie App\Models\HeroHeading.
+     * Engels is op de server al gemaakt; zie App\Models\SectionHeading.
      */
     heading: SiteKop;
 }>();

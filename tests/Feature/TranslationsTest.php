@@ -353,7 +353,13 @@ class TranslationsTest extends TestCase
 
         // Weer eerst bewijzen dat er iets gevonden wordt; zie hierboven.
         $this->assertGreaterThan(50, count($gevondenSleutels));
-        $this->assertContains('Kop boven de tijdlijn', $gevondenSleutels, 'De namen van de modellen worden niet meer gevonden.');
+        /*
+         * Hier stond 'Kop boven de tijdlijn'. Die naam verdween toen de
+         * drie koptabellen er één werden: het logboek zegt nu "Koptekst"
+         * met het onderdeel als label. Een naam uit een model die er
+         * altijd zal zijn is een betere kanarie.
+         */
+        $this->assertContains('Certificaat', $gevondenSleutels, 'De namen van de modellen worden niet meer gevonden.');
 
         $this->assertSame(
             [],

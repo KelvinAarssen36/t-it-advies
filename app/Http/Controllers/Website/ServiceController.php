@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers\Website;
 
+use App\Enums\PageSectionKey;
 use App\Enums\ServiceIcon;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Website\Concerns\BewaartKoptekst;
 use App\Http\Requests\Website\ServiceRequest;
 use App\Models\Service;
-use App\Models\ServiceHeading;
 use App\Models\ServicePoint;
 use App\Support\Toast;
 use App\Support\Translation\Vertaler;
@@ -44,6 +45,8 @@ use Inertia\Response;
  */
 class ServiceController extends Controller
 {
+    use BewaartKoptekst;
+
     public function index(Vertaler $vertaler): Response
     {
         $diensten = Service::query()
@@ -62,7 +65,7 @@ class ServiceController extends Controller
              */
             'leeg' => $diensten->isEmpty(),
 
-            'kop' => $this->koptekst(),
+            'kop' => $this->koptekst()->voorHetScherm(),
 
             'opties' => [
                 'icon' => ServiceIcon::opties(),
@@ -243,47 +246,20 @@ class ServiceController extends Controller
      */
     public function kop(Request $request): RedirectResponse
     {
-        $gegevens = $request->validate([
-            'eyebrow_nl' => ['required', 'string', 'max:60'],
-            'eyebrow_en' => ['nullable', 'string', 'max:60'],
-            'title_nl' => ['required', 'string', 'max:120'],
-            'title_en' => ['nullable', 'string', 'max:120'],
-            'intro_nl' => ['nullable', 'string', 'max:300'],
-            'intro_en' => ['nullable', 'string', 'max:300'],
-            'automatisch_vertaald' => ['boolean'],
-        ]);
-
-        $kop = ServiceHeading::huidige();
-
-        $kop->fill([
-            'eyebrow_nl' => $gegevens['eyebrow_nl'],
-            'eyebrow_en' => $this->leegIsNull($gegevens['eyebrow_en'] ?? null),
-            'title_nl' => $gegevens['title_nl'],
-            'title_en' => $this->leegIsNull($gegevens['title_en'] ?? null),
-            'intro_nl' => $this->leegIsNull($gegevens['intro_nl'] ?? null),
-            'intro_en' => $this->leegIsNull($gegevens['intro_en'] ?? null),
-        ]);
-
-        $kop->machine_translated_at = ($gegevens['automatisch_vertaald'] ?? false)
-            ? ($kop->machine_translated_at ?? Carbon::now())
-            : null;
-
-        /*
-         * `isDirty()` op een rij die nog niet bestaat is altijd waar, en
-         * dat klopt ook: hem voor het eerst wegschrijven ís een
-         * wijziging.
-         */
-        if ($kop->exists && ! $kop->isDirty()) {
+        if (! $this->verwerkKoptekst($request)) {
             Toast::melding(__('Er was niets veranderd.'));
 
             return back();
         }
 
-        $kop->save();
-
         Toast::bijgewerkt(__('De kop boven je diensten is aangepast.'));
 
         return back();
+    }
+
+    protected function sectie(): PageSectionKey
+    {
+        return PageSectionKey::Diensten;
     }
 
     /**
@@ -394,30 +370,5 @@ class ServiceController extends Controller
         }
 
         return true;
-    }
-
-    /**
-     * De kop zoals het beheerscherm hem nodig heeft.
-     *
-     * @return array<string, mixed>
-     */
-    private function koptekst(): array
-    {
-        $kop = ServiceHeading::huidige();
-
-        return [
-            'eyebrow_nl' => $kop->eyebrow_nl,
-            'eyebrow_en' => $kop->eyebrow_en,
-            'title_nl' => $kop->title_nl,
-            'title_en' => $kop->title_en,
-            'intro_nl' => $kop->intro_nl,
-            'intro_en' => $kop->intro_en,
-            'automatisch_vertaald' => $kop->machine_translated_at !== null,
-        ];
-    }
-
-    private function leegIsNull(?string $waarde): ?string
-    {
-        return blank($waarde) ? null : trim($waarde);
     }
 }

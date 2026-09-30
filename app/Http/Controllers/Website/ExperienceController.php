@@ -6,18 +6,18 @@ use App\Enums\EmploymentType;
 use App\Enums\ExperienceIcon;
 use App\Enums\ExperienceStatKey;
 use App\Enums\ExperienceStatModus;
+use App\Enums\PageSectionKey;
 use App\Enums\WorkplaceType;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Website\Concerns\BewaartKoptekst;
 use App\Http\Requests\Website\ExperienceRequest;
 use App\Models\Experience;
-use App\Models\ExperienceHeading;
 use App\Models\ExperienceStat;
 use App\Support\Datum;
 use App\Support\Loopbaan;
 use App\Support\Media\Logo;
 use App\Support\Toast;
 use App\Support\Translation\Vertaler;
-use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -54,6 +54,8 @@ use Inertia\Response;
  */
 class ExperienceController extends Controller
 {
+    use BewaartKoptekst;
+
     /** Hoeveel regels er op één pagina van het overzicht passen. */
     private const PER_PAGINA = 15;
 
@@ -98,7 +100,7 @@ class ExperienceController extends Controller
              * De tekst boven de tijdlijn. Hoort bij dezelfde knop als de
              * cijfers, want op de website is het hetzelfde blok.
              */
-            'kop' => $this->koptekst(),
+            'kop' => $this->koptekst()->voorHetScherm(),
 
             /*
              * De keuzelijsten voor een cijfer: welk soort het is en wat
@@ -119,25 +121,21 @@ class ExperienceController extends Controller
     }
 
     /**
-     * De kop zoals het beheerscherm hem nodig heeft.
+     * Bij welk onderdeel de kop hoort die dit scherm bewerkt.
      *
-     * Allebei de talen los, want dit is een bewerkvenster en geen
-     * weergave: de klant vult ze allebei zelf in en moet dus zien wat er
-     * in allebei staat.
-     *
-     * @return array<string, mixed>
+     * Het opschrift is hier niet verplicht, en het scherm laat het
+     * veld ook niet zien: de tijdlijn heeft nooit een opschrift gehad.
+     * De kolom bestaat wel, dus wil de klant er later een, dan is dat
+     * één veld in het bewerkvenster. Zie docs/openstaand.md.
      */
-    private function koptekst(): array
+    protected function sectie(): PageSectionKey
     {
-        $kop = ExperienceHeading::huidige();
+        return PageSectionKey::Ervaring;
+    }
 
-        return [
-            'title_nl' => $kop->title_nl,
-            'title_en' => $kop->title_en,
-            'intro_nl' => $kop->intro_nl,
-            'intro_en' => $kop->intro_en,
-            'automatisch_vertaald' => $kop->machine_translated_at !== null,
-        ];
+    protected function opschriftVerplicht(): bool
+    {
+        return false;
     }
 
     /**
@@ -158,25 +156,12 @@ class ExperienceController extends Controller
     {
         $gegevens = $request->validate([
             /*
-             * De titel is verplicht en de inleiding niet. Zonder titel
-             * staat er een blok zonder kop op de website; zonder
-             * inleiding staat er gewoon geen zin onder.
-             *
-             * De lengtes zijn die van de kolommen, en ze zijn krap met
-             * reden: dit is een kop en geen alinea. Een titel van
-             * tweehonderd tekens breekt het ontwerp op een telefoon.
+             * De regels voor de tekst komen uit BewaartKoptekst, want ze
+             * zijn voor elk onderdeel hetzelfde. Het opschrift zit er
+             * als optioneel veld bij en wordt door dit scherm niet
+             * meegestuurd; zie sectie() hierboven.
              */
-            'title_nl' => ['required', 'string', 'max:120'],
-            'title_en' => ['nullable', 'string', 'max:120'],
-            'intro_nl' => ['nullable', 'string', 'max:300'],
-            'intro_en' => ['nullable', 'string', 'max:300'],
-
-            /*
-             * Of het Engels van de vertaaldienst kwam. De frontend zet
-             * dit; hij weet als enige of de klant de Engelse tekst daarna
-             * nog met de hand heeft aangeraakt.
-             */
-            'automatisch_vertaald' => ['boolean'],
+            ...$this->koptekstRegels(),
 
             /*
              * De cijfers als lijst en niet meer als vaste drie. De klant
@@ -203,7 +188,7 @@ class ExperienceController extends Controller
 
         $veranderd = $this->bewaarCijfers($gegevens['cijfers']);
 
-        if ($this->bewaarKoptekst($request, $gegevens)) {
+        if ($this->bewaarKoptekst($gegevens)) {
             $veranderd = true;
         }
 
@@ -307,33 +292,6 @@ class ExperienceController extends Controller
             $veranderd = true;
             $rij->delete();
         }
-
-        return $veranderd;
-    }
-
-    /**
-     * De titel en de zin eronder bewaren.
-     *
-     * @param  array<string, mixed>  $gegevens
-     * @return bool of er iets veranderd is
-     */
-    private function bewaarKoptekst(Request $request, array $gegevens): bool
-    {
-        $tekst = ExperienceHeading::query()->firstOrNew([]);
-
-        $tekst->fill([
-            'title_nl' => $gegevens['title_nl'],
-            'title_en' => blank($gegevens['title_en'] ?? null) ? null : $gegevens['title_en'],
-            'intro_nl' => blank($gegevens['intro_nl'] ?? null) ? null : $gegevens['intro_nl'],
-            'intro_en' => blank($gegevens['intro_en'] ?? null) ? null : $gegevens['intro_en'],
-            'machine_translated_at' => $request->boolean('automatisch_vertaald')
-                ? ($tekst->machine_translated_at ?? now())
-                : null,
-        ]);
-
-        $veranderd = $tekst->isDirty();
-
-        $tekst->save();
 
         return $veranderd;
     }
@@ -616,8 +574,8 @@ class ExperienceController extends Controller
             'icon' => ExperienceIcon::opties(),
             'employment' => EmploymentType::opties(),
             'workplace' => WorkplaceType::opties(),
-            'maanden' => $this->maanden(),
-            'jaren' => $this->jaren(),
+            'maanden' => Datum::maanden(),
+            'jaren' => Datum::jaren(),
         ];
     }
 
@@ -672,46 +630,6 @@ class ExperienceController extends Controller
             'vorige' => $buur($plek - 1),
             'volgende' => $buur($plek + 1),
         ];
-    }
-
-    /**
-     * De twaalf maanden, in de taal van het portaal.
-     *
-     * Die namen komen van de server en niet uit `Intl` in de browser, om
-     * dezelfde reden als alle andere datums: anders hangt de taal van de
-     * lijst af van het besturingssysteem van de bezoeker in plaats van van
-     * de taal die hij in het portaal heeft gekozen. Zie
-     * docs/architecture/vertalingen.md.
-     *
-     * @return array<int, array{value: string, label: string}>
-     */
-    private function maanden(): array
-    {
-        return array_map(
-            fn (int $maand) => [
-                'value' => str_pad((string) $maand, 2, '0', STR_PAD_LEFT),
-                'label' => (string) CarbonImmutable::create(2000, $maand, 1)?->isoFormat('MMMM'),
-            ],
-            range(1, 12),
-        );
-    }
-
-    /**
-     * De jaren waaruit je kunt kiezen: van dit jaar tot zestig jaar terug.
-     *
-     * Aflopend, want je voert meestal eerst je huidige functie in. Een
-     * lijst die bij 1965 begint laat je elke keer helemaal doorscrollen.
-     *
-     * @return array<int, array{value: string, label: string}>
-     */
-    private function jaren(): array
-    {
-        $nu = (int) now()->format('Y');
-
-        return array_map(
-            fn (int $jaar) => ['value' => (string) $jaar, 'label' => (string) $jaar],
-            range($nu, $nu - 60),
-        );
     }
 
     /**

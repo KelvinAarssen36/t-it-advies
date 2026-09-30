@@ -8,12 +8,12 @@ Klik je op een kaart, dan opent er een venster met het hele verhaal.
 > `DienstenSection.vue`, met een `01/02/03` erboven. Dat component zei in
 > zijn eigen docblock al dat dit tijdelijk was.
 
-| Onderdeel              | Waar de klant het beheert              | Waar het vandaan komt       |
-| ---------------------- | -------------------------------------- | --------------------------- |
-| De **diensten** zelf   | Website → Diensten                     | `services`                  |
-| De **expertisepunten** | In het venster van een dienst          | `service_points`            |
-| De **kop** erboven     | Knop "Kop erboven" op datzelfde scherm | `service_headings`, één rij |
-| De **volgorde**        | Knop "Volgorde", slepen in een venster | `services.position`         |
+| Onderdeel              | Waar de klant het beheert              | Waar het vandaan komt              |
+| ---------------------- | -------------------------------------- | ---------------------------------- |
+| De **diensten** zelf   | Website → Diensten                     | `services`                         |
+| De **expertisepunten** | In het venster van een dienst          | `service_points`                   |
+| De **kop** erboven     | Knop "Kop erboven" op datzelfde scherm | `section_headings`, rij `diensten` |
+| De **volgorde**        | Knop "Volgorde", slepen in een venster | `services.position`                |
 
 Dit is de derde module, en hij combineert de twee die er al waren. Van
 [Ervaring](ervaring.md) komt de lijst met een venster per item; van
@@ -238,16 +238,16 @@ bij: `summary_nl` en `punt_nl`. De titel en het verhaal gebruiken de
 bestaande `title_nl` en `description_nl`. Zie
 [automatisch vertalen](../automatisch-vertalen.md).
 
-## Een derde koptabel, en dat is bekend
+## De kop staat in de gedeelde tabel
 
-`service_headings` is de derde bijna identieke tabel, na `hero_headings`
-en `experience_headings`. Ze samenvoegen tot één `section_headings` met
-een regel per onderdeel is de betere oplossing: dan heeft elk toekomstig
-onderdeel gratis een beheerbare kop.
+Hier stond `service_headings`, de derde bijna identieke koptabel. Bij de
+[certificaten](certificaten.md) zou het de vierde worden, en dat was het
+afgesproken moment om ze samen te voegen: er is nu één
+`section_headings` met een regel per onderdeel.
 
-Het is nu niet gedaan omdat het twee schermen raakt die werken, en de
-winst pas komt bij de vierde module. **Dát is het afgesproken moment**; het
-staat als open punt in [wat er nog open staat](../../openstaand.md).
+Voor dit scherm verandert er niets aan de buitenkant -- hetzelfde adres,
+dezelfde drie teksten. Wat eronder anders werkt staat in
+[kopteksten](../kopteksten.md).
 
 ## Wat waar staat
 
@@ -255,7 +255,7 @@ staat als open punt in [wat er nog open staat](../../openstaand.md).
 | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
 | [`Service`](../../../app/Models/Service.php)                                                | De dienst, de terugval tussen de talen, het logboek.              |
 | [`ServicePoint`](../../../app/Models/ServicePoint.php)                                      | Eén expertisepunt.                                                |
-| [`ServiceHeading`](../../../app/Models/ServiceHeading.php)                                  | De kop boven het blok.                                            |
+| [`SectionHeading`](../../../app/Models/SectionHeading.php)                                  | De kop boven het blok, gedeeld met de andere onderdelen.          |
 | [`ServiceIcon`](../../../app/Enums/ServiceIcon.php)                                         | De vaste set pictogrammen.                                        |
 | [`ServiceController`](../../../app/Http/Controllers/Website/ServiceController.php)          | Het scherm, de opslag, de volgorde en de kop.                     |
 | [`ServiceRequest`](../../../app/Http/Requests/Website/ServiceRequest.php)                   | Wat er in een dienst mag staan.                                   |

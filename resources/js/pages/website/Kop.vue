@@ -4,10 +4,13 @@ import { Globe, Languages, Pencil } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import LocaleFlag from '@/components/LocaleFlag.vue';
 import VerlaatPortaal from '@/components/VerlaatPortaal.vue';
-import KopDialoog from '@/components/website/KopDialoog.vue';
+import KoptekstDialoog from '@/components/website/KoptekstDialoog.vue';
 import { Button } from '@/components/ui/button';
 import site from '@/routes/site';
 import website from '@/routes/website';
+// `kopRoutes` en niet `kop`: dit scherm heeft een prop die zo heet, en
+// in het sjabloon zouden die twee elkaar in de weg zitten.
+import kopRoutes from '@/routes/website/kop';
 import type { SiteKopRij } from '@/types/ervaring';
 
 /**
@@ -158,7 +161,7 @@ const engelsCompleet = computed(() => {
                 <!--
                     De zin eronder valt níet terug: half Nederlands op een
                     Engelse pagina is slordiger dan geen zin. Zie
-                    App\Models\HeroHeading.
+                    App\Models\SectionHeading.
                 -->
                 <p v-if="props.kop.intro_en" class="brand-kopvoorbeeld-zin">
                     {{ props.kop.intro_en }}
@@ -198,9 +201,18 @@ const engelsCompleet = computed(() => {
         </div>
     </div>
 
-    <KopDialoog
+    <KoptekstDialoog
         v-model:open="venster"
         :kop="props.kop"
+        :actie="kopRoutes.update().url"
+        :titel="$t('De kop van je landingspagina')"
+        :uitleg="
+            $t(
+                'Het opschrift, de titel en de zin eronder. Dit is het eerste dat een bezoeker leest.',
+            )
+        "
+        :bevestiging="$t('De kop van je landingspagina aanpassen?')"
+        sleutel="hero"
         :kan-vertalen="props.kanVertalen"
     />
 </template>

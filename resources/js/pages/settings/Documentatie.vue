@@ -4,6 +4,7 @@ import {
     Activity,
     ArrowUpRight,
     Asterisk,
+    Award,
     CheckCheck,
     Eye,
     Globe,
@@ -42,6 +43,7 @@ import adminUsers from '@/routes/admin/users';
 import { show } from '@/routes/documentation';
 import site from '@/routes/site';
 import website from '@/routes/website';
+import certificatenRoutes from '@/routes/website/certificaten';
 import dienstenRoutes from '@/routes/website/diensten';
 import kop from '@/routes/website/kop';
 import ervaring from '@/routes/website/ervaring';
@@ -684,6 +686,53 @@ defineOptions({
                                 <Link :href="ervaring.index()">
                                     <Milestone class="size-4" />
                                     {{ $t('Open Ervaring') }}
+                                </Link>
+                            </Button>
+                        </template>
+                    </UitlegKaart>
+
+                    <UitlegKaart :titel="$t('Certificaten')" :icoon="Award">
+                        <p>
+                            {{
+                                $t(
+                                    'Wat je hebt gehaald en bij wie. Op je website staan ze als tegels met het logo van de uitgever groot bovenaan -- Microsoft, Cisco, wie het ook was. Dat logo is waar een bezoeker naar kijkt; de naam eronder leest hij daarna pas.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Je vult de naam in, de uitgever en de maand waarin je het haalde. Het certificaatnummer en een korte toelichting mogen, maar hoeven niet. Zet je er een van de twee neer, dan kan een bezoeker op de tegel klikken en opent er een venster met die gegevens.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Heeft een certificaat een geldigheidsdatum, vul die dan in. Is die voorbij, dan zie je dat hier in de lijst staan, maar je bezoekers merken er niets van: op je website blijft het gewoon staan en er staat nergens dat het verlopen is. Behaald is behaald. Wij halen er nooit iets vanaf zonder dat jij het zegt -- wil je het wél weg, dan zet je het uit of verwijder je het.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Er is geen maximum. Op je website staan er acht tegelijk, en op een telefoon vier -- daarna bladert je bezoeker met de knopjes eronder verder. Met de knop Volgorde bepaal je zelf welke vooraan staan.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Onderaan datzelfde scherm staat een tweede, kleiner blok voor je opleiding. Dat is helemaal optioneel: laat je het leeg, dan is er op je website niets van te zien. Vul je er iets in, dan komt er onder je certificaten een kort lijstje te staan.',
+                                )
+                            }}
+                        </p>
+
+                        <template #voorbeeld>
+                            <Button variant="outline" size="sm" as-child>
+                                <Link :href="certificatenRoutes.index()">
+                                    <Award class="size-4" />
+                                    {{ $t('Open Certificaten') }}
                                 </Link>
                             </Button>
                         </template>

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Website\CertificateController;
 use App\Http\Controllers\Website\ExperienceController;
 use App\Http\Controllers\Website\HeroController;
 use App\Http\Controllers\Website\LayoutController;
@@ -86,6 +87,36 @@ Route::middleware(['auth', 'verified', 'two-factor.required', 'can:manage portal
             Route::put('{service}', [ServiceController::class, 'update'])->name('update');
             Route::patch('{service}/online', [ServiceController::class, 'online'])->name('online');
             Route::delete('{service}', [ServiceController::class, 'destroy'])->name('destroy');
+        });
+
+        /*
+         * De certificaten, met de opleidingen eronder. Twee lijsten op
+         * één scherm, want op de website zijn ze samen één blok.
+         *
+         * `kop`, `volgorde` en `opleidingen` staan vóór `{certificate}`,
+         * en dat is geen voorzorg maar noodzaak: het zijn allemaal een
+         * PUT of POST op hetzelfde patroon, en de eerste die past wint.
+         * Staat de volgorde ooit andersom, dan komt een verzoek voor de
+         * kop bij `update()` terecht en faalt het op een ontbrekende
+         * naam.
+         */
+        Route::prefix('certificaten')->name('certificaten.')->group(function () {
+            Route::get('/', [CertificateController::class, 'index'])->name('index');
+            Route::post('/', [CertificateController::class, 'store'])->name('store');
+
+            Route::put('kop', [CertificateController::class, 'kop'])->name('kop');
+            Route::put('volgorde', [CertificateController::class, 'volgorde'])->name('volgorde');
+
+            Route::prefix('opleidingen')->name('opleidingen.')->group(function () {
+                Route::post('/', [CertificateController::class, 'opleidingStore'])->name('store');
+                Route::put('{education}', [CertificateController::class, 'opleidingUpdate'])->name('update');
+                Route::patch('{education}/online', [CertificateController::class, 'opleidingOnline'])->name('online');
+                Route::delete('{education}', [CertificateController::class, 'opleidingDestroy'])->name('destroy');
+            });
+
+            Route::put('{certificate}', [CertificateController::class, 'update'])->name('update');
+            Route::patch('{certificate}/online', [CertificateController::class, 'online'])->name('online');
+            Route::delete('{certificate}', [CertificateController::class, 'destroy'])->name('destroy');
         });
 
         /*

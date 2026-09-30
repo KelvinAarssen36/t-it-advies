@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import type { Component } from 'vue';
+import CertificatenSection from '@/components/site/sections/CertificatenSection.vue';
 import ContactSection from '@/components/site/sections/ContactSection.vue';
 import DienstenSection from '@/components/site/sections/DienstenSection.vue';
 import ErvaringSection from '@/components/site/sections/ErvaringSection.vue';
@@ -46,6 +47,7 @@ const componenten: Record<SectieSleutel, Component> = {
     diensten: DienstenSection,
     werkwijze: WerkwijzeSection,
     ervaring: ErvaringSection,
+    certificaten: CertificatenSection,
     contact: ContactSection,
     linkedin: LinkedinSection,
 };

@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Enums\PageSectionKey;
 use App\Enums\SecurityEventType;
 use App\Listeners\RecordSecurityEvents;
+use App\Models\Certificate;
+use App\Models\Education;
 use App\Models\Experience;
 use App\Models\Service;
 use App\Models\User;
@@ -110,6 +112,17 @@ class AppServiceProvider extends ServiceProvider
         $this->app->make(SectionContent::class)->telt(
             PageSectionKey::Diensten,
             fn () => Service::query()->online()->count(),
+        );
+
+        /*
+         * De certificaten tellen allebei de lijsten mee, want ze staan
+         * in hetzelfde blok. Een pagina met alleen een opleiding erin is
+         * niet leeg -- dan hoort dat blok er gewoon te staan.
+         */
+        $this->app->make(SectionContent::class)->telt(
+            PageSectionKey::Certificaten,
+            fn () => Certificate::query()->online()->count()
+                + Education::query()->online()->count(),
         );
     }
 

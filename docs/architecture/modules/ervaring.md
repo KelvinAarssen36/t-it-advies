@@ -15,7 +15,7 @@ module**, en dat is precies één scherm in het portaal:
 
 | Onderdeel                                      | Waar de klant het beheert              | Waar het vandaan komt                  |
 | ---------------------------------------------- | -------------------------------------- | -------------------------------------- |
-| De **kop** erboven: de titel en de zin eronder | Knop "Kop en cijfers" op het overzicht | `experience_headings`, één rij         |
+| De **kop** erboven: de titel en de zin eronder | Knop "Kop en cijfers" op het overzicht | `section_headings`, rij `ervaring`     |
 | De **cijfers** erboven: hoogstens vier         | Diezelfde knop                         | `experience_stats`, één rij per cijfer |
 | De **ervaringen** zelf                         | De tabel op het overzicht              | `experiences`                          |
 
@@ -37,18 +37,21 @@ onderdeel zelf: hij staat ook in het menu van de site en op het
 indelingsscherm. Zou de klant hem hier kunnen wijzigen, dan heet hetzelfde
 onderdeel op drie plekken anders.
 
-### Voor de volgende module
+### De kop is inmiddels verhuisd
 
-`experience_headings` is bewust een tabel met **één rij** en zonder
-`key`-kolom. Er is één tijdlijn, dus één kop; een sleutelkolom zou
-suggereren dat er meer bij kunnen komen, en een tabel die liegt over wat
-hij bevat is erger dan een tabel met één rij.
+Hier stond `experience_headings`, een tabel met één rij en zonder
+`key`-kolom -- met de aantekening dat het bij de volgende module met een
+beheerbare kop tijd zou worden om erover na te denken.
 
-Krijgt de volgende module óók een beheerbare kop -- en dat is
-waarschijnlijk -- dan is dát het moment om te bedenken of het naar
-`page_sections` moet, als tekstkolommen bij het onderdeel waar de kop bij
-hoort. Nu zou dat een tabel aanpassen die alle onderdelen deelt, voor één
-module die hem als enige gebruikt.
+Dat moment kwam bij de [certificaten](certificaten.md), de vierde. De
+drie koptabellen zijn samengevoegd tot één `section_headings` met een
+regel per onderdeel; zie [kopteksten](../kopteksten.md). Voor dit scherm
+verandert er niets aan de buitenkant.
+
+Eén ding is bewust blijven liggen: **de tijdlijn heeft nog steeds geen
+opschrift.** De kolom bestaat nu wel, maar het bewerkvenster laat hem
+niet zien. Dit samenvoegen was een verhuizing en geen herontwerp van de
+voorpagina.
 
 ## De velden, en waarom die
 
@@ -666,7 +669,7 @@ de tijdlijn. Dat opent het venster op zijn lijstweergave.
 
 ### De kop erboven
 
-De titel en de zin eronder komen uit `experience_headings` en niet uit het
+De titel en de zin eronder komen uit `section_headings` en niet uit het
 Vue-component. De terugval tussen de talen werkt hier net als bij een
 ervaring, en om dezelfde reden:
 

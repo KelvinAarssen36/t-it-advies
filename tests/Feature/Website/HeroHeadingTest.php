@@ -3,12 +3,14 @@
 namespace Tests\Feature\Website;
 
 use App\Enums\ActivityAction;
+use App\Enums\PageSectionKey;
 use App\Models\ActivityEntry;
-use App\Models\HeroHeading;
+use App\Models\SectionHeading;
 use App\Models\User;
-use Database\Seeders\HeroHeadingSeeder;
 use Database\Seeders\PageSectionSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Database\Seeders\SectionHeadingSeeder;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\TestResponse;
 use Inertia\Testing\AssertableInertia;
@@ -38,7 +40,21 @@ class HeroHeadingTest extends TestCase
 
         $this->seed(RolesAndPermissionsSeeder::class);
         $this->seed(PageSectionSeeder::class);
-        $this->seed(HeroHeadingSeeder::class);
+        $this->seed(SectionHeadingSeeder::class);
+    }
+
+    /**
+     * Alleen de rij van dít onderdeel.
+     *
+     * De koppen staan sinds het samenvoegen in één tabel, dus een kale
+     * `SectionHeading::query()` raakt hier ook die van de diensten en de
+     * tijdlijn. Zie docs/architecture/kopteksten.md.
+     *
+     * @return Builder<SectionHeading>
+     */
+    private function kopRij(): Builder
+    {
+        return SectionHeading::query()->where('section', PageSectionKey::Hero);
     }
 
     private function beheerder(): User
@@ -173,7 +189,7 @@ class HeroHeadingTest extends TestCase
          */
         $this->bewaar(['intro_nl' => '', 'intro_en' => '']);
 
-        $kop = HeroHeading::query()->firstOrFail();
+        $kop = $this->kopRij()->firstOrFail();
 
         $this->assertNull($kop->intro_nl);
         $this->assertNull($kop->intro_en);
@@ -188,7 +204,7 @@ class HeroHeadingTest extends TestCase
         // bestaande tekst met rust te laten.
         $this->assertSame(
             'IT-advies en realisatie',
-            HeroHeading::query()->value('eyebrow_nl'),
+            $this->kopRij()->value('eyebrow_nl'),
         );
     }
 
@@ -215,26 +231,26 @@ class HeroHeadingTest extends TestCase
          */
         $this->bewaar();
 
-        $gewijzigd = HeroHeading::query()->value('updated_at');
+        $gewijzigd = $this->kopRij()->value('updated_at');
 
         $this->travel(1)->minute();
         $this->bewaar()->assertSessionHasNoErrors();
 
-        $this->assertEquals($gewijzigd, HeroHeading::query()->value('updated_at'));
+        $this->assertEquals($gewijzigd, $this->kopRij()->value('updated_at'));
     }
 
     public function test_the_machine_mark_is_set_and_cleared(): void
     {
         $this->bewaar(['automatisch_vertaald' => true]);
 
-        $this->assertNotNull(HeroHeading::query()->value('machine_translated_at'));
+        $this->assertNotNull($this->kopRij()->value('machine_translated_at'));
 
         $this->bewaar([
             'title_en' => 'Iets dat ik zelf schreef',
             'automatisch_vertaald' => false,
         ]);
 
-        $this->assertNull(HeroHeading::query()->value('machine_translated_at'));
+        $this->assertNull($this->kopRij()->value('machine_translated_at'));
     }
 
     public function test_a_change_is_written_to_the_activity_log(): void
@@ -249,34 +265,41 @@ class HeroHeadingTest extends TestCase
             ->latest('id')
             ->firstOrFail();
 
-        $this->assertSame(HeroHeading::class, $regel->subject_type);
-        $this->assertSame('Iets heel anders', $regel->subject_label);
+        $this->assertSame(SectionHeading::class, $regel->subject_type);
+
+        /*
+         * Het label zegt wélk onderdeel het was en niet welke tekst
+         * erin stond. De titel verandert juist bij zo'n wijziging; die
+         * als naam in het logboek zetten levert een regel op die
+         * nergens meer op slaat. Zie SectionHeading::activityLabel().
+         */
+        $this->assertSame('Kop', $regel->subject_label);
     }
 
     public function test_the_website_works_without_a_seeded_row(): void
     {
         /*
          * Een vergeten seeder mag geen lege voorpagina opleveren. De
-         * standaardtekst uit HeroHeading::huidige() vangt dat op, en die
-         * mag bij het tonen van de site niets wegschrijven -- een GET
-         * hoort geen rij aan te maken.
+         * standaardtekst uit SectionHeading::standaard() vangt dat op,
+         * en die mag bij het tonen van de site niets wegschrijven --
+         * een GET hoort geen rij aan te maken.
          */
-        HeroHeading::query()->delete();
+        $this->kopRij()->delete();
 
         $kop = $this->opDeSite();
 
         $this->assertSame('IT-advies en realisatie', $kop['opschrift']);
-        $this->assertSame(0, HeroHeading::query()->count());
+        $this->assertSame(0, $this->kopRij()->count());
     }
 
     public function test_seeding_again_keeps_what_the_owner_wrote(): void
     {
         $this->bewaar(['title_nl' => 'Mijn eigen kop']);
 
-        $this->seed(HeroHeadingSeeder::class);
+        $this->seed(SectionHeadingSeeder::class);
 
-        $this->assertSame(1, HeroHeading::query()->count());
-        $this->assertSame('Mijn eigen kop', HeroHeading::query()->value('title_nl'));
+        $this->assertSame(1, $this->kopRij()->count());
+        $this->assertSame('Mijn eigen kop', $this->kopRij()->value('title_nl'));
     }
 
     public function test_the_layout_screen_links_to_this_module(): void
