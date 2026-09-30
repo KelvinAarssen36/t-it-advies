@@ -25,9 +25,10 @@ Laravel. Wat die variant anders moet doen staat in
 
 ### De inhoud van de overige onderdelen beheerbaar maken
 
-De [ervaring](architecture/modules/ervaring.md) is af. De kop, de diensten
-en de werkwijze staan nog in hun Vue-component; elk daarvan is een module
-op zich, en de vier stappen ernaartoe staan in
+De [ervaring](architecture/modules/ervaring.md) en de
+[kop](architecture/modules/kop.md) zijn af. De diensten en de werkwijze
+staan nog in hun Vue-component; allebei zijn ze een module op zich, en de
+stappen ernaartoe staan in
 [pagina-indeling](architecture/pagina-indeling.md).
 
 Zolang dat zo is, staat er op het indelingsscherm bij die onderdelen "Nog

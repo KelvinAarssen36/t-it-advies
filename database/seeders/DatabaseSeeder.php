@@ -34,6 +34,7 @@ class DatabaseSeeder extends Seeder
             ExperienceSeeder::class,
             ExperienceStatSeeder::class,
             ExperienceHeadingSeeder::class,
+            HeroHeadingSeeder::class,
         ]);
     }
 }

@@ -33,6 +33,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { bevestigBewerken, bevestigVerwijderen } from '@/lib/bevestiging';
 import { t } from '@/lib/i18n';
+import website from '@/routes/website';
 import ervaring from '@/routes/website/ervaring';
 import type {
     ErvaringCijferRij,
@@ -524,7 +525,7 @@ const vertaal = async (): Promise<void> => {
     vertaalFout.value = null;
 
     router.post(
-        ervaring.vertalen().url,
+        website.vertalen().url,
         {
             title_nl: tekst.value.title_nl,
             intro_nl: tekst.value.intro_nl,
@@ -566,7 +567,7 @@ const vertaalWoord = (cijfer: Bewerkbaar): void => {
     vertaalFout.value = null;
 
     router.post(
-        ervaring.vertalen().url,
+        website.vertalen().url,
         { woord_nl: cijfer.label_nl.trim() },
         {
             preserveScroll: true,

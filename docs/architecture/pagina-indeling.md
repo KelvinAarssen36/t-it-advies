@@ -222,11 +222,12 @@ korte pauze van 200 ms, precies zolang als de sluitanimatie duurt.
 
 ## Wat dit nog niet doet
 
-**De inhoud van de meeste onderdelen is nog niet beheerbaar.** De teksten
-van de kop, de diensten en de werkwijze staan nog in hun Vue-component;
-daar staat op het scherm nog "Nog niet te beheren". De
-[ervaring](modules/ervaring.md) is het eerste onderdeel dat wél een eigen
-beheerscherm heeft, en het voorbeeld voor de volgende.
+**De inhoud van de diensten en de werkwijze is nog niet beheerbaar.** Die
+teksten staan nog in hun Vue-component; daar staat op het scherm nog "Nog
+niet te beheren". De [ervaring](modules/ervaring.md) was het eerste
+onderdeel met een eigen beheerscherm en is het voorbeeld voor een module
+met een lijst; de [kop](modules/kop.md) is het voorbeeld voor een
+onderdeel dat alleen uit wat vaste tekst bestaat.
 
 **Er is geen waarschuwing als je het bewerkvenster wegklikt met
 onopgeslagen wijzigingen.** Escape of naast het venster klikken gooit je

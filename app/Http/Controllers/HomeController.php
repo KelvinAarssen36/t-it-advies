@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\PageSectionKey;
 use App\Models\Experience;
 use App\Models\ExperienceHeading;
+use App\Models\HeroHeading;
 use App\Models\PageSection;
 use App\Support\Loopbaan;
 use App\Support\Page\SectionContent;
@@ -43,6 +44,19 @@ class HomeController extends Controller
 
         return Inertia::render('Welcome', [
             'sections' => $secties,
+
+            /*
+             * De kop bovenaan: het opschrift, de titel en de zin eronder.
+             *
+             * Altijd meesturen en niet alleen als het onderdeel er staat,
+             * anders dan bij de tijdlijn hieronder. De kop is een vast
+             * onderdeel -- hij kan niet uit en niet verplaatst worden --
+             * dus de vraag "staat hij er?" bestaat hier niet.
+             *
+             * Zie App\Models\HeroHeading voor welke tekst terugvalt op het
+             * Nederlands en welke niet.
+             */
+            'heroHeading' => $this->heroKop(),
 
             /*
              * Dezelfde lijst, met de labels erbij, voor het menu in de kop.
@@ -87,6 +101,26 @@ class HomeController extends Controller
                 ? $this->koptekst()
                 : null,
         ]);
+    }
+
+    /**
+     * De kop van de pagina, in de taal van de bezoeker.
+     *
+     * De terugval tussen de talen is hier al beslist: het opschrift en de
+     * titel vallen terug op het Nederlands, de zin eronder niet. Zie
+     * App\Models\HeroHeading.
+     *
+     * @return array<string, string|null>
+     */
+    private function heroKop(): array
+    {
+        $kop = HeroHeading::huidige();
+
+        return [
+            'opschrift' => $kop->opschrift(),
+            'titel' => $kop->titel(),
+            'inleiding' => $kop->inleiding(),
+        ];
     }
 
     /**

@@ -11,6 +11,7 @@ import {
     typMachine,
     volgDeMuis,
 } from '@/lib/motion';
+import type { SiteKop } from '@/types/ervaring';
 
 /**
  * De kop van de landingspagina.
@@ -39,6 +40,16 @@ const props = defineProps<{
      * wat er van buiten uitziet als een kapotte website.
      */
     sections: string[];
+
+    /**
+     * De drie teksten, uit de database en niet meer uit dit bestand.
+     *
+     * Ze stonden hier hardgecodeerd, en daarmee was dit het enige stuk
+     * van de voorpagina dat de klant níet kon aanpassen -- terwijl het
+     * het eerste is wat iedereen leest. De keuze tussen Nederlands en
+     * Engels is op de server al gemaakt; zie App\Models\HeroHeading.
+     */
+    heading: SiteKop;
 }>();
 
 // Vier maten van dezelfde achtergrond; de browser kiest op schermbreedte en
@@ -241,14 +252,14 @@ onBeforeUnmount(() => {
                     data-intro
                     class="mb-4 hidden text-sm tracking-[0.2em] text-brand-cyan uppercase opacity-0 tablet:block"
                 >
-                    {{ $t('IT-advies en realisatie') }}
+                    {{ props.heading.opschrift }}
                 </p>
 
                 <h1
                     ref="kop"
                     class="max-w-3xl text-4xl leading-[1.05] font-semibold tracking-tight text-pretty text-white opacity-0 sm:text-6xl"
                 >
-                    {{ $t('Techniek die doet wat je bedrijf nodig heeft.') }}
+                    {{ props.heading.titel }}
                 </h1>
 
                 <!--
@@ -279,21 +290,29 @@ onBeforeUnmount(() => {
                         <span v-if="NAAM" class="brand-visitekaartje-naam">
                             {{ NAAM }}
                         </span>
+                        <!--
+                            Hetzelfde opschrift als hierboven, en dat is
+                            precies de bedoeling: op een telefoon staat
+                            het hier en op een breder scherm daar. De
+                            klant past het op één plek aan.
+                        -->
                         <span class="brand-visitekaartje-functie">
-                            {{ $t('IT-advies en realisatie') }}
+                            {{ props.heading.opschrift }}
                         </span>
                     </span>
                 </div>
 
+                <!--
+                    De zin eronder is optioneel. Laat de klant hem leeg,
+                    dan staat er gewoon niets in plaats van een lege regel
+                    die de knoppen omlaag duwt.
+                -->
                 <p
+                    v-if="props.heading.inleiding"
                     data-intro
                     class="mt-6 max-w-xl text-lg text-pretty text-muted-foreground opacity-0"
                 >
-                    {{
-                        $t(
-                            'Van advies tot bouw en beheer. Zonder ruis, zonder afhankelijkheid van één leverancier.',
-                        )
-                    }}
+                    {{ props.heading.inleiding }}
                 </p>
 
                 <div data-intro class="mt-10 flex flex-wrap gap-3 opacity-0">

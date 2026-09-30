@@ -5504,6 +5504,83 @@ button:hover > .brand-verlaat,
         color: var(--muted-foreground);
     }
 
+    /* --- Het voorbeeld van de kop ------------------------------------ */
+
+    /*
+      Het blok bovenaan de website, nagebootst in het beheerscherm: het
+      opschrift klein en in hoofdletters, de titel groot eronder, de zin
+      daar weer onder. Niet de echte maten -- die zijn op een voorpagina
+      enorm -- maar wel dezelfde verhoudingen, zodat je ziet wat je maakt.
+    */
+    .brand-kopvoorbeeld {
+        display: grid;
+        gap: 0.35rem;
+        align-content: start;
+        border-radius: 0.75rem;
+        border: 1px solid var(--border);
+        background-color: color-mix(in srgb, var(--muted) 35%, transparent);
+        padding: 1rem 1.15rem;
+    }
+
+    .brand-kopvoorbeeld-taal {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin-bottom: 0.4rem;
+        font-size: 0.6875rem;
+        font-weight: 500;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted-foreground);
+    }
+
+    .brand-kopvoorbeeld-opschrift {
+        font-size: 0.75rem;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--brand-cyan);
+    }
+
+    .brand-kopvoorbeeld-titel {
+        font-size: 1.25rem;
+        font-weight: 600;
+        line-height: 1.2;
+        text-wrap: pretty;
+        letter-spacing: -0.01em;
+    }
+
+    .brand-kopvoorbeeld-zin {
+        font-size: 0.875rem;
+        text-wrap: pretty;
+        color: var(--muted-foreground);
+    }
+
+    /*
+      Tekst die er alleen staat omdat de vertaling ontbreekt. Schuin, zodat
+      je in één blik ziet dat dit niet is wat je hebt ingevuld maar wat de
+      bezoeker bij gebrek daaraan te zien krijgt.
+    */
+    .brand-kopvoorbeeld-opschrift.is-terugval,
+    .brand-kopvoorbeeld-titel.is-terugval {
+        font-style: italic;
+        opacity: 0.65;
+    }
+
+    .brand-kopvoorbeeld-leeg {
+        font-size: 0.875rem;
+        font-style: italic;
+        color: var(--muted-foreground);
+        opacity: 0.75;
+    }
+
+    .brand-kop-melding {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        text-wrap: pretty;
+        color: var(--warning);
+    }
+
     /* --- De schuif om in te zoomen ----------------------------------- */
 
     .brand-schuif {

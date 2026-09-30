@@ -8,6 +8,8 @@ import {
     Eye,
     Globe,
     Hash,
+    // Onze eigen Heading.vue heet ook zo; vandaar de andere naam hier.
+    Heading as KopIcoon,
     Image,
     Languages,
     LayoutList,
@@ -38,6 +40,7 @@ import adminUsers from '@/routes/admin/users';
 import { show } from '@/routes/documentation';
 import site from '@/routes/site';
 import website from '@/routes/website';
+import kop from '@/routes/website/kop';
 import ervaring from '@/routes/website/ervaring';
 
 /**
@@ -518,6 +521,46 @@ defineOptions({
                                 <Link :href="website.index()">
                                     <LayoutList class="size-4" />
                                     {{ $t('Open de indeling') }}
+                                </Link>
+                            </Button>
+                        </template>
+                    </UitlegKaart>
+
+                    <UitlegKaart :titel="$t('Kop')" :icoon="KopIcoon">
+                        <p>
+                            {{
+                                $t(
+                                    'De drie teksten bovenaan je website: het kleine opschrift in hoofdletters, de grote titel eronder, en de zin daar weer onder. Dit is het eerste dat een bezoeker leest, dus het is ook het eerste dat je wilt kloppen.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Je ziet de twee talen naast elkaar, zoals ze op je site komen te staan. Staat er rechts iets schuingedrukt, dan is dat het Nederlands: dat betekent dat er nog geen Engelse tekst is en dat je Engelse bezoeker dus het Nederlands ziet.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Het opschrift staat op een telefoon ergens anders: daar hoort het bij je naam op het kaartje met je foto. Je past het maar op één plek aan; wij zetten het op allebei de plekken goed neer.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'De zin eronder mag leeg blijven. Dan staat er gewoon niets, en schuiven de knoppen netjes omhoog.',
+                                )
+                            }}
+                        </p>
+
+                        <template #voorbeeld>
+                            <Button variant="outline" size="sm" as-child>
+                                <Link :href="kop.index()">
+                                    <KopIcoon class="size-4" />
+                                    {{ $t('Open de kop') }}
                                 </Link>
                             </Button>
                         </template>

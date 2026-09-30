@@ -34,6 +34,7 @@ import {
     bevestigVerwijderen,
 } from '@/lib/bevestiging';
 import { t } from '@/lib/i18n';
+import website from '@/routes/website';
 import ervaring from '@/routes/website/ervaring';
 import type { ErvaringOpties, ErvaringRij } from '@/types/ervaring';
 
@@ -575,7 +576,7 @@ const vertaal = async (): Promise<void> => {
     vertaalFout.value = null;
 
     router.post(
-        ervaring.vertalen().url,
+        website.vertalen().url,
         {
             role_nl: formulier.value.role_nl,
             location_nl: formulier.value.location_nl,

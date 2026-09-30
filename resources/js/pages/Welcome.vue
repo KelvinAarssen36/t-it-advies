@@ -6,6 +6,7 @@ import DienstenSection from '@/components/site/sections/DienstenSection.vue';
 import ErvaringSection from '@/components/site/sections/ErvaringSection.vue';
 import HeroSection from '@/components/site/sections/HeroSection.vue';
 import WerkwijzeSection from '@/components/site/sections/WerkwijzeSection.vue';
+import type { SiteKop } from '@/types/ervaring';
 import type { SectieSleutel } from '@/types/secties';
 
 /**
@@ -26,7 +27,11 @@ import type { SectieSleutel } from '@/types/secties';
  * Zie docs/architecture/pagina-indeling.md.
  */
 
-const props = defineProps<{ sections: SectieSleutel[] }>();
+const props = defineProps<{
+    sections: SectieSleutel[];
+    /** De drie teksten van de kop; de klant beheert ze onder Website. */
+    heroHeading: SiteKop;
+}>();
 
 /**
  * Van sleutel naar component.
@@ -56,7 +61,7 @@ const toonVoor = (index: number): 'base' | 'raised' =>
 <template>
     <Head :title="$t('IT-advies dat blijft staan')" />
 
-    <HeroSection :sections="props.sections" />
+    <HeroSection :sections="props.sections" :heading="props.heroHeading" />
 
     <component
         :is="componenten[key]"

@@ -3,6 +3,7 @@ import { Link, usePage } from '@inertiajs/vue3';
 import {
     Activity,
     Globe,
+    Heading,
     History,
     LayoutGrid,
     LayoutList,
@@ -33,6 +34,7 @@ import adminSecurity from '@/routes/admin/security';
 import adminUsers from '@/routes/admin/users';
 import site from '@/routes/site';
 import ervaring from '@/routes/website/ervaring';
+import kop from '@/routes/website/kop';
 import website from '@/routes/website';
 import type { NavItem } from '@/types';
 
@@ -109,6 +111,11 @@ const websiteItems = computed<NavItem[]>(() => [
         href: website.index(),
         icon: LayoutList,
         hoofd: true,
+    },
+    {
+        title: t('Kop'),
+        href: kop.index(),
+        icon: Heading,
     },
     {
         title: t('Ervaring'),

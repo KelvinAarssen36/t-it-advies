@@ -82,7 +82,7 @@ class ExperienceCrudTest extends TestCase
         $this->patch(route('website.ervaring.online', $ervaring), ['published' => false])->assertRedirect(route('login'));
         $this->put(route('website.ervaring.kop'), ['waarden' => []])->assertRedirect(route('login'));
         $this->delete(route('website.ervaring.destroy', $ervaring))->assertRedirect(route('login'));
-        $this->post(route('website.ervaring.vertalen'))->assertRedirect(route('login'));
+        $this->post(route('website.vertalen'))->assertRedirect(route('login'));
 
         $this->assertSame(1, Experience::query()->count());
         $this->assertTrue($ervaring->fresh()?->published);
@@ -100,7 +100,7 @@ class ExperienceCrudTest extends TestCase
         $this->actingAs($user)->patch(route('website.ervaring.online', $ervaring), ['published' => false])->assertForbidden();
         $this->actingAs($user)->put(route('website.ervaring.kop'), ['waarden' => []])->assertForbidden();
         $this->actingAs($user)->delete(route('website.ervaring.destroy', $ervaring))->assertForbidden();
-        $this->actingAs($user)->post(route('website.ervaring.vertalen'))->assertForbidden();
+        $this->actingAs($user)->post(route('website.vertalen'))->assertForbidden();
     }
 
     public function test_the_screen_lists_the_experiences(): void

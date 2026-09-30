@@ -16,7 +16,6 @@ use App\Support\Datum;
 use App\Support\Loopbaan;
 use App\Support\Media\Logo;
 use App\Support\Toast;
-use App\Support\Translation\VertaalFout;
 use App\Support\Translation\Vertaler;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -450,68 +449,6 @@ class ExperienceController extends Controller
         Toast::verwijderd(__('":naam" is verwijderd.', ['naam' => $label]));
 
         return redirect()->to($terug);
-    }
-
-    /**
-     * Een Engels voorstel voor de tekst die nu in het formulier staat.
-     *
-     * Er wordt hier niets opgeslagen, en dat is de kern. De klant krijgt
-     * een voorstel in zijn velden, leest het na, past aan wat hij wil, en
-     * drukt daarna pas op Opslaan. Zou de knop meteen wegschrijven, dan
-     * staat er automatisch vertaald Engels live voordat iemand het heeft
-     * gezien.
-     */
-    public function vertalen(Request $request, Vertaler $vertaler): RedirectResponse
-    {
-        if (! $vertaler->beschikbaar()) {
-            abort(404);
-        }
-
-        /*
-         * Twee schermen gebruiken deze knop: het venster van één ervaring
-         * en dat van de kop boven de tijdlijn. Vandaar dat hier de velden
-         * van allebei staan -- ze zijn allemaal `nullable`, dus elk scherm
-         * stuurt alleen wat het heeft.
-         *
-         * Een tweede route ernaast zou dezelfde begrenzing, dezelfde
-         * foutafhandeling en dezelfde sleutelvertaling moeten herhalen, en
-         * dat is precies waar twee dingen uiteen gaan lopen.
-         */
-        $bron = $request->validate([
-            'role_nl' => ['nullable', 'string', 'max:120'],
-            'location_nl' => ['nullable', 'string', 'max:120'],
-            'description_nl' => ['nullable', 'string', 'max:5000'],
-            'title_nl' => ['nullable', 'string', 'max:120'],
-            'intro_nl' => ['nullable', 'string', 'max:300'],
-
-            // Het woord onder één cijfer boven de tijdlijn. Eén veld en
-            // niet een lijst: de knop staat per cijfer, en het venster
-            // onthoudt zelf welk cijfer het vroeg. Zie CijfersDialoog.vue.
-            'woord_nl' => ['nullable', 'string', 'max:40'],
-        ]);
-
-        try {
-            $vertaald = $vertaler->naarEngels($bron);
-        } catch (VertaalFout $fout) {
-            Toast::fout($fout->melding());
-
-            return back();
-        }
-
-        /*
-         * De sleutels gaan van `_nl` naar `_en`, want dat zijn de velden
-         * die het formulier moet invullen. De vertaler weet niets van onze
-         * kolomnamen; die vertaling hoort hier.
-         */
-        $velden = [];
-
-        foreach ($vertaald as $sleutel => $tekst) {
-            $velden[str_replace('_nl', '_en', $sleutel)] = $tekst;
-        }
-
-        Inertia::flash('vertaling', $velden);
-
-        return back();
     }
 
     /**

@@ -181,6 +181,32 @@ export type ErvaringOpties = {
 };
 
 /**
+ * De kop van de landingspagina, zoals de bezoeker hem krijgt.
+ *
+ * De keuze tussen Nederlands en Engels is op de server al gemaakt; hier
+ * staat wat er komt te staan. Zie App\Models\HeroHeading.
+ */
+export type SiteKop = {
+    opschrift: string;
+    titel: string;
+    inleiding: string | null;
+};
+
+/**
+ * Dezelfde kop, maar dan zoals het beheerscherm hem nodig heeft: allebei
+ * de talen los, want de klant vult ze allebei zelf in.
+ */
+export type SiteKopRij = {
+    eyebrow_nl: string;
+    eyebrow_en: string | null;
+    title_nl: string;
+    title_en: string | null;
+    intro_nl: string | null;
+    intro_en: string | null;
+    automatisch_vertaald: boolean;
+};
+
+/**
  * De kop boven de tijdlijn, zoals de bezoeker hem krijgt.
  *
  * De keuze tussen Nederlands en Engels is op de server al gemaakt; hier

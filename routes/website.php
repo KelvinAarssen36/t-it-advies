@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\Website\ExperienceController;
+use App\Http\Controllers\Website\HeroController;
 use App\Http\Controllers\Website\LayoutController;
+use App\Http\Controllers\Website\TranslateController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -37,6 +39,33 @@ Route::middleware(['auth', 'verified', 'two-factor.required', 'can:manage portal
         Route::put('/', [LayoutController::class, 'update'])->name('update');
 
         /*
+         * De vertaalknop, voor élk beheerscherm van de website en niet
+         * voor één module.
+         *
+         * Hij stond onder `ervaring`, en dat hield op te kloppen zodra de
+         * kop van de landingspagina hem ook nodig had: die zou dan naar
+         * `website/ervaring/vertalen` moeten posten. Eén adres met een
+         * veld per soort tekst; zie TranslateController.
+         *
+         * Begrensd omdat elke aanroep tekens van het maandtegoed kost:
+         * een knop die per ongeluk in een lus staat, kan dat tegoed in een
+         * paar minuten opmaken.
+         */
+        Route::post('vertalen', TranslateController::class)
+            ->middleware('throttle:vertalen')
+            ->name('vertalen');
+
+        /*
+         * De kop van de landingspagina: het opschrift, de titel en de zin
+         * eronder. Drie teksten, meer niet -- vandaar één scherm met één
+         * bewerkvenster en geen lijst met een detailpagina.
+         */
+        Route::prefix('kop')->name('kop.')->group(function () {
+            Route::get('/', [HeroController::class, 'index'])->name('index');
+            Route::put('/', [HeroController::class, 'update'])->name('update');
+        });
+
+        /*
          * De tijdlijn met ervaringen: de eerste module waarmee de klant
          * echte inhoud beheert.
          *
@@ -49,20 +78,6 @@ Route::middleware(['auth', 'verified', 'two-factor.required', 'can:manage portal
         Route::prefix('ervaring')->name('ervaring.')->group(function () {
             Route::get('/', [ExperienceController::class, 'index'])->name('index');
             Route::post('/', [ExperienceController::class, 'store'])->name('store');
-
-            /*
-             * De vertaalknop staat vóór de detailpagina, want `{experience}`
-             * vangt anders ook `vertalen` op. Hij is weliswaar een POST en
-             * de detailpagina een GET, maar die volgorde is precies het
-             * soort detail dat bij de volgende route stilletjes misgaat.
-             *
-             * Begrensd omdat elke aanroep tekens van het maandtegoed kost:
-             * een knop die per ongeluk in een lus staat, kan dat tegoed in
-             * een paar minuten opmaken.
-             */
-            Route::post('vertalen', [ExperienceController::class, 'vertalen'])
-                ->middleware('throttle:vertalen')
-                ->name('vertalen');
 
             /*
              * De kop boven de tijdlijn: de tekst én de cijfers. Eén

@@ -117,13 +117,13 @@ enum PageSectionKey: string
      * beheerd, of null zolang dat scherm er nog niet is.
      *
      * Zolang hij null is, zet het indelingsscherm er "Nog niet te beheren"
-     * bij in plaats van een link die nergens heen gaat. Dat is nu nog bij
-     * alle onderdelen zo behalve de ervaring, en die zijn dus ook nog
-     * allemaal tekst in een Vue-component.
+     * bij in plaats van een link die nergens heen gaat. De onderdelen die
+     * hier nog niet staan hebben hun tekst dus nog in een Vue-component.
      */
     public function beheerRoute(): ?string
     {
         return match ($this) {
+            self::Hero => 'website.kop.index',
             self::Ervaring => 'website.ervaring.index',
             default => null,
         };

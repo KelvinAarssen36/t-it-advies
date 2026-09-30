@@ -99,7 +99,7 @@ class ExperienceTranslationTest extends TestCase
          * in plaats van te bestaan en altijd te falen.
          */
         $this->actingAs($this->beheerder())
-            ->post(route('website.ervaring.vertalen'), ['role_nl' => 'Beheerder'])
+            ->post(route('website.vertalen'), ['role_nl' => 'Beheerder'])
             ->assertNotFound();
     }
 
@@ -109,7 +109,7 @@ class ExperienceTranslationTest extends TestCase
 
         $response = $this->actingAs($this->beheerder())
             ->from(route('website.ervaring.index'))
-            ->post(route('website.ervaring.vertalen'), [
+            ->post(route('website.vertalen'), [
                 'role_nl' => 'Systeembeheerder',
                 'location_nl' => 'Utrecht',
                 'description_nl' => 'Netwerken beheerd.',
@@ -152,7 +152,7 @@ class ExperienceTranslationTest extends TestCase
 
         $this->actingAs($this->beheerder())
             ->from(route('website.ervaring.index'))
-            ->post(route('website.ervaring.vertalen'), ['woord_nl' => 'opdrachten'])
+            ->post(route('website.vertalen'), ['woord_nl' => 'opdrachten'])
             ->assertRedirect(route('website.ervaring.index'));
 
         $this->assertSame(
@@ -169,7 +169,7 @@ class ExperienceTranslationTest extends TestCase
         $this->werkendeVertaler();
 
         $this->actingAs($this->beheerder())
-            ->post(route('website.ervaring.vertalen'), [
+            ->post(route('website.vertalen'), [
                 'woord_nl' => str_repeat('a', 41),
             ])
             ->assertSessionHasErrors('woord_nl');
@@ -200,7 +200,7 @@ class ExperienceTranslationTest extends TestCase
         });
 
         $this->actingAs($this->beheerder())
-            ->post(route('website.ervaring.vertalen'), [
+            ->post(route('website.vertalen'), [
                 'role_nl' => 'Beheerder',
                 'location_nl' => '',
                 'description_nl' => null,
@@ -216,7 +216,7 @@ class ExperienceTranslationTest extends TestCase
         $ervaring = Experience::factory()->create(['role_en' => null]);
 
         $this->actingAs($this->beheerder())
-            ->post(route('website.ervaring.vertalen'), ['role_nl' => 'Beheerder'])
+            ->post(route('website.vertalen'), ['role_nl' => 'Beheerder'])
             ->assertRedirect();
 
         // Er wordt niets opgeslagen door de knop -- ook niet bij succes,
@@ -237,11 +237,11 @@ class ExperienceTranslationTest extends TestCase
 
         for ($poging = 0; $poging < 20; $poging++) {
             $this->actingAs($beheerder)
-                ->post(route('website.ervaring.vertalen'), ['role_nl' => 'Beheerder']);
+                ->post(route('website.vertalen'), ['role_nl' => 'Beheerder']);
         }
 
         $this->actingAs($beheerder)
-            ->post(route('website.ervaring.vertalen'), ['role_nl' => 'Beheerder'])
+            ->post(route('website.vertalen'), ['role_nl' => 'Beheerder'])
             ->assertStatus(429);
     }
 

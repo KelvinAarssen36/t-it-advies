@@ -65,6 +65,7 @@ lees dan eerst [pagina-indeling](architecture/pagina-indeling.md) -- daar
 staan de vijf stappen -- en daarna een bestaande module als voorbeeld.
 
 - [Ervaring](architecture/modules/ervaring.md) -- de tijdlijn met functies en organisaties. De eerste module, en daarmee het voorbeeld voor de volgende.
+- [Kop](architecture/modules/kop.md) -- de drie teksten bovenaan de landingspagina. De kleinste module: één rij, één venster, geen lijst.
 
 ## Beveiliging
 
