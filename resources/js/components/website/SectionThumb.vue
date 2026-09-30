@@ -73,6 +73,19 @@ const donker = computed(
             <span class="brand-schets-knop mt-auto bg-brand-blue/70" />
         </template>
 
+        <!--
+            LinkedIn: een blokje met het merkteken en een knop ernaast,
+            met de stippellijnen van het netwerk erboven.
+        -->
+        <template v-else-if="sectie === 'linkedin'">
+            <div class="flex w-full items-center gap-1">
+                <span class="brand-schets-bel bg-brand-blue/70" />
+                <span class="brand-schets-balk w-1/3" />
+            </div>
+            <span class="brand-schets-balk h-px w-2/3 bg-brand-cyan/50" />
+            <span class="brand-schets-knop mt-auto w-1/2 bg-brand-cyan/60" />
+        </template>
+
         <!-- De voettekst: een accentlijn en een regel eronder. -->
         <template v-else>
             <span class="brand-schets-balk h-px w-full bg-brand-cyan/60" />

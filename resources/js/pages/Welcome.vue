@@ -5,6 +5,7 @@ import ContactSection from '@/components/site/sections/ContactSection.vue';
 import DienstenSection from '@/components/site/sections/DienstenSection.vue';
 import ErvaringSection from '@/components/site/sections/ErvaringSection.vue';
 import HeroSection from '@/components/site/sections/HeroSection.vue';
+import LinkedinSection from '@/components/site/sections/LinkedinSection.vue';
 import WerkwijzeSection from '@/components/site/sections/WerkwijzeSection.vue';
 import type { SiteKop } from '@/types/ervaring';
 import type { SectieSleutel } from '@/types/secties';
@@ -46,6 +47,7 @@ const componenten: Record<SectieSleutel, Component> = {
     werkwijze: WerkwijzeSection,
     ervaring: ErvaringSection,
     contact: ContactSection,
+    linkedin: LinkedinSection,
 };
 
 /**

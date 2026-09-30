@@ -3314,6 +3314,15 @@ button:hover > .brand-verlaat,
         );
     }
 
+    /* Een rond blokje, voor het merkteken in de LinkedIn-schets. */
+    .brand-schets-bel {
+        display: block;
+        height: 0.5rem;
+        width: 0.5rem;
+        flex-shrink: 0;
+        border-radius: 2px;
+    }
+
     .brand-schets-stip {
         display: block;
         height: 0.2rem;
@@ -5534,6 +5543,444 @@ button:hover > .brand-verlaat,
         padding: 0.35rem 0;
         font-size: 0.8125rem;
         color: var(--muted-foreground);
+    }
+
+    /* --- Het kleine merkknopje in de kop ------------------------------ */
+
+    /*
+      Het LinkedIn-knopje naast de twee grote knoppen in de hero.
+      Bewust klein, rond en zonder tekst: het is de derde keuze op die
+      regel en hoort niet mee te doen aan de wedstrijd.
+      Vierenveertig pixels, want dat is wat een duim nodig heeft -- ook
+      al oogt het kleiner door de ruimte eromheen.
+    */
+    .brand-merkknop {
+        display: inline-flex;
+        height: 2.75rem;
+        width: 2.75rem;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9999px;
+        border: 1px solid var(--brand-border-dark-strong);
+        color: var(--brand-silver);
+        transition:
+            border-color 300ms ease,
+            color 300ms ease,
+            box-shadow 300ms ease;
+    }
+
+    .brand-merkknop svg {
+        height: 1.05rem;
+        width: 1.05rem;
+
+        /*
+          De draai staat op het merkteken en niet op de knop. Zou de
+          knop zelf draaien, dan draait zijn rand mee -- en een rondje
+          dat draait ziet er niet uit als draaien maar als niets.
+        */
+        transition: rotate 600ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .brand-merkknop:hover,
+    .brand-merkknop:focus-visible {
+        border-color: var(--brand-cyan);
+        color: var(--brand-cyan);
+        box-shadow: 0 0 16px
+            color-mix(in srgb, var(--brand-cyan) 30%, transparent);
+    }
+
+    .brand-merkknop:hover svg,
+    .brand-merkknop:focus-visible svg {
+        rotate: 360deg;
+    }
+
+    .brand-merkknop:focus-visible {
+        outline: 2px solid var(--brand-cyan);
+        outline-offset: 2px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .brand-merkknop,
+        .brand-merkknop svg {
+            transition: none;
+        }
+
+        .brand-merkknop:hover svg,
+        .brand-merkknop:focus-visible svg {
+            rotate: none;
+        }
+    }
+
+    /* --- Het LinkedIn-blok ------------------------------------------- */
+
+    /*
+      De lagen liggen op elkaar: de gloed onderop, de kaart daarbovenop.
+
+      Alles hieronder is geschreven vanaf de telefoon. Het blok was daar
+      te groot -- een kaart van een halve schermhoogte voor één knop -- en
+      vanaf 40rem staan de oude, ruimere maten weer terug. Op desktop
+      verandert er dus niets.
+    */
+    .brand-linkedin {
+        position: relative;
+        display: flex;
+        justify-content: center;
+    }
+
+    @media (min-width: 40rem) {
+        .brand-linkedin {
+            padding-block: 1rem;
+        }
+    }
+
+    /*
+      De radar achter de kaart. Twee flauwe cirkels en een bundel die
+      traag ronddraait -- de tegenhanger van de ringen op het merkteken:
+      daar gaat iets uit, hier wordt gekeken.
+
+      Standaard weg. Hij komt pas vanaf 50rem, dezelfde grens als het
+      doorgaande ringpulsje: iets wat nooit ophoudt houdt zijn laag
+      eeuwig in beweging, en op een telefoon kost dat scherpte en accu.
+      Daar is naast de kaart ook geen ruimte, dus er zou toch niets van
+      te zien zijn.
+    */
+    .brand-linkedin-radar {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        display: none;
+        height: 34rem;
+        width: 34rem;
+        translate: -50% -50%;
+        pointer-events: none;
+    }
+
+    @media (min-width: 50rem) {
+        .brand-linkedin-radar {
+            display: block;
+        }
+    }
+
+    .brand-linkedin-radar-cirkel {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        border-radius: 9999px;
+        border: 1px solid color-mix(in srgb, var(--brand-cyan) 11%, transparent);
+        translate: -50% -50%;
+    }
+
+    /*
+      Twee cirkels en niet drie of vijf. Meer wordt een schietschijf, en
+      dan kijk je naar de achtergrond in plaats van naar de knop.
+    */
+    .brand-linkedin-radar-cirkel:nth-child(1) {
+        height: 20rem;
+        width: 20rem;
+    }
+
+    .brand-linkedin-radar-cirkel:nth-child(2) {
+        height: 31rem;
+        width: 31rem;
+    }
+
+    /*
+      De bundel zelf: één wig in een conisch verloop.
+
+      De volgorde van de stops is niet willekeurig. De laag draait met de
+      klok mee, dus de hoogste hoek loopt voorop -- daar staat de volle
+      kleur, met de harde knip op de naad bij 0 graden. Naar achteren
+      dooft hij uit over zestig graden. Zet je het om, dan sleept de
+      scherpe rand achteraan en ziet het eruit alsof hij achteruit
+      draait.
+
+      Het masker knipt hem tot een ring. Zonder het gat in het midden
+      loopt alle kleur samen tot een fel puntje achter de kaart; zonder
+      het uitdoven aan de buitenkant houdt de wig een harde rand die als
+      een cirkel op het scherm staat.
+
+      Begint op onzichtbaar: `draaiRadar` in motion.ts laat hem opkomen
+      en draaien. Blijft die weg -- bij minder beweging, of op een smal
+      scherm -- dan blijft dit nul en zie je alleen de twee cirkels.
+    */
+    .brand-linkedin-radar-veeg {
+        position: absolute;
+        inset: 0;
+        border-radius: 9999px;
+        opacity: 0;
+        background: conic-gradient(
+            from 0deg,
+            transparent 0deg,
+            transparent 298deg,
+            color-mix(in srgb, var(--brand-cyan) 6%, transparent) 334deg,
+            color-mix(in srgb, var(--brand-cyan) 22%, transparent) 360deg
+        );
+        -webkit-mask-image: radial-gradient(
+            circle,
+            transparent 17%,
+            #000 46%,
+            transparent 73%
+        );
+        mask-image: radial-gradient(
+            circle,
+            transparent 17%,
+            #000 46%,
+            transparent 73%
+        );
+    }
+
+    .brand-linkedin-gloed {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+
+        /*
+          Op een telefoon van 375 pixels breed is 26rem breder dan het
+          scherm: dan is het geen gloed achter de kaart meer maar een
+          waas over het hele blok.
+        */
+        height: 16rem;
+        width: 16rem;
+        translate: -50% -50%;
+        border-radius: 9999px;
+        background: radial-gradient(
+            circle,
+            color-mix(in srgb, var(--brand-cyan) 16%, transparent) 0%,
+            transparent 68%
+        );
+
+        /*
+          Dezelfde variabelen als de gloed achter de hero: JavaScript zet
+          alleen waar de muis is, de verschuiving staat hier. Zie
+          volgDeMuis() in motion.ts.
+        */
+        translate: calc(-50% + (var(--muis-x, 0.5) - 0.5) * 3rem)
+            calc(-50% + (var(--muis-y, 0.5) - 0.5) * 3rem);
+        transition: translate 600ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    @media (min-width: 40rem) {
+        .brand-linkedin-gloed {
+            height: 26rem;
+            width: 26rem;
+        }
+    }
+
+    .brand-linkedin-kaart {
+        position: relative;
+        display: flex;
+        max-width: 34rem;
+        flex-direction: column;
+        align-items: center;
+        border-radius: 1rem;
+        border: 1px solid var(--border);
+        background-color: color-mix(in srgb, var(--card) 85%, transparent);
+        padding: 1.5rem 1.15rem;
+        text-align: center;
+        -webkit-backdrop-filter: blur(8px);
+        backdrop-filter: blur(8px);
+    }
+
+    @media (min-width: 40rem) {
+        .brand-linkedin-kaart {
+            padding: 2.25rem 1.75rem;
+        }
+    }
+
+    /*
+      Het vak om het merkteken heen. De ringen liggen erin en gaan er
+      overheen naar buiten, dus het mag niet afknippen.
+    */
+    .brand-linkedin-merk-vak {
+        position: relative;
+        display: flex;
+        height: 2.5rem;
+        width: 2.5rem;
+        align-items: center;
+        justify-content: center;
+    }
+
+    @media (min-width: 40rem) {
+        .brand-linkedin-merk-vak {
+            height: 3.25rem;
+            width: 3.25rem;
+        }
+    }
+
+    /*
+      De ringen die vanaf het merkteken naar buiten gaan. Ze staan op
+      doorzichtigheid nul tot GSAP ze op weg stuurt; zie zendSignaal()
+      in motion.ts. Eén ring is een toevalligheid, twee is een baken.
+    */
+    .brand-linkedin-ring {
+        position: absolute;
+        inset: 0;
+        border-radius: 0.7rem;
+        border: 1px solid var(--brand-cyan);
+        opacity: 0;
+
+        /*
+          Ze vangen niets af en horen niet in de leesvolgorde. Zonder
+          dit ligt er een onzichtbaar vlak over de knop eronder zodra
+          een ring is uitgedijd.
+        */
+        pointer-events: none;
+    }
+
+    @media (min-width: 40rem) {
+        .brand-linkedin-ring {
+            border-radius: 0.9rem;
+        }
+    }
+
+    /*
+      Het merkteken in de kleur van LinkedIn zelf. Dat is de enige plek
+      op deze site met een vreemde merkkleur, en dat hoort ook: een
+      merkteken dat je verft is geen merkteken meer.
+    */
+    .brand-linkedin-merk {
+        display: flex;
+        height: 2.5rem;
+        width: 2.5rem;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.7rem;
+        background-color: #0a66c2;
+        color: #fff;
+        box-shadow: 0 0 20px color-mix(in srgb, #0a66c2 45%, transparent);
+    }
+
+    .brand-linkedin-merk svg {
+        height: 1.25rem;
+        width: 1.25rem;
+    }
+
+    @media (min-width: 40rem) {
+        .brand-linkedin-merk {
+            height: 3.25rem;
+            width: 3.25rem;
+            border-radius: 0.9rem;
+            box-shadow: 0 0 28px color-mix(in srgb, #0a66c2 45%, transparent);
+        }
+
+        .brand-linkedin-merk svg {
+            height: 1.6rem;
+            width: 1.6rem;
+        }
+    }
+
+    .brand-linkedin-opschrift {
+        margin-top: 0.85rem;
+        font-size: 0.6875rem;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--brand-cyan);
+    }
+
+    @media (min-width: 40rem) {
+        .brand-linkedin-opschrift {
+            margin-top: 1.25rem;
+            font-size: 0.75rem;
+        }
+    }
+
+    .brand-linkedin-titel {
+        margin-top: 0.4rem;
+        font-size: 1.375rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        text-wrap: balance;
+        color: #fff;
+    }
+
+    @media (min-width: 40rem) {
+        .brand-linkedin-titel {
+            margin-top: 0.5rem;
+            font-size: 2.125rem;
+        }
+    }
+
+    .brand-linkedin-tekst {
+        margin-top: 0.6rem;
+        max-width: 30rem;
+        font-size: 0.9375rem;
+        text-wrap: pretty;
+        color: var(--muted-foreground);
+    }
+
+    @media (min-width: 40rem) {
+        .brand-linkedin-tekst {
+            margin-top: 0.85rem;
+            font-size: 1rem;
+        }
+    }
+
+    /*
+      De knop. Het pijltje schuift bij hover een fractie naar
+      rechtsboven -- dezelfde richting als waar hij heen gaat.
+    */
+    .brand-linkedin-knop {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 1.15rem;
+        border-radius: 9999px;
+        background-image: var(--brand-gradient);
+
+        /*
+          Smaller mag, lager niet: 2,75rem hoog is wat een vinger nodig
+          heeft en daar gaat deze knop niet onder.
+        */
+        padding: 0.6rem 1.2rem;
+        font-size: 0.9375rem;
+        font-weight: 500;
+        color: #fff;
+        transition:
+            box-shadow 300ms ease,
+            translate 300ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    @media (min-width: 40rem) {
+        .brand-linkedin-knop {
+            margin-top: 1.75rem;
+            padding: 0.7rem 1.4rem;
+        }
+    }
+
+    .brand-linkedin-knop:hover {
+        box-shadow: 0 0 26px
+            color-mix(in srgb, var(--brand-cyan) 45%, transparent);
+        translate: 0 -2px;
+    }
+
+    .brand-linkedin-knop:focus-visible {
+        outline: 2px solid var(--brand-cyan);
+        outline-offset: 3px;
+    }
+
+    .brand-linkedin-knop svg {
+        transition: translate 300ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .brand-linkedin-knop:hover svg {
+        translate: 0.15rem -0.15rem;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .brand-linkedin-gloed,
+        .brand-linkedin-knop,
+        .brand-linkedin-knop svg {
+            transition: none;
+        }
+
+        .brand-linkedin-knop:hover {
+            translate: none;
+        }
+
+        .brand-linkedin-knop:hover svg {
+            translate: none;
+        }
     }
 
     /* --- De dienstkaart ---------------------------------------------- */

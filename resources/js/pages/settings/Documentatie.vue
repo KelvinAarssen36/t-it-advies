@@ -20,6 +20,7 @@ import {
     Pencil,
     Plus,
     Search,
+    Share2,
     ShieldAlert,
     Sparkles,
     SunMoon,
@@ -514,6 +515,46 @@ defineOptions({
                             {{
                                 $t(
                                     'De kop en de voettekst staan vast op hun plek. Die horen altijd boven- en onderaan, dus daar valt niets te slepen.',
+                                )
+                            }}
+                        </p>
+
+                        <template #voorbeeld>
+                            <Button variant="outline" size="sm" as-child>
+                                <Link :href="website.index()">
+                                    <LayoutList class="size-4" />
+                                    {{ $t('Open de indeling') }}
+                                </Link>
+                            </Button>
+                        </template>
+                    </UitlegKaart>
+
+                    <UitlegKaart :titel="$t('LinkedIn')" :icoon="Share2">
+                        <p>
+                            {{
+                                $t(
+                                    'Onderaan je website staat een blok dat bezoekers uitnodigt je op LinkedIn te volgen, met een knop naar je profiel. Dat is de plek waar iemand die nog geen bericht wil sturen je toch kan blijven volgen.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Helemaal bovenaan staat hetzelfde logo nog een keer, klein, naast de twee knoppen in de kop. Dat is voor de bezoeker die meteen weet wat hij zoekt en niet eerst naar beneden wil.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Hier valt niets in te vullen: je LinkedIn-adres ligt vast. Dat is met opzet -- een tikfout in die link is een knop op je voorpagina die nergens heen gaat. Wil je hem ooit wijzigen, laat het ons dan weten.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Wat je er wél mee kunt: hem verslepen naar een andere plek op je pagina, of helemaal uitzetten. Dat doe je op het scherm Indeling, net als bij de andere onderdelen.',
                                 )
                             }}
                         </p>

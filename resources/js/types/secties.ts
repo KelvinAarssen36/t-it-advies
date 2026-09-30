@@ -21,7 +21,12 @@ export type SectieProps = {
  * De kop en de voettekst staan er bewust niet bij: die zitten niet in de
  * rij die de klant kan verslepen.
  */
-export type SectieSleutel = 'diensten' | 'werkwijze' | 'ervaring' | 'contact';
+export type SectieSleutel =
+    | 'diensten'
+    | 'werkwijze'
+    | 'ervaring'
+    | 'contact'
+    | 'linkedin';
 
 /**
  * Eén regel op het indelingsscherm in het portaal.
@@ -44,4 +49,12 @@ export type SectieRij = {
     live: boolean;
     /** De weg naar het scherm met de inhoud, zodra die module er is. */
     manageUrl: string | null;
+    /**
+     * Of er überhaupt iets te beheren valt.
+     *
+     * Niet hetzelfde als `manageUrl === null`: dat betekent "nog geen
+     * scherm". Bij LinkedIn ligt de enige inhoud -- de link -- bewust
+     * vast, en dan is "nog niet" een verkeerde mededeling.
+     */
+    manageable: boolean;
 };

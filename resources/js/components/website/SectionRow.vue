@@ -136,11 +136,26 @@ const staat = computed<'live' | 'uit' | 'leeg'>(() => {
                 <ArrowRight class="size-3.5" />
             </Link>
 
+            <!--
+                Drie gevallen en niet twee. "Nog niet te beheren" is een
+                belofte dat er een scherm komt; bij een onderdeel waar
+                niets te beheren valt -- LinkedIn heeft één link die
+                vastligt -- zou die belofte onwaar zijn.
+            -->
             <span
-                v-else-if="!rij.manageUrl && !rij.fixed && !compact"
+                v-else-if="
+                    !rij.manageUrl && rij.manageable && !rij.fixed && !compact
+                "
                 class="text-xs text-muted-foreground"
             >
                 {{ $t('Nog niet te beheren') }}
+            </span>
+
+            <span
+                v-else-if="!rij.manageUrl && !rij.manageable && !compact"
+                class="text-xs text-muted-foreground"
+            >
+                {{ $t('Niets in te vullen') }}
             </span>
 
             <!--

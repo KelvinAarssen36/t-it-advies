@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, useTemplateRef } from 'vue';
+import { usePage } from '@inertiajs/vue3';
+import { computed, onBeforeUnmount, onMounted, useTemplateRef } from 'vue';
+import LinkedinMerk from '@/components/site/LinkedinMerk.vue';
 import SiteSection from '@/components/site/SiteSection.vue';
 import { Button } from '@/components/ui/button';
 import { INTRO_DUUR, introSpeeltAf } from '@/lib/intro';
@@ -87,6 +89,17 @@ const portretSrcset = [
  * knoppen; zie docs/openstaand.md.
  */
 const NAAM = 'Erik Aarssen';
+
+/**
+ * Het LinkedIn-adres, uit dezelfde bron als het blok onderaan.
+ *
+ * Gedeeld via Inertia en niet hier neergezet: twee knoppen die naar
+ * hetzelfde profiel wijzen horen niet uit elkaar te kunnen lopen. Zie
+ * config/site.php.
+ */
+const linkedin = computed(
+    () => (usePage().props.linkedin as string | undefined) ?? '',
+);
 
 const gloed = useTemplateRef<HTMLElement>('gloed');
 const portret = useTemplateRef<HTMLElement>('portret');
@@ -334,6 +347,33 @@ onBeforeUnmount(() => {
                     >
                         {{ $t('Bekijk de diensten') }}
                     </Button>
+
+                    <!--
+                        Het LinkedIn-knopje. Bewust klein en zonder tekst:
+                        dit is de derde keuze op deze regel, en twee
+                        knoppen met woorden plus een derde met woorden is
+                        geen keuze meer maar een menu.
+
+                        Het merkteken alleen is genoeg -- dat herkent
+                        iedereen -- en de naam staat in het `aria-label`
+                        voor wie het niet ziet. Bij hover draait het rond
+                        en kleurt het mee; zie `brand-merkknop` in
+                        app.css.
+
+                        Nieuw tabblad, net als in het blok onderaan: dit
+                        is een ander domein en een bezoeker hoort zijn
+                        plek op deze pagina niet kwijt te raken.
+                    -->
+                    <a
+                        v-if="linkedin"
+                        :href="linkedin"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="brand-merkknop"
+                        :aria-label="$t('Bekijk het LinkedIn-profiel')"
+                    >
+                        <LinkedinMerk />
+                    </a>
                 </div>
             </div>
 

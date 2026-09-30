@@ -23,6 +23,10 @@ declare module '@inertiajs/core' {
             auth: Auth;
             locale: string;
             locales: Record<string, string>;
+            /** De naam van de eigenaar, uit config/security.php. */
+            eigenaar: string;
+            /** Zijn LinkedIn-profiel, uit config/site.php. */
+            linkedin: string;
             /** De woordenlijst van de actieve taal; leeg in het Nederlands. */
             translations: Record<string, string>;
             flash: FlashProps;

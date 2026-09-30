@@ -33,6 +33,7 @@ enum PageSectionKey: string
     case Werkwijze = 'werkwijze';
     case Ervaring = 'ervaring';
     case Contact = 'contact';
+    case Linkedin = 'linkedin';
     case Footer = 'footer';
 
     /**
@@ -48,6 +49,7 @@ enum PageSectionKey: string
             self::Werkwijze => __('Werkwijze'),
             self::Ervaring => __('Ervaring'),
             self::Contact => __('Contact'),
+            self::Linkedin => __('LinkedIn'),
             self::Footer => __('Voettekst'),
         };
     }
@@ -61,7 +63,28 @@ enum PageSectionKey: string
             self::Werkwijze => __('De stappen van kennismaken tot overdragen.'),
             self::Ervaring => __('De tijdlijn met functies en organisaties, van nu naar vroeger.'),
             self::Contact => __('Het contactformulier.'),
+            self::Linkedin => __('De uitnodiging om je op LinkedIn te volgen, met een knop naar je profiel.'),
             self::Footer => __('De afsluiting onderaan elke pagina.'),
+        };
+    }
+
+    /**
+     * Valt er aan dit onderdeel iets te beheren?
+     *
+     * **Dit is niet hetzelfde als `beheerRoute() === null`.** Dat zegt
+     * "er is nog geen scherm voor", en het indelingsscherm zet er dan
+     * "Nog niet te beheren" bij -- een belofte dat het er ooit komt.
+     *
+     * Bij de kop en de voettekst staat de tekst in de code, en bij
+     * LinkedIn is er precies één ding -- de link -- die bewust vastligt.
+     * Daar valt niets te beheren, nu niet en later niet, en dan is
+     * "nog niet" een verkeerde mededeling.
+     */
+    public function teBeheren(): bool
+    {
+        return match ($this) {
+            self::Linkedin, self::Footer => false,
+            default => true,
         };
     }
 
@@ -108,6 +131,11 @@ enum PageSectionKey: string
             self::Werkwijze => 2,
             self::Ervaring => 3,
             self::Contact => 4,
+
+            // Ná het contactformulier: "en volg me verder op LinkedIn"
+            // is een afsluiter en geen uitnodiging om te mailen.
+            self::Linkedin => 5,
+
             self::Footer => 1000,
         };
     }

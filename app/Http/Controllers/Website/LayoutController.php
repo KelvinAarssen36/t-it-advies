@@ -222,6 +222,14 @@ class LayoutController extends Controller
              */
             'live' => $sectie->vast() || ($aangezet && $gevuld),
             'manageUrl' => $route === null ? null : route($route),
+
+            /*
+             * Of er überhaupt iets te beheren valt. Zonder dit verschil
+             * zegt het scherm bij LinkedIn "Nog niet te beheren", en dat
+             * is een belofte die we niet gaan waarmaken: daar is één
+             * link en die ligt bewust vast. Zie PageSectionKey::teBeheren().
+             */
+            'manageable' => $sectie->teBeheren(),
         ];
     }
 }

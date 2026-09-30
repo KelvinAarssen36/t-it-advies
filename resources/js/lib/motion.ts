@@ -1477,4 +1477,174 @@ export function volgSecties(
     return () => triggers.forEach((trigger) => trigger.kill());
 }
 
+/**
+ * Een signaal dat uitgaat: de inhoud komt op, en er gaan ringen vanaf.
+ *
+ * Gemaakt voor het LinkedIn-blok. Hier stond eerst een netwerkje van
+ * lijnen die zichzelf tekenden -- mooi bedacht, maar je zag het niet:
+ * het lag achter de kaart, de lijnen waren haarfijn en de helft stond
+ * buiten beeld. Een animatie die je moet zoeken is geen animatie.
+ *
+ * Dit is het tegenovergestelde: het gebeurt precies waar je al kijkt,
+ * op het merkteken bovenaan de kaart.
+ *
+ * **Twee bewegingen, en ze horen bij elkaar.**
+ *
+ * 1. Bij binnenkomst komt de inhoud regel voor regel op, en gaat er
+ *    tegelijk één ring vanaf het merkteken naar buiten. Dat leest als
+ *    "hier wordt iets uitgezonden" en niet als "er verschijnt tekst".
+ * 2. Daarna blijven de ringen met lange tussenpozen uitgaan, als een
+ *    baken. Traag en zwak: het staat naast een knop die gelezen moet
+ *    worden.
+ *
+ * Dat doorgaan staat achter een breedtegrens, om dezelfde reden als de
+ * ring om het portret: een animatie die nooit ophoudt houdt zijn laag
+ * eeuwig in beweging, en dat kost op een telefoon scherpte en accu.
+ *
+ * Geeft een opruimfunctie terug; roep die aan in onBeforeUnmount.
+ */
+export function zendSignaal(
+    onderdelen: HTMLElement[],
+    ringen: HTMLElement[],
+): () => void {
+    if (onderdelen.length === 0) {
+        return () => {};
+    }
+
+    if (prefersReducedMotion()) {
+        gsap.set(onderdelen, { opacity: 1, y: 0 });
+        gsap.set(ringen, { opacity: 0 });
+
+        return () => {};
+    }
+
+    gsap.set(onderdelen, { opacity: 0, y: 18 });
+    gsap.set(ringen, { opacity: 0, scale: 0.6 });
+
+    const tijdlijn = gsap.timeline(
+        alInBeeld(onderdelen[0])
+            ? {}
+            : {
+                  scrollTrigger: {
+                      trigger: onderdelen[0],
+                      start: 'top 80%',
+                      once: true,
+                  },
+              },
+    );
+
+    tijdlijn.to(onderdelen, {
+        opacity: 1,
+        y: 0,
+        duration: 0.7,
+        stagger: 0.09,
+        ease: 'power3.out',
+    });
+
+    /*
+     * De eerste ring vertrekt terwijl het merkteken nog opkomt. Erna
+     * laten vertrekken is netter geordend en een stuk doder: dan is het
+     * een los trucje achteraf in plaats van één beweging.
+     */
+    if (ringen[0] !== undefined) {
+        tijdlijn.fromTo(
+            ringen[0],
+            { opacity: 0.55, scale: 0.6 },
+            { opacity: 0, scale: 2.6, duration: 1.6, ease: 'power2.out' },
+            0.15,
+        );
+    }
+
+    const mm = gsap.matchMedia();
+
+    mm.add('(min-width: 50rem)', () => {
+        /*
+         * De ringen vertrekken om beurten, met een vaste tussenpoos.
+         * Twee ringen en een pauze van vier seconden: vaker wordt het
+         * een knipperlicht, minder vaak en je hebt het nooit gezien.
+         */
+        const banen = ringen.map((ring, index) =>
+            gsap.fromTo(
+                ring,
+                { opacity: 0.45, scale: 0.6 },
+                {
+                    opacity: 0,
+                    scale: 2.6,
+                    duration: 2.4,
+                    ease: 'power2.out',
+                    repeat: -1,
+                    repeatDelay: 1.6,
+                    delay: 2.2 + index * 2,
+                },
+            ),
+        );
+
+        return () => banen.forEach((baan) => baan.kill());
+    });
+
+    return () => {
+        mm.revert();
+        tijdlijn.scrollTrigger?.kill();
+        tijdlijn.kill();
+    };
+}
+
+/**
+ * Een radarveeg die achter de kaart rondgaat.
+ *
+ * De tegenhanger van `zendSignaal`: daar gaat er iets uit, hier wordt er
+ * gekeken. Samen is het één gedachte, en dat is waarom het een veeg is
+ * geworden en geen zwevende deeltjes of een raster -- die zeggen iets
+ * anders dan de ringen die er al staan.
+ *
+ * **Het is met opzet nauwelijks te zien.** De bundel zelf is een
+ * `conic-gradient` in CSS; hier draait alleen de laag rond. Achttien
+ * seconden voor een hele slag: zo traag dat je de beweging niet betrapt,
+ * alleen merkt dat het licht verschoven is. Sneller en het gaat vechten
+ * met de knop die gelezen moet worden.
+ *
+ * **Alleen op een breed scherm.** Om dezelfde reden als de ringpuls en de
+ * ring om het portret: iets wat nooit ophoudt houdt zijn laag eeuwig in
+ * beweging, en dat kost op een telefoon scherpte en accu. Daar is ook
+ * geen ruimte naast de kaart, dus er zou toch niets van te zien zijn.
+ * `matchMedia` zet hem weer stil zodra het venster smaller wordt.
+ *
+ * Geeft een opruimfunctie terug; roep die aan in onBeforeUnmount.
+ */
+export function draaiRadar(veeg: HTMLElement): () => void {
+    if (prefersReducedMotion()) {
+        return () => {};
+    }
+
+    const mm = gsap.matchMedia();
+
+    mm.add('(min-width: 50rem)', () => {
+        /*
+         * Opkomen en dan pas draaien. Een veeg die er in één klap staat
+         * valt op als een lamp die aangaat, en dat is precies wat dit
+         * niet moet zijn.
+         */
+        const opkomen = gsap.fromTo(
+            veeg,
+            { opacity: 0 },
+            { opacity: 1, duration: 1.8, ease: 'power2.out' },
+        );
+
+        const draaien = gsap.to(veeg, {
+            rotation: 360,
+            duration: 18,
+            ease: 'none',
+            repeat: -1,
+        });
+
+        return () => {
+            opkomen.kill();
+            draaien.kill();
+            gsap.set(veeg, { opacity: 0, rotation: 0 });
+        };
+    });
+
+    return () => mm.revert();
+}
+
 export { gsap, ScrollTrigger };

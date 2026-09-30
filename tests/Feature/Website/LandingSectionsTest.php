@@ -76,7 +76,7 @@ class LandingSectionsTest extends TestCase
         ]);
 
         $this->assertSame(
-            ['contact', 'diensten', 'werkwijze'],
+            ['contact', 'diensten', 'werkwijze', 'linkedin'],
             $this->sectiesOpDeLanding(),
         );
     }
@@ -90,7 +90,7 @@ class LandingSectionsTest extends TestCase
             ->update(['visible' => false]);
 
         $this->assertSame(
-            ['diensten', 'contact'],
+            ['diensten', 'contact', 'linkedin'],
             $this->sectiesOpDeLanding(),
         );
     }
@@ -107,7 +107,7 @@ class LandingSectionsTest extends TestCase
         app(SectionContent::class)->telt(PageSectionKey::Diensten, fn () => 0);
 
         $this->assertSame(
-            ['werkwijze', 'contact'],
+            ['werkwijze', 'contact', 'linkedin'],
             $this->sectiesOpDeLanding(),
         );
     }
@@ -133,7 +133,7 @@ class LandingSectionsTest extends TestCase
         $this->assertSame(0, PageSection::query()->count());
 
         $this->assertSame(
-            ['diensten', 'werkwijze', 'contact'],
+            ['diensten', 'werkwijze', 'contact', 'linkedin'],
             $this->sectiesOpDeLanding(),
         );
     }

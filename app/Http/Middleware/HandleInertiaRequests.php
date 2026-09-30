@@ -61,6 +61,20 @@ class HandleInertiaRequests extends Middleware
             // staat zonder het zelf op te zoeken.
             'locale' => app()->getLocale(),
             'locales' => (array) config('app.available_locales'),
+
+            /*
+             * De naam van de eigenaar en zijn LinkedIn, uit de config.
+             *
+             * Gedeeld en niet per pagina meegegeven, want er komen meer
+             * plekken die ernaar wijzen -- de voettekst hoort bij de
+             * layout en niet bij één pagina. Eén bron betekent dat die
+             * knoppen niet uiteen kunnen gaan lopen.
+             *
+             * Het zijn twee regels uit een configbestand, dus het kost
+             * geen query en geen meetbare tijd.
+             */
+            'eigenaar' => (string) config('security.portal_account.name'),
+            'linkedin' => (string) config('site.linkedin'),
             // De woordenlijst van de actieve taal. Zie translations().
             'translations' => fn () => $this->translations(),
             'flash' => [
