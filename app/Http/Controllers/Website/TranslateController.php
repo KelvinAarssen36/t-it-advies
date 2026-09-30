@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Website;
 
 use App\Http\Controllers\Controller;
+use App\Models\Service;
 use App\Support\Toast;
 use App\Support\Translation\VertaalFout;
 use App\Support\Translation\Vertaler;
@@ -60,8 +61,31 @@ class TranslateController extends Controller
             'title_nl' => ['nullable', 'string', 'max:120'],
             'intro_nl' => ['nullable', 'string', 'max:300'],
 
-            // Alleen de kop van de landingspagina heeft een opschrift.
+            // De koppen boven een blok hebben een opschrift; de kop van
+            // de landingspagina en die boven de diensten allebei.
             'eyebrow_nl' => ['nullable', 'string', 'max:60'],
+
+            // De korte tekst op een dienstkaart. Apart van `intro_nl`,
+            // want die is de zin onder een kop en niet de tekst van een
+            // item -- het scherm moet weten waar het antwoord heen moet.
+            'summary_nl' => ['nullable', 'string', 'max:300'],
+
+            // Eén expertisepunt onder een dienst, voor het knopje naast
+            // dat ene veld. Het venster onthoudt zelf welk punt het was.
+            'punt_nl' => ['nullable', 'string', 'max:60'],
+
+            /*
+             * En dezelfde punten als lijst, voor de grote knop.
+             *
+             * Die twee bestaan naast elkaar omdat het twee verschillende
+             * handelingen zijn: "vertaal dit ene woord opnieuw" en
+             * "vertaal alles van deze dienst". Zonder deze lijst zou de
+             * grote knop de titel en de teksten wél meenemen en de
+             * punten eronder niet, en dat is precies het soort halve
+             * uitkomst waar je later achter komt.
+             */
+            'punten_nl' => ['nullable', 'array', 'max:'.Service::PUNTEN_MAXIMUM],
+            'punten_nl.*' => ['nullable', 'string', 'max:60'],
 
             // Het woord onder één cijfer boven de tijdlijn. Eén veld en
             // geen lijst: de knop staat per cijfer, en het venster
@@ -69,27 +93,88 @@ class TranslateController extends Controller
             'woord_nl' => ['nullable', 'string', 'max:40'],
         ]);
 
+        /** @var array<int, string|null> $punten */
+        $punten = $bron['punten_nl'] ?? [];
+        unset($bron['punten_nl']);
+
         try {
-            $vertaald = $vertaler->naarEngels($bron);
+            $vertaald = $vertaler->naarEngels([
+                ...$bron,
+                ...$this->alsVelden($punten),
+            ]);
         } catch (VertaalFout $fout) {
             Toast::fout($fout->melding());
 
             return back();
         }
 
-        /*
-         * De sleutels gaan van `_nl` naar `_en`, want dat zijn de velden
-         * die het formulier moet invullen. De vertaler weet niets van onze
-         * kolomnamen; die vertaling hoort hier.
-         */
+        Inertia::flash('vertaling', $this->alsAntwoord($vertaald));
+
+        return back();
+    }
+
+    /**
+     * De lijst met punten plat maken tot losse velden.
+     *
+     * De vertaler werkt met een platte lijst van veldnaam naar tekst, en
+     * dat is met opzet: hij weet niets van onze schermen. Het nummer gaat
+     * in de veldnaam mee, zodat het antwoord straks weer bij het goede
+     * punt terechtkomt.
+     *
+     * @param  array<int, string|null>  $punten
+     * @return array<string, string|null>
+     */
+    private function alsVelden(array $punten): array
+    {
         $velden = [];
 
+        foreach ($punten as $index => $tekst) {
+            $velden['punt'.$index.'_nl'] = $tekst;
+        }
+
+        return $velden;
+    }
+
+    /**
+     * Het antwoord zoals het formulier het nodig heeft.
+     *
+     * De sleutels gaan van `_nl` naar `_en`, want dat zijn de velden die
+     * het formulier moet invullen. De vertaler weet niets van onze
+     * kolomnamen; die vertaling hoort hier.
+     *
+     * De genummerde punten komen apart terug, onder `punten_en`, **met
+     * hun oorspronkelijke nummer als sleutel**. Lege punten gaan niet
+     * naar de vertaaldienst en komen er dus ook niet uit: zou dit
+     * opnieuw doornummeren, dan schuift de vertaling van punt vier naar
+     * punt drie zodra punt twee leeg was.
+     *
+     * @param  array<string, string>  $vertaald
+     * @return array<string, mixed>
+     */
+    private function alsAntwoord(array $vertaald): array
+    {
+        $velden = [];
+        $punten = [];
+
         foreach ($vertaald as $sleutel => $tekst) {
+            if (preg_match('/^punt(\d+)_nl$/', $sleutel, $treffer) === 1) {
+                $punten[(int) $treffer[1]] = $tekst;
+
+                continue;
+            }
+
             $velden[str_replace('_nl', '_en', $sleutel)] = $tekst;
         }
 
-        Inertia::flash('vertaling', $velden);
+        if ($punten !== []) {
+            /*
+             * Als object en niet als lijst, want de nummers kunnen gaten
+             * hebben. In JSON wordt een array met gaten vanzelf een
+             * object, en dat is precies wat het formulier verwacht.
+             */
+            $velden['punten_en'] = $punten;
+        }
 
-        return back();
+        return $velden;
     }
 }

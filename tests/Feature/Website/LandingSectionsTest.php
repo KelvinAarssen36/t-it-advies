@@ -4,6 +4,7 @@ namespace Tests\Feature\Website;
 
 use App\Enums\PageSectionKey;
 use App\Models\PageSection;
+use App\Models\Service;
 use App\Support\Page\SectionContent;
 use Database\Seeders\PageSectionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -23,6 +24,20 @@ use Tests\TestCase;
 class LandingSectionsTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        /*
+         * Eén dienst, zodat dat onderdeel niet als leeg van de pagina
+         * valt. Deze tests gaan over de vólgorde van de onderdelen, en
+         * daarvoor moeten ze er wel staan -- dat een leeg onderdeel
+         * verdwijnt wordt hieronder apart getoetst en in
+         * ServicePublishingTest.
+         */
+        Service::factory()->create();
+    }
 
     /**
      * @return array<int, string>

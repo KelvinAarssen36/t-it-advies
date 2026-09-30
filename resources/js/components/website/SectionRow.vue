@@ -120,7 +120,13 @@ const staat = computed<'live' | 'uit' | 'leeg'>(() => {
             </p>
         </div>
 
-        <div class="flex shrink-0 items-center gap-3">
+        <!--
+            Op een telefoon zakt dit blok naar een eigen regel; zie
+            `brand-sectie-acties` in app.css. Zonder dat duwt het de
+            omschrijving ernaast zo smal dat er één woord per regel
+            overblijft.
+        -->
+        <div class="brand-sectie-acties flex shrink-0 items-center gap-3">
             <Link
                 v-if="rij.manageUrl && !bewerken"
                 :href="rij.manageUrl"

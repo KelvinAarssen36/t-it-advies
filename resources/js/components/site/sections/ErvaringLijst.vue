@@ -7,6 +7,7 @@ import {
     followYears,
     revealCards,
     ScrollTrigger,
+    scrollNaar,
 } from '@/lib/motion';
 import type { ErvaringOpDeSite } from '@/types/ervaring';
 
@@ -224,9 +225,13 @@ onBeforeUnmount(() => {
  * onzichtbaar blijven hangen -- en pas daarna meet ScrollTrigger de lijn
  * opnieuw op, want de punten staan ergens anders.
  *
- * Er wordt bewust niet naar boven gescrold. De lijst is zes regels hoog en
- * de knopjes staan er vlak onder; springt de pagina, dan ben je die
- * knopjes kwijt en moet je ze terugzoeken voor de volgende pagina.
+ * **En daarna wordt er naar de kop van dit onderdeel gesprongen.** Dat
+ * gebeurde hier eerst niet, met het idee dat je de knopjes dan kwijt
+ * bent. In de praktijk pakt het andersom uit: een nieuwe pagina is
+ * korter of langer dan de vorige, dus alles eronder verschuift en je
+ * staat ineens ergens middenin te kijken. Bovenaan de eerste regel van
+ * de nieuwe pagina beginnen is wat je van bladeren verwacht -- en de
+ * knopjes staan een scherm lager gewoon weer op hun plek.
  */
 const naarPagina = async (nieuw: number): Promise<void> => {
     if (nieuw === pagina.value || nieuw < 1 || nieuw > paginas.value) {
@@ -242,6 +247,10 @@ const naarPagina = async (nieuw: number): Promise<void> => {
     ScrollTrigger.refresh();
     tekenOpnieuw();
     volgJaren();
+
+    // Na het opnieuw meten, want `scrollNaar` rekent met de plek die
+    // het onderdeel dán heeft.
+    scrollNaar('ervaring');
 };
 </script>
 

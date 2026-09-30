@@ -55,6 +55,35 @@ export function prefersReducedMotion(): boolean {
 }
 
 /**
+ * Staat dit element al in beeld, of is het al voorbij?
+ *
+ * **Dit is het antwoord op de stilste fout van dit project.** Bijna elke
+ * binnenkomst hieronder werkt zo: het element begint onzichtbaar, en een
+ * scroll-trigger haalt het op zodra je erlangs komt. Dat klopt zolang
+ * het element onder de vouw wordt aangemaakt.
+ *
+ * Wordt het aangemaakt terwijl je er al voorbij bent -- bij het wisselen
+ * van taal wordt de hele pagina opnieuw opgebouwd, en bij het bladeren
+ * een deel ervan -- dan komt die trigger nooit meer langs. Het element
+ * staat er dan wel, maar op doorzichtigheid nul. Je ziet een lege plek
+ * en pas na verversen de tekst.
+ *
+ * Vandaar dat elke functie hieronder deze vraag stelt in plaats van dat
+ * de aanroeper het moet weten. Wie een nieuwe animatie toevoegt hoeft er
+ * niets voor te doen; wie het vergeet, loopt niet in de val.
+ *
+ * `deel` is dezelfde grens als de bijbehorende scroll-trigger, zodat
+ * "al in beeld" hier hetzelfde betekent als daar.
+ */
+export function alInBeeld(element: Element, deel = 0.85): boolean {
+    if (typeof window === 'undefined') {
+        return true;
+    }
+
+    return element.getBoundingClientRect().top < window.innerHeight * deel;
+}
+
+/**
  * Zet smooth scrolling aan. Geeft een opruimfunctie terug die je in
  * onUnmounted moet aanroepen, anders blijft Lenis draaien na een
  * Inertia-navigatie.
@@ -135,11 +164,21 @@ export function revealOnScroll(
                 y: 0,
                 duration: 0.8,
                 ease: 'power2.out',
-                scrollTrigger: {
-                    trigger: target,
-                    start: 'top 85%',
-                    once: true,
-                },
+
+                /*
+                 * Staat het al in beeld, dan geen scroll-trigger maar
+                 * meteen spelen: die trigger komt nooit meer langs en
+                 * dan blijft de tekst onzichtbaar. Zie `alInBeeld`.
+                 */
+                ...(alInBeeld(target)
+                    ? {}
+                    : {
+                          scrollTrigger: {
+                              trigger: target,
+                              start: 'top 85%',
+                              once: true,
+                          },
+                      }),
             },
         ),
     );
@@ -292,13 +331,23 @@ export function revealCards(
         });
     };
 
-    if (direct) {
-        binnen(kaarten);
+    /*
+     * Wat al in beeld staat komt meteen op; `direct` mag dat ook
+     * afdwingen maar hoeft niet meer. Zie `alInBeeld`.
+     */
+    const meteen = kaarten.filter((kaart) => direct || alInBeeld(kaart, 0.88));
 
+    if (meteen.length > 0) {
+        binnen(meteen);
+    }
+
+    const rest = kaarten.filter((kaart) => !meteen.includes(kaart));
+
+    if (rest.length === 0) {
         return () => {};
     }
 
-    const triggers = ScrollTrigger.batch(kaarten, {
+    const triggers = ScrollTrigger.batch(rest, {
         start: 'top 88%',
         once: true,
         onEnter: binnen,
@@ -353,11 +402,18 @@ export function countUp(tellers: HTMLElement[]): () => void {
             duration: 1.4,
             ease: 'power2.out',
             onUpdate: () => schrijf(teller, stand.waarde),
-            scrollTrigger: {
-                trigger: teller,
-                start: 'top 90%',
-                once: true,
-            },
+
+            // Al in beeld? Dan meteen tellen. Zonder dit blijft het
+            // getal op nul staan; zie `alInBeeld`.
+            ...(alInBeeld(teller, 0.9)
+                ? {}
+                : {
+                      scrollTrigger: {
+                          trigger: teller,
+                          start: 'top 90%',
+                          once: true,
+                      },
+                  }),
         });
     });
 
@@ -640,11 +696,18 @@ export function splitReveal(
                     duration: 0.9,
                     stagger: 0.09,
                     ease: 'power3.out',
-                    scrollTrigger: {
-                        trigger: target,
-                        start: 'top 88%',
-                        once: true,
-                    },
+
+                    // Al in beeld? Dan meteen, zonder trigger. Zie
+                    // `alInBeeld`.
+                    ...(alInBeeld(target, 0.88)
+                        ? {}
+                        : {
+                              scrollTrigger: {
+                                  trigger: target,
+                                  start: 'top 88%',
+                                  once: true,
+                              },
+                          }),
                 }),
         });
     });
@@ -846,11 +909,19 @@ export function kantelKaarten(
     gsap.set(kaarten, { transformPerspective: 800 });
 
     const opruimers = kaarten.map((kaart) => {
-        const naarX = gsap.quickTo(kaart, 'rotateX', {
+        /*
+         * **`rotationX` en niet `rotateX`.** Die tweede is in GSAP een
+         * alias; intern wordt de waarde onder de naam `rotationX`
+         * bewaard. `quickTo` zoekt bij elke aanroep de bewaarde waarde
+         * op onder precies de naam die je hier opgeeft, vindt hem niet,
+         * en waarschuwt dan in de console: "rotateX not eligible for
+         * reset". Hij herstelt zichzelf, maar de melding blijft komen.
+         */
+        const naarX = gsap.quickTo(kaart, 'rotationX', {
             duration: 0.5,
             ease: 'power3.out',
         });
-        const naarY = gsap.quickTo(kaart, 'rotateY', {
+        const naarY = gsap.quickTo(kaart, 'rotationY', {
             duration: 0.5,
             ease: 'power3.out',
         });
@@ -1032,7 +1103,10 @@ export function tekenPad(
  *
  * Geeft een opruimfunctie terug; roep die aan in onBeforeUnmount.
  */
-export function kaartenBinnen(kaarten: HTMLElement[]): () => void {
+export function kaartenBinnen(
+    kaarten: HTMLElement[],
+    { direct = false }: { direct?: boolean } = {},
+): () => void {
     if (kaarten.length === 0) {
         return () => {};
     }
@@ -1045,24 +1119,48 @@ export function kaartenBinnen(kaarten: HTMLElement[]): () => void {
 
     gsap.set(kaarten, { transformPerspective: 900 });
 
-    const tween = gsap.fromTo(
-        kaarten,
-        { opacity: 0, y: 40, rotateX: -12, scale: 0.96 },
-        {
-            opacity: 1,
-            y: 0,
-            rotateX: 0,
-            scale: 1,
-            duration: 0.85,
-            stagger: 0.12,
-            ease: 'power3.out',
-            scrollTrigger: {
-                trigger: kaarten[0],
-                start: 'top 85%',
-                once: true,
-            },
+    const van = { opacity: 0, y: 40, rotateX: -12, scale: 0.96 };
+
+    const naar = {
+        opacity: 1,
+        y: 0,
+        rotateX: 0,
+        scale: 1,
+        duration: 0.85,
+        stagger: 0.12,
+        ease: 'power3.out',
+    };
+
+    /*
+     * Meteen spelen als de kaarten al in beeld staan -- de volgende
+     * pagina van een lijst bijvoorbeeld. Een scroll-trigger vuurt daar
+     * nooit af, en dan blijft alles op doorzichtigheid nul hangen.
+     *
+     * `direct` mag dat ook afdwingen, maar het hoeft niet meer: de
+     * eerste kaart wordt gewoon gevraagd of hij al in beeld staat. Zo
+     * kan een aanroeper het niet meer vergeten. Zie `alInBeeld`.
+     *
+     * Wel iets korter dan bij binnenkomst: je hebt zelf op een knopje
+     * gedrukt en wacht op het antwoord.
+     */
+    if (direct || alInBeeld(kaarten[0], 0.85)) {
+        const tween = gsap.fromTo(kaarten, van, {
+            ...naar,
+            duration: 0.55,
+            stagger: 0.07,
+        });
+
+        return () => tween.kill();
+    }
+
+    const tween = gsap.fromTo(kaarten, van, {
+        ...naar,
+        scrollTrigger: {
+            trigger: kaarten[0],
+            start: 'top 85%',
+            once: true,
         },
-    );
+    });
 
     return () => {
         tween.scrollTrigger?.kill();

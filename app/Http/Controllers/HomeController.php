@@ -7,6 +7,8 @@ use App\Models\Experience;
 use App\Models\ExperienceHeading;
 use App\Models\HeroHeading;
 use App\Models\PageSection;
+use App\Models\Service;
+use App\Models\ServiceHeading;
 use App\Support\Loopbaan;
 use App\Support\Page\SectionContent;
 use Illuminate\Database\Eloquent\Collection;
@@ -40,6 +42,12 @@ class HomeController extends Controller
          */
         $loopbaan = in_array(PageSectionKey::Ervaring->value, $secties, true)
             ? Experience::query()->online()->opTijdlijn()->get()
+            : new Collection;
+
+        // Zelfde regel voor de diensten. `with('points')` erbij, anders
+        // haalt elke kaart zijn eigen lijstje op.
+        $diensten = in_array(PageSectionKey::Diensten->value, $secties, true)
+            ? Service::query()->with('points')->online()->opVolgorde()->get()
             : new Collection;
 
         return Inertia::render('Welcome', [
@@ -79,6 +87,23 @@ class HomeController extends Controller
                 $secties,
             ),
 
+            /*
+             * De diensten, in de taal van de bezoeker. Leeg als het
+             * onderdeel niet op de pagina staat -- dan is de query
+             * hierboven ook niet gedaan.
+             */
+            'services' => $diensten
+                ->map(fn (Service $dienst) => $this->dienst($dienst))
+                ->all(),
+
+            /*
+             * De kop boven dat blok. Alleen meesturen als het onderdeel
+             * er staat; dezelfde regel als bij de tijdlijn hieronder.
+             */
+            'serviceHeading' => in_array(PageSectionKey::Diensten->value, $secties, true)
+                ? $this->dienstenKop()
+                : null,
+
             'experiences' => $loopbaan
                 ->map(fn (Experience $ervaring) => $this->ervaring($ervaring))
                 ->all(),
@@ -115,6 +140,47 @@ class HomeController extends Controller
     private function heroKop(): array
     {
         $kop = HeroHeading::huidige();
+
+        return [
+            'opschrift' => $kop->opschrift(),
+            'titel' => $kop->titel(),
+            'inleiding' => $kop->inleiding(),
+        ];
+    }
+
+    /**
+     * Eén dienst, in de taal van de bezoeker.
+     *
+     * Alles is hier al beslist: wat terugvalt op het Nederlands en wat
+     * wordt weggelaten. De Vue-component toont alleen nog wat er is.
+     * Zie App\Models\Service.
+     *
+     * @return array<string, mixed>
+     */
+    private function dienst(Service $dienst): array
+    {
+        return [
+            'id' => $dienst->id,
+            'icon' => $dienst->icon->value,
+            'titel' => $dienst->titel(),
+            'samenvatting' => $dienst->samenvatting(),
+
+            // Null betekent: geen venster, en dus geen "Lees meer" op de
+            // kaart. Zie DienstenSection.vue.
+            'verhaal' => $dienst->verhaal(),
+
+            'punten' => $dienst->punten(),
+        ];
+    }
+
+    /**
+     * De kop boven de diensten, in de taal van de bezoeker.
+     *
+     * @return array<string, string|null>
+     */
+    private function dienstenKop(): array
+    {
+        $kop = ServiceHeading::huidige();
 
         return [
             'opschrift' => $kop->opschrift(),

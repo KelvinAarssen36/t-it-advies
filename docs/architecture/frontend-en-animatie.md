@@ -733,6 +733,38 @@ reveals zitten al in de layout. Alleen een animatie die bij één pagina hoort
 -- zoals de binnenkomst van de hero in `Welcome.vue` -- zet je in die pagina,
 en dan ruim je hem daar ook op.
 
+### Een element dat al in beeld staat, komt meteen op
+
+Dit is de stilste fout die dit project heeft gehad, en hij is twee keer
+gemaakt voordat hij goed was opgelost. Lees dit voordat je een animatie
+toevoegt die iets zichtbaar maakt.
+
+Bijna elke binnenkomst werkt zo: het element begint op `opacity: 0` — die
+klasse staat in het sjabloon — en een scroll-trigger haalt het op zodra je
+erlangs komt. Dat klopt zolang het element **onder de vouw** wordt
+aangemaakt, en dat is bij het laden van een pagina altijd zo.
+
+Wordt het aangemaakt terwijl je er al voorbij bent, dan komt die trigger
+nooit meer langs. Het element staat er wel, maar onzichtbaar. Je ziet een
+gat, en na verversen is alles er ineens. Twee keer gebeurd:
+
+- **Bij het bladeren** door de diensten: de kaarten van de tweede pagina
+  verschijnen midden in beeld.
+- **Bij het wisselen van taal**: `<main>` heeft de taal als sleutel, dus
+  de hele pagina wordt opnieuw opgebouwd — met alle koppen op
+  doorzichtigheid nul, terwijl je halverwege de pagina staat.
+
+Er was eerst per geval een `direct`-optie voor, die de aanroeper moest
+meegeven. Dat is precies de soort oplossing die je de derde keer vergeet.
+
+**Nu vraagt elke functie het zelf**, met `alInBeeld()` uit `motion.ts`:
+staat het element al in beeld, dan speelt de animatie meteen; staat het
+eronder, dan hangt hij aan de scroll. `revealOnScroll`, `splitReveal`,
+`revealCards`, `kaartenBinnen` en `countUp` doen dat allemaal. Wie een
+nieuwe animatie toevoegt hoeft er niets voor te doen — maar als je er een
+schrijft die iets van onzichtbaar naar zichtbaar brengt, stel die vraag
+dan ook.
+
 ### prefers-reduced-motion
 
 Alle beweging staat uit wanneer de bezoeker daarom vraagt. Dat is geen

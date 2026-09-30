@@ -3,6 +3,7 @@
 use App\Http\Controllers\Website\ExperienceController;
 use App\Http\Controllers\Website\HeroController;
 use App\Http\Controllers\Website\LayoutController;
+use App\Http\Controllers\Website\ServiceController;
 use App\Http\Controllers\Website\TranslateController;
 use Illuminate\Support\Facades\Route;
 
@@ -63,6 +64,28 @@ Route::middleware(['auth', 'verified', 'two-factor.required', 'can:manage portal
         Route::prefix('kop')->name('kop.')->group(function () {
             Route::get('/', [HeroController::class, 'index'])->name('index');
             Route::put('/', [HeroController::class, 'update'])->name('update');
+        });
+
+        /*
+         * De diensten. Een lijst zoals bij de ervaring, maar zonder
+         * detailpagina en met een volgorde die de klant zelf bepaalt.
+         *
+         * `kop` en `volgorde` staan vóór `{service}`, en dat is geen
+         * voorzorg maar noodzaak: het zijn allebei een PUT op hetzelfde
+         * patroon, en de eerste die past wint. Staat de volgorde ooit
+         * andersom, dan komt een verzoek voor de kop bij `update()`
+         * terecht en faalt het op een ontbrekende titel.
+         */
+        Route::prefix('diensten')->name('diensten.')->group(function () {
+            Route::get('/', [ServiceController::class, 'index'])->name('index');
+            Route::post('/', [ServiceController::class, 'store'])->name('store');
+
+            Route::put('kop', [ServiceController::class, 'kop'])->name('kop');
+            Route::put('volgorde', [ServiceController::class, 'volgorde'])->name('volgorde');
+
+            Route::put('{service}', [ServiceController::class, 'update'])->name('update');
+            Route::patch('{service}/online', [ServiceController::class, 'online'])->name('online');
+            Route::delete('{service}', [ServiceController::class, 'destroy'])->name('destroy');
         });
 
         /*

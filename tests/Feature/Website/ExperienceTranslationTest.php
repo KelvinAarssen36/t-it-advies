@@ -3,6 +3,7 @@
 namespace Tests\Feature\Website;
 
 use App\Models\Experience;
+use App\Models\Service;
 use App\Models\User;
 use App\Support\Translation\VertaalFout;
 use App\Support\Translation\Vertaler;
@@ -159,6 +160,98 @@ class ExperienceTranslationTest extends TestCase
             ['woord_en' => 'EN: opdrachten'],
             session(SessionKey::FLASH_DATA)['vertaling'] ?? null,
         );
+    }
+
+    /**
+     * De grote knop neemt de expertisepunten mee.
+     *
+     * Ze komen als lijst mee en niet als losse velden, want het scherm
+     * weet pas bij het indrukken hoeveel het er zijn. Terug komen ze
+     * onder `punten_en`, met hun nummer als sleutel.
+     */
+    public function test_the_whole_list_of_points_is_translated_at_once(): void
+    {
+        $this->werkendeVertaler();
+
+        $this->actingAs($this->beheerder())
+            ->from(route('website.diensten.index'))
+            ->post(route('website.vertalen'), [
+                'title_nl' => 'Beheer',
+                'punten_nl' => ['monitoring', 'back-ups'],
+            ])
+            ->assertRedirect(route('website.diensten.index'));
+
+        $this->assertSame([
+            'title_en' => 'EN: Beheer',
+            'punten_en' => [0 => 'EN: monitoring', 1 => 'EN: back-ups'],
+        ], session(SessionKey::FLASH_DATA)['vertaling'] ?? null);
+    }
+
+    /**
+     * Een leeg punt houdt zijn plek in de rij.
+     *
+     * Lege velden gaan niet naar de vertaaldienst -- dat kost tekens van
+     * het tegoed en levert niets op -- maar de nummers van de punten
+     * eromheen mogen daar niet door verschuiven. Zou dit opnieuw
+     * doornummeren, dan komt de vertaling van punt drie in punt twee
+     * terecht.
+     */
+    public function test_an_empty_point_does_not_shift_the_others(): void
+    {
+        $this->werkendeVertaler();
+
+        $this->actingAs($this->beheerder())
+            ->post(route('website.vertalen'), [
+                'punten_nl' => ['monitoring', '', 'updates'],
+            ]);
+
+        $this->assertSame(
+            [0 => 'EN: monitoring', 2 => 'EN: updates'],
+            session(SessionKey::FLASH_DATA)['vertaling']['punten_en'] ?? null,
+        );
+    }
+
+    /**
+     * Alle velden van een dienst passen in één verzoek.
+     *
+     * De vertaler heeft een noodrem op het aantal velden, en die stond
+     * op zes. Een dienst met acht expertisepunten heeft er elf, dus de
+     * helft viel er stilletjes af -- geen fout, alleen een half
+     * vertaalde dienst. Deze test bewaakt dat die rem hoog genoeg staat.
+     */
+    public function test_a_full_service_fits_in_one_request(): void
+    {
+        $this->werkendeVertaler();
+
+        $this->actingAs($this->beheerder())
+            ->post(route('website.vertalen'), [
+                'title_nl' => 'Beheer',
+                'summary_nl' => 'Draaiend houden.',
+                'description_nl' => 'Het hele verhaal.',
+                'punten_nl' => array_map(
+                    fn (int $nummer) => 'punt '.$nummer,
+                    range(1, Service::PUNTEN_MAXIMUM),
+                ),
+            ]);
+
+        /** @var array<string, mixed> $vertaling */
+        $vertaling = session(SessionKey::FLASH_DATA)['vertaling'];
+
+        $this->assertCount(Service::PUNTEN_MAXIMUM, $vertaling['punten_en']);
+        $this->assertArrayHasKey('title_en', $vertaling);
+        $this->assertArrayHasKey('summary_en', $vertaling);
+        $this->assertArrayHasKey('description_en', $vertaling);
+    }
+
+    public function test_more_points_than_a_service_can_hold_are_refused(): void
+    {
+        $this->werkendeVertaler();
+
+        $this->actingAs($this->beheerder())
+            ->post(route('website.vertalen'), [
+                'punten_nl' => array_fill(0, Service::PUNTEN_MAXIMUM + 1, 'iets'),
+            ])
+            ->assertSessionHasErrors('punten_nl');
     }
 
     public function test_a_word_that_is_too_long_is_refused(): void

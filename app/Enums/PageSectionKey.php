@@ -57,7 +57,7 @@ enum PageSectionKey: string
     {
         return match ($this) {
             self::Hero => __('Het eerste dat een bezoeker ziet: de titel, de ondertitel en de twee knoppen.'),
-            self::Diensten => __('De drie diensten, elk met een korte toelichting.'),
+            self::Diensten => __('De diensten die je aanbiedt, elk met een korte toelichting en de expertise die eronder valt.'),
             self::Werkwijze => __('De stappen van kennismaken tot overdragen.'),
             self::Ervaring => __('De tijdlijn met functies en organisaties, van nu naar vroeger.'),
             self::Contact => __('Het contactformulier.'),
@@ -124,6 +124,7 @@ enum PageSectionKey: string
     {
         return match ($this) {
             self::Hero => 'website.kop.index',
+            self::Diensten => 'website.diensten.index',
             self::Ervaring => 'website.ervaring.index',
             default => null,
         };

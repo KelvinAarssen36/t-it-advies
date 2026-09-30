@@ -44,8 +44,16 @@ class MyMemoryVertaler implements Vertaler
      * Het is geen limiet die de klant tegenkomt maar een noodrem: elke
      * tekst is een apart verzoek, en een fout in de aanroepende code zou
      * er anders tientallen achter elkaar afvuren.
+     *
+     * **Twaalf, en dat getal komt ergens vandaan.** Het drukste scherm
+     * is een dienst: een titel, een korte tekst, een uitgebreide tekst
+     * en hoogstens acht expertisepunten, samen elf. Stond dit lager --
+     * en het stond op zes -- dan sneed `array_slice` hieronder de rest
+     * er stilletjes af, en kreeg de klant de helft van zijn punten
+     * onvertaald terug zonder dat er iets misging. Komt er ooit een
+     * scherm met meer velden, dan hoort dit getal mee te groeien.
      */
-    private const HOOGUIT = 6;
+    private const HOOGUIT = 12;
 
     /**
      * Hoeveel tekens er in één verzoek passen.

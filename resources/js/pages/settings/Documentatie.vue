@@ -13,6 +13,7 @@ import {
     Image,
     Languages,
     LayoutList,
+    Lightbulb,
     Mail,
     Milestone,
     MousePointerClick,
@@ -40,6 +41,7 @@ import adminUsers from '@/routes/admin/users';
 import { show } from '@/routes/documentation';
 import site from '@/routes/site';
 import website from '@/routes/website';
+import dienstenRoutes from '@/routes/website/diensten';
 import kop from '@/routes/website/kop';
 import ervaring from '@/routes/website/ervaring';
 
@@ -561,6 +563,46 @@ defineOptions({
                                 <Link :href="kop.index()">
                                     <KopIcoon class="size-4" />
                                     {{ $t('Open de kop') }}
+                                </Link>
+                            </Button>
+                        </template>
+                    </UitlegKaart>
+
+                    <UitlegKaart :titel="$t('Diensten')" :icoon="Lightbulb">
+                        <p>
+                            {{
+                                $t(
+                                    'Wat je aanbiedt, als kaarten op je website. Elke dienst krijgt een pictogram, een titel, een korte tekst en een lijstje met de expertise die eronder valt.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Er is geen maximum: zet er zoveel neer als je wilt. Op je website staan er vier tegelijk, en op een telefoon drie -- daarna bladert je bezoeker met de knopjes eronder naar de volgende. Zo wordt het blok nooit zo lang dat de rest van je pagina eronder verdwijnt.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'De uitgebreide tekst mag je leeg laten. Vul je hem in, dan kan een bezoeker op de kaart klikken en opent er een venster met dat verhaal. Laat je hem leeg, dan is de kaart gewoon een kaart.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Met de knop Volgorde sleep je ze in de volgorde die je wilt. Met het schuifje haal je er eentje tijdelijk vanaf zonder hem kwijt te raken. Staat álles uit, dan verdwijnt het hele blok van je website.',
+                                )
+                            }}
+                        </p>
+
+                        <template #voorbeeld>
+                            <Button variant="outline" size="sm" as-child>
+                                <Link :href="dienstenRoutes.index()">
+                                    <Lightbulb class="size-4" />
+                                    {{ $t('Open de diensten') }}
                                 </Link>
                             </Button>
                         </template>

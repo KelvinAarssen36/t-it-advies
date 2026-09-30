@@ -6,6 +6,7 @@ use App\Enums\ActivityAction;
 use App\Enums\PageSectionKey;
 use App\Models\ActivityEntry;
 use App\Models\PageSection;
+use App\Models\Service;
 use App\Models\User;
 use App\Support\Page\SectionContent;
 use Database\Seeders\PageSectionSeeder;
@@ -293,6 +294,10 @@ class PageLayoutTest extends TestCase
          * keuze en leeg is een probleem. Zouden ze er hetzelfde uitzien,
          * dan leert de eigenaar de waarschuwing te negeren.
          */
+        // Wél inhoud, anders toetst deze test twee dingen tegelijk en
+        // slaagt hij ook als "uitgezet" en "leeg" hetzelfde worden.
+        Service::factory()->create();
+
         PageSection::query()
             ->where('key', PageSectionKey::Diensten)
             ->update(['visible' => false]);

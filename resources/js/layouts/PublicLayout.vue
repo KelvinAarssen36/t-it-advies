@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { router, usePage } from '@inertiajs/vue3';
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+import {
+    computed,
+    nextTick,
+    onBeforeUnmount,
+    onMounted,
+    ref,
+    watch,
+} from 'vue';
 import ScrollProgress from '@/components/site/ScrollProgress.vue';
 import SiteFooter from '@/components/site/SiteFooter.vue';
 import SiteHeader from '@/components/site/SiteHeader.vue';
@@ -60,6 +67,21 @@ const scanReveals = () => {
     stopReveal = revealOnScroll('[data-reveal]', root.value);
     stopSplit = splitReveal('[data-split]', root.value);
 };
+
+/**
+ * Opnieuw scannen zodra de taal verandert.
+ *
+ * De sleutel op `<main>` hierboven gooit bij een taalwissel de hele
+ * pagina weg en bouwt hem opnieuw op. Dat zijn dus nieuwe elementen, met
+ * hun `opacity-0` er weer op, en die moeten opnieuw worden opgehaald.
+ *
+ * Dit staat er náást de luisteraar op `navigate` hieronder, en niet in
+ * plaats daarvan. Die luisteraar dekt het waarschijnlijk al af -- een
+ * taalwissel is ook een navigatie -- maar deze herscan hangt aan precies
+ * het ding dat de pagina heeft herbouwd, en dat is één schakel minder om
+ * je zorgen over te maken.
+ */
+watch(taal, () => void nextTick(scanReveals));
 
 onMounted(() => {
     stopScroll = startSmoothScroll();

@@ -6,6 +6,7 @@ use App\Enums\PageSectionKey;
 use App\Enums\SecurityEventType;
 use App\Listeners\RecordSecurityEvents;
 use App\Models\Experience;
+use App\Models\Service;
 use App\Models\User;
 use App\Support\Page\SectionContent;
 use App\Support\Security\SecurityLogger;
@@ -102,6 +103,13 @@ class AppServiceProvider extends ServiceProvider
         $this->app->make(SectionContent::class)->telt(
             PageSectionKey::Ervaring,
             fn () => Experience::query()->online()->count(),
+        );
+
+        // Zelfde verhaal voor de diensten: staat alles offline, dan is
+        // het blok voor de bezoeker leeg en hoort het van de site af.
+        $this->app->make(SectionContent::class)->telt(
+            PageSectionKey::Diensten,
+            fn () => Service::query()->online()->count(),
         );
     }
 

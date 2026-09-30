@@ -25,11 +25,27 @@ Laravel. Wat die variant anders moet doen staat in
 
 ### De inhoud van de overige onderdelen beheerbaar maken
 
-De [ervaring](architecture/modules/ervaring.md) en de
-[kop](architecture/modules/kop.md) zijn af. De diensten en de werkwijze
-staan nog in hun Vue-component; allebei zijn ze een module op zich, en de
-stappen ernaartoe staan in
+De [ervaring](architecture/modules/ervaring.md), de
+[kop](architecture/modules/kop.md) en de
+[diensten](architecture/modules/diensten.md) zijn af. Alleen de werkwijze
+staat nog in zijn Vue-component; de stappen ernaartoe staan in
 [pagina-indeling](architecture/pagina-indeling.md).
+
+### De drie koptabellen samenvoegen
+
+`hero_headings`, `experience_headings` en `service_headings` zijn drie
+bijna identieke tabellen met één rij: een opschrift, een titel, een zin
+eronder en een merkje voor automatisch vertaald. Elke volgende module met
+een beheerbare kop maakt er een vierde bij.
+
+Eén `section_headings` met een regel per `PageSectionKey` is de betere
+vorm: dan heeft elk toekomstig onderdeel gratis een beheerbare kop, en is
+er één model, één controller-methode en één test in plaats van drie.
+
+**Dit is bewust uitgesteld tot de volgende module.** De winst komt pas
+zodra er een vierde bij zou komen, en het verhuizen raakt drie schermen
+die nu werken. De werkwijze is het eerstvolgende onderdeel dat zo'n kop
+krijgt; dat is het moment.
 
 Zolang dat zo is, staat er op het indelingsscherm bij die onderdelen "Nog
 niet te beheren".

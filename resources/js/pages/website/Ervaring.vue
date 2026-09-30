@@ -330,8 +330,17 @@ const bekijk = (item: ErvaringRij): void => {
                 </span>
             </div>
 
-            <div class="brand-scrollbar overflow-x-auto rounded-xl border">
-                <table class="w-full text-sm">
+            <!--
+                Op een telefoon wordt deze tabel een stapel kaartjes; zie
+                `brand-tabel-kaarten` in app.css. Daarvoor stonden de
+                functietitel, het schuifje en de twee knoppen op één
+                regel, en dan bleef er van die titel één woord per regel
+                over. Op een breed scherm verandert er niets.
+            -->
+            <div
+                class="brand-tabelvak brand-scrollbar overflow-x-auto rounded-xl border"
+            >
+                <table class="brand-tabel-kaarten w-full text-sm">
                     <thead class="bg-muted/50 text-left">
                         <tr>
                             <th class="px-3 py-2 font-medium">
@@ -413,38 +422,36 @@ const bekijk = (item: ErvaringRij): void => {
                                         >
                                             {{ $t('Loopt nu') }}
                                         </span>
-
-                                        <!--
-                                            Op een telefoon staan de twee
-                                            weggevallen kolommen hier, onder
-                                            de titel. Dan is de regel nog
-                                            steeds compleet zonder dat je
-                                            zijwaarts moet scrollen.
-                                        -->
-                                        <span
-                                            class="block text-xs text-muted-foreground md:hidden"
-                                        >
-                                            {{ item.organisation }}
-                                            <span aria-hidden="true">·</span>
-                                            {{ item.periode }}
-                                        </span>
                                     </span>
                                 </span>
                             </td>
 
+                            <!--
+                                Deze drie zijn op een breed scherm kolommen
+                                die pas bij genoeg ruimte verschijnen. Op
+                                een telefoon maakt `brand-tabel-kaarten`
+                                er regels met een naam ervoor van, en dan
+                                staan ze er wél -- dat is de winst van de
+                                kaartvorm: alles past, onder elkaar.
+                            -->
                             <td
+                                :data-label="$t('Organisatie')"
                                 class="hidden px-3 py-2 text-muted-foreground md:table-cell"
                             >
                                 {{ item.organisation }}
                             </td>
 
                             <td
+                                :data-label="$t('Periode')"
                                 class="hidden px-3 py-2 whitespace-nowrap text-muted-foreground tabular-nums lg:table-cell"
                             >
                                 {{ item.periode }}
                             </td>
 
-                            <td class="hidden px-3 py-2 lg:table-cell">
+                            <td
+                                :data-label="$t('Engels')"
+                                class="hidden px-3 py-2 lg:table-cell"
+                            >
                                 <!--
                                     Alleen de verplichte functietitel telt als
                                     "nog niet vertaald". Een lege beschrijving
@@ -475,9 +482,18 @@ const bekijk = (item: ErvaringRij): void => {
                                 </span>
                             </td>
 
-                            <td class="px-3 py-2" @click.stop>
+                            <td
+                                :data-label="$t('Online')"
+                                class="px-3 py-2"
+                                @click.stop
+                            >
+                                <!--
+                                    Gecentreerd onder de kolomkop, maar op
+                                    een telefoon staat hij in een regel met
+                                    een naam ervoor en hoort hij links.
+                                -->
                                 <span
-                                    class="flex items-center justify-center gap-2"
+                                    class="flex items-center justify-start gap-2 tablet:justify-center"
                                 >
                                     <Switch
                                         :model-value="item.published"

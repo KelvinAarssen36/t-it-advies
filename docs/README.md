@@ -66,6 +66,7 @@ staan de vijf stappen -- en daarna een bestaande module als voorbeeld.
 
 - [Ervaring](architecture/modules/ervaring.md) -- de tijdlijn met functies en organisaties. De eerste module, en daarmee het voorbeeld voor de volgende.
 - [Kop](architecture/modules/kop.md) -- de drie teksten bovenaan de landingspagina. De kleinste module: één rij, één venster, geen lijst.
+- [Diensten](architecture/modules/diensten.md) -- wat de klant aanbiedt, met expertisepunten en een eigen volgorde. Combineert een lijst met beheerbare vaste tekst.
 
 ## Beveiliging
 

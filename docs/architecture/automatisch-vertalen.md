@@ -48,6 +48,28 @@ te weten: één woord erin, één woord eruit. Het venster heeft de knop zelf
 ingedrukt en onthoudt de rest. Er kan er maar één tegelijk lopen, want de
 knoppen staan ondertussen uit.
 
+De **expertisepunten** van een dienst werken precies zo, met het veld
+`punt_nl`. Ook daar staat een rij korte teksten onder elkaar, en één knop
+die er acht tegelijk overschrijft is te grof.
+
+### De velden die de route kent
+
+| Veld             | Lengte | Wie het stuurt                                       |
+| ---------------- | ------ | ---------------------------------------------------- |
+| `role_nl`        | 120    | Eén ervaring                                         |
+| `location_nl`    | 120    | Eén ervaring                                         |
+| `description_nl` | 5000   | Een ervaring, en de uitgebreide tekst van een dienst |
+| `title_nl`       | 120    | De koppen boven een blok, en de titel van een dienst |
+| `intro_nl`       | 300    | De zin onder een kop                                 |
+| `eyebrow_nl`     | 60     | Het opschrift boven een kop                          |
+| `summary_nl`     | 300    | De korte tekst op een dienstkaart                    |
+| `woord_nl`       | 40     | Het woord onder één cijfer                           |
+| `punt_nl`        | 60     | Eén expertisepunt                                    |
+
+Ze zijn allemaal `nullable`, dus elk scherm stuurt alleen wat het heeft.
+Komt er een module bij met een nieuw soort tekst, dan komt daar een veld
+bij -- géén tweede route.
+
 > **De regel voor een volgende module:** één route, meerdere velden. Een
 > tweede route ernaast zou dezelfde begrenzing, dezelfde foutafhandeling
 > en dezelfde sleutelvertaling moeten herhalen, en dat is precies waar

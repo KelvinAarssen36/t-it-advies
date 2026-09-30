@@ -7,6 +7,7 @@ import {
     History,
     LayoutGrid,
     LayoutList,
+    Lightbulb,
     Mail,
     Milestone,
     ShieldAlert,
@@ -33,6 +34,7 @@ import adminMail from '@/routes/admin/mail';
 import adminSecurity from '@/routes/admin/security';
 import adminUsers from '@/routes/admin/users';
 import site from '@/routes/site';
+import diensten from '@/routes/website/diensten';
 import ervaring from '@/routes/website/ervaring';
 import kop from '@/routes/website/kop';
 import website from '@/routes/website';
@@ -116,6 +118,11 @@ const websiteItems = computed<NavItem[]>(() => [
         title: t('Kop'),
         href: kop.index(),
         icon: Heading,
+    },
+    {
+        title: t('Diensten'),
+        href: diensten.index(),
+        icon: Lightbulb,
     },
     {
         title: t('Ervaring'),
