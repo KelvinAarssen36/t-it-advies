@@ -9,6 +9,7 @@ use App\Models\Experience;
 use App\Models\PageSection;
 use App\Models\SectionHeading;
 use App\Models\Service;
+use App\Models\Statistic;
 use App\Support\Loopbaan;
 use App\Support\Page\SectionContent;
 use Illuminate\Database\Eloquent\Collection;
@@ -62,6 +63,10 @@ class HomeController extends Controller
 
         $opleidingen = $heeftCertificaten
             ? Education::query()->online()->opPeriode()->get()
+            : new Collection;
+
+        $statistieken = in_array(PageSectionKey::Statistieken->value, $secties, true)
+            ? Statistic::query()->online()->opVolgorde()->get()
             : new Collection;
 
         return Inertia::render('Welcome', [
@@ -156,6 +161,19 @@ class HomeController extends Controller
 
             'certificateHeading' => $heeftCertificaten
                 ? SectionHeading::voor(PageSectionKey::Certificaten)->voorDeSite()
+                : null,
+
+            /*
+             * De statistieken, al ingedeeld in groepen en per groep
+             * gebundeld op weergave. Dat rekenwerk staat hier en niet
+             * in Vue, om dezelfde reden als de taalkeuze: het is een
+             * inhoudelijke beslissing en geen opmaak, en het component
+             * hoort alleen nog te tekenen wat het krijgt.
+             */
+            'statistics' => $this->statistiekGroepen($statistieken),
+
+            'statisticHeading' => in_array(PageSectionKey::Statistieken->value, $secties, true)
+                ? SectionHeading::voor(PageSectionKey::Statistieken)->voorDeSite()
                 : null,
         ]);
     }
@@ -252,6 +270,163 @@ class HomeController extends Controller
             'instelling' => $opleiding->institution,
             'niveau' => $opleiding->niveau(),
             'periode' => $opleiding->periode(),
+        ];
+    }
+
+    /**
+     * De statistieken, ingedeeld in groepen en gebundeld op weergave.
+     *
+     * **Twee beslissingen die hier vallen en niet in Vue.**
+     *
+     * De eerste is de **indeling**: groeperen gebeurt op het Nederlandse
+     * veld, ook voor een Engelse bezoeker. Zou je op de vertaalde waarde
+     * groeperen, dan valt een groep in het Engels uit elkaar zodra één
+     * item zijn Engelse groepsnaam mist -- en dan staat dezelfde site in
+     * twee talen anders ingedeeld. Zie `Statistic::groepSleutel()`.
+     *
+     * De tweede is de **bundeling**: binnen een groep worden
+     * opeenvolgende statistieken van dezelfde vorm samen op één rij
+     * gezet. Een ring naast een balk naast een teller ziet er kapot uit
+     * -- drie totaal verschillende vormen en hoogtes in één raster --
+     * dus elke vorm krijgt zijn eigen band.
+     *
+     * **Opeenvolgend, en dat is een correctie.** Hier stonden eerst drie
+     * vaste bakken: eerst alle ringen, dan alle tellers, dan alle
+     * balken. Dat zag er altijd netjes uit, maar het maakte het slepen
+     * onbegrijpelijk: sleepte de eigenaar een balk boven een ring, dan
+     * gebeurde er op zijn website niets zichtbaars -- de ring stond
+     * immers altijd eerst. Hij zag het in de tabel veranderen en op de
+     * pagina niet, en dan is de sleepgreep een knop die liegt.
+     *
+     * Nu volgt de uitkomst zijn volgorde wél, en wordt er alleen een
+     * nieuwe band begonnen zodra de vorm verandert. Zet hij ring, ring,
+     * balk, ring neer, dan krijgt hij een rij ringen, een balk, en weer
+     * een ring. Nooit twee vormen op één rij, en nooit een sleepgreep
+     * die niets doet.
+     *
+     * Wat hij met slepen níet kan is een statistiek uit zijn groep
+     * halen; daar is het groepsveld voor.
+     *
+     * Een groep zonder naam komt vooraan, boven het eerste kopje. Dat is
+     * waar losse cijfers horen: ze zijn niet minder belangrijk, ze
+     * horen alleen nergens bij.
+     *
+     * @param  Collection<int, Statistic>  $statistieken
+     * @return array<int, array<string, mixed>>
+     */
+    private function statistiekGroepen(Collection $statistieken): array
+    {
+        /*
+         * Eerst alleen indelen, en in een tweede stap in banden
+         * verdelen. Dat kon ook in één keer met een referentie naar de
+         * band waar we mee bezig zijn, en dat stond er eerst -- maar
+         * dan is niet te lezen wat er gebeurt, en PHPStan kon de
+         * mutatie door die referentie niet volgen.
+         *
+         * @var array<string, array{naam: string|null, items: array<int, Statistic>}>
+         */
+        $perGroep = [];
+
+        foreach ($statistieken as $statistiek) {
+            $sleutel = $statistiek->groepSleutel();
+
+            $perGroep[$sleutel] ??= [
+                'naam' => $statistiek->groep(),
+                'items' => [],
+            ];
+
+            $perGroep[$sleutel]['items'][] = $statistiek;
+        }
+
+        /*
+         * De naamloze groep vooraan, de rest in de volgorde waarin hun
+         * eerste item staat. Daarmee bepaalt de klant met slepen ook de
+         * volgorde van de groepen, zonder dat daar een apart scherm
+         * voor nodig is.
+         *
+         * Dat `0` teruggeven de bestaande volgorde bewaart is geen
+         * toeval maar een garantie: sinds PHP 8.0 zijn de sorteringen
+         * stabiel. Op een oudere versie zou de volgorde van de groepen
+         * willekeurig zijn.
+         *
+         * **De parameters zijn `int|string` en dat is geen slordigheid.**
+         * PHP maakt van een array-sleutel die eruitziet als een getal
+         * stilletjes een integer, dus een groep die de klant "2024"
+         * noemt komt hier als `int` binnen. Zonder `declare(strict_types)`
+         * valt dat nu niet op -- PHP maakt er weer een string van -- maar
+         * de dag dat iemand dat wél aanzet ligt de voorpagina eruit op
+         * een groepsnaam. Zie StatisticGroupTest.
+         */
+        uksort($perGroep, fn (int|string $een, int|string $twee) => match (true) {
+            (string) $een === '' => -1,
+            (string) $twee === '' => 1,
+            default => 0,
+        });
+
+        $uitkomst = [];
+
+        foreach ($perGroep as $sleutel => $groep) {
+            $uitkomst[] = [
+                'sleutel' => (string) $sleutel,
+                'naam' => $groep['naam'],
+                'bundels' => $this->statistiekBundels($groep['items']),
+            ];
+        }
+
+        return $uitkomst;
+    }
+
+    /**
+     * De statistieken van één groep in banden verdelen.
+     *
+     * Een band is een rij opeenvolgende statistieken van dezelfde vorm.
+     * Verandert de vorm, dan begint er een nieuwe -- en dat is de hele
+     * regel. Zet de klant ring, ring, balk, ring neer, dan zijn dat dus
+     * drie banden en staat zijn volgorde er precies zo op de site.
+     *
+     * Zo komen twee vormen nooit op één rij, en doet slepen altijd iets
+     * zichtbaars. Zie de toelichting bij `statistiekGroepen()`.
+     *
+     * @param  array<int, Statistic>  $items
+     * @return array<int, array{weergave: string, items: array<int, array<string, mixed>>}>
+     */
+    private function statistiekBundels(array $items): array
+    {
+        $bundels = [];
+
+        foreach ($items as $statistiek) {
+            $vorm = $statistiek->display->value;
+            $laatste = count($bundels) - 1;
+
+            if ($laatste >= 0 && $bundels[$laatste]['weergave'] === $vorm) {
+                $bundels[$laatste]['items'][] = $this->statistiek($statistiek);
+
+                continue;
+            }
+
+            $bundels[] = [
+                'weergave' => $vorm,
+                'items' => [$this->statistiek($statistiek)],
+            ];
+        }
+
+        return $bundels;
+    }
+
+    /**
+     * Eén statistiek, in de taal van de bezoeker.
+     *
+     * @return array<string, mixed>
+     */
+    private function statistiek(Statistic $statistiek): array
+    {
+        return [
+            'id' => $statistiek->id,
+            'naam' => $statistiek->naam(),
+            'waarde' => $statistiek->value,
+            'voor' => $statistiek->prefix,
+            'na' => $statistiek->suffix,
+            'notitie' => $statistiek->notitie(),
         ];
     }
 

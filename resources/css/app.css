@@ -450,8 +450,55 @@
     /*
       Stopt het doorschuiven naar de pagina eronder zodra je de onderkant
       bereikt. In een venster is dat anders ronduit verwarrend.
+
+      **Let op waar je dit op zet.** Voor een paneel dat verticaal
+      schuift -- een bewerkvenster, een formulierlijst, de zijbalk -- is
+      dit precies goed. Voor een vak dat alleen zíjwaarts schuift is het
+      schadelijk: zie `brand-schuif-x` hieronder, en gebruik die klasse
+      daar.
     */
     overscroll-behavior: contain;
+}
+
+/*
+  Een vak dat alleen zijwaarts schuift: een brede tabel, een blok code.
+
+  **Dit bestaat door een fout die in elke tabel van het portaal zat.** De
+  tabellen hadden `overflow-x-auto` samen met `brand-scrollbar`, en dan
+  gebeuren er twee dingen die elkaar versterken:
+
+  1. `overflow-x: auto` met een `overflow-y` die nog op `visible` staat,
+     maakt die tweede as óók scrollbaar -- zo staat het in de
+     CSS-specificatie: `visible` wordt `auto` zodra de andere as dat niet
+     is.
+  2. `overscroll-behavior: contain` uit `brand-scrollbar` houdt het
+     scrollen dan binnen dat vak.
+
+  Samen betekende dat: met je muis boven een tabel kon je de pagina niet
+  meer naar beneden scrollen. Je wiel verdween in een vak dat verticaal
+  niets te schuiven had. De klant meldde dat als "ik kan de pagina niet
+  naar beneden scrollen", en terecht.
+
+  Deze klasse geeft het verticale scrollen weer door aan de pagina, en
+  houdt alleen het horizontale binnen het vak -- anders schiet een veeg
+  naar links op een aanraakscherm de browser een pagina terug.
+
+  **Er wordt met opzet niets aan `overflow-y` gedaan.** Dat was de eerste
+  ingeving: op `hidden` zetten, dan valt er verticaal niets te schuiven.
+  Maar bij een vak met een vaste hoogte -- het dashboard heeft `h-full`
+  -- knipt dat inhoud af die eronder uitkomt. Het is ook niet nodig: een
+  vak zonder verticale overloop geeft het wiel vanzelf door, zodra je het
+  niet meer met `contain` tegenhoudt.
+
+  **Ongelaagd met opzet.** `brand-scrollbar` is een `@utility` en staat
+  dus in de utilities-laag; een regel daarbuiten wint daar altijd van,
+  ongeacht de volgorde in dit bestand. Zie de valkuil daarover in
+  AGENTS.md.
+*/
+.brand-schuif-x {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    overscroll-behavior-y: auto;
 }
 
 .brand-scrollbar::-webkit-scrollbar {
@@ -1508,6 +1555,97 @@ html:has(.brand-dark-page) {
     .brand-knop-zacht:hover,
     .brand-knop-zacht:active {
         scale: 1;
+    }
+}
+
+/*
+  De glans die af en toe over een actieknop trekt.
+
+  **Dit zit op de knopvariant `brand` en niet op losse knoppen**, en dat is
+  de hele truc: die variant ís de actieknop van de publieke site. Hij staat
+  op "Neem contact op" in de kop, op dezelfde knop in de hero en op de
+  verzendknop onder het contactformulier. Komt er ooit een vierde bij, dan
+  glanst die mee zonder dat iemand eraan hoeft te denken.
+
+  **Eens in de zoveel tijd, en niet doorlopend.** De veeg duurt ongeveer
+  anderhalve seconde en de cyclus zeven; de rest van de tijd staat het
+  veegje buiten de knop en op doorzichtigheid nul. Een knop die altijd
+  glinstert is een knop die je wegkijkt.
+
+  De knop in de kop loopt met `brand-glans-laat` achter, zodat hij niet
+  samen met de hero oplicht. Twee knoppen die precies gelijk opflitsen
+  lezen als een laadanimatie in plaats van als een accent.
+
+  `overflow: hidden` houdt de veeg binnen de afgeronde hoeken. Dat raakt de
+  focusring niet: die is een `box-shadow` op de knop zelf, en overflow
+  snijdt alleen wat erin zit.
+
+  Zie resources/js/components/ui/button/index.ts.
+*/
+.brand-glans {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.brand-glans::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: 0;
+    z-index: 1;
+    height: 200%;
+    width: 35%;
+    translate: -150% 0;
+    rotate: 18deg;
+    background-image: linear-gradient(
+        90deg,
+        transparent,
+        color-mix(in srgb, #fff 55%, transparent),
+        transparent
+    );
+    opacity: 0;
+    pointer-events: none;
+    animation: brand-glans-veeg 7s ease-in-out infinite;
+}
+
+.brand-glans-laat::after {
+    animation-delay: 3.5s;
+}
+
+@keyframes brand-glans-veeg {
+    0% {
+        translate: -150% 0;
+        opacity: 0;
+    }
+
+    4% {
+        opacity: 1;
+    }
+
+    18% {
+        opacity: 1;
+    }
+
+    22% {
+        translate: 400% 0;
+        opacity: 0;
+    }
+
+    100% {
+        translate: 400% 0;
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    /*
+      Helemaal weg, en niet "stilgezet op een plek". Een lichte veeg die
+      halverwege de knop blijft staan leest als een vlek.
+    */
+    .brand-glans::after {
+        animation: none;
+        opacity: 0;
     }
 }
 
@@ -6491,6 +6629,759 @@ button:hover > .brand-verlaat,
         }
     }
 
+    /* --- De statistieken --------------------------------------------- */
+
+    /*
+      Het hele blok hangt aan drie variabelen die `vulStatistieken` per
+      onderdeel zet. Alles hieronder rekent daarmee.
+
+      | Variabele  | Wat het is                                        |
+      | ---------- | ------------------------------------------------- |
+      | `--vulling` | Hoe ver het vullen is, 0 tot 1. Eenmalig.        |
+      | `--glans`   | Waar het lichtpunt staat, 0 tot 1. Blijft rondgaan. |
+      | `--kracht`  | Hoe sterk dat lichtpunt is, 0 tot 1.             |
+
+      `--vulling` staat als terugval op **1** en de andere twee op **0**,
+      en dat is allebei met opzet de veilige kant. Gaat er iets mis met
+      de JavaScript, dan staat er een volle balk met het goede getal
+      ernaast in plaats van een leeg blok -- een statistiek die niets
+      laat zien is erger dan een statistiek die niet beweegt. En een
+      lichtpunt dat op zijn plek blijft staan omdat er niets beweegt,
+      leest als een vlek; dus zonder animatie is hij er niet.
+    */
+    .brand-statistieken {
+        --vulling: 1;
+        --glans: 0;
+        --kracht: 0;
+    }
+
+    /*
+      De eerste groep staat los van de sectiekop; de volgende staan
+      dichter op elkaar, want daar scheidt het kopje ze al.
+
+      **Alles hieronder is geschreven vanaf de telefoon.** Dat is nodig
+      omdat dit blok met elke statistiek langer wordt: bij vijftien
+      stuks staan er op een telefoon zo'n tien rijen onder elkaar, en
+      dan tellen een halve rem marge en een paar punten lettergrootte
+      op tot een blok dat niet meer ophoudt. Vanaf 40rem staan de
+      ruimere maten terug, dus op desktop verandert er niets.
+    */
+    .brand-statistiek-groep {
+        margin-top: 2.25rem;
+    }
+
+    .brand-statistiek-groep + .brand-statistiek-groep {
+        margin-top: 1.75rem;
+    }
+
+    @media (min-width: 40rem) {
+        .brand-statistiek-groep {
+            margin-top: 3rem;
+        }
+
+        .brand-statistiek-groep + .brand-statistiek-groep {
+            margin-top: 2.25rem;
+        }
+    }
+
+    /*
+      Binnen een groep staan de drie bundels onder elkaar: ringen,
+      tellers, balken. Wat er niet is staat er niet, dus dit is een
+      marge tussen wat er wél is en niet een vaste rij van drie.
+
+      `div + div` en niet `* + *`: het kopje van de groep is een `h3`
+      met zijn eigen ondermarge, en die twee bij elkaar opgeteld zetten
+      de eerste bundel veel te ver weg.
+    */
+    .brand-statistiek-groep > div + div {
+        margin-top: 1.5rem;
+    }
+
+    @media (min-width: 40rem) {
+        .brand-statistiek-groep > div + div {
+            margin-top: 2rem;
+        }
+    }
+
+    .brand-statistiek-groepkop {
+        margin-bottom: 1rem;
+        font-size: 0.6875rem;
+        font-weight: 500;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--brand-cyan);
+    }
+
+    @media (min-width: 40rem) {
+        .brand-statistiek-groepkop {
+            margin-bottom: 1.25rem;
+            font-size: 0.75rem;
+        }
+    }
+
+    /* De naam onder of naast een statistiek. */
+    .brand-statistiek-naam {
+        font-size: 0.8125rem;
+        font-weight: 500;
+        text-wrap: balance;
+        color: var(--foreground);
+    }
+
+    @media (min-width: 40rem) {
+        .brand-statistiek-naam {
+            font-size: 0.875rem;
+        }
+    }
+
+    .brand-statistiek-notitie {
+        margin-top: 0.25rem;
+        font-size: 0.75rem;
+        text-wrap: pretty;
+        color: var(--muted-foreground);
+    }
+
+    /* --- De balk ------------------------------------------------------ */
+
+    /*
+      Eén kolom op een telefoon, twee vanaf een breed scherm. Meer dan
+      twee wordt een tabel: de balken worden zo kort dat het verschil
+      tussen 70 en 85 procent niet meer te zien is, en dan is de balk
+      zinloos geworden.
+    */
+    .brand-statistiek-balken {
+        display: grid;
+        gap: 1rem;
+    }
+
+    @media (min-width: 40rem) {
+        .brand-statistiek-balken {
+            gap: 1.25rem;
+        }
+    }
+
+    @media (min-width: 50rem) {
+        .brand-statistiek-balken {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            column-gap: 2.5rem;
+        }
+    }
+
+    .brand-statistiek-balk-kop {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    /*
+      Het getal in cijfers met vaste breedte. Zonder dat springt het
+      rechts heen en weer terwijl het oploopt -- van "7%" naar "70%"
+      naar "100%" -- en dan danst de hele regel mee.
+    */
+    .brand-statistiek-waarde {
+        flex-shrink: 0;
+        font-size: 0.8125rem;
+        font-variant-numeric: tabular-nums;
+        color: var(--brand-cyan);
+    }
+
+    .brand-statistiek-baan {
+        position: relative;
+        margin-top: 0.5rem;
+        height: 0.4rem;
+        overflow: hidden;
+        border-radius: 9999px;
+        background-color: color-mix(in srgb, var(--border) 70%, transparent);
+    }
+
+    /*
+      `scaleX` en niet `width`: schalen draait op de GPU, breedte
+      aanpassen laat de browser bij elk beeldje de pagina doorrekenen.
+      Bij twintig balken tegelijk is dat het verschil tussen soepel en
+      schokken.
+
+      Twee variabelen doen mee. `--doel` is het percentage van déze
+      statistiek en staat als inline stijl op het vak; `--vulling` is
+      hoe ver de animatie is. Zonder JavaScript blijft die laatste 1 en
+      staat de balk meteen goed.
+    */
+    .brand-statistiek-vulling {
+        position: absolute;
+        inset: 0;
+        transform: scaleX(calc(var(--doel, 100) * var(--vulling) / 100));
+        transform-origin: left center;
+        border-radius: 9999px;
+        background-image: var(--brand-gradient);
+    }
+
+    /*
+      Het lichtpuntje dat met de kop van de balk meeloopt.
+
+      **Dit zit op de baan en niet op de vulling**, en dat is geen
+      willekeurige keuze: de vulling wordt met `scaleX` uitgerekt, dus
+      alles wat erin staat rekt mee -- een rond puntje zou een ovaal
+      worden dat steeds platter wordt. De baan staat stil, dus hier kan
+      een puntje gewoon op zijn plek worden gezet met dezelfde twee
+      variabelen.
+
+      Het is wat de golf zichtbaar maakt: je ziet niet alleen dat een
+      balk vol is, je ziet hem vollopen. `overflow: hidden` op de baan
+      houdt hem binnen de afgeronde hoeken.
+    */
+    .brand-statistiek-baan::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: calc(var(--doel, 100) * var(--vulling) * 1%);
+        height: 1rem;
+        width: 1rem;
+        translate: -50% -50%;
+        border-radius: 9999px;
+        background: radial-gradient(
+            circle,
+            color-mix(in srgb, #fff 70%, transparent) 0%,
+            transparent 70%
+        );
+
+        /*
+          Weg zodra hij er is. Een puntje dat na de animatie op het
+          einde van de balk blijft staan leest als een knop waar je op
+          kunt drukken.
+        */
+        opacity: calc(1 - var(--vulling));
+    }
+
+    /*
+      En wat er daarna nog gebeurt: een glans die af en toe over de
+      gevulde balk schuift.
+
+      **Dit is de rustanimatie.** Als het vullen klaar is staat het blok
+      stil, en dat is precies wat de klant eraan miste -- "meer een
+      kleine subtiele statische animatie" voor als alles al gebeurd is.
+      Het is hetzelfde lichtpunt dat tijdens het vullen met de kop van
+      de balk meeliep, nu als een veegje dat er eens in de zoveel tijd
+      langsgaat. Eén idee, drie vormen: de ring krijgt het als rondje,
+      de teller als streepje langs zijn rand.
+
+      Hij loopt tot `--doel` en niet verder, dus hij blijft binnen het
+      gevulde stuk. `--kracht` vaart in en uit, zodat er niets opduikt
+      of wegklapt.
+    */
+    .brand-statistiek-baan::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: calc(var(--doel, 100) * var(--glans) * 1%);
+
+        /*
+          **Dit puntje was twee keer onzichtbaar, en de tweede keer had
+          niets met de vormgeving te maken. Die reden is het onthouden
+          waard.**
+
+          `::before` wordt getekend vóór de inhoud van het element, en de
+          vulling van de balk ís die inhoud (`.brand-statistiek-vulling`,
+          een span). Alle drie zijn absoluut geplaatst zonder `z-index`,
+          dus ze stapelen in documentvolgorde: eerst dit puntje, dan de
+          vulling eroverheen, dan `::after`. Het puntje zat dus netjes
+          achter de gevulde balk en was alleen te zien op het stuk dat
+          nog leeg was.
+
+          Dat verklaart ook waarom de ring en de teller het wél deden: de
+          vonk van de ring is een `<circle>` ná de boog, en bij de teller
+          staat er niets geplaatst boven het pseudo-element. Vandaar
+          `z-index: 1` -- en niet een nog fellere kleur, want daar lag het
+          niet aan.
+
+          De eerste keer lag het wél aan de vormgeving: een veeg van
+          2,5rem met wit op 55 procent over een baan van 0,4rem hoog komt
+          nooit boven een vage waas uit. Een rond, fel puntje leest wel --
+          hetzelfde puntje als tijdens het vullen.
+        */
+        z-index: 1;
+        height: 1.25rem;
+        width: 1.25rem;
+        translate: -50% -50%;
+        border-radius: 9999px;
+        background: radial-gradient(
+            circle,
+            #fff 0%,
+            color-mix(in srgb, #fff 55%, transparent) 40%,
+            transparent 72%
+        );
+        opacity: var(--kracht);
+        pointer-events: none;
+    }
+
+    /* --- De ring ------------------------------------------------------ */
+
+    /*
+      Twee naast elkaar op een telefoon, vier op een breed scherm. Drie
+      ringen op een rij van vier laat een gat vallen, maar dat is hier
+      minder erg dan bij de certificaten: een ring is rond en staat
+      vanzelf op zichzelf, waar een tegel een raster suggereert.
+    */
+    .brand-statistiek-ringen {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    @media (min-width: 40rem) {
+        .brand-statistiek-ringen {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 2rem;
+        }
+    }
+
+    .brand-statistiek-ring {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.6rem;
+        text-align: center;
+    }
+
+    /*
+      De maat van de ring.
+
+      Op een telefoon een stuk kleiner: twee ringen van 8,5rem naast
+      elkaar vullen daar bijna het hele scherm, en met vier ringen is je
+      halve blok één rij cijfers. Zesenhalve rem is nog altijd groot
+      genoeg om de boog te zien.
+    */
+    .brand-statistiek-ring-vak {
+        position: relative;
+        width: 100%;
+        max-width: 6.5rem;
+    }
+
+    @media (min-width: 40rem) {
+        .brand-statistiek-ring-vak {
+            max-width: 8.5rem;
+        }
+    }
+
+    .brand-statistiek-ring-vak svg {
+        width: 100%;
+        height: auto;
+        overflow: visible;
+    }
+
+    .brand-statistiek-ring-baan {
+        fill: none;
+        stroke: color-mix(in srgb, var(--border) 70%, transparent);
+        stroke-width: 6;
+    }
+
+    /*
+      De boog zelf.
+
+      **Hij wordt met CSS getekend en niet met een plug-in.** Op de
+      cirkel staat `pathLength="100"`, wat de omtrek omrekent naar
+      honderd eenheden -- wat die omtrek in werkelijkheid ook is. Daarmee
+      is de streepjeslijn gewoon honderd lang, en bepaalt de verschuiving
+      hoeveel ervan zichtbaar is.
+
+      Twee variabelen: `--doel` is het percentage van déze ring en staat
+      als inline stijl op het vak; `--vulling` is hoe ver de animatie is.
+      Zonder JavaScript blijft die laatste 1 en staat de ring meteen
+      goed -- dat is precies waarom dit geen DrawSVG meer is.
+
+      `stroke-linecap: round` maakt de uiteinden rond, zodat een ring van
+      drie procent nog een streepje is en geen scherpe punt. De gloed
+      staat op de boog en niet op de hele ring, zodat hij meegroeit met
+      wat er getekend is.
+    */
+    .brand-statistiek-ring-boog {
+        fill: none;
+        stroke: var(--brand-cyan);
+        stroke-width: 6;
+        stroke-linecap: round;
+        stroke-dasharray: 100;
+        stroke-dashoffset: calc(100 - var(--doel, 100) * var(--vulling));
+        filter: drop-shadow(
+            0 0 6px color-mix(in srgb, var(--brand-cyan) 55%, transparent)
+        );
+    }
+
+    /*
+      Het lichtpunt dat na het tekenen rondjes blijft lopen over de boog.
+
+      Dezelfde rustanimatie als de glans op de balk, in de vorm van een
+      ring: een kort streepje van vijf eenheden dat over de getekende
+      boog naar zijn einde loopt. Vijf eraf in de eindstand, anders
+      steekt het streepje aan het eind voorbij de boog uit -- en dan
+      lijkt de ring even verder te lopen dan zijn percentage.
+
+      Het blijft binnen de boog, dus bij een ring van tien procent maakt
+      het een klein sprongetje en bij een van negentig een bijna hele
+      ronde. Dat is goed: de beweging zegt dan iets over het cijfer.
+    */
+    .brand-statistiek-ring-vonk {
+        fill: none;
+        stroke: color-mix(in srgb, #fff 85%, var(--brand-cyan));
+        stroke-width: 6;
+        stroke-linecap: round;
+        stroke-dasharray: 5 95;
+        stroke-dashoffset: calc(
+            -1 * var(--glans) * max(0, var(--doel, 100) - 5)
+        );
+        opacity: calc(var(--kracht) * 0.9);
+        filter: drop-shadow(0 0 7px color-mix(in srgb, #fff 55%, transparent));
+        pointer-events: none;
+    }
+
+    .brand-statistiek-ring-getal {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        translate: -50% -50%;
+        font-size: 1.125rem;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.02em;
+        color: #fff;
+    }
+
+    @media (min-width: 40rem) {
+        .brand-statistiek-ring-getal {
+            font-size: 1.75rem;
+        }
+    }
+
+    /* Het procentteken kleiner dan het getal: het is de eenheid en niet
+       het nieuws. */
+    .brand-statistiek-ring-teken {
+        font-size: 0.7em;
+        color: var(--muted-foreground);
+    }
+
+    /* --- De teller ---------------------------------------------------- */
+
+    .brand-statistiek-tellers {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    @media (min-width: 40rem) {
+        .brand-statistiek-tellers {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 1.5rem;
+        }
+    }
+
+    .brand-statistiek-teller {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        border-left: 2px solid
+            color-mix(in srgb, var(--brand-cyan) 40%, transparent);
+        padding-left: 0.9rem;
+    }
+
+    /*
+      De rustanimatie van de teller: een lichtje dat langs zijn rand naar
+      beneden zakt.
+
+      Een teller heeft geen baan en geen boog, dus er is niets om een
+      lichtpunt over te laten lopen -- behalve die randlijn links, en die
+      is precies de lijn die de teller zijn vorm geeft. Daarmee is het
+      dezelfde beweging als bij de balk en de ring, zonder dat er iets
+      bij hoeft dat er anders niet zou staan.
+
+      Het zit over de rand heen (`left: -2px`), want een absoluut
+      geplaatst element begint binnen de rand en niet erop.
+    */
+    .brand-statistiek-teller::before {
+        content: '';
+        position: absolute;
+        top: calc(55% * var(--glans));
+        left: -2px;
+        height: 45%;
+        width: 2px;
+        border-radius: 9999px;
+        background-image: linear-gradient(
+            to bottom,
+            transparent,
+            #fff,
+            transparent
+        );
+
+        /*
+          De gloed is het halve verhaal.
+
+          **Een lijn van twee pixels is te weinig om te zien bewegen**, en
+          dat was de eerste opzet: een lichtje in bijna-wit over een rand
+          die al cyaan is. Met twee schaduwen eromheen bloeit het naar
+          buiten en wordt het een lichtje in plaats van een iets lichtere
+          rand. De breedte blijft twee pixels, want het hoort op die rand
+          te liggen en niet ernaast.
+        */
+        filter: drop-shadow(0 0 4px color-mix(in srgb, #fff 80%, transparent))
+            drop-shadow(0 0 9px var(--brand-cyan));
+        opacity: var(--kracht);
+        pointer-events: none;
+    }
+
+    .brand-statistiek-teller-getal {
+        font-size: 1.5rem;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.02em;
+        line-height: 1.1;
+        color: #fff;
+    }
+
+    @media (min-width: 40rem) {
+        .brand-statistiek-teller-getal {
+            font-size: 2.25rem;
+        }
+    }
+
+    /* Het teken ervoor of erachter hoort bij het getal maar is niet het
+       getal; vandaar kleiner en in de gedempte kleur. */
+    .brand-statistiek-teken {
+        font-size: 0.6em;
+        color: var(--brand-cyan);
+    }
+
+    /* --- Wat er in het beheerscherm bij komt ------------------------- */
+
+    /*
+      Het kopje van een groep in het indelingsvenster.
+
+      Dezelfde opmaak als het kopje op de website: klein, in
+      hoofdletters, in de accentkleur. Dat is geen toeval maar de hele
+      bedoeling -- de eigenaar hoort in het beheerscherm hetzelfde te
+      zien als wat hij op zijn site krijgt, zodat hij niet hoeft af te
+      leiden wat een groep is.
+
+      In dat venster staat de naam van een groep in een invoerveld, dus
+      dit kopje is er nog maar voor één vak: dat van de losse cijfers.
+      Dat heeft geen naam en dus ook geen veld.
+    */
+    .brand-sorteer-groepkop {
+        margin-bottom: 0.4rem;
+        font-size: 0.625rem;
+        font-weight: 500;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--brand-cyan);
+    }
+
+    /*
+      In de tabel staat hetzelfde kopje als eigen rij. Daar mag er wat
+      meer lucht boven, want het scheidt twee blokken regels in plaats
+      van twee regels.
+    */
+    .brand-tabel-groepkop {
+        padding: 0.9rem 0.75rem 0.35rem;
+        font-size: 0.625rem;
+        font-weight: 500;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--brand-cyan);
+    }
+
+    /* --- Het indelingsvenster: een vak per groep ---------------------- */
+
+    /*
+      Eén groep, als vak.
+
+      **Het vak is de groep**, en dat is de hele reden dat dit er is. De
+      klant sleepte eerder een cijfer naar een andere groep in een platte
+      lijst, zag het onder een ander kopje belanden, en moest daarna
+      opslaan en terugkomen om te zien dat zijn groep níet mee was
+      verhuisd. Met een vak kan dat niet meer uit de pas lopen: ligt het
+      erin, dan hoort het erbij.
+
+      Zie StatistiekIndelingDialoog.vue.
+    */
+    .brand-groepvak {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        border-radius: 0.75rem;
+        border: 1px solid var(--border);
+
+        /*
+          Het streepje links in de accentkleur is dezelfde aanwijzing als
+          het kopje van een groep op de website: dit hoort bij elkaar. Het
+          staat na `border`, dus het overschrijft die kant.
+        */
+        border-left: 2px solid
+            color-mix(in srgb, var(--brand-cyan) 45%, transparent);
+        background-color: color-mix(in srgb, var(--muted) 45%, transparent);
+        padding: 0.75rem;
+    }
+
+    /*
+      Het vak van de losse cijfers ziet er anders uit dan de rest: een
+      gestreepte rand rondom, geen vulling en geen accentstreepje. Het is
+      geen groep maar de plek waar iets staat dat nergens bij hoort, en
+      dat hoort ook zo te lezen.
+    */
+    .brand-groepvak[data-naamloos] {
+        border: 1px dashed color-mix(in srgb, var(--border) 90%, transparent);
+        background-color: transparent;
+    }
+
+    /*
+      De kop van een vak: eerst wat het is en de knoppen, dan de
+      naamvelden, dan een streep.
+
+      Die streep doet het werk. Zonder scheiding lopen de naamvelden en
+      de eerste regel van de lijst in elkaar over, en dan lijkt de naam
+      van de groep een eigenschap van dat eerste cijfer.
+    */
+    .brand-groepvak-kop {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        border-bottom: 1px solid
+            color-mix(in srgb, var(--border) 60%, transparent);
+        padding-bottom: 0.6rem;
+    }
+
+    /*
+      Het kleine vertaalknopje naast het Engelse naamveld.
+
+      **Klein met opzet.** De eigenaar vroeg er expliciet om als iets wat
+      "gewoon heel klein" is: het hoort erbij te staan voor wie het nodig
+      heeft en niet mee te doen met de rest van de kop. Vandaar geen
+      knopvorm, geen rand en geen tekst -- een pictogram ter grootte van
+      het label ernaast.
+    */
+    .brand-vertaalknopje {
+        display: inline-flex;
+        height: 1.125rem;
+        width: 1.125rem;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9999px;
+        color: var(--muted-foreground);
+        transition:
+            color 150ms ease,
+            background-color 150ms ease;
+    }
+
+    .brand-vertaalknopje:hover:not(:disabled) {
+        background-color: var(--accent);
+        color: var(--brand-cyan);
+    }
+
+    .brand-vertaalknopje:focus-visible {
+        color: var(--brand-cyan);
+        box-shadow: 0 0 0 3px
+            color-mix(in srgb, var(--control-ring) 28%, transparent);
+    }
+
+    .brand-vertaalknopje:disabled {
+        opacity: 0.6;
+    }
+
+    /*
+      De lijst in een vak heeft altijd hoogte, ook als hij leeg is.
+
+      Zonder dit is een leeg vak nul pixels hoog en kun je er niets in
+      laten vallen -- precies het vak waar je als eerste iets in wil
+      leggen. De gestreepte rand eromheen zegt dat er iets in kan.
+    */
+    .brand-sorteer-vak {
+        min-height: 2.75rem;
+        border-radius: var(--radius);
+        transition:
+            background-color 150ms ease,
+            outline-color 150ms ease;
+    }
+
+    .brand-sorteer-vak:empty {
+        border: 1px dashed color-mix(in srgb, var(--border) 85%, transparent);
+    }
+
+    /*
+      Het vak waar je iets in laat vallen als je nu loslaat.
+
+      Dit is de "goede lijn" waar de klant om vroeg. Zonder zo'n rand
+      staat er een stapel vakken die er allemaal hetzelfde uitzien, en
+      dan is het gokken waar je iets neerlegt -- en bij mis gokken lijkt
+      slepen niets te doen.
+    */
+    .brand-sorteer-vak-doel {
+        outline: 2px dashed color-mix(in srgb, var(--primary) 55%, transparent);
+        outline-offset: 3px;
+        background-color: color-mix(in srgb, var(--primary) 7%, transparent);
+    }
+
+    /*
+      Een regel in zo'n vak is een kaartje.
+
+      De onderdelen van de pagina-indeling hebben daar `brand-sectie-rij`
+      voor; hier is het een eigen klasse, want die rij draagt veel meer
+      dan een naam en een merkje. Waar het op neerkomt is hetzelfde: een
+      regel die je kunt oppakken moet eruitzien als iets wat los ligt.
+    */
+    .brand-sorteer-kaart {
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        background-color: var(--card);
+        padding: 0.4rem 0.5rem;
+        transition:
+            border-color 150ms ease,
+            background-color 150ms ease;
+    }
+
+    /* De regel die je op dit moment vasthebt. */
+    .brand-sorteer-sleept .brand-sorteer-kaart {
+        border-color: var(--primary);
+        box-shadow: 0 12px 28px -12px rgb(0 0 0 / 0.45);
+        opacity: 0.9;
+    }
+
+    /* De plek waar hij terechtkomt als je nu loslaat. */
+    .brand-sorteer-doel .brand-sorteer-kaart {
+        border-color: color-mix(in srgb, var(--primary) 55%, transparent);
+        background-color: color-mix(in srgb, var(--primary) 6%, transparent);
+    }
+
+    /*
+      Het merkje dat zegt welke vorm een statistiek krijgt. In een tabel
+      naast tekst hoort dat een label te zijn en geen knop.
+    */
+    .brand-statistiek-soort {
+        display: inline-flex;
+        flex-shrink: 0;
+        align-items: center;
+        border-radius: 9999px;
+        border: 1px solid var(--border);
+        background-color: var(--muted);
+        padding: 0.1rem 0.5rem;
+        font-size: 0.6875rem;
+        color: var(--muted-foreground);
+    }
+
+    /*
+      Het voorbeeld naast het formulier.
+
+      De echte componenten van de website staan hierin, dus ze rekenen
+      op `--vulling`. Die blijft hier op 1 -- in een formulier valt er
+      niets te scrollen -- en dat werkt vanzelf: de terugval staat op
+      `.brand-statistieken`, en dat is de klasse om dit vak heen.
+    */
+    .brand-statistiek-voorbeeld {
+        align-self: start;
+        border-radius: 0.9rem;
+        border: 1px solid var(--border);
+        background-color: var(--muted);
+        padding: 1rem;
+    }
+
     /* --- Het voorbeeld van de kop ------------------------------------ */
 
     /*
@@ -6507,6 +7398,221 @@ button:hover > .brand-verlaat,
         border: 1px solid var(--border);
         background-color: color-mix(in srgb, var(--muted) 35%, transparent);
         padding: 1rem 1.15rem;
+    }
+
+    /* --- De klok op het dashboard ------------------------------------ */
+
+    /*
+      **Dit blok is geschreven vanaf de telefoon**, en dat is hier geen
+      gewoonte maar de opdracht: op een telefoon moet de klok bovenaan
+      staan en "echt heel klein" zijn -- een dunne strook met de tijd, en
+      niet een vierkant van een halve schermhoogte. Vanaf 48rem wordt het
+      het vlak dat naast de twee andere blokken past.
+
+      Op de strook staat de tijd links en de datum klein rechts. Dat is
+      één regel hoog en dus net zo dun als "alleen een tijd", maar je
+      raakt de datum niet kwijt.
+    */
+    .brand-klok {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        overflow: hidden;
+        padding: 0.55rem 0.9rem;
+    }
+
+    @media (min-width: 48rem) {
+        .brand-klok {
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            height: 100%;
+            padding: 1rem;
+        }
+    }
+
+    /*
+      De gloed achter de cijfers. Alleen op een breed scherm: op de dunne
+      strook is een wolk licht achter één regel tekst onrust.
+    */
+    .brand-klok-gloed {
+        display: none;
+    }
+
+    @media (min-width: 48rem) {
+        .brand-klok-gloed {
+            position: absolute;
+            top: 38%;
+            left: 50%;
+            display: block;
+            height: 9rem;
+            width: 9rem;
+            translate: -50% -50%;
+            border-radius: 9999px;
+            background: radial-gradient(
+                circle,
+                color-mix(in srgb, var(--brand-cyan) 22%, transparent) 0%,
+                transparent 70%
+            );
+            pointer-events: none;
+        }
+    }
+
+    .brand-klok-tijd {
+        position: relative;
+        margin: 0;
+        line-height: 1;
+    }
+
+    .brand-klok-cijfers {
+        display: inline-flex;
+        align-items: baseline;
+        /*
+          Vaste cijferbreedtes, anders danst de hele klok mee met elk
+          cijfer dat verandert -- een 1 is smaller dan een 8.
+        */
+        font-variant-numeric: tabular-nums;
+        font-size: 1.5rem;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+    }
+
+    @media (min-width: 48rem) {
+        .brand-klok-cijfers {
+            font-size: 2.75rem;
+        }
+    }
+
+    /*
+      Eén cijfer.
+
+      De animatie start opnieuw doordat Vue het element vervangt zodra het
+      karakter verandert; zie DigitaleKlok.vue. `inline-block` is nodig om
+      het te kunnen verschuiven, en `min-width` houdt de plek vrij zodat
+      een smalle 1 geen gat laat vallen.
+    */
+    .brand-klok-cijfer {
+        display: inline-block;
+        min-width: 0.62em;
+        text-align: center;
+        animation: brand-klok-rol 320ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /*
+      De dubbele punt pulseert in plaats van te knipperen.
+
+      Knipperen is wat een goedkope wekker doet; een zachte puls leest als
+      iets dat leeft. Hij doet niet mee met `brand-klok-rol`: zijn
+      karakter verandert nooit, dus Vue vervangt hem nooit en deze
+      animatie loopt gewoon door.
+    */
+    .brand-klok-cijfer[data-scheiding] {
+        min-width: 0.34em;
+        color: var(--brand-cyan);
+        animation: brand-klok-puls 1s ease-in-out infinite;
+    }
+
+    /*
+      De seconden kleiner en gedempt. Dat is het verschil tussen "hoe laat
+      is het" en "welke seconde is het": het eerste wil je lezen, het
+      tweede wil je zien lopen.
+    */
+    .brand-klok-seconden {
+        margin-left: 0.3em;
+        font-size: 0.45em;
+        font-weight: 500;
+        color: var(--muted-foreground);
+    }
+
+    /*
+      Het streepje dat met de minuut volloopt.
+
+      `scaleX` op een vaste breedte en niet een breedte die groeit: dan
+      hoeft de browser de regel niet elke seconde opnieuw door te rekenen.
+      Op de dunne strook is het de onderrand van het blok; daar past geen
+      los streepje tussen.
+    */
+    .brand-klok-baan {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 2px;
+        width: 100%;
+        overflow: hidden;
+        background-color: color-mix(in srgb, var(--border) 60%, transparent);
+    }
+
+    .brand-klok-baan::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        transform: scaleX(var(--minuut, 0));
+        transform-origin: left center;
+        background-image: var(--brand-gradient);
+        transition: transform 900ms linear;
+    }
+
+    @media (min-width: 48rem) {
+        .brand-klok-baan {
+            position: relative;
+            width: 4.5rem;
+            border-radius: 9999px;
+        }
+    }
+
+    .brand-klok-datum {
+        margin: 0;
+        font-size: 0.6875rem;
+        color: var(--muted-foreground);
+        text-align: right;
+    }
+
+    @media (min-width: 48rem) {
+        .brand-klok-datum {
+            font-size: 0.8125rem;
+            text-align: center;
+        }
+    }
+
+    /* De lange datum alleen waar hij past; op de strook de korte. */
+    .brand-klok-datum-lang {
+        display: none;
+    }
+
+    @media (min-width: 48rem) {
+        .brand-klok-datum-lang {
+            display: inline;
+        }
+
+        .brand-klok-datum-kort {
+            display: none;
+        }
+    }
+
+    @keyframes brand-klok-rol {
+        from {
+            opacity: 0;
+            transform: translateY(-0.35em);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes brand-klok-puls {
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.3;
+        }
     }
 
     .brand-kopvoorbeeld-taal {
@@ -6990,6 +8096,21 @@ button:hover > .brand-verlaat,
     .brand-detail-buur,
     .brand-detail-buur-pijl,
     .brand-maand {
+        transition: none;
+    }
+
+    /*
+      De klok blijft lopen -- dat is informatie en geen versiering -- maar
+      het rollen van de cijfers, het pulseren van de dubbele punt en het
+      schuiven van het streepje gaan eruit. De tijd staat er dan gewoon,
+      en verspringt elke seconde zonder beweging.
+    */
+    .brand-klok-cijfer,
+    .brand-klok-cijfer[data-scheiding] {
+        animation: none;
+    }
+
+    .brand-klok-baan::after {
         transition: none;
     }
 

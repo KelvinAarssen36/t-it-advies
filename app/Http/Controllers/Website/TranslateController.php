@@ -105,6 +105,17 @@ class TranslateController extends Controller
             // `description_nl`, want die hoort bij een ervaring en het
             // scherm moet weten waar het antwoord heen moet.
             'body_nl' => ['nullable', 'string', 'max:2000'],
+
+            /*
+             * De drie velden van een statistiek: de naam, het regeltje
+             * eronder en de groep. Drie eigen velden en niet `title_nl`
+             * hergebruikt, want dit venster stuurt ze alle drie
+             * tegelijk -- en dan moet het antwoord ze uit elkaar kunnen
+             * houden.
+             */
+            'label_nl' => ['nullable', 'string', 'max:60'],
+            'notitie_nl' => ['nullable', 'string', 'max:120'],
+            'groep_nl' => ['nullable', 'string', 'max:60'],
         ]);
 
         /** @var array<int, string|null> $punten */

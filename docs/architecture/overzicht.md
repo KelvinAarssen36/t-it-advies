@@ -116,6 +116,12 @@ Naast de tabellen van Laravel, Fortify en spatie/laravel-permission:
 - **`educations`** -- de opleidingen die onder die certificaten staan.
   Bewust kaler: geen logo, geen nummer, en een volgorde die zichzelf op
   periode regelt.
+- **`statistics`** -- de vaardigheden en kengetallen, met per rij de vorm
+  waarin ze op de site komen (balk, ring of teller) en een vrij
+  groepsveld waarop ze worden ingedeeld. Dat groepsveld is ook de
+  **sleutel** van de groep en niet alleen het kopje; in het
+  indelingsvenster is elke groep een vak. Zie
+  [de module](modules/statistieken.md).
 
 - **`section_headings`** -- het opschrift, de titel en de zin boven élk
   onderdeel, met een regel per `PageSectionKey`. Dit waren drie bijna

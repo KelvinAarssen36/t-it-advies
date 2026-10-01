@@ -27,8 +27,9 @@ Laravel. Wat die variant anders moet doen staat in
 
 De [ervaring](architecture/modules/ervaring.md), de
 [kop](architecture/modules/kop.md), de
-[diensten](architecture/modules/diensten.md) en de
-[certificaten](architecture/modules/certificaten.md) zijn af. Alleen de
+[diensten](architecture/modules/diensten.md), de
+[certificaten](architecture/modules/certificaten.md) en de
+[statistieken](architecture/modules/statistieken.md) zijn af. Alleen de
 werkwijze staat nog in zijn Vue-component; de stappen ernaartoe staan in
 [pagina-indeling](architecture/pagina-indeling.md). Op het
 indelingsscherm staat bij dat onderdeel "Nog niet te beheren".

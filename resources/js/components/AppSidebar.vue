@@ -3,6 +3,7 @@ import { Link, usePage } from '@inertiajs/vue3';
 import {
     Activity,
     Award,
+    ChartNoAxesColumn,
     Globe,
     Heading,
     History,
@@ -38,6 +39,7 @@ import site from '@/routes/site';
 import certificaten from '@/routes/website/certificaten';
 import diensten from '@/routes/website/diensten';
 import ervaring from '@/routes/website/ervaring';
+import statistieken from '@/routes/website/statistieken';
 import kop from '@/routes/website/kop';
 import website from '@/routes/website';
 import type { NavItem } from '@/types';
@@ -135,6 +137,11 @@ const websiteItems = computed<NavItem[]>(() => [
         title: t('Certificaten'),
         href: certificaten.index(),
         icon: Award,
+    },
+    {
+        title: t('Statistieken'),
+        href: statistieken.index(),
+        icon: ChartNoAxesColumn,
     },
     {
         title: t('Bekijk de website'),

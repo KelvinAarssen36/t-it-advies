@@ -26,8 +26,22 @@ export type SectieSleutel =
     | 'werkwijze'
     | 'ervaring'
     | 'certificaten'
+    | 'statistieken'
     | 'contact'
     | 'linkedin';
+
+/**
+ * De kop boven een onderdeel, zoals de bezoeker hem krijgt.
+ *
+ * De keuze tussen Nederlands en Engels is op de server al gemaakt; hier
+ * staat wat er komt te staan. Het opschrift mag ontbreken -- niet elk
+ * onderdeel heeft er een. Zie `App\Models\SectionHeading::voorDeSite()`.
+ */
+export type SectieKop = {
+    opschrift: string | null;
+    titel: string;
+    inleiding: string | null;
+};
 
 /**
  * De kop boven een onderdeel, zoals het beheerscherm hem bewerkt.

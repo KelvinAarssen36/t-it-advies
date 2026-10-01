@@ -33,6 +33,7 @@ enum PageSectionKey: string
     case Werkwijze = 'werkwijze';
     case Ervaring = 'ervaring';
     case Certificaten = 'certificaten';
+    case Statistieken = 'statistieken';
     case Contact = 'contact';
     case Linkedin = 'linkedin';
     case Footer = 'footer';
@@ -50,6 +51,7 @@ enum PageSectionKey: string
             self::Werkwijze => __('Werkwijze'),
             self::Ervaring => __('Ervaring'),
             self::Certificaten => __('Certificaten'),
+            self::Statistieken => __('Statistieken'),
             self::Contact => __('Contact'),
             self::Linkedin => __('LinkedIn'),
             self::Footer => __('Voettekst'),
@@ -65,6 +67,7 @@ enum PageSectionKey: string
             self::Werkwijze => __('De stappen van kennismaken tot overdragen.'),
             self::Ervaring => __('De tijdlijn met functies en organisaties, van nu naar vroeger.'),
             self::Certificaten => __('De certificaten die je hebt gehaald, en eventueel je opleiding.'),
+            self::Statistieken => __('Je vaardigheden en kengetallen, als balken, ringen en tellers.'),
             self::Contact => __('Het contactformulier.'),
             self::Linkedin => __('De uitnodiging om je op LinkedIn te volgen, met een knop naar je profiel.'),
             self::Footer => __('De afsluiting onderaan elke pagina.'),
@@ -139,11 +142,20 @@ enum PageSectionKey: string
             // halve verhalen twee losse blokken.
             self::Certificaten => 4,
 
-            self::Contact => 5,
+            /*
+             * En daarna de cijfers. De rij leest zo als één verhaal:
+             * wat hij deed, waarvoor hij is getoetst, en waar hij goed
+             * in is. Het is ook het laatste blok vóór de vraag om
+             * contact, en dat is de plek waar je iemand wilt hebben als
+             * hij gaat mailen.
+             */
+            self::Statistieken => 5,
+
+            self::Contact => 6,
 
             // Ná het contactformulier: "en volg me verder op LinkedIn"
             // is een afsluiter en geen uitnodiging om te mailen.
-            self::Linkedin => 6,
+            self::Linkedin => 7,
 
             self::Footer => 1000,
         };
@@ -164,6 +176,7 @@ enum PageSectionKey: string
             self::Diensten => 'website.diensten.index',
             self::Ervaring => 'website.ervaring.index',
             self::Certificaten => 'website.certificaten.index',
+            self::Statistieken => 'website.statistieken.index',
             default => null,
         };
     }

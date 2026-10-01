@@ -54,19 +54,22 @@ die er acht tegelijk overschrijft is te grof.
 
 ### De velden die de route kent
 
-| Veld             | Lengte | Wie het stuurt                                                                                          |
-| ---------------- | ------ | ------------------------------------------------------------------------------------------------------- |
-| `role_nl`        | 120    | Eén ervaring                                                                                            |
-| `location_nl`    | 120    | Eén ervaring                                                                                            |
-| `description_nl` | 5000   | Een ervaring, en de uitgebreide tekst van een dienst                                                    |
-| `title_nl`       | 120    | De koppen boven een blok, de titel van een dienst, de naam van een certificaat en die van een opleiding |
-| `intro_nl`       | 300    | De zin onder een kop                                                                                    |
-| `eyebrow_nl`     | 60     | Het opschrift boven een kop                                                                             |
-| `summary_nl`     | 300    | De korte tekst op een dienstkaart                                                                       |
-| `body_nl`        | 2000   | De toelichting bij een certificaat                                                                      |
-| `niveau_nl`      | 60     | Het niveau van een opleiding                                                                            |
-| `woord_nl`       | 40     | Het woord onder één cijfer                                                                              |
-| `punt_nl`        | 60     | Eén expertisepunt                                                                                       |
+| Veld             | Lengte | Wie het stuurt                                                                                                                             |
+| ---------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `role_nl`        | 120    | Eén ervaring                                                                                                                               |
+| `location_nl`    | 120    | Eén ervaring                                                                                                                               |
+| `description_nl` | 5000   | Een ervaring, en de uitgebreide tekst van een dienst                                                                                       |
+| `title_nl`       | 120    | De koppen boven een blok, de titel van een dienst, de naam van een certificaat en die van een opleiding                                    |
+| `intro_nl`       | 300    | De zin onder een kop                                                                                                                       |
+| `eyebrow_nl`     | 60     | Het opschrift boven een kop                                                                                                                |
+| `summary_nl`     | 300    | De korte tekst op een dienstkaart                                                                                                          |
+| `body_nl`        | 2000   | De toelichting bij een certificaat                                                                                                         |
+| `niveau_nl`      | 60     | Het niveau van een opleiding                                                                                                               |
+| `label_nl`       | 60     | De naam van een statistiek                                                                                                                 |
+| `notitie_nl`     | 120    | Het regeltje onder een statistiek                                                                                                          |
+| `groep_nl`       | 60     | De groep waarin een statistiek valt. Gaat mee met de grote knop in het bewerkvenster, en los met het kleine knopje in het indelingsvenster |
+| `woord_nl`       | 40     | Het woord onder één cijfer                                                                                                                 |
+| `punt_nl`        | 60     | Eén expertisepunt                                                                                                                          |
 
 Ze zijn allemaal `nullable`, dus elk scherm stuurt alleen wat het heeft.
 Komt er een module bij met een nieuw soort tekst, dan komt daar een veld

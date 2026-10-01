@@ -1647,4 +1647,335 @@ export function draaiRadar(veeg: HTMLElement): () => void {
     return () => mm.revert();
 }
 
+/**
+ * Eén statistiek zoals `vulStatistieken` hem nodig heeft.
+ *
+ * Alleen wat er moet bewegen, en dat is verrassend weinig: **deze helper
+ * zet één variabele en schrijft één getal.** De balk die volloopt en de
+ * ring die rond gaat zijn allebei CSS die op `--vulling` rekent.
+ *
+ * Dat is met opzet zo. De eerste opzet tekende de ring met DrawSVG, en
+ * dat werkt -- maar dan hangt de ring aan JavaScript: in het
+ * voorbeeldvenster van het beheerscherm, waar niets scrollt, stond hij
+ * altijd helemaal vol. Met `pathLength="100"` op de cirkel is de boog
+ * gewoon een `stroke-dashoffset` die uit een variabele komt, en klopt
+ * hij overal -- ook als er helemaal geen JavaScript draait.
+ */
+export type TeVullenStatistiek = {
+    /**
+     * Het element dat de CSS-variabelen krijgt.
+     *
+     * `--vulling` tijdens het vullen, en daarna `--glans` en `--kracht`
+     * voor het lichtpunt dat blijft rondgaan.
+     */
+    vak: HTMLElement;
+    /** Het element waar het getal in komt te staan. */
+    getal: HTMLElement | null;
+    /** Waar hij naartoe telt. */
+    waarde: number;
+};
+
+/**
+ * "1250" wordt "1.250".
+ *
+ * De duizendtalscheiding verschilt per taal -- een punt in het
+ * Nederlands, een komma in het Engels -- dus het teken komt van de
+ * aanroeper. Die weet welke taal het portaal heeft; deze functie niet.
+ *
+ * Hij staat hier en niet in een eigen bestandje omdat hij bij
+ * `vulStatistieken` hoort: die schrijft de tussenstanden, de componenten
+ * schrijven de beginwaarde, en die twee moeten er hetzelfde uitzien.
+ */
+export function formatteerGetal(waarde: number, scheiding = '.'): string {
+    return String(Math.round(waarde)).replace(
+        /\B(?=(\d{3})+(?!\d))/g,
+        scheiding,
+    );
+}
+
+/**
+ * De statistieken vullen zich als een golf, één keer.
+ *
+ * **Dit liep eerst mee met de scrollpositie, en dat moest eruit.** Het
+ * zag er goed uit bij naar beneden scrollen, maar het leverde een
+ * misverstand op dat erger was dan het effect goed was: scroll je weer
+ * naar boven, dan lopen alle percentages terug. Je ziet dan getallen
+ * veranderen die niets met je bezoek te maken hebben, en het blok voelt
+ * langer dan het is -- je bent er al voorbij en het beweegt nog.
+ *
+ * Nu speelt het **één keer af** zodra het in beeld komt, en daarna staat
+ * het stil. Dat is rustiger, het is wat de tijdlijn en de dienstkaarten
+ * ook doen, en het laat geen twijfel over wat een getal betekent.
+ *
+ * Er zit ook geen `pin` meer op. Dat was de helft van het probleem: een
+ * blok dat zich vastzet en daarna nog een schermhoogte scroll opeet is
+ * precies waarom de pagina langer leek.
+ *
+ * **Drie dingen maken er nog steeds een golf van en geen schakelaar.**
+ *
+ * 1. **Elk item begint iets later dan het vorige.** Daardoor rolt het
+ *    van boven naar beneden door het blok heen. Hoe meer items, hoe
+ *    korter de tussenpoos -- anders duurt het bij twintig stuks een
+ *    halve minuut.
+ * 2. **De vulling loopt een fractie door en komt terug.** Een balk die
+ *    op 85 procent hard stopt oogt als een laadbalk; eentje die net
+ *    voorbij zijn doel schiet en terugveert oogt als iets dat op zijn
+ *    plek valt. Vandaar `back.out` met een kleine uitslag.
+ * 3. **Het getal telt mee en blijft achter.** Het loopt op met de
+ *    vulling, dus je leest het terwijl het vol wordt.
+ *
+ * **En daarna gaat het lichtpunt rondjes lopen.** Een blok dat na zijn
+ * golf helemaal stilstaat voelt dood; daar vroeg de eigenaar een kleine,
+ * subtiele animatie voor. Die zit in `rustOp()` hieronder en begint
+ * precies wanneer het vullen klaar is.
+ *
+ * **De getallen worden hier opgemaakt en niet in CSS**, want er hoort een
+ * duizendtalscheiding in en die verschilt per taal. Vandaar `scheiding`:
+ * de aanroeper weet welke taal het portaal heeft, deze helper niet.
+ *
+ * Bij `prefers-reduced-motion` staat alles meteen op zijn eindwaarde:
+ * de componenten hebben die al, dus er valt niets te doen.
+ *
+ * Geeft een opruimfunctie terug; roep die aan in onBeforeUnmount.
+ */
+export function vulStatistieken(
+    blok: HTMLElement,
+    onderdelen: TeVullenStatistiek[],
+    { scheiding = '.' }: { scheiding?: string } = {},
+): () => void {
+    if (onderdelen.length === 0) {
+        return () => {};
+    }
+
+    const schrijf = (element: HTMLElement | null, waarde: number): void => {
+        if (element !== null) {
+            element.textContent = formatteerGetal(waarde, scheiding);
+        }
+    };
+
+    if (prefersReducedMotion()) {
+        // Alles meteen af. De componenten staan al op hun eindwaarde --
+        // `--vulling` valt terug op 1 en het getal staat er als tekst --
+        // dus er valt hier niets te doen.
+        return () => {};
+    }
+
+    /*
+     * Op nul beginnen.
+     *
+     * Dit is het enige moment waarop JavaScript iets wégneemt: zonder
+     * deze regel staat alles al goed (zie de terugval in app.css), en
+     * dat is precies de bedoeling voor wie geen JavaScript heeft. Wie
+     * het wél heeft, ziet het opbouwen.
+     */
+    onderdelen.forEach((deel) => {
+        deel.vak.style.setProperty('--vulling', '0');
+        schrijf(deel.getal, 0);
+    });
+
+    /*
+     * De tussenpoos tussen twee items, in seconden.
+     *
+     * Bij weinig items mag het rustig golven; bij veel items moet het
+     * korter, anders duurt de hele beweging te lang en kijkt niemand
+     * meer. Hoogstens anderhalve seconde voor het hele blok, hoe veel
+     * items er ook staan.
+     */
+    const tussen = Math.min(0.09, 1.5 / Math.max(1, onderdelen.length));
+
+    /*
+     * Wat er gebeurt als het vullen klaar is.
+     *
+     * **Dit is de rustanimatie, en die was een wens van de eigenaar.**
+     * Nadat de golf één keer door het blok is gerold staat er een
+     * stilstaand plaatje, en dat miste hij: hij vroeg om "een kleine
+     * subtiele animatie voor als alles al gebeurd is", voor elk van de
+     * drie vormen.
+     *
+     * Het is één idee in drie vormen: **het lichtpunt dat met het vullen
+     * meeliep, blijft daarna rondgaan.** Bij een balk schuift het als
+     * glans over het gevulde stuk, bij een ring loopt het een rondje
+     * over de boog, en bij een teller zakt het langs zijn randlijn naar
+     * beneden. Allemaal met dezelfde twee variabelen, zodat de CSS per
+     * vorm alleen hoeft te bepalen wát er beweegt.
+     *
+     * | Variabele  | Wat deze functie erin zet            |
+     * | ---------- | ------------------------------------ |
+     * | `--glans`  | Waar het punt staat, 0 tot 1.        |
+     * | `--kracht` | Hoe sterk het is, 0 tot 1.           |
+     *
+     * Drie keuzes die het rustig houden in plaats van druk:
+     *
+     * 1. **Eén lichtpunt tegelijk, niet allemaal samen.** De items zijn
+     *    gelijkmatig over de cyclus verdeeld, dus het loopt als een
+     *    vuurtoren het blok rond. Bij veel items wordt de cyclus langer
+     *    in plaats van de tussenpozen korter -- anders knippert het.
+     * 2. **`--kracht` vaart in en uit** met een sinus over de reis. Een
+     *    lichtpunt dat op volle sterkte begint en eindigt, duikt op en
+     *    klapt weg; nu komt het op en gaat het weer.
+     * 3. **Het staat stil zolang je het niet ziet.** Een tijdlijn die
+     *    eeuwig doorloopt op een blok dat drie schermen hoger staat,
+     *    kost accu en levert niets op.
+     */
+    const rustOp = (): (() => void) => {
+        /*
+         * De lengte van één ronde door het blok, in seconden.
+         *
+         * Bij drie cijfers mag het vlot rondgaan; bij vijftien moet het
+         * langer duren, anders is er altijd ergens iets aan het
+         * oplichten en wordt het een kerstboom.
+         *
+         * **Dit is twee keer korter gemaakt, allebei op zijn verzoek.**
+         * Eerst 1,2 seconde per cijfer: bij zestien cijfers kwam het licht
+         * dan eens per veertien seconden langs een bepaalde balk, en dan
+         * is de kans groot dat je er net niet naar keek. Daarna 0,8, en
+         * nog steeds vroeg hij of het vaker kon. Nu een halve seconde per
+         * cijfer met zeven en een half als plafond: elk cijfer licht dus
+         * minstens eens per zeven seconden op, en er lopen er een paar
+         * tegelijk.
+         *
+         * Korter dan dit zou ik niet gaan. De ondergrens van vier
+         * seconden is er voor een blok met twee of drie cijfers: die
+         * zouden anders om de twee seconden knipperen, en dan is het geen
+         * rustanimatie meer.
+         */
+        const ronde = Math.min(7.5, Math.max(4, onderdelen.length * 0.5));
+
+        const tijdlijn = gsap.timeline({ repeat: -1 });
+
+        onderdelen.forEach((deel, index) => {
+            const stand = { glans: 0 };
+
+            tijdlijn.to(
+                stand,
+                {
+                    glans: 1,
+                    duration: 1.6,
+                    ease: 'none',
+                    onUpdate: () => {
+                        deel.vak.style.setProperty(
+                            '--glans',
+                            stand.glans.toFixed(4),
+                        );
+
+                        deel.vak.style.setProperty(
+                            '--kracht',
+                            Math.sin(Math.PI * stand.glans).toFixed(4),
+                        );
+                    },
+                    onComplete: () => {
+                        // Helemaal uit, en niet "bijna uit": een restje
+                        // doorschijnendheid blijft als vlek staan.
+                        deel.vak.style.setProperty('--kracht', '0');
+                    },
+                },
+                (index * ronde) / onderdelen.length,
+            );
+        });
+
+        const kijker = ScrollTrigger.create({
+            trigger: blok,
+            start: 'top bottom',
+            end: 'bottom top',
+            onToggle: (zelf) => {
+                if (zelf.isActive) {
+                    tijdlijn.play();
+
+                    return;
+                }
+
+                tijdlijn.pause();
+            },
+        });
+
+        // Staat het blok niet in beeld, dan hoeft er nu niets te lopen.
+        if (!kijker.isActive) {
+            tijdlijn.pause();
+        }
+
+        return () => {
+            kijker.kill();
+            tijdlijn.kill();
+        };
+    };
+
+    /** De opruimer van de rustanimatie, zodra die loopt. */
+    let ruimRustOp: (() => void) | undefined;
+
+    const tijdlijn = gsap.timeline({
+        paused: true,
+        onComplete: () => {
+            ruimRustOp = rustOp();
+        },
+    });
+
+    onderdelen.forEach((deel, index) => {
+        const stand = { vulling: 0 };
+
+        tijdlijn.to(
+            stand,
+            {
+                vulling: 1,
+                duration: 1.1,
+
+                /*
+                 * `back.out` met een kleine uitslag: de vulling schiet
+                 * een fractie voorbij zijn doel en veert terug. Dat is
+                 * het verschil tussen een laadbalk en iets dat op zijn
+                 * plek valt.
+                 *
+                 * Klein houden. Bij een hogere uitslag gaat een ring van
+                 * 95 procent even over de honderd heen, en dan tekent
+                 * de boog zichzelf dubbel over het begin.
+                 */
+                ease: 'back.out(1.4)',
+
+                onUpdate: () => {
+                    /*
+                     * Afkappen op 1. De overshoot van `back.out` mag de
+                     * beweging doen, maar niet in de waarde terechtkomen
+                     * -- anders staat er even 97 waar 95 hoort.
+                     */
+                    const vulling = Math.min(1, stand.vulling);
+
+                    deel.vak.style.setProperty('--vulling', vulling.toFixed(4));
+                    schrijf(deel.getal, deel.waarde * vulling);
+                },
+            },
+            index * tussen,
+        );
+    });
+
+    /*
+     * Eén keer afspelen zodra het blok in beeld komt.
+     *
+     * `once: true` en geen `scrub`: terugscrollen hoort niets terug te
+     * draaien. Staat het blok al in beeld bij het laden -- een
+     * navigatie binnen de site, of een korte pagina -- dan vuurt een
+     * scroll-trigger nooit af en moet het meteen spelen. Zie
+     * `alInBeeld`; dezelfde valkuil als bij alle andere reveals hier.
+     */
+    if (alInBeeld(blok, 0.9)) {
+        tijdlijn.play();
+
+        return () => {
+            ruimRustOp?.();
+            tijdlijn.kill();
+        };
+    }
+
+    const trigger = ScrollTrigger.create({
+        trigger: blok,
+        start: 'top 80%',
+        once: true,
+        onEnter: () => tijdlijn.play(),
+    });
+
+    return () => {
+        trigger.kill();
+        ruimRustOp?.();
+        tijdlijn.kill();
+    };
+}
+
 export { gsap, ScrollTrigger };

@@ -11,14 +11,77 @@ De queue draait standaard op de `database`-connectie. Dat is genoeg voor dit
 volume en scheelt een Redis-server. Wordt het druk, dan is overstappen op
 Redis een wijziging in `.env`, niet in de code.
 
+## De twee adressen
+
+**Er zijn twee e-mailadressen in dit project en ze doen iets anders.** Dat
+onderscheid is uitdrukkelijk afgesproken en het is het soort ding dat je
+per ongeluk door elkaar haalt:
+
+| Adres                   | Waarvoor                                                                                                                             |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `aarssen@atitadvies.nl` | **Uitsluitend inloggen** in het portaal. Zie `config/security.php`.                                                                  |
+| `info@atitadvies.nl`    | **Al het andere**: wat er aan contactgegevens op de website staat, en waar het contactformulier naartoe gaat. Zie `config/site.php`. |
+
+Het inlogadres hoort nergens op de publieke site te staan, en het publieke
+adres hoort nergens als inlog te worden gebruikt.
+
+`SITE_EMAIL` in `.env` is de enige bron voor dat tweede adres. Zowel het
+afzendadres als het ontvangstadres van het contactformulier valt daarop
+terug, dus ze kunnen niet uiteen gaan lopen. Vul je `MAIL_FROM_ADDRESS` of
+`MAIL_CONTACT_ADDRESS` toch zelf in, dan wint die.
+
+> **Wat hier eerst fout zat.** Het ontvangstadres viel terug op het
+> from-adres, en dat stond op `no-reply@t-it-advies.nl` -- een no-reply op
+> een domein dat niet eens klopt. Liet iemand `MAIL_CONTACT_ADDRESS` leeg,
+> dan kwam een bericht van een bezoeker dus binnen op een postbus die
+> niemand leest. Daar komt niemand achter, behalve de klant die zich
+> afvraagt waarom er nooit iemand mailt.
+
+**Het afzendadres is ook `info@` en geen verzonnen no-reply.** Op gedeelde
+hosting -- en daar gaat dit naartoe, zie
+[deployment](../operations/deployment.md) -- komt mail van een adres dat
+niet als echte postbus bestaat eerder in de spam terecht; SPF en DKIM
+horen bij een bestaand adres.
+
+[`EmailAdressenTest`](../../tests/Feature/EmailAdressenTest.php) houdt
+allebei de adressen vast, inclusief een controle die afgaat zodra het
+inlogadres in een publiek onderdeel belandt.
+
 ## Mailprovider
 
 De basis staat ingesteld op **Resend**. Dat is een keuze, geen verplichting:
 Laravel ondersteunt Postmark, Mailgun en SES net zo goed. Resend is gekozen
 omdat de inrichting eenvoudig is en de webhooks goed gedocumenteerd zijn.
 
-Lokaal staat `MAIL_MAILER=log`: mail belandt in `storage/logs/laravel.log` en
-er gaat niets de deur uit.
+### Lokaal: MailHog, en niet het logbestand
+
+Lokaal staat `MAIL_MAILER=smtp` met `MAIL_HOST=127.0.0.1` en
+`MAIL_PORT=1025`. Dat is MailHog (of Mailpit, dezelfde poorten): de mail
+komt binnen op <http://localhost:8025> en je ziet hem zoals de ontvanger
+hem krijgt, met opmaak en al. Er gaat nog steeds niets de deur uit.
+
+`MAIL_MAILER=log` kan ook, en dan belandt de mail als platte tekst in
+`storage/logs/laravel.log`. Dat werkt, maar het is niet de stand waar je
+in wil zitten als je iets wil _bekijken_.
+
+> **Hier is tijd in gaan zitten, dus het staat er met nadruk.** De stand
+> was `log`, en dat ziet er van buiten precies hetzelfde uit als een
+> kapotte mailinstelling: je drukt op "Stuur de link opnieuw", het scherm
+> zegt "Er is een nieuwe link naar je e-mailadres gestuurd", en in MailHog
+> blijft het leeg. Er was niets stuk -- de mail stond in het logbestand.
+> Zie je een mail niet aankomen, controleer dan **eerst** deze instelling.
+
+**En zet er een worker naast.** Alles behalve de verificatiemail gaat via
+de queue, dus zonder `php artisan queue:work` blijft een bericht in de
+tabel `jobs` staan en lijkt het weer alsof er niets gebeurt. Een worker van
+een ánder project helpt niet: die leest de database van dat project. Zie
+[Queue draaiend houden](#queue-draaiend-houden).
+
+| Wat je stuurt           | Via de queue? |
+| ----------------------- | ------------- |
+| De verificatiemail      | nee, meteen   |
+| Het contactformulier    | ja            |
+| Een beveiligingsmelding | ja            |
 
 ### Overstappen naar een andere provider
 
@@ -118,5 +181,17 @@ In productie draai je een `queue:work` als beheerde service. Zie
 [deployment](../operations/deployment.md).
 
 Zonder draaiende worker blijft mail in de tabel `jobs` staan en gebeurt er
-niets. Dat is de eerste plek om te kijken als iemand meldt dat er geen mail
-aankomt.
+niets. Dat is de **tweede** plek om te kijken als iemand meldt dat er geen
+mail aankomt; de eerste is `MAIL_MAILER`, zie
+[hierboven](#lokaal-mailhog-en-niet-het-logbestand).
+
+Draai hem **vanuit deze map**. Op een machine met meerdere Laravel-projecten
+staat er makkelijk al een worker, maar die leest de database van zijn eigen
+project en raakt deze `jobs`-tabel niet aan. `pgrep -a -f queue:work` laat
+zien wat er draait, maar niet waar; `readlink /proc/<pid>/cwd` wel.
+
+Een snelle controle of er iets klaarstaat:
+
+```bash
+php artisan queue:monitor default
+```

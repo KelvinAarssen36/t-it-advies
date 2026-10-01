@@ -110,6 +110,12 @@ return [
     |
     */
 
+    /*
+    | **Dit adres is alleen om in te loggen.** Het hoort nergens op de
+    | publieke site te staan en er gaat geen post naartoe; daarvoor is
+    | `info@atitadvies.nl`. Welk adres waarvoor is staat uitgeschreven in
+    | config/site.php, en EmailAdressenTest houdt het vast.
+    */
     'portal_account' => [
         'name' => env('PORTAL_ACCOUNT_NAME', 'Erik Aarssen'),
         'email' => env('PORTAL_ACCOUNT_EMAIL', 'aarssen@atitadvies.nl'),

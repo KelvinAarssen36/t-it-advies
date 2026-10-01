@@ -1245,6 +1245,74 @@ Twee dingen blijven bewust wél staan: de voortgangsbalk bovenaan, want die
 volgt de beweging die de bezoeker zelf maakt, en de kleurverandering van
 een stap die aan de beurt is, want dat is informatie en geen beweging.
 
+## Eén variabele, en JavaScript dat hem alleen verschuift
+
+De [statistieken](modules/statistieken.md) zijn gebouwd op een aanpak die
+het onthouden waard is, en die hier nog nergens anders wordt gebruikt.
+
+**Het zware werk staat in CSS.** De balk schaalt op de variabele
+`--vulling` (0 tot 1), en de ring is een `stroke-dashoffset` die op
+diezelfde variabele rekent -- met `pathLength="100"` op de cirkel, zodat
+de omtrek niet uitgerekend hoeft te worden. JavaScript zet alleen die ene
+variabele en schrijft het getal.
+
+Dat levert iets op wat de andere animaties hier niet hebben: **zonder
+JavaScript staat het blok meteen goed.** `--vulling` valt in `app.css`
+terug op 1 en het getal staat als tekst in de HTML, dus het enige wat
+JavaScript doet is het wégnemen en dan opbouwen.
+
+De eerste opzet tekende de ring met DrawSVG, en toen viel meteen op waar
+dat misgaat: in het voorbeeldvenster van het beheerscherm, waar niets
+scrollt, stond de ring altijd helemaal vol.
+
+> **De regel die daaruit volgt:** kan een effect met een CSS-variabele die
+> JavaScript alleen maar verschuift, doe het dan zo. Dan werkt het ook in
+> een formulier, in een voorbeeld, en bij iemand die je script niet
+> binnenkrijgt.
+
+### En een les over `scrub`
+
+Dat blok hing eerst volledig aan de scrollpositie (`scrub`) en zette
+zichzelf daarbij vast aan het scherm (`pin`). Naar beneden scrollend zag
+dat er goed uit: je stuurde de animatie zelf aan.
+
+**Het is er weer uit gehaald, en de reden is het onthouden waard.** Bij
+terugscrollen liepen alle percentages terug. Je ziet dan getallen
+veranderen die niets met je bezoek te maken hebben, en het blok voelt
+veel langer dan het is -- je bent er al voorbij en het beweegt nog. Het
+vastzetten maakte dat erger: dat eet een hele schermhoogte scroll op
+voordat de pagina verdergaat.
+
+> **Gebruik `scrub` alleen voor iets dat een positie uitdrukt en geen
+> waarde.** De voortgangsbalk bovenaan mag meelopen: die zegt "hier ben
+> je". Een percentage zegt "dit is het", en dat hoort niet te veranderen
+> omdat iemand terugscrolt.
+
+### En een rustanimatie voor daarna
+
+Een animatie die één keer speelt laat iets achter wat helemaal stilstaat,
+en dat viel de eigenaar op: hij vroeg om "een kleine subtiele animatie voor
+als alles al gebeurd is". Bij de statistieken is dat een lichtpunt dat na
+het vullen rondjes blijft lopen -- over de boog van een ring, over het
+gevulde stuk van een balk, langs de randlijn van een teller.
+
+Twee dingen daaraan zijn algemener dan dit ene blok:
+
+- **Neem een beweging die er al was en laat die doorgaan.** Het lichtpunt
+  liep tijdens het vullen met de kop van de balk mee; daarna doet het
+  hetzelfde, langzamer en zachter. Een nieuw effect erbij verzinnen zou een
+  tweede taal in hetzelfde blok zijn.
+- **Eén tegelijk, niet allemaal.** De onderdelen zijn gelijkmatig over één
+  ronde verdeeld, dus het loopt als een vuurtoren rond in plaats van dat
+  alles samen knippert. Bij meer onderdelen wordt de ronde langer en niet de
+  tussenpoos korter.
+
+En het staat stil zolang je het niet ziet: een `ScrollTrigger` met
+`onToggle` zet de tijdlijn op pauze als het blok uit beeld is. Een
+eindeloze tijdlijn op iets dat drie schermen hoger staat kost accu en
+levert niets op. Zie `rustOp()` in
+[`motion.ts`](../../resources/js/lib/motion.ts).
+
 ## Three.js
 
 Nog niet geïnstalleerd, en dat is een keuze. Three.js is een forse

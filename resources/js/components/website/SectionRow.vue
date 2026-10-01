@@ -32,7 +32,7 @@ import type { SectieRij } from '@/types/secties';
 const props = withDefaults(
     defineProps<{
         rij: SectieRij;
-        /** In het bewerkvenster: werkt het schuifje en zijn de links weg. */
+        /** In het bewerkvenster: de links naar de beheerschermen zijn weg. */
         bewerken?: boolean;
         /** De korte vorm, zonder omschrijving, voor in het bewerkvenster. */
         compact?: boolean;
@@ -159,15 +159,21 @@ const staat = computed<'live' | 'uit' | 'leeg'>(() => {
             </span>
 
             <!--
-                Het schuifje staat er ook buiten het bewerkvenster, maar dan
-                uitgeschakeld. Weghalen zou betekenen dat de regel van vorm
-                verandert zodra je gaat bewerken, en dan herken je hem niet
-                meer terug als dezelfde regel.
+                Het schuifje werkt op allebei de plekken.
+
+                **Buiten het bewerkvenster stond het er eerst wél, maar
+                uitgeschakeld.** De gedachte was dat alles in één opslag
+                moest gaan; het gevolg was een schuifje dat je aanwees en
+                dat niets deed, zonder uitleg waarom. De eigenaar meldde dat
+                als "ik kan ze niet uit of aan zetten en ik weet niet wat er
+                aan de hand is". Nu doet het hier wat het lijkt te doen:
+                één schuifje, één bevestiging, precies zoals in elke andere
+                lijst van het portaal. Het bewerkvenster blijft de plek waar
+                je er meerdere tegelijk omzet.
             -->
             <Switch
                 v-if="!rij.fixed"
                 :model-value="rij.visible"
-                :disabled="!bewerken"
                 :aria-label="
                     $t('Toon :naam op de website', { naam: rij.label })
                 "

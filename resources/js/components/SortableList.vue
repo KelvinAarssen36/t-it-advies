@@ -24,6 +24,12 @@ import { ref, watch } from 'vue';
  * eromheen. Verandert de aanroeper iets aan een item in de slot, dan is dat
  * hetzelfde object en klopt het meteen aan beide kanten.
  *
+ * **Met `groep` wisselen meerdere lijsten items uit.** Dan is slepen niet
+ * alleen herschikken maar ook verhuizen: een item dat in een ander vak
+ * valt, hoort daar vanaf dat moment bij. De pijltjes doen dat niet -- die
+ * blijven binnen hun eigen lijst -- dus een scherm dat items laat verhuizen
+ * hoort daar een tweede weg voor te hebben die zonder slepen werkt.
+ *
  * Zie docs/architecture/pagina-indeling.md.
  */
 
@@ -34,8 +40,23 @@ const props = withDefaults(
         disabled?: boolean;
         /** Wat een schermlezer over deze lijst hoort te zeggen. */
         label?: string;
+
+        /**
+         * Lijsten met dezelfde `groep` wisselen items uit.
+         *
+         * Zonder deze prop is de lijst een eiland: je herschikt wat erin
+         * zit en daar blijft het bij. Staat er een naam in, dan kun je
+         * een item naar elke andere lijst met diezelfde naam slepen, en
+         * geven beide lijsten een nieuwe inhoud door.
+         *
+         * Gebruikt door het indelingsvenster van de statistieken: daar
+         * is elke groep een eigen lijst, en is "naar een andere groep
+         * verhuizen" gewoon slepen naar een ander vak. Zie
+         * StatistiekIndelingDialoog.vue voor waarom dat zo moest.
+         */
+        groep?: string;
     }>(),
-    { disabled: false, label: undefined },
+    { disabled: false, label: undefined, groep: undefined },
 );
 
 const emit = defineEmits<{ 'update:modelValue': [T[]] }>();
@@ -68,6 +89,32 @@ const instellingen = {
     dropZoneClass: 'brand-sorteer-doel',
     synthDraggingClass: 'brand-sorteer-sleept',
     synthDropZoneClass: 'brand-sorteer-doel',
+
+    /*
+     * De lijst zelf licht op zodra je er iets boven houdt.
+     *
+     * Dat is de "goede lijn" waar de klant om vroeg: bij lijsten die
+     * items uitwisselen moet je zien in welk vak je iets neerlegt
+     * voordat je het laat vallen. Zonder die rand gok je, en dan lijkt
+     * slepen niets te doen.
+     *
+     * **Alleen bij lijsten die items uitwisselen.** Op een scherm met
+     * één lijst valt er niets te kiezen, en dan is een rand om het
+     * geheel alleen onrust -- die schermen zagen er prima uit zonder.
+     *
+     * De bibliotheek houdt slepen met de muis en met een vinger apart,
+     * dus allebei zetten; op een telefoon heb je die rand het hardst
+     * nodig.
+     */
+    dropZoneParentClass:
+        props.groep === undefined ? undefined : 'brand-sorteer-vak-doel',
+    synthDropZoneParentClass:
+        props.groep === undefined ? undefined : 'brand-sorteer-vak-doel',
+
+    // Lijsten met dezelfde naam wisselen items uit; `undefined` maakt
+    // de lijst weer een eiland. Zie de prop.
+    group: props.groep,
+
     onDragstart: () => {
         sleept.value = true;
     },
@@ -119,9 +166,18 @@ const verplaats = (vanaf: number, naar: number): void => {
 </script>
 
 <template>
+    <!--
+        `brand-sorteer-vak` geeft een lege, uitwisselbare lijst hoogte.
+        Zonder dat is een leeg vak nul pixels hoog en kun je er niets in
+        laten vallen -- precies het geval waarin je dat het hardst nodig
+        hebt: een groep die nog leeg is.
+    -->
     <ul
         ref="lijstElement"
         class="flex flex-col gap-2"
+        :class="{
+            'brand-sorteer-vak': props.groep !== undefined,
+        }"
         :aria-label="props.label"
     >
         <!--

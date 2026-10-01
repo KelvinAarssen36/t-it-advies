@@ -156,6 +156,113 @@ class PageLayoutTest extends TestCase
         );
     }
 
+    /**
+     * Het schuifje op het overzicht: één onderdeel, één verzoek.
+     *
+     * **Deze route is er gekomen na een melding van de eigenaar.** Het
+     * schuifje stond op het overzicht te zien maar uitgeschakeld, omdat
+     * alles via het bewerkvenster in één opslag zou gaan. Zijn reactie:
+     * "het is wel raar dat dat bij allemaal zo is dat ik ze niet uit of
+     * aan kan zetten". Elke andere lijst in het portaal werkt wél zo, dus
+     * nu hier ook.
+     */
+    public function test_one_section_can_be_switched_off_from_the_overview(): void
+    {
+        $this->actingAs($this->beheerder())
+            ->patch(
+                route('website.zichtbaar', PageSectionKey::Werkwijze->value),
+                ['visible' => false],
+            )
+            ->assertSessionHasNoErrors();
+
+        $this->assertFalse(
+            PageSection::query()->where('key', PageSectionKey::Werkwijze)->value('visible'),
+        );
+    }
+
+    public function test_one_section_can_be_switched_back_on_from_the_overview(): void
+    {
+        PageSection::query()
+            ->where('key', PageSectionKey::Werkwijze)
+            ->update(['visible' => false]);
+
+        $this->actingAs($this->beheerder())
+            ->patch(
+                route('website.zichtbaar', PageSectionKey::Werkwijze->value),
+                ['visible' => true],
+            )
+            ->assertSessionHasNoErrors();
+
+        $this->assertTrue(
+            PageSection::query()->where('key', PageSectionKey::Werkwijze)->value('visible'),
+        );
+    }
+
+    /**
+     * En de volgorde blijft waar hij was.
+     *
+     * Dit is het verschil met `update()`, die alles hernummert. Zou dit
+     * schuifje dat ook doen, dan verspringt de pagina van de eigenaar
+     * omdat hij iets uitzette.
+     */
+    public function test_switching_one_section_leaves_the_order_alone(): void
+    {
+        $voor = PageSection::query()
+            ->orderBy('key')
+            ->pluck('position', 'key')
+            ->all();
+
+        $this->actingAs($this->beheerder())->patch(
+            route('website.zichtbaar', PageSectionKey::Werkwijze->value),
+            ['visible' => false],
+        );
+
+        $na = PageSection::query()
+            ->orderBy('key')
+            ->pluck('position', 'key')
+            ->all();
+
+        $this->assertSame($voor, $na);
+    }
+
+    /** Een vast onderdeel kan ook langs deze weg niet uit. */
+    public function test_a_fixed_section_cannot_be_switched_off_one_by_one(): void
+    {
+        $this->actingAs($this->beheerder())->patch(
+            route('website.zichtbaar', PageSectionKey::Footer->value),
+            ['visible' => false],
+        );
+
+        $this->assertTrue(
+            PageSection::query()->where('key', PageSectionKey::Footer)->value('visible'),
+        );
+    }
+
+    public function test_an_unknown_section_cannot_be_switched(): void
+    {
+        $this->actingAs($this->beheerder())
+            ->patch(route('website.zichtbaar', 'bestaat-niet'), ['visible' => false])
+            ->assertRedirect();
+
+        // Niets aangemaakt voor een sleutel die niet bestaat.
+        $this->assertSame(
+            count(PageSectionKey::cases()),
+            PageSection::query()->count(),
+        );
+    }
+
+    public function test_a_guest_cannot_switch_a_section(): void
+    {
+        $this->patch(
+            route('website.zichtbaar', PageSectionKey::Werkwijze->value),
+            ['visible' => false],
+        )->assertRedirect(route('login'));
+
+        $this->assertTrue(
+            PageSection::query()->where('key', PageSectionKey::Werkwijze)->value('visible'),
+        );
+    }
+
     public function test_a_fixed_section_cannot_be_moved_by_a_crafted_request(): void
     {
         /*

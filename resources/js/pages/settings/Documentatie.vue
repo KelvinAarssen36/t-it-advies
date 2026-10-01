@@ -5,7 +5,9 @@ import {
     ArrowUpRight,
     Asterisk,
     Award,
+    ChartNoAxesColumn,
     CheckCheck,
+    Clock,
     Eye,
     Globe,
     Hash,
@@ -40,11 +42,13 @@ import adminActivity from '@/routes/admin/activity';
 import adminMail from '@/routes/admin/mail';
 import adminSecurity from '@/routes/admin/security';
 import adminUsers from '@/routes/admin/users';
+import dashboardSettings from '@/routes/dashboard-settings';
 import { show } from '@/routes/documentation';
 import site from '@/routes/site';
 import website from '@/routes/website';
 import certificatenRoutes from '@/routes/website/certificaten';
 import dienstenRoutes from '@/routes/website/diensten';
+import statistiekenRoutes from '@/routes/website/statistieken';
 import kop from '@/routes/website/kop';
 import ervaring from '@/routes/website/ervaring';
 
@@ -475,6 +479,42 @@ defineOptions({
                             }}
                         </p>
                     </UitlegKaart>
+
+                    <UitlegKaart
+                        :titel="$t('De klok op je dashboard')"
+                        :icoon="Clock"
+                    >
+                        <p>
+                            {{
+                                $t(
+                                    'Op je beginscherm staat midden bovenin een klok met de datum eronder. Op een telefoon staat hij bovenaan als een dunne strook, zodat hij de rest niet wegduwt.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Onder Instellingen → Dashboard kies je in welke tijdzone hij loopt. Nederland staat er standaard op, en er zijn er nog vier om uit te kiezen. Zomer- en wintertijd gaan automatisch mee, dus daar hoef je nooit iets aan te doen. Onder de keuze loopt dezelfde klok mee, zodat je ziet wat je kiest voordat je opslaat.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Dat gedeelte is er voor de instellingen van je dashboard. Nu staat er alleen de klok; komen er later meer dingen die je zelf op je beginscherm wilt zetten, dan komen die daar ook te staan.',
+                                )
+                            }}
+                        </p>
+
+                        <template #voorbeeld>
+                            <Button variant="outline" size="sm" as-child>
+                                <Link :href="dashboardSettings.edit()">
+                                    <Clock class="size-4" />
+                                    {{ $t('Open de dashboardinstellingen') }}
+                                </Link>
+                            </Button>
+                        </template>
+                    </UitlegKaart>
                 </div>
 
                 <!-- ------------------------ Website ------------------------ -->
@@ -733,6 +773,84 @@ defineOptions({
                                 <Link :href="certificatenRoutes.index()">
                                     <Award class="size-4" />
                                     {{ $t('Open Certificaten') }}
+                                </Link>
+                            </Button>
+                        </template>
+                    </UitlegKaart>
+
+                    <UitlegKaart
+                        :titel="$t('Statistieken')"
+                        :icoon="ChartNoAxesColumn"
+                    >
+                        <p>
+                            {{
+                                $t(
+                                    'Waar je goed in bent, in cijfers. Per cijfer kies je zelf de vorm: een balk die volloopt, een ring die zichzelf tekent, of een groot getal dat oploopt. Naast het formulier zie je meteen hoe het eruit gaat zien.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Een balk en een ring zijn percentages en lopen dus tot honderd. Wil je een aantal laten zien -- vijfhonderd opgeloste tickets, twintig jaar ervaring -- kies dan de teller; daar mag elk getal in. Het teken ervoor en erachter bepaal je zelf, dus "€ 1.200" en "500+" kunnen allebei.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Met het veld Groep zet je cijfers bij elkaar onder een kopje: alles met "Netwerk" komt bij elkaar te staan. Het veld stelt groepen voor die je al gebruikt, zodat je niet per ongeluk twee keer bijna hetzelfde typt. Laat je het leeg, dan staat het cijfer los bovenaan, boven de eerste kop.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Met de knop Indeling regel je de groepen. Daar staat elk vak voor één groep, met zijn naam erboven in het Nederlands en in het Engels. Sleep een cijfer naar een ander vak en het hoort bij die groep -- je ziet het vak oplichten zodra je erboven hangt. Werk je liever zonder slepen, dan kies je de groep in de lijst achter de regel.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'In datzelfde venster hernoem je een groep door in zijn naam te typen, maak je er een nieuwe bij met de knop onderaan, en verplaats je een hele groep met de pijltjes in zijn kop. Een groep opheffen kan ook; de cijfers erin blijven dan staan en komen los bovenaan. Een groep zonder cijfers verdwijnt van je website, want er is dan niets om een kopje boven te zetten.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Typ je een nieuwe groepsnaam of pas je er een aan, dan verschijnt er een klein knopje naast het Engelse veld dat die naam voor je vertaalt. Je leest het na en past aan wat je wilt; opgeslagen wordt het pas als jij op Opslaan drukt. Staat het Engels er al goed, dan is het knopje er niet -- dan valt er niets te vertalen zonder jouw tekst te overschrijven.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Binnen een groep houdt je website jouw volgorde aan. Staan er twee van dezelfde vorm achter elkaar, dan komen die naast elkaar op één rij; zet je er een andere vorm tussen, dan begint daaronder een nieuwe rij. Zo bepaal je zelf wat samen op een rij komt.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'En het leukste: zodra je bezoeker bij dit blok komt, vullen ze zich allemaal op. Niet tegelijk, maar als een golf van boven naar beneden, met een lichtpuntje dat met elke balk meeloopt. Daarna blijven de cijfers staan -- scrolt hij terug, dan verandert er niets meer.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Helemaal stil staat het daarna niet: er blijft een lichtpuntje rondgaan. Bij een ring loopt het een rondje over de boog, bij een balk schuift het over het gevulde stuk, en bij een groot getal zakt het langs het streepje ernaast. Eén tegelijk en rustig achter elkaar, zodat het leeft zonder dat het aandacht vraagt.',
+                                )
+                            }}
+                        </p>
+
+                        <template #voorbeeld>
+                            <Button variant="outline" size="sm" as-child>
+                                <Link :href="statistiekenRoutes.index()">
+                                    <ChartNoAxesColumn class="size-4" />
+                                    {{ $t('Open Statistieken') }}
                                 </Link>
                             </Button>
                         </template>

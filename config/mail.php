@@ -115,20 +115,47 @@ return [
     | Ontvangstadres contactformulier
     |--------------------------------------------------------------------------
     |
-    | Waar berichten uit het contactformulier naartoe gaan. Los van het
-    | from-adres, zodat je kunt versturen vanaf no-reply@ en ontvangen op een
-    | postbus die mensen echt lezen.
+    | Waar berichten uit het contactformulier naartoe gaan.
+    |
+    | **Dit is het publieke adres van de klant en niet zijn inlogadres.**
+    | Die twee zijn uitdrukkelijk gescheiden; welke waarvoor is staat in
+    | config/site.php.
+    |
+    | De terugval is daarom `SITE_EMAIL` en niet meer het from-adres. Dat
+    | laatste stond er eerst, en dat was fout: dan komt een bericht uit het
+    | contactformulier binnen op het no-reply-adres zodra iemand
+    | `MAIL_CONTACT_ADDRESS` leeg laat -- precies de postbus die niemand
+    | leest.
     |
     */
 
     // Let op de ?: en niet de tweede parameter van env(): een variabele die
     // wel in .env staat maar leeg is, geeft een lege string terug en niet
     // null. Met env(..., $default) zou je dan naar het lege adres versturen.
-    'contact_address' => env('MAIL_CONTACT_ADDRESS') ?: env('MAIL_FROM_ADDRESS'),
+    'contact_address' => env('MAIL_CONTACT_ADDRESS')
+        ?: (env('SITE_EMAIL') ?: 'info@atitadvies.nl'),
 
+    /*
+    | Het afzendadres.
+    |
+    | Ook `info@`, en niet een no-reply op een ander domein zoals hier
+    | eerst stond. Twee redenen: het domein was simpelweg verkeerd, en op
+    | gedeelde hosting komt mail van een adres dat niet als echte postbus
+    | bestaat eerder in de spam terecht -- SPF en DKIM horen bij een
+    | bestaand adres. Zie docs/operations/deployment.md.
+    |
+    | Let ook hier op de `?:` en niet de tweede parameter van `env()`,
+    | om precies dezelfde reden als bij `contact_address` hierboven: een
+    | `MAIL_FROM_ADDRESS=` zonder waarde -- en dat is de bedoeling, want
+    | dan geldt `SITE_EMAIL` -- geeft een lege string terug en geen null.
+    | Met `env(..., $default)` blijft het afzendadres dus leeg, en dan
+    | weigert Symfony de mail met "An email must have a From header".
+    | MailLoggingTest viel daar meteen over.
+    */
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-        'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
+        'address' => env('MAIL_FROM_ADDRESS')
+            ?: (env('SITE_EMAIL') ?: 'info@atitadvies.nl'),
+        'name' => env('MAIL_FROM_NAME') ?: env('APP_NAME', 'Laravel'),
     ],
 
     /*

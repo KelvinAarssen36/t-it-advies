@@ -512,11 +512,19 @@ onBeforeUnmount(() => {
                     springen dat niet bestaat -- en dan gebeurt er bij het
                     klikken niets.
                 -->
+                <!--
+                    `brand-glans-laat` zet de glans van deze knop een halve
+                    cyclus achter die van de hero. Zonder dat flitsen ze
+                    precies gelijk op -- ze staan allebei bovenaan in beeld
+                    -- en dan leest het als een laadanimatie in plaats van
+                    als een accent.
+                -->
                 <Button
                     v-if="heeftContact"
                     as="a"
                     href="#contact"
                     variant="brand"
+                    class="brand-glans-laat"
                     @click="gaNaar('contact', $event)"
                 >
                     {{ $t('Neem contact op') }}

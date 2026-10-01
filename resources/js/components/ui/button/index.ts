@@ -12,7 +12,14 @@ export const buttonVariants = cva(
                     "bg-primary text-primary-foreground hover:bg-primary-hover",
                 // Alleen op een donkere achtergrond. Op wit verliest de gradient
                 // zijn contrast en wordt de knop juist zwakker dan de gewone.
-                brand: "brand-surface text-white shadow-xs hover:brightness-110",
+                //
+                // Dit is de actieknop van de publieke site: "Neem contact op"
+                // in de kop en in de hero, en de verzendknop onder het
+                // formulier. `brand-glans` laat er af en toe een lichte veeg
+                // over trekken; dat hoort bij de variant en niet bij één knop,
+                // zodat een nieuwe actieknop meegaat zonder dat iemand eraan
+                // hoeft te denken. Zie .brand-glans in app.css.
+                brand: "brand-surface brand-glans text-white shadow-xs hover:brightness-110",
                 // De secundaire knop op donker: doorzichtig, zodat de gradient of
                 // de navy eronder gewoon doorloopt.
                 "brand-outline":

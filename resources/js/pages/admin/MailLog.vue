@@ -90,7 +90,7 @@ const expanded = ref<number | null>(null);
             </span>
         </div>
 
-        <div class="brand-scrollbar overflow-x-auto rounded-xl border">
+        <div class="brand-schuif-x brand-scrollbar rounded-xl border">
             <table class="w-full text-sm">
                 <thead class="bg-muted/50 text-left">
                     <tr>

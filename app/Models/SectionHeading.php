@@ -156,6 +156,15 @@ class SectionHeading extends Model
                 'intro_en' => 'What I have been tested on, and by whom. Paper is patient; an exam is not.',
             ],
 
+            PageSectionKey::Statistieken => [
+                'eyebrow_nl' => 'In cijfers',
+                'eyebrow_en' => 'By the numbers',
+                'title_nl' => 'Waar ik goed in ben',
+                'title_en' => 'What I am good at',
+                'intro_nl' => 'Geen vage beloftes maar getallen. Scroll erdoorheen en ze vullen zich.',
+                'intro_en' => 'No vague promises, just numbers. Scroll through and they fill themselves in.',
+            ],
+
             default => ['title_nl' => ucfirst($sectie->value)],
         };
     }

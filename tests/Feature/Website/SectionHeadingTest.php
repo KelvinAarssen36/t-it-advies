@@ -44,6 +44,7 @@ class SectionHeadingTest extends TestCase
         PageSectionKey::Diensten,
         PageSectionKey::Ervaring,
         PageSectionKey::Certificaten,
+        PageSectionKey::Statistieken,
     ];
 
     public function test_seeding_gives_every_section_exactly_one_row(): void

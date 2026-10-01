@@ -9,6 +9,7 @@ import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { t } from '@/lib/i18n';
 import { toUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
+import { edit as editDashboard } from '@/routes/dashboard-settings';
 import { show as showDocumentatie } from '@/routes/documentation';
 import { edit as editProfile } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
@@ -34,6 +35,16 @@ const sidebarNavItems = computed<Instelling[]>(() => [
     {
         title: t('Weergave'),
         href: editAppearance(),
+    },
+    /*
+     * Het dashboard staat ná de weergave: die twee gaan allebei over hoe
+     * het portaal eruitziet, en dit is de specifieke van de twee. Een eigen
+     * regel en geen onderdeel van "Weergave", want daar komt meer bij -- de
+     * eigenaar wil zijn dashboard verder kunnen inrichten.
+     */
+    {
+        title: t('Dashboard'),
+        href: editDashboard(),
     },
     /*
      * De handleiding staat onderaan en niet bovenaan. Wie hier komt heeft

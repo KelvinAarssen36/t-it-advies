@@ -5,6 +5,7 @@ use App\Http\Controllers\Website\ExperienceController;
 use App\Http\Controllers\Website\HeroController;
 use App\Http\Controllers\Website\LayoutController;
 use App\Http\Controllers\Website\ServiceController;
+use App\Http\Controllers\Website\StatisticController;
 use App\Http\Controllers\Website\TranslateController;
 use Illuminate\Support\Facades\Route;
 
@@ -33,12 +34,25 @@ Route::middleware(['auth', 'verified', 'two-factor.required', 'can:manage portal
         Route::get('/', [LayoutController::class, 'index'])->name('index');
 
         /*
-         * Volgorde en zichtbaarheid gaan in één opslag, en dus ook door één
-         * bevestiging. Zou elk schuifje meteen iets opslaan, dan krijgt de
-         * eigenaar bij elke klik twee vragen over iets dat live gaat -- en
-         * dan klikt hij ze weg zonder te lezen.
+         * De hele indeling in één opslag: de volgorde én alle schuifjes,
+         * door één bevestiging. Dat is wat het bewerkvenster stuurt, waar
+         * je meerdere dingen tegelijk omzet.
          */
         Route::put('/', [LayoutController::class, 'update'])->name('update');
+
+        /*
+         * Eén onderdeel aan of uit, rechtstreeks vanaf het overzicht.
+         *
+         * **Dit stond er eerst niet, en dat was een fout die de eigenaar
+         * meldde.** Het schuifje stond op het overzicht wél te zien maar
+         * uitgeschakeld, zonder uitleg waarom: "het is wel raar dat dat bij
+         * allemaal zo is dat ik ze niet uit of aan kan zetten". Er was een
+         * reden -- alles ging via het bewerkvenster, in één opslag -- maar
+         * die was nergens te lezen, en bovendien werkt élke andere lijst in
+         * het portaal wel zo: één schuifje, één bevestiging. Nu hier ook.
+         */
+        Route::patch('zichtbaar/{sectie}', [LayoutController::class, 'zichtbaar'])
+            ->name('zichtbaar');
 
         /*
          * De vertaalknop, voor élk beheerscherm van de website en niet
@@ -117,6 +131,27 @@ Route::middleware(['auth', 'verified', 'two-factor.required', 'can:manage portal
             Route::put('{certificate}', [CertificateController::class, 'update'])->name('update');
             Route::patch('{certificate}/online', [CertificateController::class, 'online'])->name('online');
             Route::delete('{certificate}', [CertificateController::class, 'destroy'])->name('destroy');
+        });
+
+        /*
+         * De statistieken: vaardigheden en kengetallen. Eén lijst, geen
+         * bijlagen -- qua opzet de eenvoudigste module, met het meeste
+         * werk aan de kant van de bezoeker.
+         *
+         * `kop` en `volgorde` staan ook hier vóór `{statistic}`, want
+         * het zijn allemaal een PUT op hetzelfde patroon en de eerste
+         * die past wint.
+         */
+        Route::prefix('statistieken')->name('statistieken.')->group(function () {
+            Route::get('/', [StatisticController::class, 'index'])->name('index');
+            Route::post('/', [StatisticController::class, 'store'])->name('store');
+
+            Route::put('kop', [StatisticController::class, 'kop'])->name('kop');
+            Route::put('volgorde', [StatisticController::class, 'volgorde'])->name('volgorde');
+
+            Route::put('{statistic}', [StatisticController::class, 'update'])->name('update');
+            Route::patch('{statistic}/online', [StatisticController::class, 'online'])->name('online');
+            Route::delete('{statistic}', [StatisticController::class, 'destroy'])->name('destroy');
         });
 
         /*

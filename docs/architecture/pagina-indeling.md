@@ -189,17 +189,69 @@ toelichting:
   animeert de bibliotheek de beweging al. Twee animaties op hetzelfde
   element geeft geschok.
 
-## Eén opslag, één bevestiging
+### Met `groep` wisselen lijsten items uit
 
-Volgorde en schuifjes gaan samen in één `PUT`. Dat is met opzet: alles wat
-hier verandert staat direct live, en zou elk schuifje op zichzelf opslaan,
-dan krijgt de eigenaar bij elke klik de dubbele bevestiging over iets dat
-live gaat. Dan klikt hij ze weg zonder te lezen, en is de bevestiging niets
-meer waard. Nu verzamelt hij eerst en bevestigt hij één keer.
+Staat er een naam in de prop `groep`, dan kunnen alle lijsten met diezelfde
+naam items aan elkaar doorgeven. Slepen is dan niet alleen herschikken maar
+ook verhuizen, en beide lijsten geven een nieuwe inhoud door.
+
+Dat wordt gebruikt in het indelingsvenster van de
+[statistieken](modules/statistieken.md#het-indelingsvenster-elke-groep-is-een-vak),
+waar elke groep een eigen vak is. Drie dingen horen daar altijd bij:
+
+1. **Een lege lijst heeft hoogte nodig** (`.brand-sorteer-vak`). Een vak van
+   nul pixels is niet te raken, en dat is juist het vak waar je als eerste
+   iets in wil leggen.
+2. **Het vak waar je boven hangt moet oplichten**
+   (`dropZoneParentClass`). Zonder dat is een stapel vakken niet van elkaar
+   te onderscheiden en is het gokken waar iets belandt.
+3. **De pijltjes blijven binnen hun eigen lijst.** Verhuizen kan er dus niet
+   mee, en dat betekent dat er een tweede weg moet zijn die zonder slepen
+   werkt -- bij de statistieken een keuzelijst achter elke regel. Anders kan
+   wie niet sleept de indeling niet aanpassen.
+
+## Twee wegen naar hetzelfde schuifje
+
+Een onderdeel aan- of uitzetten kan op twee plekken, en ze doen iets
+anders:
+
+| Waar                     | Wat er gebeurt                                                                            |
+| ------------------------ | ----------------------------------------------------------------------------------------- |
+| **Op het overzicht**     | Eén onderdeel, één `PATCH`, één bevestiging. De volgorde blijft precies zoals hij was.    |
+| **In het bewerkvenster** | De hele indeling in één `PUT`: de volgorde én alle schuifjes samen, door één bevestiging. |
+
+> **Op het overzicht stond dat schuifje eerst uitgeschakeld, en dat was een
+> fout.** De gedachte was dat álles via het bewerkvenster moest, zodat je
+> eerst verzamelt en één keer bevestigt. Het gevolg was een schuifje dat je
+> aanwees en dat niets deed, zonder een woord uitleg waarom. De eigenaar
+> meldde precies dat: "als ik op aan-uitknop hover staat dat ik hem niet kan
+> gebruiken (...) ik weet nu niet wat er aan de hand is", en: "het is wel
+> raar dat dat bij allemaal zo is".
+>
+> Hij had op twee manieren gelijk. Een reden die nergens te lezen is, is
+> geen reden maar een raadsel. En élke andere lijst in het portaal werkt wél
+> zo -- het online-schuifje bij een dienst, een certificaat of een
+> statistiek zet er één om met één bevestiging. Dit scherm was de
+> uitzondering zonder dat daar iets voor te zeggen was.
+>
+> **De les:** een knop die er staat hoort te werken. Is er echt een reden om
+> hem onbruikbaar te maken, dan hoort die reden op het scherm te staan en
+> niet in een commentaarregel in de code.
+
+De reden achter het batchgedrag van het bewerkvenster blijft wél staan:
+daar zet je er meerdere tegelijk om, en dan is één bevestiging aan het eind
+beter dan vijf onderweg. Dan klikt hij ze weg zonder te lezen, en is de
+bevestiging niets meer waard.
 
 Is er niets veranderd, dan gebeurt er ook niets: geen vraag, geen verzoek,
 geen melding. De server weigert een lege opslag ook, maar dan heeft de
 eigenaar al twee keer "ja" gezegd tegen niets.
+
+De route voor één onderdeel weigert de **vaste** onderdelen, en niet alleen
+in het scherm: de kop en de voettekst horen er altijd te staan, ook als
+iemand het verzoek zelf opstelt. En hij raakt de posities niet aan -- zou hij
+alles hernummeren zoals `update()` doet, dan verspringt de pagina van de
+eigenaar omdat hij iets uitzette.
 
 Het bevestigingsvenster zelf staat in
 [meldingen](meldingen.md#het-bevestigingsvenster).
@@ -233,7 +285,10 @@ alleen uit wat vaste tekst bestaat; de [diensten](modules/diensten.md)
 voor allebei tegelijk -- een lijst met een eigen volgorde, een venster per
 item, en een beheerbare kop erboven. Die laatste lijkt het meest op wat de
 werkwijze nodig heeft. De [certificaten](modules/certificaten.md) laten
-zien hoe je er twee lijsten in één onderdeel kwijt kunt.
+zien hoe je er twee lijsten in één onderdeel kwijt kunt, en de
+[statistieken](modules/statistieken.md) hoe je één lijst in meerdere
+vormen op de pagina zet, en hoe een indelingsvenster eruitziet waarin
+items tussen groepen kunnen verhuizen.
 
 **De kop erboven kost geen werk meer.** Sinds de koptabellen zijn
 samengevoegd heeft elk onderdeel er gratis een; je hoeft er geen migratie

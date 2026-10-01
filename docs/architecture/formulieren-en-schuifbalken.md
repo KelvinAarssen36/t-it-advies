@@ -609,6 +609,51 @@ er meer is -- een rij die zichtbaar doorloopt tot buiten de rand, of een knop
 die verder bladert. Een verborgen schuifbalk zonder zo'n aanwijzing is inhoud
 die niemand vindt.
 
+### `brand-schuif-x`: een brede tabel die de pagina niet gijzelt
+
+Een beheertabel die breder is dan het scherm schuift zijwaarts. Zet daar
+**`brand-schuif-x`** op, en nooit los `overflow-x-auto`:
+
+```css
+.brand-schuif-x {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    overscroll-behavior-y: auto;
+}
+```
+
+> **Dit is een echte bug geweest, gemeld met "als ik in tabel probeer te
+> scrollen dat ik dan de pagina niet naar beneden kan scrollen".** Met de
+> muis boven een brede tabel deed het wiel niets meer: de pagina stond
+> stil en je moest er eerst naast gaan staan.
+
+De oorzaak zit in twee regels die elk apart redelijk lijken:
+
+1. **`overflow-x: auto` trekt `overflow-y` mee.** De specificatie zegt dat
+   als één as `visible` is en de andere niet, die `visible` wordt
+   behandeld als `auto`. Een vak met alléén `overflow-x-auto` schuift dus
+   óók verticaal -- alleen valt er verticaal niets te schuiven.
+2. **`overscroll-behavior: contain`** zegt tegen de browser: geef de
+   beweging niet door aan wat erachter zit. Op een vak dat verticaal
+   niets te schuiven heeft betekent dat: slik het wiel op en laat de
+   pagina staan.
+
+De oplossing is de twee assen uit elkaar trekken: horizontaal houden we
+`contain` (anders schuift de pagina er zijwaarts achteraan mee), en
+verticaal zetten we hem terug op `auto` zodat de beweging netjes
+doorgaat naar de pagina.
+
+De regel staat **buiten een `@layer`**, want een losse Tailwind-utility
+als `overflow-x-auto` zou hem anders kunnen overrulen; zie
+[AGENTS.md](../../AGENTS.md) over die val.
+
+**Waarom niet de tabel zelf laten schuiven in de hoogte.** Dat was het
+voorstel bij de melding: geef de tabel een eigen hoogte met een eigen
+verticale balk. Dat lost het wiel op, maar het levert twee schuifbalken
+op één pagina op, de kop van de tabel loopt weg onder je handen, en op
+een telefoon is een vak-in-een-vak slopend. Een tabel die net zo lang is
+als zijn inhoud en een pagina die normaal schuift, is rustiger.
+
 ### Waar het al op staat
 
 | Plek                                                                                              | Wat er schuift                            |
@@ -622,8 +667,14 @@ die niemand vindt.
 | [MailLog.vue](../../resources/js/pages/admin/MailLog.vue)                                         | De brede tabel en de context-`<pre>`.     |
 | [SecurityEvents.vue](../../resources/js/pages/admin/SecurityEvents.vue)                           | De brede tabel.                           |
 | [Users.vue](../../resources/js/pages/admin/Users.vue)                                             | De brede tabel.                           |
+| [Activity.vue](../../resources/js/pages/admin/Activity.vue)                                       | De brede tabel.                           |
+| [Diensten.vue](../../resources/js/pages/website/Diensten.vue)                                     | De brede tabel.                           |
+| [Ervaring.vue](../../resources/js/pages/website/Ervaring.vue)                                     | De brede tabel.                           |
+| [Certificaten.vue](../../resources/js/pages/website/Certificaten.vue)                             | De brede tabel.                           |
+| [Statistieken.vue](../../resources/js/pages/website/Statistieken.vue)                             | De brede tabel.                           |
 | [Dashboard.vue](../../resources/js/pages/Dashboard.vue)                                           | Het raster op een smal scherm.            |
 
+Alles in die lijst dat **zijwaarts** schuift, draagt `brand-schuif-x`.
 Komt er een scherm bij, dan hoort die plek in deze tabel.
 
 ## De componenten van de UI-pakketten
@@ -651,7 +702,9 @@ vermijden.
 5. Een bestand? Het inheemse veld op `sr-only` achter een `Button`, en het
    formulier als `FormData` versturen.
 6. Kan er iets schuiven binnen de pagina? `brand-scrollbar` erop, en de plek
-   erbij in de tabel hierboven.
+   erbij in de tabel hierboven. Schuift het **zijwaarts** -- een brede
+   tabel -- dan `brand-schuif-x` in plaats van `overflow-x-auto`, anders
+   slikt het vak het muiswiel op en staat de pagina stil.
 7. Een kleur nodig die er niet is? Die komt in `:root` én in `.dark`, en in de
    tabel bovenaan dit document.
 8. Maakt, wijzigt of verwijdert een knop iets? Dan krijgt hij de variant

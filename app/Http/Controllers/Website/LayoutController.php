@@ -86,6 +86,59 @@ class LayoutController extends Controller
     }
 
     /**
+     * Eén onderdeel aan of uit, rechtstreeks vanaf het overzicht.
+     *
+     * **Waarom dit er naast `update()` staat.** Dat laatste verwacht de
+     * hele indeling en hernummert alles; dat past bij het bewerkvenster,
+     * waar je meerdere dingen tegelijk omzet en één keer bevestigt. Maar
+     * op het overzicht is één schuifje omzetten één handeling, en dan
+     * hoort het ook één verzoek te zijn -- precies zoals het schuifje in
+     * elke andere lijst van het portaal werkt.
+     *
+     * De vaste onderdelen worden hier geweigerd en niet alleen in het
+     * scherm verstopt: de kop en de voettekst horen er altijd te staan.
+     */
+    public function zichtbaar(Request $request, string $sectie): RedirectResponse
+    {
+        $sleutel = PageSectionKey::tryFrom($sectie);
+
+        if ($sleutel === null || $sleutel->vast()) {
+            Toast::fout(__('Dit onderdeel kan niet aan- of uitgezet worden.'));
+
+            return back();
+        }
+
+        $aan = $request->boolean('visible');
+
+        $rij = PageSection::query()->firstOrNew(['key' => $sleutel]);
+
+        /*
+         * Een rij die nog niet bestaat krijgt zijn plek uit de code. Zonder
+         * dat staat hij op positie 0 en springt hij naar voren zodra de
+         * eigenaar hem voor het eerst uitzet -- een plek die hij nooit
+         * heeft gekozen.
+         */
+        if (! $rij->exists) {
+            $rij->position = $sleutel->standaardPositie();
+        }
+
+        if ($rij->visible === $aan) {
+            Toast::melding(__('Er was niets veranderd.'));
+
+            return back();
+        }
+
+        $rij->visible = $aan;
+        $rij->save();
+
+        Toast::bijgewerkt($aan
+            ? __('":naam" staat nu op je website.', ['naam' => $sleutel->label()])
+            : __('":naam" staat niet meer op je website.', ['naam' => $sleutel->label()]));
+
+        return back();
+    }
+
+    /**
      * Precies de verplaatsbare onderdelen, elk één keer.
      *
      * Dit is de grendel op de kop en de voettekst. Hij is met opzet streng

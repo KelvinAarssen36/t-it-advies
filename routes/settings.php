@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Settings\DashboardSettingsController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
 use Illuminate\Auth\Middleware\RequirePassword;
@@ -35,6 +36,17 @@ Route::middleware(['auth', 'verified', 'two-factor.required'])->group(function (
         ->name('user-password.update');
 
     Route::inertia('settings/appearance', 'settings/Appearance')->name('appearance.edit');
+
+    /*
+     * De instellingen van het dashboard: nu de tijdzone van de klok, later
+     * meer. Een eigen gedeelte en geen regel bij "Weergave", want dat gaat
+     * over licht en donker in het hele portaal; dit gaat over één scherm.
+     */
+    Route::get('settings/dashboard', [DashboardSettingsController::class, 'edit'])
+        ->name('dashboard-settings.edit');
+
+    Route::patch('settings/dashboard', [DashboardSettingsController::class, 'update'])
+        ->name('dashboard-settings.update');
 
     /*
      * De handleiding voor de eigenaar. Een gewone Inertia-pagina zonder

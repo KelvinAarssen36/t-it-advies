@@ -313,7 +313,7 @@ const verwijderOpleiding = async (item: OpleidingRij): Promise<void> => {
             </p>
 
             <div
-                class="brand-tabelvak brand-scrollbar overflow-x-auto rounded-xl border"
+                class="brand-tabelvak brand-schuif-x brand-scrollbar rounded-xl border"
             >
                 <table class="brand-tabel-kaarten w-full text-sm">
                     <thead class="bg-muted/50 text-left">
@@ -485,7 +485,7 @@ const verwijderOpleiding = async (item: OpleidingRij): Promise<void> => {
 
             <div
                 v-if="props.opleidingen.length > 0"
-                class="brand-tabelvak brand-scrollbar overflow-x-auto rounded-xl border"
+                class="brand-tabelvak brand-schuif-x brand-scrollbar rounded-xl border"
             >
                 <table class="brand-tabel-kaarten w-full text-sm">
                     <thead class="bg-muted/50 text-left">

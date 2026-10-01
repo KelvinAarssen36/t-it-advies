@@ -338,7 +338,7 @@ const bekijk = (item: ErvaringRij): void => {
                 over. Op een breed scherm verandert er niets.
             -->
             <div
-                class="brand-tabelvak brand-scrollbar overflow-x-auto rounded-xl border"
+                class="brand-tabelvak brand-schuif-x brand-scrollbar rounded-xl border"
             >
                 <table class="brand-tabel-kaarten w-full text-sm">
                     <thead class="bg-muted/50 text-left">

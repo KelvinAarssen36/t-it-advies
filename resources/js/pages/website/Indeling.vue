@@ -92,6 +92,45 @@ const beginBewerken = (): void => {
     bewerken.value = true;
 };
 
+/**
+ * Eén onderdeel aan of uit, rechtstreeks vanaf het overzicht.
+ *
+ * **Dit schuifje stond er eerst uitgeschakeld**, omdat alles via het
+ * bewerkvenster zou gaan. Daar was een gedachte achter -- meerdere
+ * schuifjes omzetten en één keer bevestigen -- maar op het overzicht
+ * leverde het een knop op die je aanwees en die niets deed, zonder uitleg
+ * waarom. De eigenaar meldde precies dat.
+ *
+ * Nu is het hier hetzelfde als het online-schuifje in elke andere lijst
+ * van het portaal: één handeling, één verzoek, de vaste bevestiging. Het
+ * bewerkvenster houdt zijn eigen weg voor wie er meerdere tegelijk omzet.
+ *
+ * `preserveState` staat uit: het overzicht erachter hoort na het opslaan
+ * de nieuwe stand te laten zien, inclusief de telling eronder.
+ */
+const wisselZichtbaar = async (rij: SectieRij, aan: boolean): Promise<void> => {
+    const akkoord = await bevestigBewerken({
+        titel: aan
+            ? t(':naam op je website zetten?', { naam: rij.label })
+            : t(':naam van je website halen?', { naam: rij.label }),
+        tekst: aan
+            ? undefined
+            : t(
+                  'Het onderdeel blijft hier staan met alles wat erin zit; bezoekers zien het alleen niet meer.',
+              ),
+    });
+
+    if (!akkoord) {
+        return;
+    }
+
+    router.patch(
+        website.zichtbaar(rij.key).url,
+        { visible: aan },
+        { preserveScroll: true },
+    );
+};
+
 /** Wat er straks naar de server gaat, in deze volgorde. */
 const alsPayload = (lijst: SectieRij[]) =>
     lijst.map((rij) => ({ key: rij.key, visible: rij.visible }));
@@ -215,6 +254,7 @@ const opslaan = async (): Promise<void> => {
                     v-for="rij in verplaatsbaar"
                     :key="rij.key"
                     :rij="rij"
+                    @update:zichtbaar="wisselZichtbaar(rij, $event)"
                 />
 
                 <SectionRow v-if="voet" :rij="voet" />

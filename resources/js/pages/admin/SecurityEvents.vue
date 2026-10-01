@@ -114,7 +114,7 @@ const expanded = ref<number | null>(null);
         </div>
 
         <div
-            class="brand-tabelvak brand-scrollbar overflow-x-auto rounded-xl border"
+            class="brand-tabelvak brand-schuif-x brand-scrollbar rounded-xl border"
         >
             <table class="brand-tabel-kaarten w-full text-sm">
                 <thead class="bg-muted/50 text-left">
@@ -186,7 +186,7 @@ const expanded = ref<number | null>(null);
                                 </p>
                                 <pre
                                     v-if="row.context"
-                                    class="brand-scrollbar overflow-x-auto rounded bg-background p-3 text-xs"
+                                    class="brand-schuif-x brand-scrollbar rounded bg-background p-3 text-xs"
                                     >{{
                                         JSON.stringify(row.context, null, 2)
                                     }}</pre>

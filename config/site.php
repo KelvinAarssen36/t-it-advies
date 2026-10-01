@@ -27,4 +27,32 @@ return [
 
     'linkedin' => env('SITE_LINKEDIN', 'https://www.linkedin.com/in/erik-aarssen/'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Het publieke e-mailadres
+    |--------------------------------------------------------------------------
+    |
+    | **Er zijn twee adressen in dit project en ze doen iets anders.** Dat
+    | onderscheid is uitdrukkelijk afgesproken en het is het soort ding dat
+    | je per ongeluk door elkaar haalt, dus het staat hier met zoveel
+    | woorden:
+    |
+    | | Adres                   | Waarvoor                                  |
+    | | ----------------------- | ----------------------------------------- |
+    | | `aarssen@atitadvies.nl` | **Alleen inloggen.** Het account van de eigenaar in het portaal; zie config/security.php. |
+    | | `info@atitadvies.nl`    | **Al het andere.** Wat er aan contactgegevens op de website staat, en waar de berichten uit het contactformulier naartoe gaan. |
+    |
+    | Het inlogadres hoort dus nergens op de publieke site te staan, en dit
+    | adres hoort nergens als inlog te worden gebruikt.
+    |
+    | Dit is de enige bron voor het publieke adres. `config/mail.php` valt er
+    | op terug voor het ontvangstadres van het contactformulier, zodat die
+    | twee niet uiteen kunnen gaan lopen.
+    |
+    | EmailAdressenTest houdt allebei de adressen vast.
+    |
+    */
+
+    'email' => env('SITE_EMAIL', 'info@atitadvies.nl'),
+
 ];

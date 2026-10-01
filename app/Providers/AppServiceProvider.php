@@ -9,6 +9,7 @@ use App\Models\Certificate;
 use App\Models\Education;
 use App\Models\Experience;
 use App\Models\Service;
+use App\Models\Statistic;
 use App\Models\User;
 use App\Support\Page\SectionContent;
 use App\Support\Security\SecurityLogger;
@@ -123,6 +124,13 @@ class AppServiceProvider extends ServiceProvider
             PageSectionKey::Certificaten,
             fn () => Certificate::query()->online()->count()
                 + Education::query()->online()->count(),
+        );
+
+        // En de statistieken. Zelfde verhaal: staat alles offline, dan
+        // is het blok voor de bezoeker leeg.
+        $this->app->make(SectionContent::class)->telt(
+            PageSectionKey::Statistieken,
+            fn () => Statistic::query()->online()->count(),
         );
     }
 

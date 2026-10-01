@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DashboardTimezone;
 use App\Models\Concerns\LogsActivity;
 use BaconQrCode\Renderer\Color\Rgb;
 use BaconQrCode\Renderer\Image\SvgImageBackEnd;
@@ -27,6 +28,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string $name
  * @property string $email
  * @property string|null $locale
+ * @property DashboardTimezone|null $dashboard_timezone
  * @property Carbon|null $email_verified_at
  * @property string $password
  * @property string|null $two_factor_secret
@@ -92,7 +94,25 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
+            'dashboard_timezone' => DashboardTimezone::class,
         ];
+    }
+
+    /**
+     * De tijdzone van de klok op zijn dashboard.
+     *
+     * Een eigen methode en geen `->dashboard_timezone` op de aanroepplek,
+     * want die kolom is leeg zolang niemand iets heeft gekozen -- en de
+     * standaard hoort op één plek te staan. Een lege kolom met een `??`
+     * bij elke lezer is precies hoe twee plekken uiteen gaan lopen.
+     *
+     * Een onbekende waarde uit de database levert `null` op door de cast,
+     * en komt daarmee ook hier terecht. Dat is de bedoeling: een zone die
+     * we niet kennen, kunnen we ook niet tonen.
+     */
+    public function dashboardTijdzone(): DashboardTimezone
+    {
+        return $this->dashboard_timezone ?? DashboardTimezone::STANDAARD;
     }
 
     /**

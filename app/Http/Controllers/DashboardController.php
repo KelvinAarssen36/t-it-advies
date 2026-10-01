@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -15,8 +17,21 @@ use Inertia\Response;
  */
 class DashboardController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        return Inertia::render('Dashboard');
+        /** @var User $gebruiker */
+        $gebruiker = $request->user();
+
+        return Inertia::render('Dashboard', [
+            /*
+             * De zone van de klok, als IANA-naam. De browser maakt de tijd
+             * en de datum ermee op; zie DigitaleKlok.vue.
+             *
+             * Hij komt uit `dashboardTijdzone()` en niet rechtstreeks uit
+             * de kolom: die is leeg zolang de eigenaar niets heeft gekozen,
+             * en de standaard hoort op één plek te staan.
+             */
+            'tijdzone' => $gebruiker->dashboardTijdzone()->value,
+        ]);
     }
 }
