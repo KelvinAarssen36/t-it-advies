@@ -619,6 +619,7 @@ Een beheertabel die breder is dan het scherm schuift zijwaarts. Zet daar
     overflow-x: auto;
     overscroll-behavior-x: contain;
     overscroll-behavior-y: auto;
+    scrollbar-gutter: auto;
 }
 ```
 
@@ -646,6 +647,35 @@ doorgaat naar de pagina.
 De regel staat **buiten een `@layer`**, want een losse Tailwind-utility
 als `overflow-x-auto` zou hem anders kunnen overrulen; zie
 [AGENTS.md](../../AGENTS.md) over die val.
+
+#### En `scrollbar-gutter`, uit dezelfde hoek
+
+`scrollbar-gutter: auto` in die lijst is een tweede reparatie met dezelfde
+oorzaak. De eigenaar meldde het zo: _"bij de tabel loopt de bovenste kleur
+niet helemaal tot rechts door"_ -- de gekleurde kop van een beheertabel
+stopte een centimeter voor de rechterrand, met een strook in de kleur van
+het vak eronder ertussen.
+
+Dat komt van `scrollbar-gutter: stable` in `brand-scrollbar`. Die
+reserveert ruimte voor de schuifbalk van de **blokas** -- rechts, in onze
+schrijfrichting -- vóórdat die balk er is, zodat inhoud niet verspringt
+zodra een lijst lang genoeg wordt. Voor een paneel dat verticaal schuift
+is dat precies goed.
+
+Hier niet, en de reden is punt 1 hierboven: de verticale as is alleen
+`auto` geworden omdat de horizontale dat is. Er komt nooit een verticale
+balk, en toch bleef die strook gereserveerd. De tabel heeft `w-full` --
+honderd procent van de **inhoudsbreedte** -- dus hij stopt waar die strook
+begint.
+
+> **De les is dezelfde als bij `overscroll-behavior`:** `brand-scrollbar`
+> is geschreven voor een paneel dat verticaal schuift. Elke eigenschap
+> daarin die over de blokas gaat, moet je terugdraaien voor een vak dat
+> alleen zijwaarts schuift. Daarom horen die correcties bij elkaar in
+> `brand-schuif-x` te staan en niet verspreid over de schermen.
+
+Aan de tabellen zelf is hiervoor niets veranderd; dit haalt alleen weg wat
+er niet hoorde te staan.
 
 **Waarom niet de tabel zelf laten schuiven in de hoogte.** Dat was het
 voorstel bij de melding: geef de tabel een eigen hoogte met een eigen

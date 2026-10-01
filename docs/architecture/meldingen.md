@@ -202,6 +202,97 @@ wie er wint. Dezelfde truc staat uitgelegd in
 andere meldingen bevestigen iets dat je zelf net deed en die mag je missen;
 een fout moet je lezen, en misschien twee keer.
 
+### Meerdere tegelijk: een stapel die uitklapt als je erop gaat staan
+
+Komen er meerdere meldingen, dan legt vue-sonner ze als een pak kaarten op
+elkaar: de voorste is te lezen, de rest wordt kleiner geschaald, op de
+hoogte van de voorste gezet (`height: var(--front-toast-height)`) en
+erachter geschoven. Ga je er met de muis op staan, dan klapt de stapel uit
+en zie je ze allemaal.
+
+Dat is de standaard van vue-sonner, en het **blijft** zo. De eigenaar heeft
+daar expliciet om gevraagd: "dat je er muis op kan houden zoals eerst en dat
+dan alle meldingen zich opstapelen zodat je ze toch allemaal kan zien".
+
+#### Waarom dat stapelen eerst niet werkte
+
+> **De oorzaak was één regel van onszelf: `position: relative` op
+> `.brand-toast`.** Die stond er zodat de streep links als pseudo-element
+> geplaatst kon worden, en hij was nooit nodig -- maar hij was wel
+> specifieker dan de `position: absolute` die vue-sonner met
+> `[data-sonner-toast]` op elke melding zet. Onze regel won dus altijd.
+>
+> Daarmee stonden de meldingen in de **normale tekststroom** in plaats van
+> absoluut in hun hoek, terwijl vue-sonner ze ondertussen wél verschoof met
+> `translateY`, op de hoogte van de voorste zette en schaalde. Bij één
+> melding valt dat niet op: die staat toch op zijn plek. Bij twee of meer
+> wordt het een stapel die niet klopt, met kaarten en gekleurde randjes die
+> scheef onder elkaar uit piepen.
+>
+> Dat is ook precies hoe de eigenaar het meldde, in twee rondes: eerst "als
+> je meerdere meldingen krijgt valt dat soms een beetje raar over elkaar
+> heen", daarna "hij blijft er dan achter staan".
+
+**De les.** Een `position` op een component uit een pakket is geen
+onschuldige toevoeging. Dit soort bibliotheken rekent op zijn eigen
+positioneringsmodel, en een specifiekere regel van ons zet dat stil zonder
+een foutmelding -- het ziet er in het eenvoudigste geval nog goed uit en
+valt pas om zodra er een tweede element bij komt.
+
+**Twee eerdere pogingen waren het verkeerde antwoord**, en staan hier
+omdat ze er logisch uitzagen:
+
+1. **`expand` op de Toaster** om de stapel uit te zetten. Dat werkte en het
+   zag er netjes uit, maar het kostte het uitklappen bij hover -- en dat was
+   juist wat er goed aan was.
+2. **De streep verbergen** op een melding die achteraan ligt. Dat was een
+   echte verbetering (zie hieronder), maar het bestreed een symptoom: de
+   kaarten zelf stonden nog steeds verkeerd.
+
+#### De streep zit in de box-shadow, niet op een pseudo-element
+
+Vue-sonner gebruikt `::before` op een melding zélf, als onzichtbaar
+raakvlak voor het wegvegen (`left: -100%; right: -100%`, drie keer de
+hoogte) en voor het verdwijnen. Twee partijen op één pseudo-element is
+precies hoe dit soort fouten ontstaat, dus de streep zit nu in een
+`inset`-schaduw:
+
+- Die kan per definitie niet buiten de kaart vallen en volgt de ronde
+  hoeken vanzelf.
+- Er hoeft geen `overflow: hidden` bij -- en dat is winst, want daarmee
+  knipten we het raakvlak voor het wegvegen af.
+- Hij zit in een eigen variabele (`--toast-streep`), dus een melding die
+  achteraan ligt zet alleen die variabele leeg. Omdat de rest van de
+  schaduw gelijk blijft, loopt dat mee met de `box-shadow`-overgang die
+  vue-sonner er zelf al op heeft: hij vaagt in en uit in plaats van te
+  springen.
+
+Dat verbergen hoort erbij: vue-sonner vaagt de inhoud van de kaarten
+achteraan weg, zodat je een stapel blanco kaarten ziet. Een gekleurd
+randje van een melding die je niet kunt lezen, zegt niets.
+
+Drie tegelijk blijft het maximum -- de standaard van vue-sonner -- dus een
+reeks snelle handelingen kan het scherm niet vullen.
+
+### Ze gaan mee met licht of huisstijl
+
+De `Toaster` krijgt het thema van het portaal mee (`:theme="appearance"`,
+uit `useAppearance`). De standaard van vue-sonner is `light`, en dat is hier
+altijd fout: het portaal staat standaard in de huisstijl.
+
+De kleuren van de kaart zelf gingen altijd al mee -- de achtergrond, de
+rand en de tekst komen uit de rol-tokens (`--popover`,
+`--popover-foreground`, `--border`), en de accenten uit `--success`,
+`--primary`, `--destructive` en `--brand-cyan`. Wat niet meeging is de
+grijstrap van vue-sonner zelf, die aan `data-theme` op het vak eromheen
+hangt. Die is nu goed, en dat telt zodra er iets bij komt dat daarop rekent
+-- een sluitknop bijvoorbeeld.
+
+Het haarlijntje om de kaart volgt sinds dezelfde ronde ook de tekstkleur van
+het vlak in plaats van een vaste witte lijn te zijn. In de huisstijl ziet dat
+er hetzelfde uit als eerst; in het lichte thema was het wit op wit en dus
+onzichtbaar.
+
 ## Bij een nieuwe CRUD
 
 1. Bij opslaan: `Toast::aangemaakt(...)` of `Toast::bijgewerkt(...)`.

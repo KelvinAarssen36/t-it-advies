@@ -490,6 +490,24 @@
   vak zonder verticale overloop geeft het wiel vanzelf door, zodra je het
   niet meer met `contain` tegenhoudt.
 
+  **En er wordt rechts geen ruimte vrijgehouden.** Dat is de tweede fout
+  uit dezelfde hoek, en de klant zag hem: de gekleurde kop van een tabel
+  liep niet helemaal tot de rechterrand door. Er zat een strook van een
+  centimeter tussen, in de kleur van het vak eronder.
+
+  De oorzaak is `scrollbar-gutter: stable` uit `brand-scrollbar`. Die
+  reserveert ruimte voor de schuifbalk van de **blokas** -- rechts dus --
+  voordat die balk er is, zodat inhoud niet verspringt zodra een lijst lang
+  genoeg wordt. Voor een paneel dat verticaal schuift is dat precies goed.
+  Hier niet: de verticale as is alleen `auto` geworden door regel 1
+  hierboven, er komt nooit een balk, en toch bleef die strook staan -- en
+  daarbuiten stopt de tabel, want `w-full` is honderd procent van de
+  inhoudsbreedte.
+
+  `auto` betekent: alleen ruimte als er écht een balk is. De tabel zelf is
+  hiervoor niet aangepast; dit haalt alleen weg wat er niet hoorde te
+  staan.
+
   **Ongelaagd met opzet.** `brand-scrollbar` is een `@utility` en staat
   dus in de utilities-laag; een regel daarbuiten wint daar altijd van,
   ongeacht de volgorde in dit bestand. Zie de valkuil daarover in
@@ -499,6 +517,7 @@
     overflow-x: auto;
     overscroll-behavior-x: contain;
     overscroll-behavior-y: auto;
+    scrollbar-gutter: auto;
 }
 
 .brand-scrollbar::-webkit-scrollbar {
@@ -2119,30 +2138,104 @@ button:hover > .brand-verlaat,
   docs/architecture/formulieren-en-schuifbalken.md, waar dezelfde truc
   wordt uitgelegd.
 */
-[data-sonner-toast].brand-toast {
-    --toast-accent: var(--muted-foreground);
+/*
+  **Twee dingen die hier níet staan, en dat is de hele reparatie van het
+  stapelen. Lees dit voordat je er iets aan toevoegt.**
 
-    position: relative;
-    overflow: hidden;
+  **1. Geen `position: relative`.** Dat stond er, zodat de streep links als
+  pseudo-element geplaatst kon worden. Het gevolg was dat meerdere
+  meldingen over elkaar heen vielen, en de oorzaak is zuivere cascade:
+  vue-sonner zet `position: absolute` op elke melding met
+  `[data-sonner-toast]`, en onze regel met `[data-sonner-toast].brand-toast`
+  is specifieker. Onze `relative` won dus altijd, ongeacht de volgorde van
+  de stylesheets.
+
+  Daarmee stonden de meldingen in de normale tekststroom in plaats van
+  absoluut in hun hoek -- terwijl vue-sonner ze ondertussen wél verschoof
+  met `translateY`, op de hoogte van de voorste zette en schaalde. Bij één
+  melding valt dat niet op: die staat toch op zijn plek. Bij twee of meer
+  wordt het een stapel die niet klopt, met kaarten en gekleurde randjes die
+  scheef onder elkaar uit piepen. Zo meldde de eigenaar het ook: "als je
+  meerdere meldingen krijgt valt dat soms een beetje raar over elkaar
+  heen", en daarna "hij blijft er dan achter staan".
+
+  Het was ook niet nodig: een absoluut geplaatst element is zelf al een
+  containing block voor wat erin absoluut geplaatst wordt.
+
+  **2. Geen `overflow: hidden`.** Dat hoorde bij diezelfde streep. Het is
+  nu niet alleen overbodig maar schadelijk: vue-sonner gebruikt
+  `::before` op een melding als onzichtbaar raakvlak voor het wegvegen
+  (`left: -100%; right: -100%`, drie keer de hoogte), en dat raakvlak werd
+  door onze `overflow: hidden` afgeknipt.
+
+  **De streep zit daarom nu in de box-shadow en niet meer op `::before`.**
+  Vue-sonner heeft dat pseudo-element zelf nodig -- voor het wegvegen én
+  voor het verdwijnen -- en twee partijen op één pseudo-element is precies
+  hoe dit soort fouten ontstaat. Een `inset`-schaduw kan bovendien per
+  definitie niet buiten de kaart vallen en volgt de ronde hoeken vanzelf.
+
+  Elke soort heeft een eigen kleur via één variabele: `--toast-accent`
+  stuurt de streep én het pictogram aan, dus een nieuwe soort is één regel.
+
+  `[data-styled='true']` staat erbij omdat vue-sonner zijn eigen schaduw op
+  diezelfde combinatie zet. Zonder dat zijn de twee even specifiek en
+  beslist de volgorde in het gebouwde stylesheet wie er wint -- en dat is
+  geen afspraak maar geluk.
+
+  Zie docs/architecture/meldingen.md.
+*/
+/*
+  De kleur van een melding waarvan de soort niets bijzonders zegt.
+
+  **Met opzet op een losse klasse en niet in de grote regel hieronder.**
+  De vijf soorten zetten `--toast-accent` met
+  `[data-sonner-toast].brand-toast-...`, en dat is twee punten
+  specificiteit. Stond deze terugval in de regel hieronder -- drie punten
+  -- dan won hij van alle vijf en was elke melding grijs.
+*/
+.brand-toast {
+    --toast-accent: var(--muted-foreground);
+}
+
+[data-sonner-toast][data-styled='true'].brand-toast {
+    /*
+      De streep links, als eerste schaduw in de rij. Drie pixels is genoeg
+      om te zien en te weinig om te schreeuwen.
+    */
+    --toast-streep: inset 3px 0 0 var(--toast-accent);
+
     gap: 0.75rem;
     border-radius: var(--radius-xl);
     border-color: var(--border);
     padding: 0.875rem 1rem;
     box-shadow:
+        var(--toast-streep),
         0 12px 32px -12px rgb(0 0 0 / 0.35),
-        0 0 0 1px rgb(255 255 255 / 0.03);
+        /*
+          Het haarlijntje volgt de tekstkleur van het vlak en is geen vaste
+          witte lijn. In de huisstijl geeft dat dezelfde lichte rand als
+          eerst; in het lichte thema was die wit op wit en dus onzichtbaar,
+          en nu zet hij de kaart juist af tegen de pagina.
+        */
+        0 0 0 1px color-mix(in srgb, var(--popover-foreground) 6%, transparent);
 }
 
-/* De streep links. Drie pixels is genoeg om te zien en te weinig om te
-   schreeuwen. */
-[data-sonner-toast].brand-toast::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    width: 3px;
-    background-color: var(--toast-accent);
+/*
+  Een melding die achter een andere ligt, verliest zijn streep.
+
+  Vue-sonner vaagt de inhoud van die kaarten weg met
+  `[data-expanded='false'][data-front='false'] > *`, zodat je een stapel
+  blanco kaarten ziet. De streep hoort daarbij: een gekleurd randje van een
+  melding die je niet kunt lezen, zegt niets.
+
+  Hij komt terug zodra je de stapel uitklapt met je muis -- dan is elke
+  melding weer een melding op zichzelf. Omdat alleen de variabele wisselt
+  en niet de hele schaduw, loopt dat mee met de `box-shadow`-overgang die
+  vue-sonner er zelf al op heeft staan: hij vaagt in en uit in plaats van
+  te springen.
+*/
+[data-sonner-toast][data-styled='true'][data-expanded='false'][data-front='false'].brand-toast {
+    --toast-streep: inset 0 0 0 transparent;
 }
 
 [data-sonner-toast].brand-toast [data-icon] {
