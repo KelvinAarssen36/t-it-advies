@@ -7,6 +7,7 @@ use App\Enums\ExperienceIcon;
 use App\Enums\WorkplaceType;
 use App\Models\Concerns\LogsActivity;
 use App\Support\Datum;
+use App\Support\Zoekterm;
 use Database\Factories\ExperienceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -217,37 +218,18 @@ class Experience extends Model
      * Engels nakijkt zoekt op de Engelse titel, en wie een oude functie
      * terugzoekt weet vaak alleen nog waar het was.
      *
-     * De jokertekens van LIKE worden onschadelijk gemaakt. Zonder dat geeft
-     * een zoekterm met een procentteken erin ineens alles terug, want in
-     * een LIKE betekent `%` "wat dan ook". Geen lek -- de waarde is
-     * gebonden -- maar wel een zoekveld dat raar doet zodra iemand "100%"
-     * intypt.
-     *
-     * **De `ESCAPE`-clausule staat er expliciet bij, en dat is geen
-     * overdaad.** MySQL neemt zonder die clausule de backslash als
-     * ontsnappingsteken; SQLite -- waar de tests op draaien -- kent geen
-     * standaardteken. Dan doet het zoekveld in een test iets anders dan in
-     * productie, en dat is precies het soort verschil waardoor je een test
-     * op een dag ten onrechte gelooft.
-     *
-     * **En het teken is een uitroepteken en geen backslash.** Dat scheelt
-     * een tweede verschil tussen de twee: MySQL verwerkt backslashes ín
-     * een tekst tussen aanhalingstekens, SQLite niet, dus `escape '\\'`
-     * betekent daar niet hetzelfde. Een uitroepteken is in allebei gewoon
-     * een uitroepteken.
+     * De jokertekens van LIKE worden onschadelijk gemaakt door
+     * [`Zoekterm`](../Support/Zoekterm.php); daar staat ook waarom de
+     * `ESCAPE`-clausule erbij hoort en waarom het teken een uitroepteken
+     * is. Zonder dat geeft een zoekterm met een procentteken erin ineens
+     * alles terug, want in een LIKE betekent `%` "wat dan ook".
      *
      * @param  Builder<$this>  $query
      * @return Builder<$this>
      */
     public function scopeZoek(Builder $query, string $term): Builder
     {
-        // Het ontsnappingsteken zelf gaat als eerste, anders ontsnapt hij
-        // straks de tekens die we er net voor hebben gezet.
-        $patroon = '%'.str_replace(
-            ['!', '%', '_'],
-            ['!!', '!%', '!_'],
-            $term,
-        ).'%';
+        $patroon = Zoekterm::patroon($term);
 
         $kolommen = [
             'role_nl',

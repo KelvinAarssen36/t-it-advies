@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { usePage } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { scrollNaar } from '@/lib/motion';
+import { privacy } from '@/routes';
 
 /**
  * De voet van de publieke site. Geen inloglink: zie SiteHeader.vue.
@@ -64,8 +65,23 @@ const year = new Date().getFullYear();
                 </nav>
             </div>
 
-            <p class="mt-12 text-sm text-muted-foreground">
-                &copy; {{ year }} @T IT Advies
+            <!--
+                De privacyverklaring hoort hier en niet in de navigatie
+                erboven: die gaat over de onderdelen van de pagina, en dit
+                is een eigen pagina. Onderaan is ook waar bezoekers hem
+                zoeken.
+            -->
+            <p
+                class="mt-12 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground"
+            >
+                <span>&copy; {{ year }} @T IT Advies</span>
+                <span aria-hidden="true">·</span>
+                <Link
+                    :href="privacy()"
+                    class="transition-colors hover:text-brand-cyan"
+                >
+                    {{ $t('Privacyverklaring') }}
+                </Link>
             </p>
         </div>
     </footer>

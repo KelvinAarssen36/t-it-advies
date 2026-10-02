@@ -94,6 +94,33 @@ een ánder project helpt niet: die leest de database van dat project. Zie
    hieronder.
 5. Werk dit document bij.
 
+## De onderwerpregel van een bezoeker gaat niet in het logboek
+
+Het mailoverzicht legt metadata vast en geen mailinhoud. **Op dat "geen
+inhoud" zat een gat**: bij een bericht uit het contactformulier is het
+onderwerp "Contactformulier: wat de bezoeker typte", en dat stond honderd
+tachtig dagen in onze database.
+
+Een mailable kan daarom een neutraal onderwerp voor het logboek opgeven:
+
+```php
+public static function logboekOnderwerp(): string
+{
+    return __('Bericht via het contactformulier');
+}
+```
+
+`RecordOutgoingMail` gebruikt die als hij bestaat, en anders het echte
+onderwerp. De eigenaar houdt het volledige onderwerp in zijn eigen postvak;
+dit gaat alleen over wat wij bewaren.
+
+> **Zet dit op elke mailable waar tekst van een bezoeker in het onderwerp
+> staat.** Het is gegevensminimalisatie, en het is wat de
+> [privacyverklaring](bezoekcijfers.md#de-privacyverklaring) belooft: "niet
+> je bericht en niet je onderwerp". `MailLoggingTest` houdt het vast -- die
+> test stond er eerst omgekeerd in en controleerde juist dat het onderwerp
+> van de bezoeker wél werd gelogd.
+
 ## Wat er wordt vastgelegd
 
 Elke verstuurde mail komt in de tabel `mail_logs`, via de listener

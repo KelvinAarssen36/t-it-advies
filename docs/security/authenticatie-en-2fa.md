@@ -414,8 +414,51 @@ niets mee op.
 ## Passkeys
 
 Passkeys staan aan. Ze zijn een alternatief voor wachtwoord + 2FA en zijn
-bestand tegen phishing, omdat de sleutel aan het domein vastzit. De inrichting
-komt volledig uit Fortify; wij hebben er niets aan toegevoegd.
+bestand tegen phishing, omdat de sleutel aan het domein vastzit. De werking
+komt volledig uit `laravel/passkeys` via Fortify; daar hebben wij niets aan
+toegevoegd.
+
+### Wat wij er wél aan hebben gedaan
+
+De componenten kwamen met de starter kit mee, in het Engels en in de
+standaardopmaak. Er zaten drie dingen in die niet bij dit project pasten, en
+ze zijn alle drie lastig te zien zonder ernaar te zoeken:
+
+| Wat                               | Wat er misging                                                                                                                                                                                                                                                                                                                                  |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| De teksten in `PasskeyVerify`     | De drie labels hadden een **Engelse terugval**, en het inlogscherm gaf geen eigen teksten mee. Daar stond dus "Sign in with a passkey" en "Or continue with email", ook met het portaal in het Nederlands. `TranslationsTest` ving dat niet: die zoekt naar Nederlandse zinnen die `$t()` omzeilen, en dit was Engels in een stukje JavaScript. |
+| Het verwijderen in `PasskeyItem`  | Een **eigen `Dialog`**, in de goede kleuren maar los van het gedeelde bevestigingsvenster. Het was de enige plek in het hele portaal met een tweede verwijdervenster.                                                                                                                                                                           |
+| De melding bij "niet ondersteund" | Die zei dat je **browser** geen passkeys kende, terwijl de echte oorzaak bijna altijd is dat de verbinding geen https is. Een foutmelding die de verkeerde schuldige aanwijst kost iemand een middag in de verkeerde richting.                                                                                                                  |
+
+`PasskeyScreenTest` legt alle drie vast, plus de routes en het
+ontdekkingsdocument.
+
+### Waarom je het lokaal niet ziet werken
+
+De bibliotheek toetst `globalThis.PublicKeyCredential !== undefined`, en
+browsers stellen dat object alleen beschikbaar in een **beveiligde
+context**: https of `localhost`. Op `http://t-it-advies.test` bestaat het
+niet, dus verschijnt de knop niet en staat er de melding over https.
+
+Wil je het hier toch zien: `valet secure t-it-advies` en `APP_URL` op
+`https://t-it-advies.test`.
+
+### De Permissions-Policy mag WebAuthn niet afsluiten
+
+`SecurityHeaders` zet `camera=(), microphone=(), geolocation=(), payment=(),
+usb=()`. WebAuthn hangt aan twee ándere onderdelen --
+`publickey-credentials-create` en `publickey-credentials-get` -- en die
+staan er niet in. Daardoor geldt hun standaard, en dat is "de eigen site mag
+het". Precies wat we nodig hebben.
+
+> **Zet ze er niet bij met een lege lijst.** Dan weigert de browser elke
+> passkey, en er belandt niets in een logboek.
+> `PasskeyScreenTest::test_the_permissions_policy_does_not_block_webauthn`
+> valt dan om.
+
+Wat er vóór de livegang moet gebeuren staat in
+[deployment](../operations/deployment.md#voor-de-eerste-keer-live) en in
+[openstaand](../openstaand.md).
 
 Voor een gevoelige actie vragen we bewust een TOTP-code en geen passkey, zodat
 er één duidelijke, testbare route is. Wil je passkeys ook daar toestaan, pas

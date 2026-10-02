@@ -164,28 +164,45 @@ in [onderhoudstaken](onderhoudstaken.md).
 
 Naast de standaard Laravel-variabelen:
 
-| Variabele                         | Waarvoor                                      | Verplicht in productie              |
-| --------------------------------- | --------------------------------------------- | ----------------------------------- |
-| `RESEND_API_KEY`                  | Mail versturen                                | ja                                  |
-| `MAIL_WEBHOOK_SECRET`             | Handtekening van de mailwebhook               | ja                                  |
-| `MAIL_CONTACT_ADDRESS`            | Waar contactformulieren binnenkomen           | ja                                  |
-| `TURNSTILE_SITE_KEY`              | Botcheck in de browser                        | ja                                  |
-| `TURNSTILE_SECRET_KEY`            | Botcheck op de server                         | ja                                  |
-| `SECURITY_ALERT_ADDRESS`          | Waar beveiligingsmeldingen heen gaan          | ja                                  |
-| `PORTAL_ACCOUNT_PASSWORD`         | Wachtwoord van het account van de eigenaar    | ja, vóór de eerste seed             |
-| `PORTAL_TWO_FACTOR_REQUIRED`      | 2FA verplicht in het portaal                  | nee, staat in productie vanzelf aan |
-| `SENSITIVE_ACTION_TTL`            | Geldigheid van een 2FA-bevestiging (seconden) | nee, standaard 900                  |
-| `SECURITY_LOG_RETENTION_DAYS`     | Bewaartermijn logboektabel                    | nee, standaard 365                  |
-| `MAIL_LOG_RETENTION_DAYS`         | Bewaartermijn mailoverzicht                   | nee, standaard 180                  |
-| `SECURITY_ALERT_WINDOW_MINUTES`   | Hoe ver de alarmering terugkijkt              | nee, standaard 60                   |
-| `SECURITY_ALERT_COOLDOWN_MINUTES` | Pauze na een melding                          | nee, standaard 180                  |
-| `SECURITY_ALERT_FAILED_LOGINS`    | Drempel mislukte inlogpogingen                | nee, standaard 25                   |
-| `SECURITY_ALERT_MAIL_PROBLEMS`    | Drempel mailproblemen                         | nee, standaard 5                    |
+| Variabele                         | Waarvoor                                        | Verplicht in productie              |
+| --------------------------------- | ----------------------------------------------- | ----------------------------------- |
+| `RESEND_API_KEY`                  | Mail versturen                                  | ja                                  |
+| `MAIL_WEBHOOK_SECRET`             | Handtekening van de mailwebhook                 | ja                                  |
+| `MAIL_CONTACT_ADDRESS`            | Waar contactformulieren binnenkomen             | ja                                  |
+| `TURNSTILE_SITE_KEY`              | Botcheck in de browser                          | ja                                  |
+| `TURNSTILE_SECRET_KEY`            | Botcheck op de server                           | ja                                  |
+| `SECURITY_ALERT_ADDRESS`          | Waar beveiligingsmeldingen heen gaan            | ja                                  |
+| `PORTAL_ACCOUNT_PASSWORD`         | Wachtwoord van het account van de eigenaar      | ja, vóór de eerste seed             |
+| `PASSKEYS_USER_HANDLE_SECRET`     | Sleutel waarmee passkeys aan een account hangen | ja, zie hieronder                   |
+| `PORTAL_TWO_FACTOR_REQUIRED`      | 2FA verplicht in het portaal                    | nee, staat in productie vanzelf aan |
+| `SENSITIVE_ACTION_TTL`            | Geldigheid van een 2FA-bevestiging (seconden)   | nee, standaard 900                  |
+| `SECURITY_LOG_RETENTION_DAYS`     | Bewaartermijn logboektabel                      | nee, standaard 365                  |
+| `MAIL_LOG_RETENTION_DAYS`         | Bewaartermijn mailoverzicht                     | nee, standaard 180                  |
+| `SECURITY_ALERT_WINDOW_MINUTES`   | Hoe ver de alarmering terugkijkt                | nee, standaard 60                   |
+| `SECURITY_ALERT_COOLDOWN_MINUTES` | Pauze na een melding                            | nee, standaard 180                  |
+| `SECURITY_ALERT_FAILED_LOGINS`    | Drempel mislukte inlogpogingen                  | nee, standaard 25                   |
+| `SECURITY_ALERT_MAIL_PROBLEMS`    | Drempel mailproblemen                           | nee, standaard 5                    |
 
 Zonder `TURNSTILE_SECRET_KEY` weigert de applicatie in productie bewust elk
 beschermd formulier. Zonder `MAIL_WEBHOOK_SECRET` weigert het
 webhook-endpoint alles. Dat is geen storing maar het ontwerp: zie
 [spam- en botbescherming](../security/spam-en-botbescherming.md).
+
+### `PASSKEYS_USER_HANDLE_SECRET` hoort apart te staan
+
+Laat je hem leeg, dan valt hij terug op `APP_KEY`. Dat wérkt, en daarom is
+het een val: wordt `APP_KEY` ooit vernieuwd -- bij een verhuizing, of omdat
+iemand denkt dat het netjes is -- dan zijn **alle bestaande passkeys in één
+klap onbruikbaar**, en er is niets dat uitlegt waarom.
+
+Zet er dus een eigen waarde in, één keer, en laat hem daarna staan:
+
+```bash
+php -r "echo bin2hex(random_bytes(32)), PHP_EOL;"
+```
+
+Verandert hij later alsnog, dan moet de eigenaar met zijn wachtwoord en 2FA
+inloggen en zijn passkeys opnieuw aanmaken. Vervelend, niet fataal.
 
 ## Voor de eerste keer live
 
@@ -221,9 +238,73 @@ webhook-endpoint alles. Dat is geen storing maar het ontwerp: zie
     werken -- de knop geeft dan netjes een foutmelding -- maar zet hem dan
     liever uit met `TRANSLATE_ENABLED=false`, zodat hij niet elke keer
     teleurstelt.
+12. **`APP_URL` op het echte domein zetten, met `https://` ervoor.** Dat is
+    hier geen cosmetische instelling: passkeys halen hun _relying party id_
+    en hun toegestane herkomst uit die waarde
+    (`config/fortify.php`). Staat er nog `http://t-it-advies.test`, dan
+    weigert de browser elke passkey -- zonder foutmelding die uitlegt
+    waarom. Let ook op het domein zelf: dat is **atitadvies.nl** en niet
+    `t-it-advies.nl`.
+13. **Kijk na wat de hostingpartij in zijn toegangslogboek zet en hoe lang
+    hij dat bewaart.** De privacyverklaring noemt dat logbestand, maar
+    zonder termijn, omdat wij die niet bepalen. Is hij bekend en vast, dan
+    kan hij er alsnog bij -- maar alleen als hij klopt. Zie
+    [bezoekcijfers](../architecture/bezoekcijfers.md#de-privacyverklaring).
+14. **Kies één vaste host en verwijs de andere door.** Dus `atitadvies.nl`
+    óf `www.atitadvies.nl`, met een 301 van de ene naar de andere. Een
+    passkey zit vast aan de host waar hij is gemaakt; is de site op allebei
+    bereikbaar, dan werkt een passkey van de ene niet op de andere en lijkt
+    het alsof hij zomaar kwijt is. Dezelfde host hoort in `APP_URL`.
+15. **`PASSKEYS_USER_HANDLE_SECRET` zetten.** Zie het stuk hierboven: laat
+    je hem leeg, dan hangt hij aan `APP_KEY`, en dan sneuvelen alle
+    passkeys zodra die ooit wordt vernieuwd.
+16. **Controleer dat `/.well-known/passkey-endpoints` een JSON-antwoord
+    geeft** en geen 404 van de webserver. Op gedeelde hosting wordt
+    `/.well-known/` soms door de server zelf afgehandeld -- dat is de map
+    waar ook de certificaatcontrole van Let's Encrypt doorheen gaat. Vangt
+    hij alles af, dan vinden wachtwoordmanagers de beheerpagina niet.
+    Controleer het met `curl -s https://<domein>/.well-known/passkey-endpoints`.
+
+### En daarna: maak één echte passkey aan
+
+**Dit is het enige onderdeel dat lokaal niet te testen is**, want zonder
+https geeft de browser `PublicKeyCredential` niet vrij en verschijnt de knop
+niet eens. Alles eromheen is nagelopen en in orde -- de routes, de feature,
+het model, de componenten en de `Permissions-Policy` -- maar of het echt
+werkt zie je pas op het echte adres.
+
+Ga dus na de lancering één keer naar **Instellingen → Beveiliging**, maak
+een passkey aan en log er één keer mee in. Lukt dat, dan is alles hierboven
+goed gezet. Lukt het niet, dan is het bijna altijd stap 12, 14 of 15.
+
+> Gaat dit mis, dan is dat **geen blokkade**: inloggen met wachtwoord en 2FA
+> werkt er los van.
 
 ## Draait het achter een proxy of load balancer
 
-Stel dan de vertrouwde proxy's in, anders ziet de applicatie het IP-adres van
-de load balancer in plaats van dat van de bezoeker. Dat maakt rate limiting
-per IP waardeloos en zet het verkeerde adres in het beveiligingslogboek.
+Zet dan **`TRUSTED_PROXIES`** in `.env` op de adressen van die proxy,
+gescheiden door komma's. Laat je dat leeg, dan ziet de applicatie het
+IP-adres van de proxy in plaats van dat van de bezoeker, en gaat er op drie
+plekken iets stil mis:
+
+| Waar                                                 | Wat je ziet                                                                 |
+| ---------------------------------------------------- | --------------------------------------------------------------------------- |
+| De snelheidsgrenzen                                  | Gelden voor alle bezoekers samen; één drukke bezoeker sluit de rest buiten. |
+| Het beveiligingslogboek                              | Eén adres bij elke poging, dus je kunt niets meer onderscheiden.            |
+| De [bezoekcijfers](../architecture/bezoekcijfers.md) | Iedereen krijgt dezelfde code: voor altijd één bezoeker per dag.            |
+
+> **Vul er geen `*` in.** De kop `X-Forwarded-For` is door de afzender zelf
+> te verzinnen. Vertrouw je hem zonder dat er een proxy voor staat, dan kiest
+> iedereen zijn eigen IP-adres -- en dan zijn het logboek en die grenzen
+> helemaal niets meer waard. Leeg is veiliger dan `*`.
+
+Op het gedeelde pakket van Strato staat er geen proxy voor, dus daar blijft
+deze instelling leeg. Zet je er later een CDN voor, dan is dit het eerste
+dat mee moet.
+
+## Zet er geen volledige paginacache voor
+
+Een cache vóór de applicatie -- bij een CDN bijvoorbeeld -- betekent dat de
+middleware van de bezoekcijfers niet meer draait. De grafiek blijft dan plat
+zonder dat er iets zichtbaar stuk is. Zie
+[bezoekcijfers](../architecture/bezoekcijfers.md).

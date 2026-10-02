@@ -17,6 +17,55 @@ scherm dat de eigenaar na het inloggen ziet.
 
 ## Voor livegang
 
+### De privacyverklaring juridisch laten nalezen
+
+Op `/privacy` staat een verklaring die **woord voor woord tegen de code is
+nagelopen**: elke bewering erin klopt met wat de software doet, en waar dat
+niet zo was is óf de tekst óf de code aangepast. Zie
+[bezoekcijfers](architecture/bezoekcijfers.md#wat-de-eerste-versie-van-deze-verklaring-fout-had)
+voor de vier onwaarheden die eruit zijn gehaald.
+
+**Dat is iets anders dan juridisch advies.** Laat hem één keer nalezen door
+iemand met die kennis voordat de site live gaat. Het is een halfuur werk en
+het is precies het soort ding waar je later gedoe mee krijgt.
+
+Het staat ook op het scherm **Beheer → Juridisch**, zodat het niet alleen
+hier blijft staan.
+
+### Een adres voor beveiligingsmeldingen
+
+`SECURITY_ALERT_ADDRESS` is leeg. Alles wordt wel vastgelegd, maar niemand
+krijgt bericht bij een piek in mislukte inlogpogingen of als de site omvalt.
+Het scherm **Instellingen → Veiligheid** zegt dat er nog geen adres is
+ingesteld, dus het valt op -- maar het moet vóór de livegang geregeld zijn.
+Zie [monitoring](operations/monitoring.md).
+
+### Passkeys op het echte domein nalopen
+
+**Dit is het enige onderdeel dat hier lokaal niet te testen is**, en het
+breekt stil als er iets niet klopt: je klikt, er gebeurt niets, en er komt
+geen foutmelding in welk logboek dan ook.
+
+De code is nagelopen en in orde -- routes, feature, model, componenten, en
+de `Permissions-Policy` blokkeert WebAuthn niet. Wat overblijft hangt aan de
+omgeving:
+
+| Wat                                                              | Waarom het stuk gaat                                                                                                                                 |
+| ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **https moet aanstaan** op het echte domein                      | Browsers geven `PublicKeyCredential` alleen vrij op een beveiligde verbinding. Zonder slotje is er geen knop.                                        |
+| **`APP_URL` precies gelijk aan het adres in de adresbalk**       | `relying_party_id` en `allowed_origins` komen daaruit. Eén letter verschil en elke passkey wordt geweigerd.                                          |
+| **Eén vaste host: `atitadvies.nl` óf `www.atitadvies.nl`**       | Een passkey zit vast aan de host. Is de site op allebei bereikbaar zonder doorverwijzing, dan werkt een passkey van de ene niet op de andere.        |
+| **`PASSKEYS_USER_HANDLE_SECRET` apart zetten**                   | Zonder die variabele valt hij terug op `APP_KEY`. Wordt die ooit vernieuwd, dan zijn alle bestaande passkeys in één klap onbruikbaar.                |
+| **`/.well-known/passkey-endpoints` moet de applicatie bereiken** | Op gedeelde hosting wordt `/.well-known/` soms door de webserver zelf afgehandeld. Doet hij dat, dan vinden wachtwoordmanagers de beheerpagina niet. |
+
+De stappen staan in
+[deployment](operations/deployment.md#voor-de-eerste-keer-live). Loop ze na
+en maak daarna één echte passkey aan; werkt dat, dan werkt de rest ook.
+
+> **Het is geen blokkade voor de livegang.** Inloggen met wachtwoord en 2FA
+> werkt los hiervan. Gaat er iets mis met passkeys, dan is dat vervelend en
+> niet fataal.
+
 ### De foutpagina van de landing
 
 Het portaal heeft er een; de landing krijgt voorlopig de standaardpagina van

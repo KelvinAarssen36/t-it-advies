@@ -49,14 +49,21 @@ const handleRegisterSuccess = () => {
                 />
             </template>
 
+            <!--
+                Nog geen passkeys. Het tekentje staat in de accentkleur en
+                niet in het grijs van de starter: dit is geen melding dat
+                er iets mis is, het is een plek die nog gevuld kan worden.
+            -->
             <div v-else class="p-8 text-center">
                 <div
-                    class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted"
+                    class="brand-passkeyleeg mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl"
                 >
-                    <KeyRound class="h-7 w-7 text-muted-foreground" />
+                    <KeyRound class="size-7" />
                 </div>
                 <p class="font-medium">{{ $t('Nog geen passkeys') }}</p>
-                <p class="mt-1 text-sm text-muted-foreground">
+                <p
+                    class="mx-auto mt-1 max-w-sm text-sm text-pretty text-muted-foreground"
+                >
                     {{
                         $t(
                             'Zet er een op dit apparaat en je logt voortaan in zonder wachtwoord.',

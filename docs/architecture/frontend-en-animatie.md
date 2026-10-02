@@ -513,6 +513,17 @@ Op de publieke site en in het portaal, en zonder uitzondering: kopiëren
 hoort zich altijd hetzelfde te gedragen, en de valkuilen hieronder wil je
 niet per plek opnieuw oplossen.
 
+> **Bouw nooit zelf een knop met `navigator.clipboard.writeText()`
+> erachter.** Dat ziet er in vijf regels uit alsof het werkt, en het werkt
+> ook -- op https. Lokaal op een `.test`-adres gebeurt er niets: geen tekst
+> op het klembord en geen vinkje, zonder foutmelding. Je klikt, en er
+> verandert simpelweg niets op het scherm.
+>
+> Het is hier twee keer gebeurd, voor het laatst bij "Kopieer de tekst" op
+> het scherm [Juridisch](../security/verzoeken-van-bezoekers.md). Komt er
+> een plek bij waar iets te kopiëren valt, dan is `CopyButton` het
+> antwoord en niet een eigen knopje ernaast.
+
 ```vue
 <!-- Alleen een icoon, bijvoorbeeld naast een veld -->
 <CopyButton :value="sleutel" label="Kopieer de sleutel" />

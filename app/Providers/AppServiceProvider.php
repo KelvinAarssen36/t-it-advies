@@ -18,6 +18,7 @@ use App\Support\Translation\MyMemoryVertaler;
 use App\Support\Translation\Vertaler;
 use Carbon\CarbonImmutable;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -70,6 +71,35 @@ class AppServiceProvider extends ServiceProvider
         $this->configureRateLimiting();
         $this->configureAuthorization();
         $this->configurePageSections();
+        $this->configureTrustedProxies();
+    }
+
+    /**
+     * Welke proxies we vertrouwen voor het echte IP-adres van een bezoeker.
+     *
+     * **Dit staat hier en niet in bootstrap/app.php**, en daar is een harde
+     * reden voor: die closure draait vóórdat de configuratie is geladen, dus
+     * `config()` bestaat daar nog niet. De middleware zelf zit al in de
+     * standaardstapel van Laravel; hier wordt alleen de lijst gezet.
+     *
+     * **Waarom dit er überhaupt is.** Komt er ooit een Cloudflare of een
+     * loadbalancer voor de site, dan is `REMOTE_ADDR` het adres van die
+     * proxy en niet van de bezoeker. Zonder deze lijst krijgt elke bezoeker
+     * dan hetzelfde adres: één regel in het beveiligingslogboek voor
+     * iedereen, snelheidsgrenzen die voor alle bezoekers samen gelden, en
+     * bezoekcijfers die de hele wereld als één bezoeker per dag zien. Er
+     * valt niets om -- er staat alleen overal een verkeerd getal.
+     *
+     * Leeg is de veilige stand; zie de toelichting in config/security.php.
+     */
+    private function configureTrustedProxies(): void
+    {
+        /** @var array<int, string> $proxies */
+        $proxies = config('security.trusted_proxies', []);
+
+        if ($proxies !== []) {
+            TrustProxies::at($proxies);
+        }
     }
 
     /**

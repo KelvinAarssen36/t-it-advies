@@ -2,9 +2,11 @@
 
 use App\Http\Controllers\Admin\ActivityController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\LegalController;
 use App\Http\Controllers\Admin\MailLogController;
 use App\Http\Controllers\Admin\SecurityEventController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\VisitorController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -32,6 +34,31 @@ Route::middleware(['auth', 'verified', 'two-factor.required'])
         Route::get('/', [DashboardController::class, 'index'])
             ->middleware('can:manage portal')
             ->name('dashboard');
+
+        /*
+         * De bezoekcijfers van de website. Het enige scherm hier dat over
+         * de site gaat en niet over het portaal, en het staat er omdat je
+         * het nakíjkt -- net als de logboeken ernaast.
+         */
+        Route::get('bezoekers', [VisitorController::class, 'index'])
+            ->middleware('can:manage portal')
+            ->name('visitors.index');
+
+        /*
+         * Juridisch: een verzoek van een bezoeker afhandelen.
+         *
+         * Kijken mag met alleen het recht. Het weggooien van mislukte
+         * mailpogingen vraagt daarnaast om een verse authenticator-code:
+         * daar verdwijnt een bericht van iemand onherstelbaar, en dat is
+         * precies de soort handeling waar `2fa.confirm` voor is.
+         */
+        Route::get('juridisch', [LegalController::class, 'index'])
+            ->middleware('can:manage portal')
+            ->name('legal.index');
+
+        Route::delete('juridisch/mislukte-mail', [LegalController::class, 'destroyFailedMail'])
+            ->middleware(['can:manage portal', '2fa.confirm'])
+            ->name('legal.failed-mail.destroy');
 
         Route::get('activiteit', [ActivityController::class, 'index'])
             ->middleware('can:manage portal')

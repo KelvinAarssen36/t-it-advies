@@ -32,8 +32,59 @@ class MailLoggingTest extends TestCase
 
         $this->assertSame(['klant@example.com'], $log->to);
         $this->assertSame(MailStatus::Sent, $log->status);
-        $this->assertStringContainsString('Hallo', (string) $log->subject);
         $this->assertNotNull($log->message_id);
+        $this->assertNotNull($log->subject);
+    }
+
+    /**
+     * Van een bericht van een bezoeker komt er geen tekst in het logboek.
+     *
+     * **Dit is een belofte uit de privacyverklaring en geen voorkeur.**
+     * Daar staat dat we een logboek bijhouden met het tijdstip, de
+     * ontvanger en de status -- "niet je bericht en niet je onderwerp".
+     *
+     * Het echte onderwerp van de mail blijft wél volledig: de eigenaar ziet
+     * in zijn postvak "Contactformulier: Hallo". Dit gaat alleen over wat
+     * wíj honderd tachtig dagen in onze database bewaren.
+     *
+     * Deze test stond er eerst omgekeerd in: hij controleerde dat het
+     * onderwerp van de bezoeker wél in het logboek stond. Dat was precies
+     * de onwaarheid die uit de verklaring moest.
+     *
+     * Zie ContactMessageMail::logboekOnderwerp() en RecordOutgoingMail.
+     */
+    public function test_a_visitors_own_words_do_not_end_up_in_the_log(): void
+    {
+        Mail::to('klant@example.com')->send(new ContactMessageMail(
+            senderName: 'Kees',
+            senderEmail: 'kees@example.com',
+            senderSubject: 'Mijn dochter is ziek, kan het later',
+            body: 'Een bericht met gevoelige inhoud.',
+        ));
+
+        $log = MailLog::sole();
+
+        // Niets uit het onderwerp van de bezoeker.
+        $this->assertStringNotContainsString('dochter', (string) $log->subject);
+        $this->assertStringNotContainsString('ziek', (string) $log->subject);
+
+        // En het hele logboek bevat geen letter van zijn bericht.
+        $alles = (string) json_encode($log->toArray());
+        $this->assertStringNotContainsString('gevoelige inhoud', $alles);
+
+        // Wel genoeg om terug te vinden wat er is verstuurd.
+        $this->assertSame(['klant@example.com'], $log->to);
+        $this->assertStringContainsString('ontactformulier', (string) $log->subject);
+    }
+
+    /** Een gewone mail houdt zijn echte onderwerp in het logboek. */
+    public function test_an_ordinary_mail_keeps_its_subject_in_the_log(): void
+    {
+        Mail::raw('Tekst', function ($bericht) {
+            $bericht->to('klant@example.com')->subject('Gewoon onderwerp');
+        });
+
+        $this->assertSame('Gewoon onderwerp', MailLog::sole()->subject);
     }
 
     public function test_a_provider_event_updates_the_status(): void

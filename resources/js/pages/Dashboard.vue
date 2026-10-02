@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
+import BezoekBlok from '@/components/dashboard/BezoekBlok.vue';
 import DigitaleKlok from '@/components/dashboard/DigitaleKlok.vue';
-import PlaceholderPattern from '@/components/PlaceholderPattern.vue';
+import LeegVak from '@/components/dashboard/LeegVak.vue';
 import { dashboard } from '@/routes';
 
 /**
@@ -17,9 +18,23 @@ import { dashboard } from '@/routes';
  * worden om de klok vooraan te krijgen, en wat je niet aanraakt kan ook
  * niet stuk. De hoogte van die strook zit in `brand-klok` in app.css.
  *
+ * Links van de klok staat wat de website doet; zie BezoekBlok.vue. Het
+ * derde vlak en het grote blok eronder zijn nog leeg, en dat blijft zo tot
+ * er iets is afgesproken om erin te zetten -- een vlak vullen met een getal
+ * dat niemand heeft gevraagd maakt een dashboard niet nuttiger.
+ *
  * Zie docs/architecture/dashboard.md.
  */
-const props = defineProps<{ tijdzone: string }>();
+const props = defineProps<{
+    tijdzone: string;
+    bezoek: {
+        weergavenTotaal: number;
+        bezoekersVandaag: number;
+        weergavenVandaag: number;
+        reeks: number[];
+        meet: boolean;
+    };
+}>();
 
 defineOptions({
     layout: {
@@ -40,10 +55,19 @@ defineOptions({
         class="brand-schuif-x flex h-full flex-1 brand-scrollbar flex-col gap-4 rounded-xl p-4"
     >
         <div class="grid auto-rows-min gap-4 md:grid-cols-3">
-            <div
-                class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
-            >
-                <PlaceholderPattern />
+            <!--
+                Wat de website doet. Dit vlak heeft geen eigen rand meer:
+                de kaart erin is zelf een link en tekent zijn eigen rand,
+                zodat je kunt zien dat hij reageert als je erover gaat.
+            -->
+            <div class="relative aspect-video">
+                <BezoekBlok
+                    :weergaven-totaal="props.bezoek.weergavenTotaal"
+                    :bezoekers-vandaag="props.bezoek.bezoekersVandaag"
+                    :weergaven-vandaag="props.bezoek.weergavenVandaag"
+                    :reeks="props.bezoek.reeks"
+                    :meet="props.bezoek.meet"
+                />
             </div>
 
             <!--
@@ -54,20 +78,23 @@ defineOptions({
                 vierkant.
             -->
             <div
-                class="relative order-first overflow-hidden rounded-xl border border-sidebar-border/70 md:order-none md:aspect-video dark:border-sidebar-border"
+                class="brand-dashboardvak relative order-first overflow-hidden md:order-none md:aspect-video"
             >
                 <DigitaleKlok :tijdzone="props.tijdzone" />
             </div>
-            <div
-                class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
-            >
-                <PlaceholderPattern />
+            <div class="relative aspect-video">
+                <LeegVak />
             </div>
         </div>
-        <div
-            class="relative min-h-[100vh] flex-1 rounded-xl border border-sidebar-border/70 md:min-h-min dark:border-sidebar-border"
-        >
-            <PlaceholderPattern />
+
+        <!--
+            Het grote vlak. `min-h-56` op een telefoon en niet de
+            `min-h-[100vh]` van de starter: een leeg vlak van een hele
+            schermhoogte betekende dat je moest scrollen langs niets om bij
+            de onderkant van je eigen dashboard te komen.
+        -->
+        <div class="relative min-h-56 flex-1 md:min-h-min">
+            <LeegVak :tekst="$t('Ruimte voor wat er later bij komt')" />
         </div>
     </div>
 </template>

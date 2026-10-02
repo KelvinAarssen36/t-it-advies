@@ -3,6 +3,7 @@
 use App\Console\Commands\PruneActivityEntries;
 use App\Console\Commands\PruneMailLogs;
 use App\Console\Commands\PruneSecurityEvents;
+use App\Console\Commands\PruneVisitorCodes;
 use App\Console\Commands\ReportSecurityAnomalies;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -37,6 +38,13 @@ Schedule::command(ReportSecurityAnomalies::class)
 Schedule::command(PruneSecurityEvents::class)->dailyAt('03:10');
 Schedule::command(PruneMailLogs::class)->dailyAt('03:20');
 Schedule::command(PruneActivityEntries::class)->dailyAt('03:25');
+
+/*
+ * De bezoekerscodes. Dit is een tweede slot: ze worden normaal al
+ * opgeruimd bij het eerste bezoek na middernacht. Deze taak is er voor de
+ * dagen dat er niemand langskomt; zie PruneVisitorCodes.
+ */
+Schedule::command(PruneVisitorCodes::class)->dailyAt('03:05');
 
 // Huishouding van het framework zelf. Zonder dit groeien `failed_jobs`,
 // `job_batches` en `password_reset_tokens` ook onbeperkt door.

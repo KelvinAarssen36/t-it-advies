@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { ChevronDown, Menu, X } from '@lucide/vue';
+import { ArrowLeft, ChevronDown, Menu, X } from '@lucide/vue';
 import {
     computed,
     nextTick,
@@ -25,6 +25,7 @@ import {
     scrollNaar,
     volgSecties,
 } from '@/lib/motion';
+import { home } from '@/routes';
 import portal from '@/routes/portal';
 
 /**
@@ -420,8 +421,26 @@ onBeforeUnmount(() => {
                 breedte nul zolang je in de hero zit: daar hoort niets op
                 te lichten, want de hero staat niet in het menu.
             -->
+            <!--
+                Staat er geen navigatie, dan zijn we niet op de
+                landingspagina -- de privacyverklaring bijvoorbeeld. Dan
+                hoort er op die plek de weg terug te staan in plaats van
+                een lege balk. Zonder dit is de terugknop van de browser de
+                enige uitweg, en dat is geen navigatie.
+            -->
             <nav
-                v-if="items.length > 0"
+                v-if="items.length === 0"
+                class="hidden tablet:flex"
+                :aria-label="$t('Terug naar de website')"
+            >
+                <Link :href="home()" class="brand-terug">
+                    <ArrowLeft class="size-4" />
+                    {{ $t('Terug naar de website') }}
+                </Link>
+            </nav>
+
+            <nav
+                v-else
                 ref="balk"
                 class="brand-navbalk hidden tablet:flex"
                 :style="{
@@ -551,6 +570,17 @@ onBeforeUnmount(() => {
             class="overflow-hidden border-t border-border bg-background tablet:hidden"
         >
             <nav class="mx-auto flex max-w-6xl flex-col gap-1 px-6 py-4">
+                <!-- Buiten de landingspagina: de weg terug. Zie de balk hierboven. -->
+                <Link
+                    v-if="items.length === 0"
+                    data-menu-regel
+                    :href="home()"
+                    class="brand-navlink-mobiel"
+                    @click="open = false"
+                >
+                    {{ $t('Terug naar de website') }}
+                </Link>
+
                 <a
                     v-for="item in items"
                     :key="item.key"

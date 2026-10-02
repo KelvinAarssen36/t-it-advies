@@ -2,17 +2,20 @@
 import { KeyRound, Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
 import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogClose,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog';
+import { bevestigVerwijderen } from '@/lib/bevestiging';
+import { t } from '@/lib/i18n';
 import type { Passkey } from '@/types/auth';
 
+/**
+ * Eén passkey in de lijst op het scherm Beveiliging.
+ *
+ * **Het verwijderen gaat via het gedeelde bevestigingsvenster**
+ * (`lib/bevestiging`), net als overal elders in het portaal. Hier stond
+ * eerst een eigen `Dialog` -- in de goede kleuren, dus het viel niet op,
+ * maar het was wel de enige plek in het hele project met een tweede
+ * verwijdervenster. Zo gaan twee vensters uit elkaar lopen zodra er iets
+ * aan de afspraak verandert.
+ */
 const props = defineProps<{
     passkey: Passkey;
 }>();
@@ -21,26 +24,42 @@ const emit = defineEmits<{
     remove: [id: number, onError: () => void];
 }>();
 
-const isDeleting = ref(false);
+const bezig = ref(false);
 
-const handleDelete = () => {
-    isDeleting.value = true;
+const verwijder = async (): Promise<void> => {
+    const akkoord = await bevestigVerwijderen({
+        titel: t('De passkey ":naam" verwijderen?', {
+            naam: props.passkey.name,
+        }),
+        tekst: t(
+            'Je kunt daarna niet meer met dit apparaat inloggen. Je wachtwoord en je authenticator-app blijven gewoon werken.',
+        ),
+    });
+
+    if (!akkoord) {
+        return;
+    }
+
+    bezig.value = true;
+
     emit('remove', props.passkey.id, () => {
-        isDeleting.value = false;
+        bezig.value = false;
     });
 };
 </script>
 
 <template>
-    <div class="flex items-center justify-between border-b p-4 last:border-b-0">
-        <div class="flex items-center gap-4">
+    <div
+        class="flex items-center justify-between gap-4 border-b p-4 last:border-b-0"
+    >
+        <div class="flex min-w-0 items-center gap-4">
             <div
-                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted"
+                class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted"
             >
-                <KeyRound class="h-5 w-5 text-muted-foreground" />
+                <KeyRound class="size-5 text-muted-foreground" />
             </div>
-            <div class="space-y-1">
-                <div class="flex items-center gap-2.5">
+            <div class="min-w-0 space-y-1">
+                <div class="flex flex-wrap items-center gap-2.5">
                     <p class="font-medium tracking-tight">{{ passkey.name }}</p>
                     <span
                         v-if="passkey.authenticator"
@@ -49,7 +68,7 @@ const handleDelete = () => {
                         {{ passkey.authenticator }}
                     </span>
                 </div>
-                <p class="text-sm text-muted-foreground">
+                <p class="text-sm text-pretty text-muted-foreground">
                     {{
                         $t('Toegevoegd :wanneer', {
                             wanneer: passkey.created_at_diff,
@@ -67,43 +86,14 @@ const handleDelete = () => {
             </div>
         </div>
 
-        <Dialog>
-            <DialogTrigger as-child>
-                <Button variant="verwijderen-zacht" size="icon-sm">
-                    <Trash2 class="size-4" />
-                    <span class="sr-only">{{ $t('Verwijderen') }}</span>
-                </Button>
-            </DialogTrigger>
-
-            <DialogContent>
-                <DialogTitle>{{ $t('Passkey verwijderen') }}</DialogTitle>
-                <DialogDescription>
-                    {{
-                        $t(
-                            'Weet je zeker dat je de passkey ":naam" verwijdert? Je kunt er daarna niet meer mee inloggen.',
-                            { naam: passkey.name },
-                        )
-                    }}
-                </DialogDescription>
-                <DialogFooter class="gap-2">
-                    <DialogClose as-child>
-                        <Button variant="secondary">
-                            {{ $t('Annuleren') }}
-                        </Button>
-                    </DialogClose>
-                    <Button
-                        variant="verwijderen"
-                        :disabled="isDeleting"
-                        @click="handleDelete"
-                    >
-                        {{
-                            isDeleting
-                                ? $t('Bezig...')
-                                : $t('Passkey verwijderen')
-                        }}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+        <Button
+            variant="verwijderen-zacht"
+            size="icon-sm"
+            :disabled="bezig"
+            @click="verwijder"
+        >
+            <Trash2 class="size-4" />
+            <span class="sr-only">{{ $t('Verwijderen') }}</span>
+        </Button>
     </div>
 </template>

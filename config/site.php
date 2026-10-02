@@ -55,4 +55,29 @@ return [
 
     'email' => env('SITE_EMAIL', 'info@atitadvies.nl'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | De tijdzone waarin een "dag" wordt geteld
+    |--------------------------------------------------------------------------
+    |
+    | **Dit is niet hetzelfde als `app.timezone`, en dat is met opzet.** De
+    | applicatie rekent intern in UTC -- dat is de verstandige keuze voor
+    | tijdstempels in de database. Maar een bezoekcijfer per dag hoort te
+    | lopen van middernacht tot middernacht in de tijd van de eigenaar, niet
+    | van 02:00 tot 02:00.
+    |
+    | Zonder deze instelling zou een bezoek van 23:30 op maandag bij de
+    | cijfers van dinsdag terechtkomen, en dat is precies het soort fout dat
+    | niemand ziet maar dat elk cijfer een beetje scheef zet.
+    |
+    | De klok op het dashboard gebruikt dit niet: die volgt de persoonlijke
+    | voorkeur van de gebruiker uit `DashboardTimezone`. Dit gaat over het
+    | bedrijf en niet over wie er kijkt.
+    |
+    | Zie docs/architecture/bezoekcijfers.md.
+    |
+    */
+
+    'timezone' => env('SITE_TIMEZONE', 'Europe/Amsterdam'),
+
 ];

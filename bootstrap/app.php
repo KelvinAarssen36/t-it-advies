@@ -24,6 +24,14 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
         /*
+         * De vertrouwde proxies worden níet hier ingesteld maar in
+         * AppServiceProvider, en dat is geen smaak: deze closure draait
+         * vóórdat de configuratie is geladen, dus `config()` bestaat hier
+         * nog niet. De middleware zelf staat al in de standaardstapel van
+         * Laravel; alleen de lijst adressen komt van elders.
+         */
+
+        /*
          * De koppen die de browser vertellen wat hij niet mag. Globaal en
          * niet op de webgroep: ze horen ook op een JSON-antwoord, op een
          * webhook en op een foutpagina te staan -- juist daar, want dat

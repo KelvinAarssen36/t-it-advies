@@ -160,4 +160,35 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Vertrouwde proxies
+    |--------------------------------------------------------------------------
+    |
+    | **Standaard leeg, en dat is de veilige stand.** Staat er geen proxy
+    | voor de applicatie, dan is `REMOTE_ADDR` het echte adres van de
+    | bezoeker en hoeft er niets vertrouwd te worden.
+    |
+    | Komt er wél een proxy voor -- Cloudflare, een loadbalancer -- dan staat
+    | het echte adres in de kop `X-Forwarded-For` en moet die proxy hier
+    | genoemd worden. Twee dingen gaan anders mis, en allebei stil:
+    |
+    | 1. **Zonder deze instelling** krijgt elke bezoeker het adres van de
+    |    proxy. In het beveiligingslogboek staat dan één adres voor alle
+    |    pogingen, de snelheidsgrenzen gelden voor iedereen samen, en de
+    |    bezoekcijfers zien de hele wereld als één bezoeker per dag.
+    | 2. **Met `*` erin** vertrouw je een kop die de afzender zelf kan
+    |    verzinnen. Dan kiest iedereen zijn eigen IP-adres, en zijn het
+    |    logboek en die grenzen niets meer waard.
+    |
+    | Vul dus de adressen van de proxy in, gescheiden door komma's -- niet
+    | `*`. Zie docs/operations/deployment.md.
+    |
+    */
+
+    'trusted_proxies' => array_values(array_filter(array_map(
+        'trim',
+        explode(',', (string) env('TRUSTED_PROXIES', '')),
+    ))),
+
 ];

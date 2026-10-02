@@ -7,7 +7,8 @@ eronder -- en wordt van binnenuit gevuld.
 | Onderdeel              | Waar de klant het beheert | Waar het vandaan komt      |
 | ---------------------- | ------------------------- | -------------------------- |
 | De **klok**            | Instellingen → Dashboard  | `users.dashboard_timezone` |
-| De drie andere vlakken | Nog niet                  | `PlaceholderPattern.vue`   |
+| Het **bezoekblok**     | Niets; het telt zichzelf  | `site_day_totals`          |
+| De twee andere vlakken | Nog niet                  | `LeegVak.vue`              |
 
 > **Dit document gaat over het portaal en niet over de website.** Alles wat
 > hier staat verandert niets aan wat een bezoeker ziet. Dat is ook de reden
@@ -85,6 +86,96 @@ Dat het vlak bovenaan komt is **één klasse op dat vlak**:
 blok zijn niet aangeraakt -- ze hoeven niet aangepast te worden om de klok
 vooraan te krijgen, en wat je niet aanraakt kan ook niet stuk.
 
+## Het bezoekblok
+
+Links van de klok staat wat de website doet:
+[`BezoekBlok.vue`](../../resources/js/components/dashboard/BezoekBlok.vue).
+
+**Het grote getal is het totaal van altijd en niet van deze maand.** Dat is
+een keuze met een reden: een dashboardblok dat elke maand op nul begint
+voelt als iets dat je kwijtraakt. En het hóeft ook niet terug te lopen --
+niets ruimt `site_day_totals` op, want daar staan aantallen per dag in die
+over niemand in het bijzonder gaan. Zo staat het ook in de
+[privacyverklaring](bezoekcijfers.md#de-privacyverklaring): de bezoekcijfers
+zelf bewaren we onbeperkt.
+
+> `DashboardVisitBlockTest::test_the_total_is_not_limited_to_a_period` houdt
+> dat vast. Komt er ooit een opruimtaak op die tabel, dan valt die test om --
+> en dan hoort de tekst in de privacyverklaring in dezelfde wijziging mee te
+> veranderen.
+
+Daaronder staat wat er **vandaag** gebeurt. Zonder dat is het een monument
+en geen dashboard.
+
+| Wat                         | Waarom                                                         |
+| --------------------------- | -------------------------------------------------------------- |
+| Het totaal aantal weergaven | Wat de site in zijn hele bestaan heeft gedaan                  |
+| De bezoekers van vandaag    | Of er nú iets gebeurt                                          |
+| Veertien staafjes           | De vorm van de laatste twee weken, zonder cijfers en zonder as |
+
+### Elk cijfer staat onder zijn eigen opschrift
+
+Boven het grote getal staat **TOTAAL SINDS DE START** en boven de regel
+eronder **VANDAAG**, met een streepje ertussen.
+
+Die twee woordjes zijn het verschil tussen een cijfer en een cijfer dat je
+begrijpt. Zonder opschrift is "1.284" een getal zonder tijdvak, en dan leest
+iemand het als "deze maand" -- precies wat het niet is. Twee cijfers onder
+elkaar in hetzelfde vlak zijn bovendien makkelijk te verwisselen, en dan
+denkt de eigenaar dat er vandaag duizend mensen langskwamen.
+
+De regel van vandaag noemt de bezoekers én de weergaven ("7 bezoekers · 12
+weergaven"), want dat zijn twee verschillende dingen: één bezoeker die drie
+pagina's opent is drie weergaven. Het aantal bezoekers staat dik, omdat dat
+het cijfer is waar iemand naar zoekt.
+
+**De hele kaart is een link** naar Beheer → Bezoekers, en niet een vlak met
+een knop in een hoek: je kijkt ernaar en denkt "hoeveel waren het er deze
+week", en dan hoort de kaart je daarheen te brengen. Hij reageert daarom ook
+zichtbaar bij het aanwijzen -- een kaart die niets doet als je eroverheen
+gaat, lijkt geen link.
+
+**Nog niets gemeten geeft geen nul maar een zin.** Een nul leest als "er komt
+niemand", en dat is iets anders dan "we zijn pas begonnen met kijken".
+
+### De opmaak
+
+| Wat                     | Hoe                                                              |
+| ----------------------- | ---------------------------------------------------------------- |
+| Het totaal              | In de merkgradient, met "weergaven" er gedempt achter            |
+| De gloed in de hoek     | `background-image` op de kaart, niet een `::before`              |
+| Het aanwijzen           | Rand in de accentkleur, een zachte schaduw en één pixel omhoog   |
+| De staafjes             | Groeien bij het openen één voor één omhoog, van oud naar vandaag |
+| Het staafje van vandaag | Staat vol; de rest staat op 55% dekking                          |
+
+De gloed zit in `background-image` en niet in een pseudo-element omdat een
+absoluut geplaatst `::before` over de tekst heen schildert. Dat is dezelfde
+val als bij de balkanimatie op de website, en de oplossing is hier
+eenvoudiger: een radiale gradient op de kaart zelf heeft geen laagjes nodig.
+
+Het getal staat in de gradient via een **eigen span** en niet via de hele
+regel: `background-clip: text` maakt elke letter in het element doorzichtig,
+dus zou "weergaven" mee de kleur in gaan en net zo hard roepen als het
+cijfer.
+
+Bij `prefers-reduced-motion` vervallen het groeien van de staafjes en het
+omhoogschuiven bij het aanwijzen; de kleuren blijven.
+
+## De lege vlakken
+
+Het derde kleine vlak en het grote blok eronder zijn nog leeg. Daar staat
+[`LeegVak.vue`](../../resources/js/components/dashboard/LeegVak.vue): een
+gestreepte rand, een gedempt tekentje en één regel.
+
+**Dit verving het diagonale streepjespatroon van de Laravel-starter.** Dat
+patroon is een bouwsteiger -- het zegt "hier is de ontwikkelaar nog bezig",
+en dat is precies wat de eigenaar niet hoort te zien op het eerste scherm
+dat hij elke dag opent. Wat er nu staat leest als ruimte die bewaard is.
+
+Het grote blok heeft ook geen `min-h-[100vh]` meer maar `min-h-56` op een
+telefoon. Een leeg vlak van een hele schermhoogte betekende dat je langs
+niets moest scrollen om bij de onderkant van je eigen dashboard te komen.
+
 ## De instellingen van het dashboard
 
 Een eigen gedeelte onder Instellingen:
@@ -140,8 +231,11 @@ pas kan gaan lopen.
 | Bestand                                                                                              | Wat het doet                                             |
 | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
 | [`DigitaleKlok.vue`](../../resources/js/components/dashboard/DigitaleKlok.vue)                       | De klok zelf: de tijd, de datum en de animatie.          |
+| [`BezoekBlok.vue`](../../resources/js/components/dashboard/BezoekBlok.vue)                           | Wat de website doet, met de weg naar het hele overzicht. |
+| [`LeegVak.vue`](../../resources/js/components/dashboard/LeegVak.vue)                                 | Een vlak waar nog niets in zit.                          |
 | [`Dashboard.vue`](../../resources/js/pages/Dashboard.vue)                                            | Het beginscherm, met de klok in het middelste vlak.      |
-| [`DashboardController`](../../app/Http/Controllers/DashboardController.php)                          | Stuurt de gekozen zone mee.                              |
+| [`DashboardController`](../../app/Http/Controllers/DashboardController.php)                          | Stuurt de gekozen zone en de bezoekcijfers mee.          |
+| [`DashboardVisitBlockTest`](../../tests/Feature/DashboardVisitBlockTest.php)                         | Dat het totaal nooit terugloopt en vandaag apart staat.  |
 | [`DashboardTimezone`](../../app/Enums/DashboardTimezone.php)                                         | De vijf zones en hun labels.                             |
 | [`DashboardSettingsController`](../../app/Http/Controllers/Settings/DashboardSettingsController.php) | Het instellingenscherm en de opslag.                     |
 | [`settings/Dashboard.vue`](../../resources/js/pages/settings/Dashboard.vue)                          | Dat scherm, met het voorbeeld eronder.                   |
@@ -155,6 +249,6 @@ pas kan gaan lopen.
 - **Geen analoge klok.** Afgesproken was een digitale.
 - **Geen vrije invoer van een tijdzone.** Zie hierboven: de korte lijst is
   het hele idee.
-- **De andere drie vlakken zijn nog leeg.** Dat blijft zo tot er iets is
+- **De andere twee vlakken zijn nog leeg.** Dat blijft zo tot er iets is
   afgesproken om erin te zetten; een vlak vullen met een getal dat niemand
   heeft gevraagd maakt het dashboard niet nuttiger.

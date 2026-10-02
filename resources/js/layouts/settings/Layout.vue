@@ -12,6 +12,7 @@ import { edit as editAppearance } from '@/routes/appearance';
 import { edit as editDashboard } from '@/routes/dashboard-settings';
 import { show as showDocumentatie } from '@/routes/documentation';
 import { edit as editProfile } from '@/routes/profile';
+import { show as showSafety } from '@/routes/safety';
 import { edit as editSecurity } from '@/routes/security';
 import type { NavItem } from '@/types';
 
@@ -45,6 +46,20 @@ const sidebarNavItems = computed<Instelling[]>(() => [
     {
         title: t('Dashboard'),
         href: editDashboard(),
+    },
+    /*
+     * Veiligheid staat ná Dashboard en vóór de handleiding. Het is geen
+     * instelling maar uitleg, en daarmee hoort het bij het eind van de
+     * lijst -- net als de handleiding, die er ook alleen is om te lezen.
+     *
+     * Het is níet hetzelfde als "Beveiliging" hierboven: daar stel je je
+     * wachtwoord en je authenticator in, hier lees je hoe het geheel
+     * beschermd is. Vandaar ook de andere naam; twee regels die allebei
+     * "Beveiliging" heten is onbruikbaar.
+     */
+    {
+        title: t('Veiligheid'),
+        href: showSafety(),
     },
     /*
      * De handleiding staat onderaan en niet bovenaan. Wie hier komt heeft

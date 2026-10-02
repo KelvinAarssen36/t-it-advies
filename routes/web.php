@@ -6,9 +6,11 @@ use App\Http\Controllers\FallbackController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\Portal\SiteEntryController;
+use App\Http\Controllers\PrivacyController;
 use App\Http\Controllers\Security\ConfirmTwoFactorController;
 use App\Http\Controllers\Security\PortalEntryController;
 use App\Http\Controllers\Security\TwoFactorSetupController;
+use App\Http\Middleware\TelBezoek;
 use Illuminate\Support\Facades\Route;
 use Spatie\Honeypot\ProtectAgainstSpam;
 
@@ -21,8 +23,26 @@ use Spatie\Honeypot\ProtectAgainstSpam;
 /*
  * De landingspagina. Hier stond `Route::inertia`, maar de pagina haalt nu
  * de volgorde van zijn onderdelen uit de database; zie HomeController.
+ *
+ * `TelBezoek` staat op deze route en niet globaal: het portaal, de webhooks
+ * en /up zijn geen bezoek. Komt er een tweede publieke pagina bij, dan hoort
+ * die middleware daar ook op -- en dan is dit het moment om er een groep van
+ * te maken.
  */
-Route::get('/', HomeController::class)->name('home');
+Route::get('/', HomeController::class)
+    ->middleware(TelBezoek::class)
+    ->name('home');
+
+/*
+ * De privacyverklaring.
+ *
+ * Een eigen pagina en geen regeltje in de voet, want er staat te veel in om
+ * weg te stoppen: wat er wordt verwerkt, waarom, hoe lang en door wie. De
+ * tekst staat in de code en niet in de database -- hij beschrijft wat de
+ * software doet, dus hij hoort in dezelfde wijziging mee te veranderen als
+ * die software. Zie docs/architecture/bezoekcijfers.md.
+ */
+Route::get('privacy', PrivacyController::class)->name('privacy');
 
 /*
  * Van taal wisselen. Open voor iedereen, want de publieke site moet ook

@@ -44,37 +44,60 @@ enum SecurityEventType: string
     case WebhookRejected = 'webhook.rejected';
     case AlertSent = 'alert.sent';
 
-    public function label(): string
+    /*
+     * Gegevens die de beheerder op het scherm Juridisch heeft laten
+     * verwijderen -- nu alleen mislukte mailpogingen. Het staat in dit
+     * logboek omdat er gegevens door verdwijnen: zonder deze regel is er
+     * later geen manier om te zien dat het is gebeurd.
+     */
+    case PrivacyDataCleared = 'privacy.data_cleared';
+
+    /**
+     * De Nederlandse tekst, onvertaald.
+     *
+     * In dit project is de Nederlandse zin zelf de vertaalsleutel, dus dit
+     * is ook meteen de sleutel om in een andere taal op te zoeken. Dat is
+     * nodig voor de antwoordtekst op het scherm Juridisch: die wordt in
+     * allebei de talen tegelijk opgebouwd, en kan dus niet leunen op de
+     * taal die het portaal op dat moment aanstaat.
+     */
+    public function sleutel(): string
     {
         return match ($this) {
-            self::Login => __('Ingelogd'),
-            self::LoginFailed => __('Mislukte login'),
-            self::Logout => __('Uitgelogd'),
-            self::Lockout => __('Login geblokkeerd'),
-            self::PasswordReset => __('Wachtwoord hersteld'),
-            self::PasswordUpdated => __('Wachtwoord gewijzigd'),
-            self::EmailVerified => __('E-mailadres geverifieerd'),
-            self::TwoFactorEnabled => __('2FA ingeschakeld'),
-            self::TwoFactorConfirmed => __('2FA bevestigd'),
-            self::TwoFactorDisabled => __('2FA uitgeschakeld'),
-            self::TwoFactorChallenged => __('2FA gevraagd'),
-            self::TwoFactorFailed => __('2FA mislukt'),
-            self::TwoFactorSucceeded => __('2FA gelukt'),
-            self::RecoveryCodeUsed => __('Recovery code gebruikt'),
-            self::RecoveryCodesGenerated => __('Recovery codes aangemaakt'),
-            self::SensitiveActionChallenged => __('Gevoelige actie: code gevraagd'),
-            self::SensitiveActionConfirmed => __('Gevoelige actie: bevestigd'),
-            self::SensitiveActionFailed => __('Gevoelige actie: verkeerde code'),
-            self::SensitiveActionRecoveryCodeRefused => __('Gevoelige actie: recovery code geweigerd'),
-            self::SensitiveActionDenied => __('Gevoelige actie: geen rechten'),
-            self::SpamBlocked => __('Spam geblokkeerd'),
-            self::TurnstileFailed => __('Turnstile mislukt'),
-            self::RateLimited => __('Rate limit geraakt'),
-            self::UserCreated => __('Gebruiker aangemaakt'),
-            self::UserRolesChanged => __('Rollen van gebruiker gewijzigd'),
-            self::UserDeleted => __('Gebruiker verwijderd'),
-            self::WebhookRejected => __('Webhook geweigerd'),
-            self::AlertSent => __('Alarmering verstuurd'),
+            self::Login => 'Ingelogd',
+            self::LoginFailed => 'Mislukte login',
+            self::Logout => 'Uitgelogd',
+            self::Lockout => 'Login geblokkeerd',
+            self::PasswordReset => 'Wachtwoord hersteld',
+            self::PasswordUpdated => 'Wachtwoord gewijzigd',
+            self::EmailVerified => 'E-mailadres geverifieerd',
+            self::TwoFactorEnabled => '2FA ingeschakeld',
+            self::TwoFactorConfirmed => '2FA bevestigd',
+            self::TwoFactorDisabled => '2FA uitgeschakeld',
+            self::TwoFactorChallenged => '2FA gevraagd',
+            self::TwoFactorFailed => '2FA mislukt',
+            self::TwoFactorSucceeded => '2FA gelukt',
+            self::RecoveryCodeUsed => 'Recovery code gebruikt',
+            self::RecoveryCodesGenerated => 'Recovery codes aangemaakt',
+            self::SensitiveActionChallenged => 'Gevoelige actie: code gevraagd',
+            self::SensitiveActionConfirmed => 'Gevoelige actie: bevestigd',
+            self::SensitiveActionFailed => 'Gevoelige actie: verkeerde code',
+            self::SensitiveActionRecoveryCodeRefused => 'Gevoelige actie: recovery code geweigerd',
+            self::SensitiveActionDenied => 'Gevoelige actie: geen rechten',
+            self::SpamBlocked => 'Spam geblokkeerd',
+            self::TurnstileFailed => 'Turnstile mislukt',
+            self::RateLimited => 'Rate limit geraakt',
+            self::UserCreated => 'Gebruiker aangemaakt',
+            self::UserRolesChanged => 'Rollen van gebruiker gewijzigd',
+            self::UserDeleted => 'Gebruiker verwijderd',
+            self::WebhookRejected => 'Webhook geweigerd',
+            self::AlertSent => 'Alarmering verstuurd',
+            self::PrivacyDataCleared => 'Gegevens verwijderd op verzoek',
         };
+    }
+
+    public function label(): string
+    {
+        return __($this->sleutel());
     }
 }

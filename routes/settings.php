@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Settings\DashboardSettingsController;
 use App\Http\Controllers\Settings\ProfileController;
+use App\Http\Controllers\Settings\SafetyController;
 use App\Http\Controllers\Settings\SecurityController;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Route;
@@ -44,6 +45,18 @@ Route::middleware(['auth', 'verified', 'two-factor.required'])->group(function (
      */
     Route::get('settings/dashboard', [DashboardSettingsController::class, 'edit'])
         ->name('dashboard-settings.edit');
+
+    /*
+     * Hoe het allemaal beveiligd is. Een scherm zonder knoppen: het legt
+     * uit wat er onder water gebeurt en laat een paar echte cijfers zien.
+     *
+     * Het staat níet achter een wachtwoordbevestiging zoals het scherm
+     * Beveiliging, en dat is geen slordigheid: daar wijzig je iets dat je
+     * niet wilt terugdraaien, hier lees je alleen. Een extra drempel voor
+     * lezen zou betekenen dat hij het nooit opent.
+     */
+    Route::get('settings/veiligheid', [SafetyController::class, 'edit'])
+        ->name('safety.show');
 
     Route::patch('settings/dashboard', [DashboardSettingsController::class, 'update'])
         ->name('dashboard-settings.update');

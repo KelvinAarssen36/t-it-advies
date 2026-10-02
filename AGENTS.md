@@ -224,14 +224,37 @@ niet weet:
   herladen. Roep de opruimfunctie aan in `onBeforeUnmount`.
 - **`prefers-reduced-motion` mag geen lege pagina opleveren.** Zet elementen
   op hun eindtoestand in plaats van de animatie over te slaan.
+- **Kopiëren gaat altijd via
+  [`CopyButton.vue`](resources/js/components/CopyButton.vue).** Schrijf
+  nooit zelf een knopje met `navigator.clipboard.writeText()` erachter.
+  Die werkt alleen op https of localhost, dus op een `.test`-adres gebeurt
+  er niets: geen tekst op het klembord, en ook geen vinkje. Je merkt het
+  niet, want er komt geen foutmelding -- je klikt en er verandert
+  simpelweg niets op het scherm.
+
+    Dit is al twee keer misgegaan, voor het laatst bij de knop "Kopieer de
+    tekst" op het scherm Juridisch. `CopyButton` heeft de terugval naar
+    `document.execCommand('copy')` én de vinkje-animatie al, en zorgt
+    ervoor dat kopiëren overal in het project hetzelfde aanvoelt. Zie
+    [frontend-en-animatie](docs/architecture/frontend-en-animatie.md#kopiëren-naar-het-klembord).
+
 - **De tests draaien op SQLite in het geheugen**, niet op MySQL.
 - **Een formulier met een bestand erin gaat als `FormData` de deur uit.**
   Een wijziging gebruikt dan `POST` met `_method: 'put'`; Laravel leest die
   omweg niet uit JSON. En zet `Storage::fake()` in de test, anders schrijf
   je in `storage/app/public`.
-- **Een zoekveld dat op `LIKE` draait moet `%` en `_` ontsnappen.** Zonder
-  dat geeft "100%" de hele lijst terug. Zet de `ESCAPE`-clausule er
-  expliciet bij, want MySQL en SQLite gaan er anders mee om.
+- **Een zoekveld dat op `LIKE` draait gaat via
+  [`Zoekterm::patroon()`](app/Support/Zoekterm.php).** Zonder ontsnappen
+  geeft "100%" de hele lijst terug en vindt `jan_de_vries@…` ook
+  `janXdeYvries@…`, want `_` betekent "één willekeurig teken". Zet er in de
+  query `escape '!'` bij; waarom het een uitroepteken is en geen backslash
+  staat in die klasse.
+
+    Dit ging mis bij het zoekveld op het scherm Juridisch: de regel stond
+    wel in dit document, maar het trucje stond uitgeschreven in één model
+    en moest dus bij elke nieuwe zoekopdracht opnieuw onthouden worden.
+    Daarom is het nu één gedeelde plek.
+
 - **De componenten in `components/ui/` komen Engels geleverd.** Loop een
   nieuwe na op `sr-only`, `aria-label`, `title`, `alt` en `placeholder`;
   daar zit vertaalde tekst in die je niet ziet staan. Zie

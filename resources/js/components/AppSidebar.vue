@@ -4,6 +4,7 @@ import {
     Activity,
     Award,
     ChartNoAxesColumn,
+    Eye,
     Globe,
     Heading,
     History,
@@ -12,6 +13,7 @@ import {
     Lightbulb,
     Mail,
     Milestone,
+    Scale,
     ShieldAlert,
     Users,
 } from '@lucide/vue';
@@ -32,9 +34,11 @@ import { t } from '@/lib/i18n';
 import { dashboard } from '@/routes';
 import { dashboard as adminDashboard } from '@/routes/admin';
 import adminActivity from '@/routes/admin/activity';
+import adminLegal from '@/routes/admin/legal';
 import adminMail from '@/routes/admin/mail';
 import adminSecurity from '@/routes/admin/security';
 import adminUsers from '@/routes/admin/users';
+import adminVisitors from '@/routes/admin/visitors';
 import site from '@/routes/site';
 import certificaten from '@/routes/website/certificaten';
 import diensten from '@/routes/website/diensten';
@@ -191,6 +195,17 @@ const beheerItems = computed<NavItem[]>(() =>
                   icon: Activity,
                   hoofd: true,
               },
+              /*
+               * De bezoekcijfers staan bovenaan deze groep, direct onder
+               * het overzicht. Van alles wat je hier nakijkt is dit het
+               * enige waar je uit eigen beweging naar toe gaat -- de
+               * logboeken bekijk je pas als er iets is.
+               */
+              {
+                  title: t('Bezoekers'),
+                  href: adminVisitors.index(),
+                  icon: Eye,
+              },
               {
                   title: t('Activiteit'),
                   href: adminActivity.index(),
@@ -205,6 +220,18 @@ const beheerItems = computed<NavItem[]>(() =>
                   title: t('Gebruikers'),
                   href: adminUsers.index(),
                   icon: Users,
+              },
+              /*
+               * Juridisch staat onderaan, en dat is geen degradatie: je
+               * komt hier alleen als iemand om zijn gegevens vraagt, en
+               * dat gebeurt zelden. Maar dan moet het er wel staan, want
+               * zoeken naar een procedure terwijl de klok van een maand
+               * loopt is precies hoe het fout gaat.
+               */
+              {
+                  title: t('Juridisch'),
+                  href: adminLegal.index(),
+                  icon: Scale,
               },
           ]
         : [],

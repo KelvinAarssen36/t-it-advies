@@ -9,6 +9,7 @@ import {
     CheckCheck,
     Clock,
     Eye,
+    Fingerprint,
     Globe,
     Hash,
     // Onze eigen Heading.vue heet ook zo; vandaar de andere naam hier.
@@ -21,10 +22,12 @@ import {
     Milestone,
     MousePointerClick,
     Pencil,
+    Scale,
     Plus,
     Search,
     Share2,
     ShieldAlert,
+    ShieldCheck,
     Sparkles,
     SunMoon,
     Trash2,
@@ -39,11 +42,15 @@ import { Button } from '@/components/ui/button';
 import { t } from '@/lib/i18n';
 import { dashboard as adminDashboard } from '@/routes/admin';
 import adminActivity from '@/routes/admin/activity';
+import adminLegal from '@/routes/admin/legal';
 import adminMail from '@/routes/admin/mail';
 import adminSecurity from '@/routes/admin/security';
+import adminVisitors from '@/routes/admin/visitors';
 import adminUsers from '@/routes/admin/users';
 import dashboardSettings from '@/routes/dashboard-settings';
 import { show } from '@/routes/documentation';
+import { show as showSafety } from '@/routes/safety';
+import { edit as editSecurity } from '@/routes/security';
 import site from '@/routes/site';
 import website from '@/routes/website';
 import certificatenRoutes from '@/routes/website/certificaten';
@@ -494,6 +501,13 @@ defineOptions({
                         <p>
                             {{
                                 $t(
+                                    'Links ernaast staat wat je website doet, met boven elk cijfer waar het over gaat. Onder "Totaal sinds de start" staat hoe vaak je website is bekeken sinds de allereerste dag; dat getal loopt nooit terug, want die cijfers gooien we niet weg. Onder "Vandaag" staat hoeveel bezoekers er vandaag langskwamen en hoeveel pagina\'s zij samen hebben bekeken. De staafjes onderin zijn de laatste twee weken, met vandaag als laatste. Klik op dat vlak en je komt in het volledige overzicht.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
                                     'Onder Instellingen → Dashboard kies je in welke tijdzone hij loopt. Nederland staat er standaard op, en er zijn er nog vier om uit te kiezen. Zomer- en wintertijd gaan automatisch mee, dus daar hoef je nooit iets aan te doen. Onder de keuze loopt dezelfde klok mee, zodat je ziet wat je kiest voordat je opslaat.',
                                 )
                             }}
@@ -511,6 +525,78 @@ defineOptions({
                                 <Link :href="dashboardSettings.edit()">
                                     <Clock class="size-4" />
                                     {{ $t('Open de dashboardinstellingen') }}
+                                </Link>
+                            </Button>
+                        </template>
+                    </UitlegKaart>
+
+                    <UitlegKaart
+                        :titel="$t('Hoe je site beveiligd is')"
+                        :icoon="ShieldCheck"
+                    >
+                        <p>
+                            {{
+                                $t(
+                                    'Onder Instellingen → Veiligheid staat in gewone taal wat er allemaal gebeurt om je website en dit portaal te beschermen. Je hoeft daar niets in te stellen; het staat er zodat je weet waar je aan toe bent.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Je ziet er een paar echte cijfers over de afgelopen maand -- mislukte inlogpogingen, wat er is tegengehouden, en of je mail aankomt -- en daaronder in gewone taal wat er voor je geregeld is. Onderaan staan de twee dingen die je zelf kunt aanzetten: een code uit een app bij het inloggen, en inloggen met je vingerafdruk of gezicht.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Wat daar staat wordt op dat moment uit je instellingen gelezen. Er staat dus nooit dat iets je beschermt terwijl het niet aanstaat -- dat zou erger zijn dan geen scherm, want dan denk je beschermd te zijn.',
+                                )
+                            }}
+                        </p>
+
+                        <template #voorbeeld>
+                            <Button variant="outline" size="sm" as-child>
+                                <Link :href="showSafety()">
+                                    <ShieldCheck class="size-4" />
+                                    {{ $t('Open Veiligheid') }}
+                                </Link>
+                            </Button>
+                        </template>
+                    </UitlegKaart>
+
+                    <UitlegKaart
+                        :titel="$t('Inloggen met je vingerafdruk')"
+                        :icoon="Fingerprint"
+                    >
+                        <p>
+                            {{
+                                $t(
+                                    'Een passkey is inloggen zonder wachtwoord: je browser vraagt om je vingerafdruk, je gezicht of de pincode van je apparaat, en je bent binnen. Het is niet verplicht, maar het is wel het makkelijkste én het veiligste dat er is -- een nepsite kan een passkey niet van je aftroggelen, want hij werkt alleen op jouw eigen website.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Je stelt er een in onder Instellingen → Beveiliging. Klik op "Passkey toevoegen", geef hem een naam waaraan je het apparaat herkent -- "iPhone" of "laptop" -- en bevestig op je apparaat. Vanaf dan staat er op het inlogscherm een knop om er meteen mee in te loggen.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Je kunt er meerdere naast elkaar hebben, één per apparaat, en je kunt ze los van elkaar weer weghalen. Je wachtwoord en je authenticator-app blijven gewoon werken; de code uit die app blijf je bovendien nodig voor handelingen die niet terug te draaien zijn.',
+                                )
+                            }}
+                        </p>
+
+                        <template #voorbeeld>
+                            <Button variant="outline" size="sm" as-child>
+                                <Link :href="editSecurity()">
+                                    <Fingerprint class="size-4" />
+                                    {{ $t('Naar Beveiliging') }}
                                 </Link>
                             </Button>
                         </template>
@@ -1028,10 +1114,135 @@ defineOptions({
                     <p class="text-sm text-pretty text-muted-foreground">
                         {{
                             $t(
-                                'Dit gedeelte verandert niets aan je website. Het laat zien wat er gebeurd is: wie er wat wijzigde, wie er probeerde in te loggen en welke mail eruit ging.',
+                                'Dit gedeelte verandert niets aan je website. Het laat zien wat er gebeurd is: hoeveel bezoek je site krijgt, wie er wat wijzigde, wie er probeerde in te loggen en welke mail eruit ging.',
                             )
                         }}
                     </p>
+
+                    <UitlegKaart :titel="$t('Bezoekers')" :icoon="Eye">
+                        <p>
+                            {{
+                                $t(
+                                    'Hoeveel mensen je website bekijken, en of dat meer of minder is dan de periode ervoor. Je kiest zelf of je naar zeven, dertig of negentig dagen kijkt.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Daaronder staat waar ze vandaan komen -- of je LinkedIn echt bezoek oplevert bijvoorbeeld -- met welk apparaat ze kijken, en in welke taal. Dat laatste zegt of het Engels de moeite waard is.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Het cijfer over de berichten via het contactformulier is het nuttigste van allemaal: dat is het enige dat zegt of je site zijn werk doet in plaats van alleen bekeken te worden.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Eén ding om goed te weten: een bezoeker wordt één keer per dag geteld. Komt iemand drie dagen achter elkaar, dan zijn dat over die week drie bezoekers -- we kunnen niet zien dat het dezelfde persoon was. Dat is met opzet: er worden geen cookies gebruikt en er wordt niets op het apparaat van je bezoeker opgeslagen, en daarom hoeft er ook geen cookiemelding op je website te staan.',
+                                )
+                            }}
+                        </p>
+
+                        <template #voorbeeld>
+                            <Button variant="outline" size="sm" as-child>
+                                <Link :href="adminVisitors.index()">
+                                    <Eye class="size-4" />
+                                    {{ $t('Open Bezoekers') }}
+                                </Link>
+                            </Button>
+                        </template>
+                    </UitlegKaart>
+
+                    <!--
+                        Deze kaart is er omdat de privacyverklaring op de
+                        website een belofte doet die de eigenaar zelf moet
+                        nakomen: binnen een maand antwoorden op een verzoek.
+                        Dan hoort hij te weten waar hij moet kijken.
+                    -->
+                    <UitlegKaart
+                        :titel="$t('Als een bezoeker zijn gegevens opvraagt')"
+                        :icoon="ShieldCheck"
+                    >
+                        <p>
+                            {{
+                                $t(
+                                    'In de privacyverklaring op je website staat dat iemand mag vragen welke gegevens je van hem hebt, en dat je binnen een maand antwoordt. Dat komt zelden voor, maar als het gebeurt is dit waar je moet kijken.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Zijn bericht via het contactformulier staat in je mailbox, nergens anders. Zoek op zijn e-mailadres, stuur hem wat je vindt, en verwijder het als hij daarom vraagt. Op de website zelf staat het niet.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    "Staat hij in het beveiligingslogboek -- bij een mislukte inlogpoging of een geblokkeerd formulier -- dan vind je dat onder Beveiliging. Zoek daar op zijn e-mailadres of op het IP-adres dat hij je geeft. Zonder zo'n gegeven kun je niet zoeken, en dat mag je hem ook vragen.",
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Dat logboek verwijder je niet, ook niet als hij daarom vraagt. Het bestaat om misbruik te kunnen zien en tegenhouden, en een logboek waar regels uit te halen zijn doet dat niet meer. Dat mag je weigeren -- zeg dan wél waarom, en dat het na een jaar vanzelf verdwijnt. Zo staat het ook in je privacyverklaring.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Verder is er niets, en dat is prettig om te weten voordat je gaat zoeken. In het mailoverzicht staat alleen jouw eigen adres als ontvanger, dus daar is hij niet te vinden. De sessie van zijn bezoek verloopt na twee uur en ruimt zichzelf op. En uit de bezoekcijfers valt niets te halen en niets te verwijderen: daar staan alleen aantallen per dag in. Dat mag je gewoon zo antwoorden.',
+                                )
+                            }}
+                        </p>
+
+                        <p>
+                            {{
+                                $t(
+                                    'Je hoeft dit allemaal niet te onthouden: op het scherm Juridisch staat één zoekveld waarmee je iemand opzoekt, een overzicht van wat er waar staat, en een antwoordtekst die je kunt kopiëren en versturen.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Vind je daar niemand, dan zegt het scherm erbij wat je daarna moet doen: zoek óók in je mailbox op dat adres. Berichten uit het contactformulier komen daar binnen en nergens anders, dus daar kan nog wel iets van hem staan. Pas als je daar ook niets vindt, kun je antwoorden dat je niets van hem hebt.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'De antwoordtekst staat er in het Nederlands en in het Engels. Met de vlaggetjes erboven kies je welke je kopieert -- handig als je bezoeker je in het Engels schreef. Dat verandert niets aan de taal van je portaal.',
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{
+                                $t(
+                                    'Klik je daar op "Kopieer de tekst", dan verschijnt er een vinkje op de knop. Dat is je teken dat de tekst op je klembord staat en dat je hem in je mail kunt plakken. Na een seconde staat de knop weer zoals hij was; je kunt zo vaak klikken als je wilt.',
+                                )
+                            }}
+                        </p>
+
+                        <template #voorbeeld>
+                            <Button variant="outline" size="sm" as-child>
+                                <Link :href="adminLegal.index()">
+                                    <Scale class="size-4" />
+                                    {{ $t('Open Juridisch') }}
+                                </Link>
+                            </Button>
+                        </template>
+                    </UitlegKaart>
 
                     <UitlegKaart :titel="$t('Overzicht')" :icoon="Activity">
                         <p>

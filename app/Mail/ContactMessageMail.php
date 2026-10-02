@@ -40,6 +40,28 @@ class ContactMessageMail extends Mailable implements ShouldQueue
         );
     }
 
+    /**
+     * Wat er van deze mail in het mailoverzicht terechtkomt.
+     *
+     * **Niet het echte onderwerp, want daar staat tekst van de bezoeker
+     * in.** Die zou dan honderd tachtig dagen in onze database blijven
+     * staan, en daar is geen enkele reden voor: het mailoverzicht is er om
+     * te zien óf een bericht is aangekomen, niet om te lezen wat erin
+     * stond.
+     *
+     * De eigenaar houdt het volledige onderwerp gewoon in zijn eigen
+     * postvak. Dit gaat alleen over wat wij bewaren.
+     *
+     * Hierdoor kan de privacyverklaring zeggen dat we het bericht van een
+     * bezoeker niet bewaren, zonder een uitzondering voor de onderwerpregel
+     * erbij. Zie RecordOutgoingMail en
+     * docs/architecture/bezoekcijfers.md.
+     */
+    public static function logboekOnderwerp(): string
+    {
+        return __('Bericht via het contactformulier');
+    }
+
     public function content(): Content
     {
         return new Content(markdown: 'mail.contact');

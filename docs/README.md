@@ -52,6 +52,7 @@ Nieuw op dit project? Lees in deze volgorde:
 - [Formulieren en schuifbalken](architecture/formulieren-en-schuifbalken.md) -- de standaard voor keuzevelden en schuifbalken in het portaal.
 - [Pagina-indeling](architecture/pagina-indeling.md) -- hoe de klant de volgorde van de landing bepaalt, en hoe je er een onderdeel bij bouwt.
 - [Dashboard](architecture/dashboard.md) -- het beginscherm van het portaal: de klok, de tijdzone en waar de instellingen ervan staan.
+- [Bezoekcijfers](architecture/bezoekcijfers.md) -- hoeveel bezoek de site krijgt, hoe dat zonder cookies en zonder IP-opslag wordt geteld, en waarom er geen cookiebanner bij hoort.
 - [Kopteksten](architecture/kopteksten.md) -- de gedeelde tabel met het opschrift, de titel en de zin boven elk onderdeel.
 - [Meldingen](architecture/meldingen.md) -- de berichtjes rechtsonder, het bevestigingsvenster, en waarom je aan de kleur ziet wat er gebeurde.
 - [Foutpagina's](architecture/foutpaginas.md) -- wat je ziet als er iets misgaat, en waarom portaal en landing verschillen.
@@ -83,6 +84,8 @@ staan de vijf stappen -- en daarna een bestaande module als voorbeeld.
 - [Beveiligingskoppen](security/headers.md) -- wat de browser van ons niet mag doen, en waarom er nog geen CSP staat.
 - [Logging](security/logging.md) -- wat we vastleggen en wat we nooit vastleggen.
 - [E-mailauthenticatie](security/e-mailauthenticatie.md) -- SPF, DKIM en DMARC.
+- [Verzoeken van bezoekers](security/verzoeken-van-bezoekers.md) -- wat er gebeurt als iemand zijn gegevens opvraagt, en het scherm Juridisch waarmee de eigenaar dat afhandelt.
+- [Het scherm Veiligheid](security/overzicht-voor-de-eigenaar.md) -- de uitlegpagina in de instellingen die laat zien hoe alles beschermd is, met echte cijfers en zonder iets te verzinnen.
 
 ## Ontwikkeling
 

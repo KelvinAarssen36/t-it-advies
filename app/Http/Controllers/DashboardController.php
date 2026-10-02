@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Support\Bezoek\Bezoekcijfers;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -17,12 +18,19 @@ use Inertia\Response;
  */
 class DashboardController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, Bezoekcijfers $cijfers): Response
     {
         /** @var User $gebruiker */
         $gebruiker = $request->user();
 
         return Inertia::render('Dashboard', [
+            /*
+             * Het blok linksboven: wat de website in totaal heeft gedaan,
+             * en wat er vandaag gebeurt. Het grote getal loopt door zolang
+             * de site bestaat; de dagtotalen worden nergens opgeruimd.
+             */
+            'bezoek' => $cijfers->samenvatting(),
+
             /*
              * De zone van de klok, als IANA-naam. De browser maakt de tijd
              * en de datum ermee op; zie DigitaleKlok.vue.

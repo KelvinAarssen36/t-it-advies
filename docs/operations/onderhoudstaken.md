@@ -11,15 +11,21 @@ De taken die vanzelf draaien: opruimen en alarmeren. Ze staan in
 
 ## Het overzicht
 
-| Tijd                    | Taak                       | Wat het doet                                       |
-| ----------------------- | -------------------------- | -------------------------------------------------- |
-| elk uur                 | `security:report`          | Meldt pieken in mislukte pogingen en mailproblemen |
-| 03:10                   | `activity:prune`           | 03:25                                              | Ruimt het activiteitenlogboek op. Eigen termijn: `ACTIVITY_LOG_RETENTION_DAYS`, standaard een jaar. Zie [activiteitenlogboek](../security/activiteitenlogboek.md). |
-| `security:prune-events` | Ruimt `security_events` op |
-| 03:20                   | `mail:prune-logs`          | Ruimt `mail_logs` op                               |
-| 03:30                   | `queue:prune-failed`       | Ruimt mislukte jobs ouder dan 14 dagen op          |
-| 03:40                   | `queue:prune-batches`      | Ruimt afgeronde batches op                         |
-| 03:50                   | `auth:clear-resets`        | Ruimt verlopen wachtwoordherstel-tokens op         |
+| Tijd    | Taak                    | Wat het doet                                                                                                                                                                                     |
+| ------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| elk uur | `security:report`       | Meldt pieken in mislukte pogingen en mailproblemen                                                                                                                                               |
+| 03:05   | `bezoek:prune-codes`    | Gooit de bezoekerscodes en het zout van voorbije dagen weg. **Tweede slot:** dat gebeurt normaal al bij het eerste bezoek na middernacht. Zie [bezoekcijfers](../architecture/bezoekcijfers.md). |
+| 03:10   | `security:prune-events` | Ruimt `security_events` op. Termijn: `SECURITY_LOG_RETENTION_DAYS`, standaard een jaar.                                                                                                          |
+| 03:20   | `mail:prune-logs`       | Ruimt `mail_logs` op. Termijn: `MAIL_LOG_RETENTION_DAYS`, standaard 180 dagen.                                                                                                                   |
+| 03:25   | `activity:prune`        | Ruimt het activiteitenlogboek op. Eigen termijn: `ACTIVITY_LOG_RETENTION_DAYS`, standaard een jaar. Zie [activiteitenlogboek](../security/activiteitenlogboek.md).                               |
+| 03:30   | `queue:prune-failed`    | Ruimt mislukte jobs ouder dan 14 dagen op                                                                                                                                                        |
+| 03:40   | `queue:prune-batches`   | Ruimt afgeronde batches op                                                                                                                                                                       |
+| 03:50   | `auth:clear-resets`     | Ruimt verlopen wachtwoordherstel-tokens op                                                                                                                                                       |
+
+> **Deze tabel stond verhaspeld**: twee regels waren in elkaar geschoven,
+> waardoor `activity:prune` op 03:10 leek te staan en
+> `security:prune-events` zonder tijd. De tijden hierboven komen nu uit
+> `routes/console.php`.
 
 De opruimtaken staan bewust niet op hetzelfde moment: twee grote deletes
 tegelijk op dezelfde database maken elkaar alleen maar trager.
@@ -47,11 +53,18 @@ precies goed, want die hangen nergens aan vast.
 
 ### Bewaartermijnen
 
-| Wat                     | Variabele                     | Standaard |
-| ----------------------- | ----------------------------- | --------- |
-| Tabel `security_events` | `SECURITY_LOG_RETENTION_DAYS` | 365 dagen |
-| Bestand `security.log`  | `SECURITY_LOG_DAILY_DAYS`     | 90 dagen  |
-| Tabel `mail_logs`       | `MAIL_LOG_RETENTION_DAYS`     | 180 dagen |
+| Wat                        | Variabele                     | Standaard                |
+| -------------------------- | ----------------------------- | ------------------------ |
+| Tabel `security_events`    | `SECURITY_LOG_RETENTION_DAYS` | 365 dagen                |
+| Bestand `security.log`     | `SECURITY_LOG_DAILY_DAYS`     | 90 dagen                 |
+| Tabel `mail_logs`          | `MAIL_LOG_RETENTION_DAYS`     | 180 dagen                |
+| Tabel `activity_entries`   | `ACTIVITY_LOG_RETENTION_DAYS` | 365 dagen                |
+| Tabel `site_visitor_codes` | geen -- en met opzet          | één dag, niet instelbaar |
+
+**Die laatste heeft bewust geen instelling.** Eén dag is wat er in de
+privacyverklaring aan de bezoeker wordt beloofd, en een knop om er dertig
+van te maken is een knop om die belofte te breken. Zie
+[bezoekcijfers](../architecture/bezoekcijfers.md).
 
 De termijnen verschillen met opzet. Een bounce van een jaar geleden zegt
 niets meer; een inlogpoging van een jaar geleden kan bij onderzoek naar een
