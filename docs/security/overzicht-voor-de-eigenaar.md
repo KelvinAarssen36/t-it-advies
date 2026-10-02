@@ -16,8 +16,12 @@ instellingen gelezen.**
 Dat is bij dit onderwerp geen stijlkeuze. Een scherm dat zegt dat de
 spamcontrole aanstaat terwijl de sleutel leeg is, is **erger dan geen
 scherm** -- dan denkt de eigenaar beschermd te zijn en kijkt hij er nooit
-meer naar. Staat iets uit, dan staat dat er met een kruisje én met wat eraan
-te doen is.
+meer naar.
+
+Staat iets uit, dan staat er dus niet de zin die bij "aan" hoort. Dat gaat
+via de **tekst** en niet via een kruisje; zie
+[Wat er voor je geregeld is](#wat-er-voor-je-geregeld-is) voor waarom de
+stoplichten eruit zijn gegaan.
 
 `SafetyScreenTest` legt dat vast: de spamcontrole en de alarmering worden
 allebei getest in de stand aan én uit.

@@ -52,6 +52,39 @@ in wat de eigenaar op meer dan één scherm tegenkomt: de kleur van een knop,
 de sterretjes, de twee talen, online en offline, zoeken. Gaat het maar over
 één scherm, dan hoort het bij dat scherm.
 
+## Zoeken: de kaarten doorzoeken zichzelf
+
+Boven de onderdelenkiezer staat een zoekveld. Het filtert terwijl je typt,
+vanaf twee tekens, en gaat **dwars door alle drie de onderdelen heen** --
+zoek je alleen in het onderdeel dat toevallig aanstaat, dan moet je weten
+waar iets staat om het te kunnen vinden, en dat is precies de vraag die je
+stelde. Tijdens het zoeken verdwijnt de onderdelenkiezer en staat er hoeveel
+onderwerpen er gevonden zijn.
+
+**Er is met opzet geen zoekindex.** De voor de hand liggende aanpak is een
+lijst met per kaart een titel en wat trefwoorden, en die lijst is precies het
+probleem: hij staat náást de kaarten, dus hij veroudert zodra iemand een
+kaart toevoegt of een zin herschrijft. En je merkt het niet -- de kaart staat
+er gewoon, hij is alleen niet meer te vinden.
+
+In plaats daarvan leest `UitlegKaart` na het tekenen **zijn eigen
+`textContent`** en bepaalt hij zelf of hij past. De doorzoekbare tekst is dus
+per definitie de tekst die er staat, inclusief wat er op een knop in het
+voorbeeld staat.
+
+> **Je hoeft dus niets te doen om een nieuwe kaart vindbaar te maken.** Dat
+> is het hele punt van deze opzet, en het is ook het enige wat je kapot kunt
+> maken: bouw hier geen trefwoordenlijst bij.
+> `DocumentationTest::test_searching_needs_no_separate_index` valt dan om.
+
+Het zoeken zelf staat in
+[`lib/handleiding.ts`](../../resources/js/lib/handleiding.ts): kleine letters,
+zonder accenten (zodat "prive" ook "privé" vindt) en alle losse woorden
+moeten voorkomen, niet de hele zin achter elkaar.
+
+Dat laatste maakt het bruikbaar: "mail bezoeker" vindt ook een kaart waar die
+twee woorden ver uit elkaar staan.
+
 ## Zo voeg je een kaart toe
 
 1. Bepaal in welk onderdeel hij hoort. Twijfel je tussen Basis en een
@@ -108,3 +141,11 @@ heen te gaan, dan hoort dat "ergens anders" in het label.
 controleert dat de pagina achter de inlog zit en dat hij blijft bestaan. Dat
 laatste klinkt overbodig, maar een handleiding die stilletjes verdwijnt
 merkt niemand -- tot de eigenaar hem nodig heeft.
+
+Daarnaast houdt hij twee dingen vast die je niet aan het scherm ziet:
+
+| Test                                      | Wat het bewaakt                                                                                     |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `test_every_manageable_module_has_a_card` | Elke module die te beheren valt, heeft een kaart -- met hetzelfde woord als op het indelingsscherm. |
+| `test_searching_needs_no_separate_index`  | De kaart leest zijn eigen tekst. Komt er ooit een trefwoordenlijst bij, dan valt dit om.            |
+| `test_searching_covers_every_section`     | Zoeken doorzoekt alle drie de onderdelen en niet alleen het geopende.                               |

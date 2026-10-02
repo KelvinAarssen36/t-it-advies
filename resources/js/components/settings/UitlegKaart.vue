@@ -1,5 +1,14 @@
 <script setup lang="ts">
 import type { LucideIcon } from '@lucide/vue';
+import {
+    computed,
+    onBeforeUnmount,
+    onMounted,
+    ref,
+    useId,
+    watchEffect,
+} from 'vue';
+import { meldAan, meldAf, past, zoekt } from '@/lib/handleiding';
 
 /**
  * Eén onderwerp op de handleidingspagina.
@@ -18,16 +27,52 @@ import type { LucideIcon } from '@lucide/vue';
  * Zie resources/js/pages/settings/Documentatie.vue en
  * docs/architecture/uitleg-voor-de-eigenaar.md.
  */
-defineProps<{
+const props = defineProps<{
     titel: string;
     icoon: LucideIcon;
     /** Het scherm waar dit onderwerp onder valt, als het er een heeft. */
     onder?: string;
 }>();
+
+/*
+ * --- Zoeken ---------------------------------------------------------------
+ *
+ * De kaart doorzoekt zichzelf: na het tekenen leest hij de tekst die er
+ * écht staat uit zijn eigen element. Daardoor is er geen tweede lijst met
+ * trefwoorden die kan verouderen -- zie lib/handleiding.ts.
+ *
+ * `textContent` en geen eigen opsomming van de slots: dan telt alles mee
+ * wat de lezer ziet, inclusief de tekst op een knop in het voorbeeld.
+ */
+const wortel = ref<HTMLElement>();
+const inhoud = ref('');
+
+const sleutel = useId();
+
+onMounted(() => {
+    inhoud.value = wortel.value?.textContent ?? '';
+});
+
+const zichtbaar = computed(() => past(`${props.titel} ${inhoud.value}`));
+
+/*
+ * De pagina moet weten of er íets gevonden is, anders staat er bij nul
+ * treffers een leeg scherm zonder uitleg. Elke kaart meldt daarom zijn
+ * eigen uitkomst; `watchEffect` houdt dat vanzelf bij.
+ */
+watchEffect(() => meldAan(sleutel, zichtbaar.value));
+
+onBeforeUnmount(() => meldAf(sleutel));
 </script>
 
 <template>
-    <article class="brand-uitleg-kaart" :data-onder="onder ? '' : undefined">
+    <article
+        v-show="zichtbaar"
+        ref="wortel"
+        class="brand-uitleg-kaart"
+        :data-onder="onder ? '' : undefined"
+        :data-treffer="zoekt && zichtbaar ? '' : undefined"
+    >
         <header class="flex items-center gap-3">
             <span class="brand-uitleg-merk" aria-hidden="true">
                 <component :is="icoon" class="size-4" />

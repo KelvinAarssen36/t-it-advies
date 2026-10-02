@@ -418,6 +418,38 @@ bestand tegen phishing, omdat de sleutel aan het domein vastzit. De werking
 komt volledig uit `laravel/passkeys` via Fortify; daar hebben wij niets aan
 toegevoegd.
 
+### Na een passkey-login vragen we géén authenticator-code
+
+**Dit is een beslissing, geen vergetelheid.** Wie met een passkey inlogt komt
+direct binnen: het pakket roept `$guard->login($passkey->user, ...)` aan,
+zonder tweestapsuitdaging. `EnsureTwoFactorIsConfigured` laat dat door, want
+die controleert of 2FA **op het account staat** (`two_factor_confirmed_at`)
+en niet of er deze sessie een code is ingetypt.
+
+Drie redenen waarom dat klopt:
+
+1. **Een passkey is zelf al twee factoren.** Het pakket zet
+   `userVerification: REQUIRED`, bij het aanmaken én bij het inloggen. De
+   browser verplicht je apparaat dus om je echt te verifiëren -- vingerafdruk,
+   gezicht of pincode. Dat is bezit (het apparaat) plus inherentie of kennis.
+2. **Een code erbovenop is een zwakkere factor op een sterkere.** Een
+   TOTP-code is wél te phishen: een overtuigende nepsite vraagt hem, de
+   bezoeker typt hem in, en de aanvaller gebruikt hem binnen dertig seconden.
+   Een passkey kan dat niet overkomen, want hij werkt alleen op het domein
+   waarvoor hij is gemaakt.
+3. **Het haalt het nut eruit.** Een passkey plus een code is langzamer dan
+   wachtwoord plus een code, en dan gebruikt niemand hem.
+
+> **Dit hangt aan `userVerification: REQUIRED`.** Zou dat ooit op `preferred`
+> komen te staan, dan kan een passkey terugvallen op alleen "raak het
+> apparaat aan" en is het één factor. Dan hoort deze afweging opnieuw gemaakt
+> te worden.
+
+Het vangnet staat elders: voor een **gevoelige actie** vraagt het portaal nog
+steeds een TOTP-code en geen passkey (zie hieronder). Komt iemand ooit tóch
+met een passkey binnen die hij niet hoort te hebben, dan kan hij daarmee nog
+niet alles.
+
 ### Wat wij er wél aan hebben gedaan
 
 De componenten kwamen met de starter kit mee, in het Engels en in de

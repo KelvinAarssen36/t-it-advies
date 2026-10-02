@@ -96,4 +96,60 @@ class DocumentationTest extends TestCase
         // regel slaagt de test ook als er geen enkele module bestaat.
         $this->assertGreaterThan(0, $gevonden);
     }
+
+    /**
+     * Het zoeken werkt zonder aparte index, en dat moet zo blijven.
+     *
+     * **Dit legt een ontwerpbeslissing vast en geen functie.** De voor de
+     * hand liggende manier om zoeken te bouwen is een lijst met per kaart
+     * een titel en wat trefwoorden. Die lijst staat náást de kaarten, dus
+     * hij veroudert zodra iemand een kaart toevoegt of een zin herschrijft
+     * -- en je merkt het niet, want de kaart staat er gewoon, hij is alleen
+     * niet meer te vinden.
+     *
+     * In plaats daarvan leest `UitlegKaart` zijn eigen getoonde tekst uit
+     * het element. De doorzoekbare tekst is dus per definitie de tekst die
+     * er staat, en een nieuwe kaart is meteen vindbaar zonder dat iemand
+     * ergens iets bijwerkt.
+     *
+     * Bouwt iemand hier ooit alsnog een trefwoordenlijst bij, dan hoort
+     * deze test om te vallen en hoort er eerst een gesprek te komen.
+     */
+    public function test_searching_needs_no_separate_index(): void
+    {
+        $kaart = (string) file_get_contents(
+            resource_path('js/components/settings/UitlegKaart.vue'),
+        );
+
+        $this->assertStringContainsString(
+            'textContent',
+            $kaart,
+            'De kaart leest zijn eigen tekst niet meer; dan is er ergens een '
+                .'zoekindex bijgekomen die kan verouderen.',
+        );
+
+        $this->assertFileExists(resource_path('js/lib/handleiding.ts'));
+    }
+
+    /**
+     * Zoeken gaat door alle drie de onderdelen heen.
+     *
+     * Zoek je alleen in het onderdeel dat toevallig aanstaat, dan moet je
+     * weten waar iets staat om het te kunnen vinden -- en dat is precies
+     * de vraag die je stelde.
+     */
+    public function test_searching_covers_every_section(): void
+    {
+        $handleiding = (string) file_get_contents(
+            resource_path('js/pages/settings/Documentatie.vue'),
+        );
+
+        foreach (['basis', 'website', 'administratie'] as $onderdeel) {
+            $this->assertMatchesRegularExpression(
+                '/zoekt \|\| onderdeel === \''.$onderdeel.'\'/',
+                $handleiding,
+                "Het onderdeel [{$onderdeel}] doet niet mee als er gezocht wordt.",
+            );
+        }
+    }
 }
