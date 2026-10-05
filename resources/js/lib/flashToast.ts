@@ -50,6 +50,31 @@ const oudeNamen: Record<string, FlashToastType> = {
     error: 'fout',
 };
 
+/**
+ * Eén melding tonen, in de opmaak van dit project.
+ *
+ * **Geëxporteerd omdat niet elke melding van de server komt.** Op het
+ * scherm Aanvragen zet je twee vinkjes achter elkaar aan; daar hoort een
+ * bevestiging bij dat het is opgeslagen, en die hoeft niet via een
+ * paginaherlading. Zonder deze functie zou dat scherm de pictogrammen, de
+ * klassen en de duur opnieuw opschrijven -- en dan ziet dezelfde melding
+ * er op twee plekken net anders uit.
+ */
+export function toonToast(
+    bericht: string,
+    soortNaam: FlashToastType = 'melding',
+    beschrijving?: string,
+): void {
+    const soort = soorten[soortNaam] ?? soorten.melding;
+
+    toast(bericht, {
+        description: beschrijving,
+        icon: h(soort.icoon, { class: 'size-4' }),
+        class: `brand-toast ${soort.klasse}`,
+        duration: soort.duur,
+    });
+}
+
 export function initializeFlashToast(): void {
     router.on('flash', (event) => {
         const flash = (event as CustomEvent).detail?.flash;
@@ -60,13 +85,7 @@ export function initializeFlashToast(): void {
         }
 
         const naam = soorten[data.type] ? data.type : oudeNamen[data.type];
-        const soort = soorten[naam] ?? soorten.melding;
 
-        toast(data.message, {
-            description: data.description,
-            icon: h(soort.icoon, { class: 'size-4' }),
-            class: `brand-toast ${soort.klasse}`,
-            duration: soort.duur,
-        });
+        toonToast(data.message, naam, data.description);
     });
 }

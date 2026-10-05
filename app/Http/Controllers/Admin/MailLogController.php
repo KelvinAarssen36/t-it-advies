@@ -6,6 +6,7 @@ use App\Enums\MailStatus;
 use App\Http\Controllers\Controller;
 use App\Models\MailLog;
 use App\Support\Datum;
+use App\Support\Zoekterm;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -26,14 +27,37 @@ class MailLogController extends Controller
         ];
 
         $logs = MailLog::query()
-            ->when($filters['search'], fn ($query, string $search) => $query->where(
-                fn ($query) => $query
-                    ->where('subject', 'like', "%{$search}%")
-                    ->orWhere('mailable', 'like', "%{$search}%")
-                    ->orWhere('to', 'like', "%{$search}%")
-            ))
+            ->when($filters['search'], function ($query, string $search) {
+                /*
+                 * Via `Zoekterm`, want `_` betekent in een LIKE "één
+                 * willekeurig teken" en staat in heel veel e-mailadressen.
+                 * Dit scherm was de laatste plek die dat nog zelf deed, en
+                 * sinds de bevestigingsmail staan hier adressen van
+                 * bezoekers in -- dus zoeken op `jan_de_vries@...` mag niet
+                 * ook het adres van iemand anders opleveren. Zie AGENTS.md.
+                 */
+                $patroon = Zoekterm::patroon($search);
+                $teken = Zoekterm::TEKEN;
+
+                $query->where(fn ($q) => $q
+                    ->whereRaw("subject like ? escape '{$teken}'", [$patroon])
+                    ->orWhereRaw("mailable like ? escape '{$teken}'", [$patroon])
+                    ->orWhereRaw("`to` like ? escape '{$teken}'", [$patroon]));
+            })
             ->when($filters['status'], fn ($query, string $status) => $query->where('status', $status))
-            ->latest('sent_at')
+
+            /*
+             * Op `created_at` en niet op `sent_at`.
+             *
+             * **Anders zakt precies de interessante regel naar beneden.**
+             * Een mail die nooit is verstuurd heeft geen `sent_at` -- zie
+             * MeldtMislukteVerzending -- en NULL sorteert bij aflopend
+             * sorteren achteraan. De mislukte verzending van vandaag kwam
+             * dan onder de geslaagde van vorig jaar te staan. Voor een
+             * geslaagde mail verandert er niets: `RecordOutgoingMail` zet
+             * `sent_at` op hetzelfde moment als `created_at`.
+             */
+            ->latest('created_at')
             ->paginate(25)
             ->withQueryString()
             ->through(fn (MailLog $log) => [

@@ -147,7 +147,7 @@ class PasskeyScreenTest extends TestCase
         $component = $this->zonderCommentaar('components/PasskeyVerify.vue');
 
         $this->assertStringContainsString("t('Inloggen met een passkey')", $component);
-        $this->assertStringContainsString("t('Of log in met je e-mailadres')", $component);
+        $this->assertStringContainsString("t('Of met je e-mailadres')", $component);
     }
 
     /**

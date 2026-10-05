@@ -15,10 +15,12 @@ import {
     // Onze eigen Heading.vue heet ook zo; vandaar de andere naam hier.
     Heading as KopIcoon,
     Image,
+    Inbox,
     Languages,
     LayoutList,
     Lightbulb,
     Mail,
+    MessageSquare,
     Milestone,
     MousePointerClick,
     Pencil,
@@ -49,6 +51,7 @@ import VerlaatPortaal from '@/components/VerlaatPortaal.vue';
 import { Button } from '@/components/ui/button';
 import { t } from '@/lib/i18n';
 import { dashboard as adminDashboard } from '@/routes/admin';
+import adminAanvragen from '@/routes/admin/submissions';
 import adminActivity from '@/routes/admin/activity';
 import adminLegal from '@/routes/admin/legal';
 import adminMail from '@/routes/admin/mail';
@@ -63,6 +66,7 @@ import { edit as editSecurity } from '@/routes/security';
 import site from '@/routes/site';
 import website from '@/routes/website';
 import certificatenRoutes from '@/routes/website/certificaten';
+import contactRoutes from '@/routes/website/contact';
 import dienstenRoutes from '@/routes/website/diensten';
 import statistiekenRoutes from '@/routes/website/statistieken';
 import kop from '@/routes/website/kop';
@@ -580,6 +584,20 @@ defineOptions({
                                     )
                                 }}
                             </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Op datzelfde scherm staan twee voorbeelden van je mail. Het eerste is de bevestiging die een bezoeker krijgt, met jouw eigen tekst erin -- dat is niet een plaatje maar de echte mail. Het tweede toont de bouwstenen: een knop, een uitgelicht vak en een tabel. Die komen voor in de meldingen die jij krijgt, niet in de bevestiging, en daarom staan ze apart.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Daar kies je ook hoe je mail eruitziet. "Licht" is een witte mail met je merkkleur als accent; "Huisstijl" is donkerblauw, zoals je website. Dat tweede is mooier, maar in een enkel ouder mailprogramma kan de donkere achtergrond wegvallen -- daarom staat licht standaard aan. Je ziet het verschil meteen in het voorbeeld eronder, en je kunt altijd terug.',
+                                    )
+                                }}
+                            </p>
                         </UitlegKaart>
 
                         <UitlegKaart
@@ -649,6 +667,13 @@ defineOptions({
                                 {{
                                     $t(
                                         'Wat daar staat wordt op dat moment uit je instellingen gelezen. Er staat dus nooit dat iets je beschermt terwijl het niet aanstaat -- dat zou erger zijn dan geen scherm, want dan denk je beschermd te zijn.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Gaat er iets mis, dan krijg je daar binnen het uur een mail over. Dat gebeurt bij drie dingen: veel mislukte inlogpogingen, mail die niet aankomt, en post die blijft liggen. Dat laatste klinkt vaag maar is de belangrijkste van de drie: je website zet een bericht eerst in een rij en verstuurt het daarna. Loopt dat vast, dan lijkt alles goed te gaan -- de bezoeker krijgt zijn bedankje en de aanvraag staat in je portaal -- terwijl jij geen mail krijgt. Komt die melding voorbij, stuur hem dan door; het is iets aan de server en niet aan je website.',
                                     )
                                 }}
                             </p>
@@ -1104,6 +1129,77 @@ defineOptions({
                         </UitlegKaart>
 
                         <UitlegKaart
+                            :titel="$t('Contact')"
+                            :icoon="MessageSquare"
+                        >
+                            <p>
+                                {{
+                                    $t(
+                                        'Je contactformulier. Hier bepaal je drie dingen: waar bezoekers uit kunnen kiezen, wat ze moeten invullen, en wat ze terugkrijgen zodra ze op versturen drukken.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'De onderwerpen zijn de keuzes die een bezoeker krijgt bij "Onderwerp" -- bijvoorbeeld "Vrijblijvend gesprek" of "Offerte aanvragen". Hoe duidelijker die zijn, hoe beter je vooraf weet waar een bericht over gaat. Zet je er geen in, dan typt hij zelf iets; dat mag ook.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Bij een onderwerp kun je "Dit onderwerp uitlichten" aanvinken. Dat verandert niets op je website: het zorgt ervoor dat een aanvraag met dát onderwerp eruit springt in je postbus, met een sterretje en een gele tint. Handig voor spoed, zodat je in één blik ziet wat voorgaat. Je volgorde blijft gewoon zoals je hem had gesleept.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Vul je bij een onderwerp ook het Engels in, dan krijgt een Engelse bezoeker die naam te zien. In je eigen postbus staat altijd de naam in jouw taal -- ook bij een bericht van een Engelse bezoeker, zodat je lijst één taal blijft. Welke taal hij zelf gebruikte staat bij het bericht.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Bij de velden kies je per veld of het er staat en of het moet. Naam, e-mailadres en bericht staan vast: zonder die drie kun je niemand antwoorden. Bedrijfsnaam en telefoonnummer staan standaard uit. Bedenk wel: hoe meer je verplicht maakt, hoe minder berichten je krijgt.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Onder "Weergave" kies je of het formulier onderaan je website staat of dat er alleen een knop staat die naar een eigen contactpagina gaat. Dat tweede houdt je website korter en geeft je een adres dat je kunt delen, bijvoorbeeld op LinkedIn.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Onder "Bevestigingsmail" schrijf je wat iemand terugkrijgt. Die mail is vaak het eerste dat hij van je ziet, dus hij mag goed klinken. Vulde hij het formulier op de Engelse versie van je site in, dan krijgt hij automatisch de Engelse tekst.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Onder de verstuurknop staat ook je e-mailadres. Dat is er voor het geval het formulier het even niet doet -- bijvoorbeeld als de spamcontrole niet kan laden omdat er ergens anders iets hapert. Dan kan iemand je nog gewoon mailen in plaats van af te haken.',
+                                    )
+                                }}
+                            </p>
+
+                            <template #voorbeeld>
+                                <Button variant="outline" size="sm" as-child>
+                                    <Link :href="contactRoutes.index()">
+                                        <MessageSquare class="size-4" />
+                                        {{ $t('Open Contact') }}
+                                    </Link>
+                                </Button>
+                            </template>
+                        </UitlegKaart>
+
+                        <UitlegKaart
                             :titel="$t('Een logo bijsnijden')"
                             :icoon="Image"
                             :onder="$t('Ervaring')"
@@ -1254,6 +1350,60 @@ defineOptions({
                             }}
                         </p>
 
+                        <UitlegKaart :titel="$t('Aanvragen')" :icoon="Inbox">
+                            <p>
+                                {{
+                                    $t(
+                                        'Alles wat er via je contactformulier binnenkomt staat hier. Klik een regel open en je ziet het hele bericht, het e-mailadres, en wat hij verder heeft ingevuld. Een ongelezen aanvraag heeft een streepje in de accentkleur, zodat je in één blik ziet wat er nog ligt.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Met de twee keuzelijsten bovenaan kijk je gerichter: op stand (alleen ongelezen of onbeantwoord) en op onderwerp. Die twee werken samen, en samen met het zoekveld. Bij onderwerp staat onderaan ook "Zelf ingevuld" -- dat zijn de bezoekers die hun eigen onderwerp typten, en daar zit vaak iets wat nog niet in je lijst staat.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Antwoorden doe je niet hier maar vanuit je eigen mail -- je krijgt elk bericht ook gewoon toegestuurd, en je kunt er rechtstreeks op antwoorden. Dit scherm is er om bij te houden wat je al hebt gedaan.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Een aanvraag staat hier al zodra hij is opgeslagen, en dat gebeurt vóór de mails eruit gaan. Die twee kunnen dus los van elkaar misgaan: staat er een aanvraag waar je geen mail van hebt gekregen, kijk dan onder Beheer → Mail of hij is aangekomen. Lukt het versturen niet, dan krijg je daar binnen het uur ook een melding over. Het bericht zelf is in dat geval niet weg -- het staat hier.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Daarvoor zijn de twee vakjes vóór elke regel: een vinkje voor gelezen en een pijltje voor beantwoord. Je kunt ze meteen aantikken, zonder de regel eerst open te klappen. Die zet je zelf; de website raadt het niet. Beantwoord zet gelezen meteen mee aan, want het een kan niet zonder het ander.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Een aanvraag verdwijnt na een jaar vanzelf. Dat staat ook in je privacyverklaring, dus het is een belofte aan je bezoeker. Wil je er eerder een weg, bijvoorbeeld omdat iemand daarom vraagt, dan kan dat met het prullenbakje -- je moet dan wel een code uit je app invullen.',
+                                    )
+                                }}
+                            </p>
+
+                            <template #voorbeeld>
+                                <Button variant="outline" size="sm" as-child>
+                                    <Link :href="adminAanvragen.index()">
+                                        <Inbox class="size-4" />
+                                        {{ $t('Open Aanvragen') }}
+                                    </Link>
+                                </Button>
+                            </template>
+                        </UitlegKaart>
+
                         <UitlegKaart :titel="$t('Mail')" :icoon="Mail">
                             <p>
                                 {{
@@ -1346,7 +1496,14 @@ defineOptions({
                             <p>
                                 {{
                                     $t(
-                                        'Zijn bericht via het contactformulier staat in je mailbox, nergens anders. Zoek op zijn e-mailadres, stuur hem wat je vindt, en verwijder het als hij daarom vraagt. Op de website zelf staat het niet.',
+                                        'Zijn bericht via het contactformulier staat in je portaal, onder Beheer → Aanvragen. Daar blijft het staan zolang de bewaartermijn loopt die onderaan dat scherm staat. Zoek op zijn e-mailadres, stuur hem wat je vindt, en verwijder het als hij daarom vraagt -- dat kun je hier zelf doen.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'In je eigen mailbox staat datzelfde bericht ook, want het is naar je toegestuurd. Dat moet je daar apart weghalen; dat kan de website niet voor je doen.',
                                     )
                                 }}
                             </p>
@@ -1367,7 +1524,14 @@ defineOptions({
                             <p>
                                 {{
                                     $t(
-                                        'Verder is er niets, en dat is prettig om te weten voordat je gaat zoeken. In het mailoverzicht staat alleen jouw eigen adres als ontvanger, dus daar is hij niet te vinden. De sessie van zijn bezoek verloopt na twee uur en ruimt zichzelf op. En uit de bezoekcijfers valt niets te halen en niets te verwijderen: daar staan alleen aantallen per dag in. Dat mag je gewoon zo antwoorden.',
+                                        'Er is nog één plek, en die is kort: in het mailoverzicht staat zijn adres als ontvanger van de bevestiging die hij kreeg. Dat is een regel met een tijdstip en een status, zonder de inhoud van zijn bericht, en hij verdwijnt vanzelf. Noem hem wel, want hij hoort erbij.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Daarmee heb je ze gehad. De sessie van zijn bezoek verloopt na twee uur en ruimt zichzelf op. En uit de bezoekcijfers valt niets te halen en niets te verwijderen: daar staan alleen aantallen per dag in. Dat mag je gewoon zo antwoorden.',
                                     )
                                 }}
                             </p>
@@ -1382,7 +1546,7 @@ defineOptions({
                             <p>
                                 {{
                                     $t(
-                                        'Vind je daar niemand, dan zegt het scherm erbij wat je daarna moet doen: zoek óók in je mailbox op dat adres. Berichten uit het contactformulier komen daar binnen en nergens anders, dus daar kan nog wel iets van hem staan. Pas als je daar ook niets vindt, kun je antwoorden dat je niets van hem hebt.',
+                                        'Vind je daar niemand, dan zegt het scherm erbij wat je daarna moet doen: zoek óók in je mailbox op dat adres. Een bericht dat ouder is dan de bewaartermijn staat niet meer in je portaal, maar kan daar nog wel liggen. Pas als je daar ook niets vindt, kun je antwoorden dat je niets van hem hebt.',
                                     )
                                 }}
                             </p>

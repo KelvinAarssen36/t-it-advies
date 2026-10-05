@@ -7607,7 +7607,788 @@ button:hover > .brand-verlaat,
       doet: je mailprogramma gaat open. Een adres dat eruitziet als tekst
       laat de bezoeker kopiëren en plakken.
     */
-    .brand-privacy-mail {
+    /*
+      Het opschrift boven de kop van de contactpagina.
+
+      Dezelfde vorm als het opschrift boven een blok op de landing: klein,
+      in hoofdletters, in de accentkleur. Zie SectionHeading.
+    */
+    .brand-privacy-opschrift {
+        font-size: 0.6875rem;
+        font-weight: 500;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--brand-cyan);
+    }
+
+    /* --- Het contactformulier ----------------------------------------- */
+
+    /*
+      Het formulier als kaart.
+
+      **Hiervoor stonden de velden los op de achtergrond**, en dat was de
+      klacht: te kaal. Een formulier is één handeling, en een kaart zegt
+      dat -- je kijkt naar één ding in plaats van naar vier losse vakken
+      die toevallig onder elkaar staan.
+    */
+    .brand-contactformulier {
+        margin-top: 2.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        border-radius: 1rem;
+        border: 1px solid var(--brand-border-dark-strong);
+        background-color: color-mix(
+            in srgb,
+            var(--brand-navy-raised) 55%,
+            transparent
+        );
+        /*
+          Een gloed in de linkerbovenhoek. Geen `::before`: een absoluut
+          geplaatst pseudo-element schildert over de velden heen, en dan
+          moet alles eronder een z-index krijgen. Zelfde val als bij het
+          bezoekblok op het dashboard.
+        */
+        background-image: radial-gradient(
+            120% 80% at 0% 0%,
+            color-mix(in srgb, var(--brand-cyan) 7%, transparent) 0%,
+            transparent 60%
+        );
+        padding: 1.5rem;
+    }
+
+    @media (min-width: 40rem) {
+        .brand-contactformulier {
+            padding: 2rem;
+        }
+    }
+
+    /*
+      De velden in twee kolommen vanaf 40rem.
+
+      Naam en e-mailadres naast elkaar, het onderwerp en het bericht over
+      de volle breedte. Een formulier dat één kolom blijft terwijl er
+      ruimte is, leest als een enquête -- je ziet niet dat het kort is.
+    */
+    .brand-contactvelden {
+        display: grid;
+        gap: 1.1rem;
+    }
+
+    @media (min-width: 40rem) {
+        .brand-contactvelden {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .brand-contactveld-vak.is-breed {
+            grid-column: 1 / -1;
+        }
+    }
+
+    .brand-contactveld-vak {
+        display: grid;
+        gap: 0.5rem;
+    }
+
+    /*
+      Het veld dat de aandacht heeft licht zijn rand op.
+
+      Subtiel en op het vak en niet op de invoer zelf: dan beweegt het
+      label mee en zie je waar je bent zonder dat er iets verspringt.
+    */
+    .brand-contactveld-vak:focus-within > label {
+        color: var(--brand-cyan);
+        transition: color 150ms ease;
+    }
+
+    /*
+      Het merkje "uitgelicht" in de onderwerpentabel.
+
+      Zelfde vorm als de andere merkjes op die schermen, in de accentkleur:
+      dit is een keuze van de eigenaar en geen waarschuwing.
+    */
+    .brand-uitgelicht {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        border-radius: 999px;
+        border: 1px solid color-mix(in srgb, var(--brand-cyan) 35%, transparent);
+        background-color: color-mix(
+            in srgb,
+            var(--brand-cyan) 10%,
+            transparent
+        );
+        padding: 0.05rem 0.45rem;
+        font-size: 0.7rem;
+        font-weight: 500;
+        color: var(--brand-cyan);
+    }
+
+    /*
+      Het formulier is onderweg gewijzigd.
+
+      **Bewust niet de stijl van het geluktvak en bewust niet rood.** Dit
+      is geen fout van de bezoeker en ook geen succes: zijn tekst staat er
+      nog en hij hoeft alleen opnieuw te versturen. Daarom de
+      waarschuwingskleur van het huis, in een vlak binnen het formulier --
+      zodat het blijft staan bij wat hij heeft getypt.
+
+      Hij kwam eerst als `flash.status` binnen, en dat is hetzelfde kanaal
+      als een geslaagde inzending; de bezoeker zag dus "Aanvraag gelukt"
+      terwijl er niets was opgeslagen. Zie ContactRequest::after().
+    */
+    .brand-contactwaarschuwing {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.6rem;
+        border-radius: 0.6rem;
+        border: 1px solid color-mix(in srgb, var(--warning) 45%, transparent);
+        background-color: color-mix(in srgb, var(--warning) 10%, transparent);
+        padding: 0.7rem 0.85rem;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        text-wrap: pretty;
+        color: color-mix(in srgb, var(--warning) 75%, #fff);
+    }
+
+    /*
+      Gelukt. Dit vak neemt de plek van het formulier in.
+
+      **Dat is het hele punt**: eerst bleef het lege formulier staan met
+      een regel erboven, en dan lijkt het alsof er niets is gebeurd. Nu is
+      er geen formulier meer om naar te kijken.
+    */
+    .brand-contactgelukt {
+        margin-top: 2.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+        border-radius: 1rem;
+        border: 1px solid color-mix(in srgb, var(--success) 40%, transparent);
+        background-color: color-mix(in srgb, var(--success) 8%, transparent);
+        padding: 2.5rem 1.5rem;
+        text-align: center;
+    }
+
+    .brand-contactgelukt-vink {
+        display: flex;
+        height: 3rem;
+        width: 3rem;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9999px;
+        background-color: color-mix(in srgb, var(--success) 15%, transparent);
+        color: var(--success);
+    }
+
+    /*
+      De uitnodiging met een knop, als de eigenaar voor een eigen
+      contactpagina heeft gekozen.
+    */
+    .brand-contactknop-vak {
+        margin-top: 2.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.25rem;
+        border-radius: 1rem;
+        border: 1px solid var(--brand-border-dark-strong);
+        background-color: color-mix(
+            in srgb,
+            var(--brand-navy-raised) 55%,
+            transparent
+        );
+        padding: 1.75rem;
+    }
+
+    /*
+      De keuze tussen de twee mailstijlen.
+
+      **Twee kaarten en geen keuzelijst.** Dit is een keuze die je één keer
+      maakt en die je wil kunnen zien: het verschil tussen licht en de
+      huisstijl is niet alleen smaak -- de een komt overal goed aan, de
+      ander is mooier. Die uitleg hoort naast de keuze te staan en niet in
+      een lijstje waar je naar moet gokken.
+    */
+    .brand-mailstijl {
+        display: grid;
+        gap: 0.6rem;
+    }
+
+    @media (min-width: 40rem) {
+        .brand-mailstijl {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    .brand-mailstijl-kaart {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.7rem;
+        cursor: pointer;
+        border-radius: 0.75rem;
+        border: 1px solid var(--border);
+        background-color: color-mix(in srgb, var(--muted) 25%, transparent);
+        padding: 0.85rem 1rem;
+        text-align: left;
+        transition:
+            border-color 150ms ease,
+            background-color 150ms ease;
+    }
+
+    .brand-mailstijl-kaart:hover:not(:disabled) {
+        border-color: color-mix(in srgb, var(--brand-cyan) 45%, transparent);
+    }
+
+    .brand-mailstijl-kaart:disabled {
+        cursor: default;
+        opacity: 0.7;
+    }
+
+    .brand-mailstijl-kaart[data-gekozen] {
+        border-color: color-mix(in srgb, var(--brand-cyan) 55%, transparent);
+        background-color: color-mix(in srgb, var(--brand-cyan) 8%, transparent);
+    }
+
+    /* Een rondje dat vol wordt: hetzelfde teken als elders in het portaal. */
+    .brand-mailstijl-vink {
+        display: flex;
+        height: 1.25rem;
+        width: 1.25rem;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        margin-top: 0.1rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        transition:
+            background-color 150ms ease,
+            border-color 150ms ease;
+    }
+
+    .brand-mailstijl-kaart[data-gekozen] .brand-mailstijl-vink {
+        border-color: transparent;
+        background-color: var(--brand-cyan);
+        color: var(--brand-navy);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .brand-mailstijl-kaart,
+        .brand-mailstijl-vink {
+            transition: none;
+        }
+    }
+
+    /*
+      Het mailvoorbeeld op het scherm Weergave.
+
+      **Een witte lijst eromheen en niet de kleuren van het portaal.** Een
+      mail wordt gelezen in een mailprogramma en niet in dit scherm; zou het
+      vak meekleuren met licht of donker, dan ziet de eigenaar iets anders
+      dan zijn bezoeker krijgt. Het venster zelf is wit omdat de mail dat is.
+    */
+    /*
+      Het vak om het voorbeeld van de mail.
+
+      **De achtergrond volgt de mailstijl en niet het portaal.** Wat je
+      hier ziet is een mail en geen scherm, dus de lijst hoort de kleur van
+      die mail te hebben. Stond hij vast op wit, dan zie je bij de
+      huisstijl een witte flits terwijl het `iframe` laadt, en een witte
+      rand zodra de mail smaller is dan het vak.
+
+      De twee kleuren zijn de buitenste laag van de twee thema's:
+      `#f2f7fb` is `.wrapper` in atit.css, `--brand-navy` diezelfde laag in
+      atit-huisstijl.css.
+    */
+    .brand-mailvoorbeeld {
+        overflow: hidden;
+        border-radius: 0.75rem;
+        border: 1px solid var(--border);
+        background-color: #f2f7fb;
+    }
+
+    .brand-mailvoorbeeld[data-stijl='huisstijl'] {
+        background-color: var(--brand-navy);
+    }
+
+    .brand-mailvoorbeeld-venster {
+        display: block;
+        width: 100%;
+        height: 32rem;
+        border: 0;
+    }
+
+    @media (min-width: 48rem) {
+        .brand-mailvoorbeeld-venster {
+            height: 38rem;
+        }
+    }
+
+    /* --- Het scherm Aanvragen ----------------------------------------- */
+
+    /*
+      Eén aanvraag in de postbus.
+
+      **Een lijst met uitklapbare regels en geen tabel**, anders dan bij de
+      logboeken ernaast. Een aanvraag is geen rij met kolommen maar een
+      bericht: het ding dat je wil lezen is een alinea, en die past niet in
+      een cel. Vandaar één regel per aanvraag die openklapt.
+    */
+    .brand-aanvraag {
+        border-radius: 0.75rem;
+        border: 1px solid var(--border);
+        background-color: color-mix(in srgb, var(--muted) 25%, transparent);
+        transition: border-color 150ms ease;
+    }
+
+    /*
+      Een ongelezen aanvraag krijgt een streep in de accentkleur.
+
+      Links en niet als gekleurde achtergrond: je moet in één blik kunnen
+      zien hoeveel er nog open staan zonder dat de lijst een kleurenkaart
+      wordt.
+    */
+    .brand-aanvraag[data-ongelezen] {
+        border-left: 3px solid var(--brand-cyan);
+    }
+
+    /*
+      Een aanvraag met een uitgelicht onderwerp.
+
+      **Dit is waar uitlichten voor is.** De eigenaar zet een vinkje bij een
+      onderwerp -- spoed bijvoorbeeld -- en dan springt een aanvraag met dat
+      onderwerp eruit in zijn postbus. Op de site verandert er niets.
+
+      Een warme tint en niet de accentkleur: die is hier al bezet door
+      "ongelezen", en twee dingen in hetzelfde blauw vallen samen. Zo kun je
+      ze ook gecombineerd zien -- een ongelezen aanvraag over spoed heeft
+      een blauwe rand én een warme achtergrond.
+    */
+    .brand-aanvraag[data-uitgelicht] {
+        border-color: color-mix(in srgb, var(--warning) 40%, var(--border));
+        background-color: color-mix(in srgb, var(--warning) 7%, transparent);
+    }
+
+    .brand-aanvraag-ster {
+        color: var(--warning);
+    }
+
+    .brand-aanvraag:hover {
+        border-color: color-mix(in srgb, var(--brand-cyan) 30%, transparent);
+    }
+
+    /*
+      De regel: vinkjes, samenvatting, tijd.
+
+      **Geen `cursor: pointer` meer op het geheel.** Dit was zelf de knop
+      die openklapte; nu zit dat op de samenvatting ernaast, zodat de
+      vinkjes ervóór kunnen staan zonder een knop in een knop te worden.
+      Een handje over de hele regel zou nu beloven dat alles openklapt,
+      ook de vinkjes.
+    */
+    .brand-aanvraag-kop {
+        display: flex;
+        width: 100%;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.85rem 1rem;
+        text-align: left;
+    }
+
+    .brand-aanvraag-pijl {
+        transition: rotate 200ms ease;
+    }
+
+    .brand-aanvraag-pijl[data-open] {
+        rotate: 180deg;
+    }
+
+    /* Het woordje "nieuw" naast een ongelezen aanvraag. */
+    .brand-aanvraag-nieuw {
+        border-radius: 9999px;
+        background-color: color-mix(
+            in srgb,
+            var(--brand-cyan) 15%,
+            transparent
+        );
+        padding: 0.05rem 0.45rem;
+        font-size: 0.625rem;
+        font-weight: 500;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--brand-cyan);
+    }
+
+    .brand-aanvraag-inhoud {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        border-top: 1px solid var(--border);
+        padding: 1rem;
+    }
+
+    /*
+      Het bericht zelf.
+
+      `white-space: pre-wrap` houdt de witregels die de bezoeker heeft
+      gemaakt. Zonder dat wordt zijn alinea-indeling één blok tekst, en dan
+      leest het slechter dan in de mail die ernaast ligt.
+    */
+    .brand-aanvraag-bericht {
+        border-radius: 0.5rem;
+        background-color: color-mix(in srgb, var(--muted) 45%, transparent);
+        padding: 0.9rem 1rem;
+        font-size: 0.9375rem;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+
+    .brand-aanvraag-gegevens {
+        display: grid;
+        gap: 0.75rem;
+        font-size: 0.875rem;
+    }
+
+    @media (min-width: 40rem) {
+        .brand-aanvraag-gegevens {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    .brand-aanvraag-gegevens dt {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.6875rem;
+        font-weight: 500;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--brand-cyan);
+    }
+
+    .brand-aanvraag-gegevens dd {
+        margin-top: 0.15rem;
+        overflow-wrap: anywhere;
+    }
+
+    .brand-aanvraag-acties {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+        border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+        padding-top: 0.85rem;
+    }
+
+    /*
+      De twee vinkjes vóór de regel: gelezen en beantwoord.
+
+      **Ze stonden eerst als grote bollen ín het uitgeklapte vlak.** Dat
+      betekende dat je eerst een regel moest openklappen voordat je kon
+      afvinken, en afvinken is het enige dat je op dit scherm doet. Hier
+      staan ze altijd, zonder een klik vooraf.
+
+      Klein en vierkant, en niet de grote ronde bollen van eerst: er staan
+      er twee per regel en twintig regels op een pagina. Groot zouden ze
+      het scherm overnemen en de naam wegduwen, en dan ben je iets anders
+      aan het lezen dan wie je geschreven heeft.
+    */
+    .brand-aanvraag-vinkjes {
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .brand-aanvraag-vink {
+        display: flex;
+        height: 1.65rem;
+        width: 1.65rem;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.45rem;
+        border: 1px solid var(--border);
+        color: color-mix(in srgb, var(--muted-foreground) 55%, transparent);
+        transition:
+            border-color 150ms ease,
+            background-color 150ms ease,
+            color 150ms ease;
+    }
+
+    .brand-aanvraag-vink:hover {
+        border-color: color-mix(in srgb, var(--brand-cyan) 45%, transparent);
+        color: var(--foreground);
+    }
+
+    /*
+      Aan: gelezen krijgt de accentkleur, beantwoord groen.
+
+      Twee kleuren én twee tekens -- een vinkje en een antwoordpijl. Alleen
+      kleur is te weinig: wie kleuren slecht onderscheidt ziet dan twee
+      gevulde vakjes zonder verschil.
+    */
+    .brand-aanvraag-vink[data-aan] {
+        border-color: transparent;
+        background-color: var(--brand-cyan);
+        color: var(--brand-navy);
+    }
+
+    .brand-aanvraag-vink.is-groen[data-aan] {
+        background-color: var(--success);
+        color: #fff;
+    }
+
+    .brand-aanvraag-vink[data-aan]:hover {
+        border-color: transparent;
+    }
+
+    /*
+      De samenvatting ernaast is de knop die openklapt. Hij pakt de ruimte
+      die overblijft, zodat de vinkjes links en de tijd rechts op hun plek
+      blijven staan ongeacht de lengte van een naam.
+    */
+    .brand-aanvraag-samenvatting {
+        display: flex;
+        min-width: 0;
+        flex: 1;
+        cursor: pointer;
+        align-items: center;
+        gap: 0.75rem;
+        text-align: left;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .brand-aanvraag,
+        .brand-aanvraag-pijl,
+        .brand-aanvraag-vink {
+            transition: none;
+        }
+    }
+
+    /* --- De velden op het beheerscherm Contact ------------------------- */
+
+    /*
+      Eén veld van het contactformulier in het beheerscherm.
+
+      Een vergrendeld veld staat gedempt en met een slotje; zie
+      ContactVeldenVak voor waarom er geen tweede schuifje is.
+    */
+    .brand-contactveld {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        border-radius: 0.75rem;
+        border: 1px solid var(--border);
+        padding: 0.85rem 1rem;
+    }
+
+    @media (min-width: 40rem) {
+        .brand-contactveld {
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+        }
+    }
+
+    .brand-contactveld[data-vast] {
+        background-color: color-mix(in srgb, var(--muted) 25%, transparent);
+    }
+
+    .brand-contactveld-slot {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        border-radius: 9999px;
+        border: 1px solid var(--border);
+        padding: 0.05rem 0.45rem;
+        font-size: 0.6875rem;
+        font-weight: 400;
+        color: var(--muted-foreground);
+    }
+
+    /*
+      Een keuzekaart: een optie met uitleg eronder, als knop.
+
+      **Twee kaarten en geen keuzelijst.** Het verschil tussen de twee
+      weergaven van het contact zit niet in de naam maar in wat het voor de
+      bezoeker betekent, en dat is een regel uitleg per optie. In een
+      uitklaplijst zie je die regels niet.
+    */
+    .brand-keuzekaart {
+        display: flex;
+        cursor: pointer;
+        align-items: flex-start;
+        gap: 0.75rem;
+        border-radius: 0.75rem;
+        border: 1px solid var(--border);
+        padding: 0.9rem 1rem;
+        text-align: left;
+        transition:
+            border-color 150ms ease,
+            background-color 150ms ease;
+    }
+
+    .brand-keuzekaart:hover {
+        border-color: color-mix(in srgb, var(--brand-cyan) 35%, transparent);
+    }
+
+    .brand-keuzekaart[data-gekozen] {
+        border-color: color-mix(in srgb, var(--brand-cyan) 55%, transparent);
+        background-color: color-mix(in srgb, var(--brand-cyan) 8%, transparent);
+    }
+
+    .brand-keuzekaart-vink {
+        display: flex;
+        height: 1.25rem;
+        width: 1.25rem;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9999px;
+        border: 1px solid var(--border);
+        margin-top: 0.1rem;
+    }
+
+    .brand-keuzekaart[data-gekozen] .brand-keuzekaart-vink {
+        border-color: transparent;
+        background-color: var(--brand-cyan);
+        color: var(--brand-navy);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .brand-keuzekaart,
+        .brand-contactveld-vak:focus-within > label {
+            transition: none;
+        }
+    }
+
+    /*
+      De aparte contactpagina.
+
+      **Deze pagina had geen eigen opmaak en zag er daardoor onaf uit.** Het
+      formulier liep van rand tot rand, er was geen ruimte boven en onder,
+      en de kop ontbrak helemaal -- zie het commentaar in Contact.vue. De
+      kop en het visitekaartje ernaast staan hieronder; de breedte en de
+      ruimte komen van het omhulsel in de pagina zelf, net als bij
+      `/privacy`.
+    */
+    .brand-contactpagina-opschrift {
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--brand-cyan);
+    }
+
+    .brand-contactpagina-titel {
+        font-size: clamp(1.75rem, 4vw, 2.5rem);
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        line-height: 1.15;
+        text-wrap: balance;
+    }
+
+    /*
+      Het visitekaartje naast het formulier: naar wíe schrijf je.
+
+      Zelfde taal als de kaart om het formulier -- dezelfde rand, dezelfde
+      ronding, dezelfde gloed uit de hoek -- zodat het twee helften van één
+      geheel zijn en niet twee losse vlakken.
+    */
+    .brand-contactkaart {
+        display: flex;
+        height: fit-content;
+        flex-direction: column;
+        border-radius: 1rem;
+        border: 1px solid var(--brand-border-dark-strong);
+        background-color: color-mix(
+            in srgb,
+            var(--brand-navy-raised) 55%,
+            transparent
+        );
+        background-image: radial-gradient(
+            120% 80% at 100% 0%,
+            color-mix(in srgb, var(--brand-cyan) 7%, transparent) 0%,
+            transparent 60%
+        );
+        padding: 1.5rem;
+    }
+
+    /*
+      De foto als medaillon, met dezelfde ring als in de kop van de site.
+      `aspect-ratio` en `object-fit` samen: dan blijft hij rond ook als het
+      bestand ooit niet precies vierkant is.
+    */
+    .brand-contactkaart-foto {
+        width: 6rem;
+        height: 6rem;
+        border-radius: 999px;
+        border: 1px solid color-mix(in srgb, var(--brand-cyan) 30%, transparent);
+        aspect-ratio: 1;
+        object-fit: cover;
+    }
+
+    .brand-contactkaart-naam {
+        margin-top: 1rem;
+        font-size: 1.0625rem;
+        font-weight: 600;
+    }
+
+    .brand-contactkaart-rol {
+        margin-top: 0.15rem;
+        font-size: 0.875rem;
+        color: var(--muted-foreground);
+    }
+
+    .brand-contactkaart-streep {
+        margin: 1.25rem 0;
+        border: 0;
+        border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    }
+
+    .brand-contactkaart-lijst {
+        display: grid;
+        gap: 0.7rem;
+        font-size: 0.875rem;
+        color: var(--muted-foreground);
+    }
+
+    .brand-contactkaart-lijst > li {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        min-width: 0;
+    }
+
+    .brand-contactkaart-lijst svg {
+        color: var(--brand-cyan);
+    }
+
+    /*
+      Op de aparte pagina zet het raster de ruimte al, dus daar moet de
+      eigen bovenmarge van het formulier eraf.
+
+      Die marge hoort bij de sectievariant: daar staat het formulier ónder
+      een kop en heeft het die afstand nodig. In een rastercel zou hij het
+      formulier anderhalve centimeter lager zetten dan het visitekaartje
+      ernaast, en dan staan de twee kaarten niet meer op één lijn.
+    */
+    .brand-contactpagina-formulier > .brand-contactformulier {
+        margin-top: 0;
+    }
+
+    /*
+      Een mailto-link op de publieke site.
+
+      Heette `brand-privacy-mail`, omdat de privacyverklaring de eerste
+      pagina was die hem nodig had. Inmiddels staat hij ook op de
+      contactpagina en onder het contactformulier zelf, en dan is een naam
+      die één pagina noemt een uitnodiging om een bijna-kopie te maken.
+    */
+    .brand-sitemail {
         color: var(--brand-cyan);
         text-decoration: underline;
         text-decoration-color: color-mix(
@@ -7621,7 +8402,7 @@ button:hover > .brand-verlaat,
             text-decoration-color 150ms ease;
     }
 
-    .brand-privacy-mail:hover {
+    .brand-sitemail:hover {
         color: #fff;
         text-decoration-color: #fff;
     }
@@ -8274,65 +9055,85 @@ button:hover > .brand-verlaat,
       hoofdletters, in de accentkleur.
     */
     .brand-bezoekblok-label {
-        font-size: 0.625rem;
+        font-size: 0.5625rem;
         font-weight: 500;
         letter-spacing: 0.14em;
         text-transform: uppercase;
         color: var(--brand-cyan);
     }
 
-    /* Het totaal duwt zichzelf naar beneden; de kop blijft bovenaan. */
-    .brand-bezoekblok-totaal {
+    /*
+      De twee cijfers naast elkaar, met een streepje ertussen.
+
+      **Naast elkaar en niet gestapeld**, want de bovenste rij van het
+      dashboard is een platte strook. Gestapeld was dit blok twee regels
+      hoog en werd de hele rij mee omhoog getrokken; zie Dashboard.vue.
+
+      Het streepje staat er nog steeds, nu verticaal: zonder scheiding
+      lopen "1.284" en "12" in elkaar over en lijkt het één getal.
+    */
+    .brand-bezoekblok-cijfers {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: start;
+        gap: 0.7rem;
         margin-top: auto;
     }
 
-    /*
-      Het blok van vandaag staat los van het totaal, met een streepje
-      ertussen. Zonder die scheiding lopen de twee cijfers in elkaar over
-      en lijkt het één alinea.
-    */
-    .brand-bezoekblok-vandaag {
-        margin-top: 0.6rem;
-        border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-        padding-top: 0.5rem;
+    .brand-bezoekblok-cijfers::before {
+        content: '';
+        grid-column: 2;
+        align-self: stretch;
+        width: 1px;
+        background-color: color-mix(in srgb, var(--border) 70%, transparent);
     }
 
     /*
-      Het grote getal: het totaal van altijd.
+      De twee vakken staan in kolom 1 en 3; het streepje hierboven pakt
+      kolom 2. Expliciet, want anders zet de browser het eerste vak naast
+      het streepje en klapt de indeling om.
+    */
+    .brand-bezoekblok-vak {
+        grid-column: 1;
+        min-width: 0;
+    }
 
-      `clamp` omdat dit vlak meegroeit met de kolom: bij vier cijfers mag
-      het groot, en bij zeven moet het passen zonder af te breken.
+    .brand-bezoekblok-vak[data-vandaag] {
+        grid-column: 3;
+    }
+
+    /*
+      Het getal. `clamp` omdat dit vlak meegroeit met de kolom: bij vier
+      cijfers mag het groot, bij zeven moet het passen zonder af te
+      breken. Het plafond is laag gehouden omdat de rij een vaste hoogte
+      heeft -- een getal dat doorgroeit duwt de staafjes eronder weg.
     */
     .brand-bezoekblok-getal {
-        font-size: clamp(1.375rem, 4.5vw, 2rem);
+        font-size: clamp(1.125rem, 3.4vw, 1.5rem);
         font-weight: 600;
         font-variant-numeric: tabular-nums;
         letter-spacing: -0.02em;
-        line-height: 1.15;
+        line-height: 1.1;
     }
 
     /*
       Alleen het getal staat in de merkgradient, en niet de hele regel.
 
       `background-clip: text` maakt élke tekst in het element doorzichtig,
-      dus zou het woordje "weergaven" mee de gradient in gaan en daarmee
-      net zo hard roepen als het cijfer. Vandaar een eigen span om de
-      cijfers heen; `brand-text-gradient` staat er in de template naast en
-      zorgt voor de terugval als een browser dit niet kan.
+      dus zou een woord ernaast mee de gradient in gaan en net zo hard
+      roepen als het cijfer. Vandaar een eigen span om de cijfers heen;
+      `brand-text-gradient` staat er in de template naast en zorgt voor de
+      terugval als een browser dit niet kan.
     */
     .brand-bezoekblok-cijfer {
         font-variant-numeric: tabular-nums;
     }
 
-    /* Het aantal bezoekers van vandaag mag opvallen tussen de rest. */
-    .brand-bezoekblok-nadruk {
-        font-weight: 600;
-        color: var(--foreground);
-    }
-
-    .brand-bezoekblok-eenheid {
-        font-size: 0.45em;
-        font-weight: 500;
+    /* Wat het getal betekent, klein eronder. */
+    .brand-bezoekblok-onder {
+        font-size: 0.6875rem;
+        line-height: 1.3;
+        text-wrap: pretty;
         color: var(--muted-foreground);
     }
 
@@ -8344,7 +9145,7 @@ button:hover > .brand-verlaat,
     /* Nog niets gemeten: geen nul, maar een zin. */
     .brand-bezoekblok-leeg {
         margin-top: auto;
-        font-size: 1.125rem;
+        font-size: 1rem;
         font-weight: 600;
         text-wrap: pretty;
     }
@@ -8352,15 +9153,17 @@ button:hover > .brand-verlaat,
     /*
       De laatste twee weken als vorm, zonder cijfers en zonder as.
 
-      Ze staan onderaan en nemen de ruimte die overblijft; `align-items:
-      flex-end` zet ze op de bodem in plaats van ze uit te rekken.
+      Laag gehouden omdat de bovenste rij van het dashboard een vaste
+      hoogte heeft: dit blok moet er met kop, twee cijfers en de staafjes
+      samen in passen. Maak hem niet hoger zonder naar Dashboard.vue te
+      kijken.
     */
     .brand-bezoekblok-staven {
         display: flex;
         align-items: flex-end;
         gap: 2px;
-        margin-top: 0.6rem;
-        height: 1.75rem;
+        margin-top: 0.45rem;
+        height: 1.25rem;
     }
 
     .brand-bezoekblok-staaf {

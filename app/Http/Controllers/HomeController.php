@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ContactWeergave;
 use App\Enums\PageSectionKey;
 use App\Models\Certificate;
+use App\Models\ContactSetting;
 use App\Models\Education;
 use App\Models\Experience;
 use App\Models\PageSection;
 use App\Models\SectionHeading;
 use App\Models\Service;
 use App\Models\Statistic;
+use App\Support\Contact\Contactformulier;
 use App\Support\Loopbaan;
 use App\Support\Page\SectionContent;
 use Illuminate\Database\Eloquent\Collection;
@@ -31,8 +34,11 @@ use Inertia\Response;
  */
 class HomeController extends Controller
 {
-    public function __invoke(SectionContent $inhoud, Loopbaan $loopbaanCijfers): Response
-    {
+    public function __invoke(
+        SectionContent $inhoud,
+        Loopbaan $loopbaanCijfers,
+        Contactformulier $formulier,
+    ): Response {
         $secties = $this->secties($inhoud);
 
         /*
@@ -175,7 +181,63 @@ class HomeController extends Controller
             'statisticHeading' => in_array(PageSectionKey::Statistieken->value, $secties, true)
                 ? SectionHeading::voor(PageSectionKey::Statistieken)->voorDeSite()
                 : null,
+
+            /*
+             * Het contactformulier.
+             *
+             * **De velden komen van de server en staan niet in de Vue.**
+             * De eigenaar bepaalt welke er staan en welke moeten, en die
+             * lijst moet dezelfde zijn als waarop gevalideerd wordt --
+             * anders krijgt een bezoeker een foutmelding over een veld dat
+             * hij niet ziet. Eén bron: `Contactformulier`.
+             *
+             * `null` als het onderdeel niet op de pagina staat, of als de
+             * eigenaar heeft gekozen voor een eigen contactpagina. Dan
+             * staat er op de landing een knop en geen formulier.
+             */
+            'contact' => $this->contactblok($secties, $formulier),
         ]);
+    }
+
+    /**
+     * Wat de contactsectie op de landingspagina nodig heeft.
+     *
+     * @param  array<int, string>  $secties
+     * @return array<string, mixed>|null
+     */
+    private function contactblok(array $secties, Contactformulier $formulier): ?array
+    {
+        if (! in_array(PageSectionKey::Contact->value, $secties, true)) {
+            return null;
+        }
+
+        $instellingen = ContactSetting::huidige();
+        $eigenPagina = $instellingen->display === ContactWeergave::EigenPagina;
+
+        return [
+            'kop' => SectionHeading::voor(PageSectionKey::Contact)->voorDeSite(),
+
+            /*
+             * Bij een eigen contactpagina staat hier alleen een knop, dus
+             * dan hoeven de velden niet mee. Dat is niet alleen zuinig:
+             * het formulier staat dan op één plek, en een tweede kopie op
+             * de landing zou een tweede Turnstile-widget betekenen.
+             */
+            'eigenPagina' => $eigenPagina,
+            'velden' => $eigenPagina ? [] : $formulier->voorDeSite(),
+            'onderwerpen' => $eigenPagina ? [] : $formulier->onderwerpenVoorDeSite(),
+            'eigenOnderwerpToegestaan' => $formulier->eigenOnderwerpToegestaan(),
+            'instellingen' => $formulier->versie(),
+
+            /*
+             * Het publieke adres, als uitweg onder het formulier. Het
+             * tokenveld van Turnstile is verplicht, dus laadt Cloudflare
+             * niet dan is het formulier niet te versturen -- en dan hoort
+             * er een andere manier te staan om iemand te bereiken. Zie
+             * ContactFormulier.vue.
+             */
+            'email' => config('site.email'),
+        ];
     }
 
     /**

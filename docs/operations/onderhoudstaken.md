@@ -11,16 +11,17 @@ De taken die vanzelf draaien: opruimen en alarmeren. Ze staan in
 
 ## Het overzicht
 
-| Tijd    | Taak                    | Wat het doet                                                                                                                                                                                     |
-| ------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| elk uur | `security:report`       | Meldt pieken in mislukte pogingen en mailproblemen                                                                                                                                               |
-| 03:05   | `bezoek:prune-codes`    | Gooit de bezoekerscodes en het zout van voorbije dagen weg. **Tweede slot:** dat gebeurt normaal al bij het eerste bezoek na middernacht. Zie [bezoekcijfers](../architecture/bezoekcijfers.md). |
-| 03:10   | `security:prune-events` | Ruimt `security_events` op. Termijn: `SECURITY_LOG_RETENTION_DAYS`, standaard een jaar.                                                                                                          |
-| 03:20   | `mail:prune-logs`       | Ruimt `mail_logs` op. Termijn: `MAIL_LOG_RETENTION_DAYS`, standaard 180 dagen.                                                                                                                   |
-| 03:25   | `activity:prune`        | Ruimt het activiteitenlogboek op. Eigen termijn: `ACTIVITY_LOG_RETENTION_DAYS`, standaard een jaar. Zie [activiteitenlogboek](../security/activiteitenlogboek.md).                               |
-| 03:30   | `queue:prune-failed`    | Ruimt mislukte jobs ouder dan 14 dagen op                                                                                                                                                        |
-| 03:40   | `queue:prune-batches`   | Ruimt afgeronde batches op                                                                                                                                                                       |
-| 03:50   | `auth:clear-resets`     | Ruimt verlopen wachtwoordherstel-tokens op                                                                                                                                                       |
+| Tijd    | Taak                    | Wat het doet                                                                                                                                                                                                                                            |
+| ------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| elk uur | `security:report`       | Meldt pieken in mislukte pogingen en mailproblemen                                                                                                                                                                                                      |
+| 03:05   | `bezoek:prune-codes`    | Gooit de bezoekerscodes en het zout van voorbije dagen weg. **Tweede slot:** dat gebeurt normaal al bij het eerste bezoek na middernacht. Zie [bezoekcijfers](../architecture/bezoekcijfers.md).                                                        |
+| 03:10   | `security:prune-events` | Ruimt `security_events` op. Termijn: `SECURITY_LOG_RETENTION_DAYS`, standaard een jaar.                                                                                                                                                                 |
+| 03:15   | `contact:prune`         | Ruimt de contactaanvragen op. Termijn: `CONTACT_RETENTION_DAYS`, standaard een jaar. **De enige van deze taken die over inhoud van een bezoeker gaat**, en de termijn staat in de privacyverklaring. Zie [contact](../architecture/modules/contact.md). |
+| 03:20   | `mail:prune-logs`       | Ruimt `mail_logs` op. Termijn: `MAIL_LOG_RETENTION_DAYS`, standaard 180 dagen.                                                                                                                                                                          |
+| 03:25   | `activity:prune`        | Ruimt het activiteitenlogboek op. Eigen termijn: `ACTIVITY_LOG_RETENTION_DAYS`, standaard een jaar. Zie [activiteitenlogboek](../security/activiteitenlogboek.md).                                                                                      |
+| 03:30   | `queue:prune-failed`    | Ruimt mislukte jobs ouder dan 14 dagen op                                                                                                                                                                                                               |
+| 03:40   | `queue:prune-batches`   | Ruimt afgeronde batches op                                                                                                                                                                                                                              |
+| 03:50   | `auth:clear-resets`     | Ruimt verlopen wachtwoordherstel-tokens op                                                                                                                                                                                                              |
 
 > **Deze tabel stond verhaspeld**: twee regels waren in elkaar geschoven,
 > waardoor `activity:prune` op 03:10 leek te staan en
@@ -53,18 +54,26 @@ precies goed, want die hangen nergens aan vast.
 
 ### Bewaartermijnen
 
-| Wat                        | Variabele                     | Standaard                |
-| -------------------------- | ----------------------------- | ------------------------ |
-| Tabel `security_events`    | `SECURITY_LOG_RETENTION_DAYS` | 365 dagen                |
-| Bestand `security.log`     | `SECURITY_LOG_DAILY_DAYS`     | 90 dagen                 |
-| Tabel `mail_logs`          | `MAIL_LOG_RETENTION_DAYS`     | 180 dagen                |
-| Tabel `activity_entries`   | `ACTIVITY_LOG_RETENTION_DAYS` | 365 dagen                |
-| Tabel `site_visitor_codes` | geen -- en met opzet          | één dag, niet instelbaar |
+| Wat                         | Variabele                     | Standaard                |
+| --------------------------- | ----------------------------- | ------------------------ |
+| Tabel `security_events`     | `SECURITY_LOG_RETENTION_DAYS` | 365 dagen                |
+| Tabel `contact_submissions` | `CONTACT_RETENTION_DAYS`      | 365 dagen                |
+| Bestand `security.log`      | `SECURITY_LOG_DAILY_DAYS`     | 90 dagen                 |
+| Tabel `mail_logs`           | `MAIL_LOG_RETENTION_DAYS`     | 180 dagen                |
+| Tabel `activity_entries`    | `ACTIVITY_LOG_RETENTION_DAYS` | 365 dagen                |
+| Tabel `site_visitor_codes`  | geen -- en met opzet          | één dag, niet instelbaar |
 
 **Die laatste heeft bewust geen instelling.** Eén dag is wat er in de
 privacyverklaring aan de bezoeker wordt beloofd, en een knop om er dertig
 van te maken is een knop om die belofte te breken. Zie
 [bezoekcijfers](../architecture/bezoekcijfers.md).
+
+> **`CONTACT_RETENTION_DAYS` is de enige termijn hierboven die over inhoud
+> van een bezoeker gaat** en niet over een logboek. Hij staat ook in de
+> privacyverklaring, en die leest diezelfde instelling -- dus verander je
+> hem, dan verandert die tekst mee. Dat is met opzet zo geregeld; een getal
+> dat op twee plekken staat loopt uit elkaar. Zie
+> [contact](../architecture/modules/contact.md).
 
 De termijnen verschillen met opzet. Een bounce van een jaar geleden zegt
 niets meer; een inlogpoging van een jaar geleden kan bij onderzoek naar een
@@ -93,18 +102,51 @@ elk uur voor je en mailt zodra er iets boven een drempel uitkomt.
 
 ### Waar het naar kijkt
 
-[`AnomalyScanner`](../../app/Support/Security/AnomalyScanner.php) stelt twee
-vragen over het ingestelde venster:
+[`AnomalyScanner`](../../app/Support/Security/AnomalyScanner.php) stelt drie
+vragen:
 
-| Signaal                | Wat er wordt geteld                            | Drempel |
-| ---------------------- | ---------------------------------------------- | ------- |
-| Mislukte inlogpogingen | `auth.login_failed` plus `auth.lockout`        | 25      |
-| Mailproblemen          | mails met status bounced, complained of failed | 5       |
+| Signaal                    | Wat er wordt geteld                            | Drempel |
+| -------------------------- | ---------------------------------------------- | ------- |
+| Mislukte inlogpogingen     | `auth.login_failed` plus `auth.lockout`        | 25      |
+| Mailproblemen              | mails met status bounced, complained of failed | 5       |
+| Werk blijft in de wachtrij | jobs die meer dan 15 minuten over tijd zijn    | 1       |
 
 Die twee gebeurtenissen tellen samen bij het eerste signaal, en dat is geen
 detail: een aanvaller die tegen de rate limiter aanloopt levert juist _minder_
 `auth.login_failed` op. Los van elkaar geteld zou een geslaagde afweer
 eruitzien als rust.
+
+De eerste twee kijken naar het ingestelde venster; de derde kijkt naar de
+stand van nu. "Er ligt werk dat een kwartier over tijd is" is geen
+gebeurtenis in het verleden maar iets dat op dit moment klemt.
+
+### Werk dat in de wachtrij blijft liggen
+
+**Dit is de stilste storing die deze applicatie heeft.** Alle mail gaat via
+de wachtrij: de melding aan de eigenaar, de bevestiging aan de bezoeker, de
+beveiligingsmeldingen. Draait er geen worker, dan blijven die in de tabel
+`jobs` staan -- en er is níets dat eruitziet als een fout. De bezoeker krijgt
+zijn bedankje, de aanvraag staat netjes onder Beheer → Aanvragen, en de
+eigenaar wacht op een mail die nooit komt.
+
+Daarom een drempel van **1** en niet van vijf of vijfentwintig. Bij de andere
+twee signalen gaat het om een piek boven een normaal niveau; hier gaat het om
+een toestand die niet hoort te bestaan. Een job die een kwartier over tijd is,
+is geen piek maar een stilstand, en dan is het tweede bericht net zo erg als
+het vijfde.
+
+Twee dingen die deze controle met opzet níet doet:
+
+- **Ze noemt geen namen van jobs in de mail.** De klasse van een job vertelt
+  wat er in de site gebeurt, en zo'n melding komt in een postbus die minder
+  goed is beveiligd dan de applicatie.
+- **Ze zwijgt bij een andere wachtrij dan de database.** Bij `sync` wordt werk
+  tijdens het verzoek zelf gedaan en kan er per definitie niets blijven
+  liggen; bij Redis zit de wachtrij ergens waar wij hier niet in kijken. Een
+  alarm dat altijd nul meldt leert je het te negeren.
+
+Hoe je de worker op gedeelde hosting aan de praat houdt staat in
+[deployment](deployment.md#op-gedeelde-hosting-zoals-strato).
 
 ### Wat er in de mail staat
 
@@ -135,13 +177,15 @@ php artisan security:report --window=1440   # kijk een etmaal terug
 
 ### Instellingen
 
-| Variabele                         | Waarvoor                               | Standaard |
-| --------------------------------- | -------------------------------------- | --------- |
-| `SECURITY_ALERT_ADDRESS`          | Waar de melding heen gaat              | leeg      |
-| `SECURITY_ALERT_WINDOW_MINUTES`   | Hoe ver de taak terugkijkt             | 60        |
-| `SECURITY_ALERT_COOLDOWN_MINUTES` | Pauze per soort signaal na een melding | 180       |
-| `SECURITY_ALERT_FAILED_LOGINS`    | Drempel mislukte inlogpogingen         | 25        |
-| `SECURITY_ALERT_MAIL_PROBLEMS`    | Drempel mailproblemen                  | 5         |
+| Variabele                          | Waarvoor                               | Standaard |
+| ---------------------------------- | -------------------------------------- | --------- |
+| `SECURITY_ALERT_ADDRESS`           | Waar de melding heen gaat              | leeg      |
+| `SECURITY_ALERT_WINDOW_MINUTES`    | Hoe ver de taak terugkijkt             | 60        |
+| `SECURITY_ALERT_COOLDOWN_MINUTES`  | Pauze per soort signaal na een melding | 180       |
+| `SECURITY_ALERT_FAILED_LOGINS`     | Drempel mislukte inlogpogingen         | 25        |
+| `SECURITY_ALERT_MAIL_PROBLEMS`     | Drempel mailproblemen                  | 5         |
+| `SECURITY_ALERT_STUCK_JOB_MINUTES` | Vanaf wanneer werk "blijft liggen"     | 15        |
+| `SECURITY_ALERT_STUCK_JOBS`        | Drempel vastgelopen jobs               | 1         |
 
 **Zonder adres verstuurt de taak niets.** Hij faalt dan niet, maar zet een
 waarschuwing in de applicatielog. Een scheduler die elk uur een fout meldt
@@ -149,8 +193,16 @@ leidt af van echte problemen; een taak die stilletjes niets doet is erger.
 Vandaar die waarschuwing -- en vandaar dat `SECURITY_ALERT_ADDRESS` in de
 [deploy-checklist](deployment.md) staat.
 
-De melding gaat via de queue, net als alle andere mail. Draait er geen queue
-worker, dan blijft hij in de tabel `jobs` staan.
+**Deze melding gaat als enige níet via de queue.** `SecurityAlertMail` is een
+`ShouldQueue`, en `Mail::send()` zet zo'n mail alsnog in de wachtrij -- dat
+doet de mailer zelf. Daarmee ging precies het ene bericht dat je nodig hebt
+als de worker stilstaat, door die stilstaande worker. Vandaar `sendNow()` in
+[`ReportSecurityAnomalies`](../../app/Console/Commands/ReportSecurityAnomalies.php),
+en vandaar een test die omvalt als iemand daar weer `send()` van maakt.
+
+Dat kost niets: de taak draait per uur vanuit de scheduler, dus er wacht geen
+bezoeker op, en mislukt de verzending dan meldt de volgende ronde hetzelfde
+signaal opnieuw -- het venster schuift mee.
 
 ### Drempels afstellen
 

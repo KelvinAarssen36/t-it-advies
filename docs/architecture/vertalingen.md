@@ -348,6 +348,49 @@ __('Deze code klopt niet.')
 Nederlands is de sleuteltaal, dus `lang/nl.json` is leeg -- er valt niets te
 vertalen. In `lang/en.json` staat de Engelse kant.
 
+### En `lang/nl/`, die de andere kant op gaat
+
+Er is één soort tekst waarvoor dit niet opgaat: de meldingen die **Laravel
+zelf** meelevert. Die zijn Engels aan de bron, en dat zijn ze gebleven:
+
+```
+validation.required  ->  "The :attribute field is required."
+auth.failed          ->  "These credentials do not match our records."
+passwords.sent       ->  "We have emailed your password reset link."
+```
+
+De taal staat op `nl`, maar Laravel levert alleen een `en`-map mee, dus viel
+elke melding terug op het Engels. **Een bezoeker die een verplicht veld leeg
+liet kreeg "The telefoonnummer field is required." te zien**: een Engelse zin
+met een Nederlandse veldnaam erin, omdat die veldnaam wél uit onze eigen
+`attributes()` kwam. En de eigenaar las bij een typefout in zijn wachtwoord
+"These credentials do not match our records."
+
+Daarom twee richtingen, en het is maar één regel om te onthouden:
+
+| Map             | Van        | Naar       | Wat                       |
+| --------------- | ---------- | ---------- | ------------------------- |
+| `lang/en.json`  | Nederlands | Engels     | **onze** zinnen           |
+| `lang/nl/*.php` | Engels     | Nederlands | de zinnen van **Laravel** |
+
+**Een zin die wij zelf schrijven hoort dus nooit in `lang/nl/`.** Komt hij
+uit het framework, dan hoort hij er juist wel.
+
+`lang/nl/validation.php` is met opzet **niet compleet**: Laravel heeft ruim
+honderd regels en daar staan de regels in die dit project echt gebruikt. De
+terugval werkt per sleutel -- getest -- dus een ontbrekende regel geeft
+gewoon weer de Engelse zin. Gebruik je in een nieuwe FormRequest een regel
+die er nog niet staat, zet hem er dan bij.
+
+> **En niet voor de voettekst van een mail.** Die zegt
+> `__('All rights reserved.')`, dus hij zou in `lang/nl.json` kunnen. Dat is
+> niet gedaan: dat bestand gaat via de gedeelde Inertia-props naar de
+> browser, en dan draagt elke pagina van de site een zin mee die alleen in
+> een mail voorkomt. In plaats daarvan is
+> [`message.blade.php`](../../resources/views/vendor/mail/html/message.blade.php)
+> gepubliceerd met een Nederlandse brontekst erin. Zie
+> [mail en queues](mail-en-queues.md).
+
 ### Dezelfde bestanden in de frontend
 
 Het portaal is Vue, en `__()` is PHP. Toch is er maar één woordenlijst:

@@ -42,7 +42,7 @@ defineOptions({
         }"
         :label="$t('Bevestig met een passkey')"
         :loading-label="$t('Bezig met bevestigen…')"
-        :separator="$t('Of bevestig met je wachtwoord')"
+        :separator="$t('Of met je wachtwoord')"
     />
 
     <Form

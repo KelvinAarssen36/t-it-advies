@@ -45,6 +45,13 @@ class SectionHeadingTest extends TestCase
         PageSectionKey::Ervaring,
         PageSectionKey::Certificaten,
         PageSectionKey::Statistieken,
+
+        /*
+         * Het contactformulier hoort er sinds de module Contact bij. Zijn
+         * kop stond daarvóór hardgecodeerd in ContactSection.vue, als
+         * enige onderdeel met een kop die de klant niet kon wijzigen.
+         */
+        PageSectionKey::Contact,
     ];
 
     public function test_seeding_gives_every_section_exactly_one_row(): void

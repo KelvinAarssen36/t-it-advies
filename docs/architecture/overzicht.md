@@ -123,6 +123,20 @@ Naast de tabellen van Laravel, Fortify en spatie/laravel-permission:
   indelingsvenster is elke groep een vak. Zie
   [de module](modules/statistieken.md).
 
+- **`contact_subjects`**, **`contact_fields`**, **`contact_settings`** -- het
+  contactformulier: waar een bezoeker uit kan kiezen, welke velden er staan
+  en of ze moeten, en waar het formulier op de site staat. De velden zijn
+  geen lijst die de klant aanmaakt maar een vaste set met per rij een stand;
+  wát een veld is staat in `ContactVeld`. Zie
+  [de module](modules/contact.md).
+
+- **`contact_submissions`** -- de binnengekomen aanvragen. **De enige tabel
+  in dit project met inhoud van een bezoeker erin**: zijn naam, zijn adres en
+  zijn bericht, een jaar lang. Dat is een bewuste keuze met een bewaartermijn
+  en een alinea in de privacyverklaring; vaste kolommen en geen JSON, zodat
+  het scherm Juridisch erop kan zoeken en kan verwijderen. Lees
+  [de module](modules/contact.md) voordat je hier iets aan verandert.
+
 - **`section_headings`** -- het opschrift, de titel en de zin boven élk
   onderdeel, met een regel per `PageSectionKey`. Dit waren drie bijna
   identieke tabellen (`hero_headings`, `experience_headings`,

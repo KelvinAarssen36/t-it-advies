@@ -50,6 +50,7 @@ class SectionHeadingSeeder extends Seeder
         PageSectionKey::Ervaring,
         PageSectionKey::Certificaten,
         PageSectionKey::Statistieken,
+        PageSectionKey::Contact,
     ];
 
     public function run(): void

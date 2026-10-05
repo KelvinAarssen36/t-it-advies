@@ -276,7 +276,15 @@ korte pauze van 200 ms, precies zolang als de sluitanimatie duurt.
 
 **De inhoud van de werkwijze is nog niet beheerbaar.** Die teksten staan
 nog in hun Vue-component; daar staat op het scherm nog "Nog niet te
-beheren".
+beheren". Dat is sinds de module [contact](modules/contact.md) het enige
+onderdeel waarvoor dat nog geldt.
+
+> **Contact is het onderdeel dat het patroon het verst oprekt.** Hij heeft
+> geen teller in `SectionContent` -- met opzet, want het formulier staat er
+> ook zonder onderwerpen -- en hij kan op twee manieren op de site staan:
+> als formulier onderaan de pagina of als knop naar een eigen adres. Dat
+> laatste is het eerste geval waarin een onderdeel zijn inhoud buiten de
+> landingspagina kan zetten.
 
 Er zijn vier voorbeelden om uit te kiezen als je de volgende bouwt. De
 [ervaring](modules/ervaring.md) is het voorbeeld voor een module met een

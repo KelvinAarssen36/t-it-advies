@@ -70,8 +70,18 @@ onMounted(async () => {
     try {
         await loadScript();
     } catch {
-        // Cloudflare niet bereikbaar. Het formulier blijft bruikbaar; de
-        // server weigert de inzending dan alsnog, en dat is de juiste plek.
+        /*
+         * Cloudflare niet bereikbaar, dus er komt geen tokenveld in het
+         * formulier. De server weigert de inzending dan, want dat veld is
+         * verplicht -- zie TurnstileRule::veld().
+         *
+         * **Hier stond dat het formulier "bruikbaar blijft".** Dat was
+         * niet waar en bovendien gevaarlijk: het veld stond op `nullable`,
+         * dus een inzending zonder token kwam er juist zónder enige
+         * controle door. Nu klopt het andersom -- hij is niet bruikbaar,
+         * en de bezoeker krijgt een melding die zegt dat verversen helpt,
+         * met het e-mailadres eronder als dat niet lukt.
+         */
         return;
     }
 

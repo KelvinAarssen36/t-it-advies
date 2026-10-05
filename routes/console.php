@@ -1,6 +1,7 @@
 <?php
 
 use App\Console\Commands\PruneActivityEntries;
+use App\Console\Commands\PruneContactSubmissions;
 use App\Console\Commands\PruneMailLogs;
 use App\Console\Commands\PruneSecurityEvents;
 use App\Console\Commands\PruneVisitorCodes;
@@ -38,6 +39,13 @@ Schedule::command(ReportSecurityAnomalies::class)
 Schedule::command(PruneSecurityEvents::class)->dailyAt('03:10');
 Schedule::command(PruneMailLogs::class)->dailyAt('03:20');
 Schedule::command(PruneActivityEntries::class)->dailyAt('03:25');
+
+/*
+ * De contactaanvragen. Dit is de enige van deze taken die over inhoud van
+ * een bezoeker gaat en niet over een logboek, en de termijn die hij
+ * aanhoudt staat in de privacyverklaring. Zie PruneContactSubmissions.
+ */
+Schedule::command(PruneContactSubmissions::class)->dailyAt('03:15');
 
 /*
  * De bezoekerscodes. Dit is een tweede slot: ze worden normaal al

@@ -246,6 +246,48 @@ Zonder `TURNSTILE_SECRET_KEY` slaat de applicatie de botcheck in `local` en
 weigert de applicatie bewust alles zonder secret. Zie
 [spam- en botbescherming](../security/spam-en-botbescherming.md).
 
+## Voorbeelddata om de schermen mee te bekijken
+
+Een vers geseede database is leeg waar het om de klant gaat: geen
+contactonderwerpen, geen aanvragen, geen mailoverzicht. Dat is met opzet --
+`ContactSeeder` zet alleen de velden en de instellingen klaar, want verzonnen
+onderwerpen op een echte site zijn erger dan geen onderwerpen. Maar het maakt
+de schermen wel moeilijk te beoordelen.
+
+Daarvoor is er een aparte seeder:
+
+```bash
+php artisan voorbeeld:zaaien
+```
+
+Die zet neer:
+
+- **vijf onderwerpen**, waarvan één offline en één zonder Engelse naam, zodat
+  je ziet wat er op de site komt en wat niet;
+- **negen aanvragen** in alle standen die het scherm kent: ongelezen,
+  gelezen, beantwoord, met en zonder bedrijf en telefoon, Nederlands en
+  Engels, een zelf getypt onderwerp, een onderwerp dat later is verwijderd,
+  een bericht van ruim duizend tekens en een van dertig;
+- **zeven regels in het mailoverzicht**, inclusief een bounce en een
+  verzending die nooit is vertrokken -- want dat is precies waar dat scherm
+  voor bestaat.
+
+En weer weg:
+
+```bash
+php artisan voorbeeld:opruimen
+```
+
+> **Hij weigert buiten `local` en `testing`.** Deze rijen zijn in het portaal
+> niet van echte aanvragen van echte mensen te onderscheiden, en die twee door
+> elkaar laten lopen is onherstelbaar. Daarom staat deze seeder ook **niet** in
+> `DatabaseSeeder`: je draait hem expliciet of niet.
+>
+> Alles wat hij maakt staat op `@voorbeeld.test` -- een domein dat de IANA
+> gereserveerd heeft en dat dus nooit bestaat. Daar gaat `voorbeeld:opruimen`
+> op af, zodat er nooit een echte aanvraag meegaat. Alleen de onderwerpen
+> worden op naam gevonden; dat zegt de opdracht erbij voordat hij iets doet.
+
 ## Veelgebruikte commando's
 
 ```bash
@@ -255,6 +297,9 @@ composer lint           # pint, formatteert PHP
 composer types:check    # phpstan
 npm run types:check     # vue-tsc
 composer ci:check       # alles wat CI ook draait
+
+php artisan voorbeeld:zaaien                      # verzonnen data erbij
+php artisan voorbeeld:opruimen                    # en weer weg
 ```
 
 ## Problemen

@@ -76,7 +76,24 @@ class ReportSecurityAnomalies extends Command
             return self::SUCCESS;
         }
 
-        Mail::to($address)->send(new SecurityAlertMail($report, $since));
+        /*
+         * **`sendNow()` en niet `send()`, en dat is de hele reden dat dit
+         * alarm werkt.**
+         *
+         * `SecurityAlertMail` is een `ShouldQueue`, en `send()` zet zo'n
+         * mail alsnog in de wachtrij -- dat doet `Mailer::sendMailable()`
+         * zelf. Daarmee ging het ene bericht dat je het hardst nodig hebt
+         * precies door het ding dat kapot is: ligt de worker stil, dan
+         * belandt de melding "er blijft werk in de wachtrij liggen" in die
+         * wachtrij, en komt hij er nooit uit.
+         *
+         * Dat kost niets. Dit commando draait per uur vanuit de scheduler,
+         * dus er wacht geen bezoeker op; en mislukt de verzending, dan
+         * meldt de volgende ronde hetzelfde signaal opnieuw, want het
+         * tijdvak schuift mee. De drie pogingen van de wachtrij voegen hier
+         * dus niets toe en kosten het alarm zijn bestaansrecht.
+         */
+        Mail::to($address)->sendNow(new SecurityAlertMail($report, $since));
 
         $logger->success(SecurityEventType::AlertSent, context: [
             'signalen' => array_map(fn (Anomaly $anomaly) => [

@@ -2,6 +2,7 @@
 
 namespace App\Support\Juridisch;
 
+use App\Models\ContactSubmission;
 use App\Models\SecurityEvent;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -47,12 +48,15 @@ class Antwoordtekst
      * Het antwoord in elke taal, als kaart van taalcode naar tekst.
      *
      * @param  Collection<int, SecurityEvent>  $gebeurtenissen
+     * @param  Collection<int, ContactSubmission>  $aanvragen
      * @return array<string, string>
      */
     public function voorElkeTaal(
         ?string $zoekterm,
         Collection $gebeurtenissen,
+        Collection $aanvragen,
         int $bewaartermijnBeveiliging,
+        int $bewaartermijnAanvragen,
     ): array {
         $teksten = [];
 
@@ -61,7 +65,9 @@ class Antwoordtekst
                 $taal,
                 $zoekterm,
                 $gebeurtenissen,
+                $aanvragen,
                 $bewaartermijnBeveiliging,
+                $bewaartermijnAanvragen,
             );
         }
 
@@ -70,12 +76,15 @@ class Antwoordtekst
 
     /**
      * @param  Collection<int, SecurityEvent>  $gebeurtenissen
+     * @param  Collection<int, ContactSubmission>  $aanvragen
      */
     private function tekst(
         string $taal,
         ?string $zoekterm,
         Collection $gebeurtenissen,
+        Collection $aanvragen,
         int $bewaartermijnBeveiliging,
+        int $bewaartermijnAanvragen,
     ): string {
         $regels = [
             __('Beste,', [], $taal),
@@ -117,10 +126,37 @@ class Antwoordtekst
          * IP-adressen" zegt zonder die uitzondering is niet waar. Het staat
          * om dezelfde reden in de privacyverklaring.
          */
+        /*
+         * De contactaanvragen.
+         *
+         * **Hier stond eerder dat een bericht uit het contactformulier
+         * alleen in onze mailbox staat.** Dat was waar tot de module
+         * Contact, die aanvragen een jaar bewaart. Een antwoord dat die
+         * uitzondering niet noemt spreekt de privacyverklaring tegen.
+         */
+        $regels[] = '';
+
+        if ($aanvragen->isNotEmpty()) {
+            $regels[] = __('Je hebt ons :aantal keer een bericht gestuurd via het contactformulier op onze website. Die berichten bewaren we :dagen dagen, zodat we kunnen terugzoeken waar we het over hadden; daarna verdwijnen ze vanzelf.', [
+                'aantal' => $aanvragen->count(),
+                'dagen' => $bewaartermijnAanvragen,
+            ], $taal);
+            $regels[] = '';
+
+            foreach ($aanvragen->take(self::REGELS_IN_DE_TEKST) as $aanvraag) {
+                $regels[] = $this->aanvraagregel($aanvraag, $taal);
+            }
+
+            $regels[] = '';
+            $regels[] = __('Wil je dat we die berichten nu verwijderen, laat het weten -- dat kunnen we doen.', [], $taal);
+        } elseif ($zoekterm !== null) {
+            $regels[] = __('Via het contactformulier op onze website hebben we geen bericht van je. Zulke berichten bewaren we :dagen dagen; daarna verdwijnen ze vanzelf. Stuurde je ons eerder van een ander adres, laat dat dan weten.', [
+                'dagen' => $bewaartermijnAanvragen,
+            ], $taal);
+        }
+
         $regels[] = '';
         $regels[] = __('Verder bewaren wij zelf geen gegevens over je bezoek aan onze website: daarvoor gebruiken we geen cookies en slaan we je IP-adres niet op. Wel houdt onze webserver, zoals elke webserver, een technisch logbestand bij waarin het IP-adres van elk verzoek staat. Dat hoort bij het beheer en de beveiliging van de server en wordt bewaard door de partij waar die server staat.', [], $taal);
-        $regels[] = '';
-        $regels[] = __('Heb je ons eerder een bericht via het contactformulier gestuurd, laat dat dan weten -- dat staat in onze mailbox en kunnen we opzoeken en verwijderen.', [], $taal);
         $regels[] = '';
         $regels[] = __('Met vriendelijke groet,', [], $taal);
         $regels[] = '@T IT Advies';
@@ -158,5 +194,24 @@ class Antwoordtekst
         return $gebeurtenis->ip_address === null
             ? $regel
             : "{$regel} — {$gebeurtenis->ip_address}";
+    }
+
+    /**
+     * Eén contactaanvraag, in de taal van het antwoord.
+     *
+     * **Alleen de datum en het onderwerp, niet het bericht.** De bezoeker
+     * weet wat hij heeft geschreven; dit is er om hem te laten zien wát we
+     * van hem hebben, niet om het terug te citeren. Zijn eigen bericht in
+     * een mail terugsturen zou het ook nog eens door een extra postbus
+     * halen.
+     */
+    private function aanvraagregel(ContactSubmission $aanvraag, string $taal): string
+    {
+        $moment = $aanvraag->created_at->copy();
+        $moment->locale($taal);
+
+        $wanneer = $moment->isoFormat('D MMM YYYY, HH:mm');
+
+        return "- {$wanneer} — {$aanvraag->subject_text}";
     }
 }

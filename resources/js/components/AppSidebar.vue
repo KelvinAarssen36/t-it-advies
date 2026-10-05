@@ -9,9 +9,11 @@ import {
     Heading,
     History,
     LayoutGrid,
+    Inbox,
     LayoutList,
     Lightbulb,
     Mail,
+    MessageSquare,
     Milestone,
     Scale,
     ShieldAlert,
@@ -35,12 +37,14 @@ import { dashboard } from '@/routes';
 import { dashboard as adminDashboard } from '@/routes/admin';
 import adminActivity from '@/routes/admin/activity';
 import adminLegal from '@/routes/admin/legal';
+import adminAanvragen from '@/routes/admin/submissions';
 import adminMail from '@/routes/admin/mail';
 import adminSecurity from '@/routes/admin/security';
 import adminUsers from '@/routes/admin/users';
 import adminVisitors from '@/routes/admin/visitors';
 import site from '@/routes/site';
 import certificaten from '@/routes/website/certificaten';
+import contact from '@/routes/website/contact';
 import diensten from '@/routes/website/diensten';
 import ervaring from '@/routes/website/ervaring';
 import statistieken from '@/routes/website/statistieken';
@@ -148,6 +152,11 @@ const websiteItems = computed<NavItem[]>(() => [
         icon: ChartNoAxesColumn,
     },
     {
+        title: t('Contact'),
+        href: contact.index(),
+        icon: MessageSquare,
+    },
+    {
         title: t('Bekijk de website'),
         href: site.enter(),
         icon: Globe,
@@ -171,6 +180,16 @@ const websiteItems = computed<NavItem[]>(() => [
 const administratieItems = computed<NavItem[]>(() =>
     magBeheren.value
         ? [
+              /*
+               * De aanvragen staan vóór het mailoverzicht, want dit is wat
+               * hij dagelijks opent. Het mailoverzicht is er voor als er
+               * iets niet aankomt.
+               */
+              {
+                  title: t('Aanvragen'),
+                  href: adminAanvragen.index(),
+                  icon: Inbox,
+              },
               {
                   title: t('Mail'),
                   href: adminMail.index(),

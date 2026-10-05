@@ -14,19 +14,31 @@ Dit is nagelopen door elke tabel in de database af te gaan op kolommen die
 een persoon kunnen aanwijzen (`ip_address`, `user_agent`, `email`,
 `payload`). De uitkomst:
 
-| Plek                                     | Wat erin staat                                                   | Terug te vinden? | Te verwijderen?        |
-| ---------------------------------------- | ---------------------------------------------------------------- | ---------------- | ---------------------- |
-| **De mailbox van de eigenaar**           | Naam, adres, onderwerp, bericht                                  | ja               | ja, door hem           |
-| `security_events`                        | IP + browserkenmerk bij een inlogpoging of geblokkeerd formulier | **ja**           | nee, met reden         |
-| `failed_jobs`                            | Een bericht dat niet verstuurd kon worden: naam, adres, inhoud   | nee              | **ja**, via dit scherm |
-| `sessions`                               | IP + browserkenmerk, zolang de sessie leeft                      | nee              | verloopt zelf          |
-| `mail_logs`                              | Alleen het eigen adres als ontvanger, plus status                | nee              | nee                    |
-| `site_visitor_codes`                     | Onomkeerbare codes, hoogstens één dag                            | nee              | n.v.t.                 |
-| `site_day_totals`, `site_day_dimensions` | Aantallen per dag                                                | nee              | n.v.t.                 |
-| `activity_entries`                       | Wat de eigenaar zelf wijzigde, met zijn IP                       | n.v.t.           | nee                    |
+| Plek                                     | Wat erin staat                                                                      | Terug te vinden? | Te verwijderen?        |
+| ---------------------------------------- | ----------------------------------------------------------------------------------- | ---------------- | ---------------------- |
+| **De mailbox van de eigenaar**           | Naam, adres, onderwerp, bericht                                                     | ja               | ja, door hem           |
+| `security_events`                        | IP + browserkenmerk bij een inlogpoging of geblokkeerd formulier                    | **ja**           | nee, met reden         |
+| `contact_submissions`                    | Wat iemand via het contactformulier stuurde: naam, adres, onderwerp, bericht        | **ja**           | **ja**, via dit scherm |
+| `failed_jobs`                            | Een bericht dat niet verstuurd kon worden: naam, adres, inhoud                      | nee              | **ja**, via dit scherm |
+| `sessions`                               | IP + browserkenmerk, zolang de sessie leeft                                         | nee              | verloopt zelf          |
+| `mail_logs`                              | Het eigen adres als ontvanger, en sinds de bevestigingsmail ook dat van de bezoeker | ja, elders       | nee                    |
+| `site_visitor_codes`                     | Onomkeerbare codes, hoogstens één dag                                               | nee              | n.v.t.                 |
+| `site_day_totals`, `site_day_dimensions` | Aantallen per dag                                                                   | nee              | n.v.t.                 |
+| `activity_entries`                       | Wat de eigenaar zelf wijzigde, met zijn IP                                          | n.v.t.           | nee                    |
 
-**Eén tabel is dus de hele zoekopdracht**: `security_events`. Dat is waarom
-het scherm één zoekveld heeft en niet zeven.
+**Twee tabellen zijn de hele zoekopdracht**: `security_events` en
+`contact_submissions`. Dat was er één, tot de module Contact aanvragen begon
+te bewaren; zie [contact](../architecture/modules/contact.md). Het scherm
+heeft daarom nog steeds **één** zoekveld en niet zeven -- het doorzoekt die
+twee met dezelfde term.
+
+> **"ja, elders" bij `mail_logs` is geen slordigheid.** De bevestigingsmail
+> zet het adres van de bezoeker daar als ontvanger in, dus hij is er terug
+> te vinden -- maar niet op dít scherm. Dat gaat via Beheer → Mail, dat zijn
+> eigen zoekveld heeft. Het hier óók doorzoeken zou betekenen dat één zoekterm
+> drie soorten rijen oplevert die niets met elkaar te maken hebben; het
+> overzicht hierboven zegt daarom waar hij wél staat en het scherm zegt dat
+> ook. Zie `Gegevensoverzicht::plekken()`, waar deze rij op `zoekbaar` staat.
 
 ## Het scherm
 
@@ -107,6 +119,35 @@ Vier tests in `LegalScreenTest` houden dit vast, waaronder
 `test_the_english_answer_is_english_in_a_dutch_portal` -- die valt om zodra
 iemand de tekst terugzet naar de taal van het scherm.
 
+### Sinds de module Contact doorzoekt dit scherm twee tabellen
+
+**Dit was de grootste verandering aan dit scherm**, en het is een
+verbetering. Zolang een bericht uit het contactformulier de website verliet
+zodra het verstuurd was, was `security_events` de enige tabel waarin een
+bezoeker terug te vinden was -- en ging een verzoek om verwijdering dus
+altijd over de mailbox, waar de applicatie niets kan.
+
+Sinds [de module Contact](../architecture/modules/contact.md) blijven
+aanvragen een jaar staan. Het scherm zoekt nu met dezelfde zoekterm in:
+
+| Tabel                 | Wat je vindt                                      | Verwijderen                       |
+| --------------------- | ------------------------------------------------- | --------------------------------- |
+| `security_events`     | Inlogpogingen en geblokkeerde formulieren, met IP | **Nee**, met opzet                |
+| `contact_submissions` | Wat iemand via het contactformulier stuurde       | **Ja**, achter een verse 2FA-code |
+
+Die tweede is daarmee de eerste plek in dit project die zowel **zoekbaar** als
+**wisbaar** is.
+
+> **Het bericht zelf staat niet op dit scherm.** Dit scherm is er om te
+> kunnen zeggen dát er iets van iemand staat en om het te verwijderen; lezen
+> doe je op Beheer → Aanvragen. Het bericht van een bezoeker hoeft niet op
+> twee schermen te staan.
+
+En de drie stappen hierboven zijn daarop aangepast: daar stond dat berichten
+uit het contactformulier "nergens anders" dan in de mailbox staan, en dat is
+niet meer waar. De mailbox blijft wél een stap, want een bericht dat ouder is
+dan de bewaartermijn staat hier niet meer en kan daar nog wel liggen.
+
 ### Het zoekveld ontsnapt de jokertekens van LIKE
 
 Via [`Zoekterm::patroon()`](../../app/Support/Zoekterm.php), met `escape '!'`
@@ -173,10 +214,16 @@ wordt per mail beantwoord.
 
 ## Wat er wél weg kan: mislukte mailpogingen
 
-`failed_jobs` is de enige plek in de database waar een bericht van een
-bezoeker kan blijven liggen -- met naam, adres en inhoud, veertien dagen
-lang -- en hij was nergens in het portaal te zien. Nu staat het aantal op
-dit scherm, met een knop om het weg te gooien.
+`failed_jobs` was de enige plek in de database waar een bericht van een
+bezoeker kon blijven liggen; sinds de module Contact is het de enige plek
+waar dat **ongemerkt** gebeurt. Een aanvraag staat nu netjes onder Beheer →
+Aanvragen; een mislukte poging is nergens te zien en blijft hier veertien
+dagen staan, met naam, adres en inhoud. Daarom staat het aantal op dit
+scherm, met een knop om het weg te gooien.
+
+> Overigens is die module hier een verbetering: een bericht raakt niet meer
+> kwijt als de mailprovider eruit ligt, want de aanvraag staat al opgeslagen
+> voordat de mail de wachtrij in gaat.
 
 Drie dingen zitten daaraan vast:
 

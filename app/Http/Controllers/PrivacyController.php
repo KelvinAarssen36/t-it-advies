@@ -45,6 +45,17 @@ class PrivacyController extends Controller
              * Ook dat hoort in de verklaring, want het gaat over een
              * bericht dat een bezoeker heeft gestuurd.
              */
+            /*
+             * Hoe lang een bericht uit het contactformulier blijft staan.
+             *
+             * **Dit getal is nieuw omdat de belofte veranderde.** Tot de
+             * module Contact verliet een bericht de website zodra het
+             * verstuurd was, en stond er in deze verklaring dat het "weg is
+             * uit de website". Nu blijft het een jaar staan, en dan hoort
+             * dat er met het getal bij.
+             */
+            'bewaartermijnAanvragen' => (int) config('site.contact.retention_days'),
+
             'bewaartermijnMail' => (int) config('mail.log_retention_days'),
 
             /*

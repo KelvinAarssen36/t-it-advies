@@ -1,9 +1,12 @@
 <?php
 
 use App\Http\Controllers\Settings\DashboardSettingsController;
+use App\Http\Controllers\Settings\MailStijlController;
+use App\Http\Controllers\Settings\MailVoorbeeldController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SafetyController;
 use App\Http\Controllers\Settings\SecurityController;
+use App\Http\Controllers\Settings\WeergaveController;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Route;
 
@@ -36,7 +39,33 @@ Route::middleware(['auth', 'verified', 'two-factor.required'])->group(function (
         ->middleware('throttle:6,1')
         ->name('user-password.update');
 
-    Route::inertia('settings/appearance', 'settings/Appearance')->name('appearance.edit');
+    /*
+     * Weergave. Sinds de mailstijl een instelling is kan dit geen
+     * `Route::inertia` meer zijn: het scherm moet weten welke stijl er nu
+     * staat, en dat komt uit de database.
+     */
+    Route::get('settings/appearance', WeergaveController::class)->name('appearance.edit');
+
+    Route::put('settings/appearance/mail', [MailStijlController::class, 'update'])
+        ->name('appearance.mail-stijl');
+
+    /*
+     * Het voorbeeld van de mailstijl, als kale HTML voor een `iframe` op
+     * dat scherm. Geen Inertia: een mail heeft zijn opmaak in de tags
+     * zelf, en die zou met het portaal vechten. Zie
+     * MailVoorbeeldController.
+     */
+    Route::get('settings/appearance/mail', [MailVoorbeeldController::class, 'bevestiging'])
+        ->name('appearance.mail');
+
+    /*
+     * En de bouwstenen die in de ándere mails voorkomen: een knop, een
+     * uitgelicht vak, een tabel. Een eigen adres en geen schakelaar op het
+     * eerste voorbeeld, want het zijn twee `iframe`s naast elkaar op het
+     * scherm Weergave.
+     */
+    Route::get('settings/appearance/mail/onderdelen', [MailVoorbeeldController::class, 'onderdelen'])
+        ->name('appearance.mail-onderdelen');
 
     /*
      * De instellingen van het dashboard: nu de tijdzone van de klok, later

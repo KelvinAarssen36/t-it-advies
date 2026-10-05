@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\SecurityEventType;
 use App\Mail\ContactMessageMail;
+use Database\Seeders\ContactSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Spatie\Honeypot\EncryptedTime;
@@ -17,7 +18,27 @@ class ContactFormTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        /*
+         * De velden van het formulier komen uit de database. Zonder deze
+         * seeder valt `Contactformulier` terug op de standaardstanden uit
+         * de enum -- dat werkt, maar dan test je niet wat er in productie
+         * staat. Zie ContactSeeder.
+         */
+        $this->seed(ContactSeeder::class);
+    }
+
     /**
+     * Een geldige inzending.
+     *
+     * **Het onderwerp is `subject_text` en niet `subject`.** Sinds de
+     * module Contact is het onderwerp twee velden: een keuze uit de lijst
+     * van de eigenaar (`subject_id`) of een eigen tekst. Zie
+     * App\Support\Contact\Contactformulier.
+     *
      * @return array<string, string>
      */
     private function validPayload(array $overrides = []): array
@@ -25,7 +46,7 @@ class ContactFormTest extends TestCase
         return array_merge([
             'name' => 'Kees Jansen',
             'email' => 'kees@example.com',
-            'subject' => 'Vraag over een migratie',
+            'subject_text' => 'Vraag over een migratie',
             'message' => 'Graag advies over onze overstap naar een nieuwe omgeving.',
             config('honeypot.name_field_name') => '',
             config('honeypot.valid_from_field_name') => EncryptedTime::create(now()->subMinute()),

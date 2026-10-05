@@ -72,6 +72,7 @@ staan de vijf stappen -- en daarna een bestaande module als voorbeeld.
 - [Diensten](architecture/modules/diensten.md) -- wat de klant aanbiedt, met expertisepunten en een eigen volgorde. Combineert een lijst met beheerbare vaste tekst.
 - [Certificaten](architecture/modules/certificaten.md) -- wat de klant heeft gehaald en bij wie, als raster van badges, met optioneel zijn opleiding eronder.
 - [Statistieken](architecture/modules/statistieken.md) -- vaardigheden en kengetallen als balken, ringen en tellers, die zich als een golf vullen en daarna blijven glanzen. Ingedeeld in groepen, elk een eigen vak in het indelingsvenster.
+- [Contact](architecture/modules/contact.md) -- het contactformulier: beheerbare onderwerpen, instelbare velden, een bevestigingsmail in de taal van de bezoeker, en de postbus onder Beheer. De enige module die inhoud van een bezoeker bewaart, met alles wat dat voor de privacyverklaring betekent.
 - [LinkedIn](architecture/modules/linkedin.md) -- geen module maar een blok: één vaste link, wel te verslepen en uit te zetten.
 
 ## Beveiliging

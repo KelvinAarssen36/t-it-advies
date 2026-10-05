@@ -314,6 +314,17 @@ class TranslationsTest extends TestCase
      *
      * `app/Console` valt er bewust buiten. Die tekst verschijnt op een
      * terminal bij ons en niet bij de klant, dus die hoeft geen Engels.
+     *
+     * **`resources/views` viel er óók buiten, en daar ging het mis.** De
+     * bevestigingsmail is de enige mail die in twee talen de deur uit gaat,
+     * en drie van zijn eigen zinnen stonden niet in `lang/en.json`. Een
+     * Engelse bezoeker kreeg "Bedankt voor je bericht / Beste John Smith"
+     * boven een Engelse tekst. Geen enkele test voelde dat: de sleutels
+     * staan in een Blade en die werd niet ingelezen.
+     *
+     * Daarom staan de mailsjablonen er nu bij. Ook die aan de eigenaar:
+     * `site.locale` staat op Nederlands, maar een instelling die je kunt
+     * omzetten hoort te werken als iemand dat doet.
      */
     public function test_every_sentence_the_server_translates_has_an_english_translation(): void
     {
@@ -329,6 +340,7 @@ class TranslationsTest extends TestCase
         $bestanden = [
             ...File::allFiles(app_path()),
             ...File::allFiles(database_path('seeders')),
+            ...File::allFiles(resource_path('views')),
         ];
 
         foreach ($bestanden as $bestand) {

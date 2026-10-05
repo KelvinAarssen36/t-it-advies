@@ -43,3 +43,10 @@ yarn-error.log
 /boost.json
 /opencode.json
 /opencode.jsonc
+
+# Windows schrijft bij een bestand dat van internet komt een tweede bestand
+# met de naam "<bestand>:Zone.Identifier" en twee regels erin. Via de
+# WSL-schijf belandt dat als een gewoon bestand in de map, en er stonden er
+# zo twee in git. Het is metadata van de verkenner en hoort nergens bij dit
+# project.
+*Zone.Identifier

@@ -18,6 +18,7 @@ import { bevestigVerwijderen } from '@/lib/bevestiging';
 import { t } from '@/lib/i18n';
 import { dashboard } from '@/routes/admin';
 import legal from '@/routes/admin/legal';
+import aanvragen from '@/routes/admin/submissions';
 import { privacy } from '@/routes';
 
 /**
@@ -58,6 +59,20 @@ const props = defineProps<{
         email: string | null;
         ip: string | null;
     }>;
+    /**
+     * De contactaanvragen van deze persoon.
+     *
+     * Zonder het bericht: dit scherm is er om te kunnen zeggen dát er iets
+     * van iemand staat en om het te verwijderen. Lezen doe je op het
+     * scherm Aanvragen.
+     */
+    aanvragen: Array<{
+        id: number;
+        wanneer: string | null;
+        naam: string;
+        email: string;
+        onderwerp: string;
+    }>;
     plekken: Array<{
         sleutel: string;
         bewaartermijn: string;
@@ -70,6 +85,7 @@ const props = defineProps<{
     antwoord: Record<string, string>;
     termijnen: {
         beveiliging: number;
+        aanvragen: number;
         mail: number;
         sessie: number;
         mislukteMail: number;
@@ -115,11 +131,24 @@ const PLEKKEN: Record<string, { naam: () => string; wat: () => string }> = {
                 'IP-adres en browserkenmerk bij een inlogpoging of een geblokkeerd formulier. Hier is iemand terug te vinden.',
             ),
     },
+    aanvragen: {
+        naam: () => t('Contactaanvragen'),
+        wat: () =>
+            t(
+                'Wat iemand via je contactformulier heeft gestuurd: naam, e-mailadres, onderwerp en bericht. Hier is iemand terug te vinden, en hier kun je het ook verwijderen.',
+            ),
+    },
+    /*
+     * **Hier stond dat een bezoeker er niet in staat.** Dat was waar tot
+     * de bevestigingsmail bestond: sinds die naar de bezoeker gaat, staat
+     * zijn adres hier als ontvanger -- en de server zet deze rij daarom
+     * ook op `zoekbaar`. Zie Gegevensoverzicht::plekken().
+     */
     mail: {
         naam: () => t('Mailoverzicht'),
         wat: () =>
             t(
-                'Alleen jouw eigen adres als ontvanger, plus tijdstip en status. Een bezoeker staat hier niet in.',
+                'Het tijdstip, de ontvanger en de status van verstuurde mail -- niet de inhoud. Een bezoeker staat hier wél in, als ontvanger van de bevestiging die hij kreeg. Zoeken doe je op het scherm Mail.',
             ),
     },
     'mislukte-mail': {
@@ -211,6 +240,38 @@ const antwoord = computed(
 const taalnaam = (taal: string): string =>
     usePage().props.locales?.[taal] ?? taal;
 
+/* --- Een contactaanvraag verwijderen ---------------------------------- */
+
+/**
+ * Een bericht uit het contactformulier weghalen op verzoek.
+ *
+ * **De enige plek op dit scherm waar inhoud van een bezoeker echt
+ * verdwijnt.** Het beveiligingslogboek blijft met opzet staan; dit mag
+ * wel, want dit bewaren we voor ons eigen gemak en niet om misbruik te
+ * kunnen aantonen.
+ *
+ * De bevestiging zegt er met zoveel woorden bij dat het bericht in de
+ * mailbox blijft staan. Anders denkt de eigenaar dat hij klaar is terwijl
+ * de helft er nog ligt.
+ */
+const verwijderAanvraag = async (rij: {
+    id: number;
+    naam: string;
+}): Promise<void> => {
+    const akkoord = await bevestigVerwijderen({
+        titel: t('De aanvraag van :naam verwijderen?', { naam: rij.naam }),
+        tekst: t(
+            'Het bericht is daarna weg uit je portaal. In je mailbox staat hij nog; die moet je daar apart weghalen.',
+        ),
+    });
+
+    if (!akkoord) {
+        return;
+    }
+
+    router.delete(aanvragen.destroy(rij.id).url, { preserveScroll: true });
+};
+
 /* --- Mislukte mailpogingen -------------------------------------------- */
 
 const verwijderMislukteMail = async (): Promise<void> => {
@@ -285,15 +346,27 @@ const verwijderMislukteMail = async (): Promise<void> => {
                 komt daarom nu pas ná die stap, en niet ernaast.
             -->
             <div
-                v-else-if="props.zoekterm && props.resultaten.length === 0"
+                v-else-if="
+                    props.zoekterm &&
+                    props.resultaten.length === 0 &&
+                    props.aanvragen.length === 0
+                "
                 class="brand-bezoekuitleg mt-4"
             >
                 <ShieldCheck class="size-5 shrink-0 text-success" />
+                <!--
+                    **De middelste stap is aangepast door de module
+                    Contact.** Hier stond dat berichten uit het
+                    contactformulier "nergens anders" dan in de mailbox
+                    staan, en dat was waar tot die module. Nu staan ze ook
+                    in het portaal, en dat doorzoekt dit scherm zelf -- dus
+                    die stap gaat alleen nog over de mailbox.
+                -->
                 <div class="space-y-2 text-sm text-pretty">
                     <p>
                         {{
                             $t(
-                                'Niets gevonden in je beveiligingslogboek. Dat is de enige plek in je website waar een bezoeker terug te vinden is.',
+                                'Niets gevonden. Niet in je beveiligingslogboek en niet bij de berichten uit je contactformulier; die twee heb ik allebei nagekeken.',
                             )
                         }}
                     </p>
@@ -303,7 +376,7 @@ const verwijderMislukteMail = async (): Promise<void> => {
                         </strong>
                         {{
                             $t(
-                                'Berichten uit het contactformulier komen daar binnen en staan nergens anders. Vind je daar iets, dan is dát wat hij bedoelt, en verwijder je het in je mailbox.',
+                                'Een bericht dat ouder is dan de bewaartermijn staat hier niet meer, maar kan nog wel in je mail staan. Vind je daar iets, dan verwijder je het daar.',
                             )
                         }}
                     </p>
@@ -316,9 +389,21 @@ const verwijderMislukteMail = async (): Promise<void> => {
                     </p>
                 </div>
             </div>
-
-            <div v-else-if="props.resultaten.length > 0" class="mt-4">
+            <!--
+                Er is iets gevonden. **Twee tabellen in één blok**, want de
+                twee plekken waar een bezoeker kan staan zijn niet hetzelfde
+                soort gegeven: het logboek gaat over een poging, de
+                aanvragen over een bericht. Het blok verschijnt zodra een
+                van de twee iets oplevert.
+            -->
+            <div
+                v-else-if="
+                    props.resultaten.length > 0 || props.aanvragen.length > 0
+                "
+                class="mt-4"
+            >
                 <div
+                    v-if="props.resultaten.length > 0"
                     class="brand-tabelvak brand-schuif-x brand-scrollbar rounded-xl border"
                 >
                     <table class="brand-tabel-kaarten w-full text-sm">
@@ -374,6 +459,7 @@ const verwijderMislukteMail = async (): Promise<void> => {
                 </div>
 
                 <p
+                    v-if="props.resultaten.length > 0"
                     class="mt-3 flex items-start gap-2 text-sm text-muted-foreground"
                 >
                     <Lock class="mt-0.5 size-4 shrink-0" />
@@ -382,6 +468,100 @@ const verwijderMislukteMail = async (): Promise<void> => {
                             $t(
                                 'Deze regels kun je niet verwijderen, en dat is met opzet: een logboek waar regels uit te halen zijn kan geen misbruik meer aantonen. Dat mag je weigeren -- zeg wél waarom, en dat ze na :dagen dagen vanzelf verdwijnen.',
                                 { dagen: props.termijnen.beveiliging },
+                            )
+                        }}
+                    </span>
+                </p>
+            </div>
+
+            <!--
+                De contactaanvragen van deze persoon.
+
+                **Dit is de reden dat dit scherm beter is geworden.** Een
+                verzoek om verwijdering ging eerst altijd over de mailbox,
+                waar de applicatie niets kan. Nu kun je het hier vinden en
+                hier weghalen.
+
+                Het bericht zelf staat er niet bij: dit scherm is er om te
+                kunnen zeggen dát er iets van iemand staat en om het te
+                verwijderen. Lezen doe je op het scherm Aanvragen.
+            -->
+            <div v-if="props.aanvragen.length > 0" class="mt-5">
+                <p class="brand-bezoeklijst-kop">
+                    {{ $t('Berichten via je contactformulier') }}
+                </p>
+
+                <div
+                    class="brand-tabelvak brand-schuif-x mt-2 brand-scrollbar rounded-xl border"
+                >
+                    <table class="brand-tabel-kaarten w-full text-sm">
+                        <thead class="bg-muted/50 text-left">
+                            <tr>
+                                <th class="px-3 py-2 font-medium">
+                                    {{ $t('Wanneer') }}
+                                </th>
+                                <th class="px-3 py-2 font-medium">
+                                    {{ $t('Naam') }}
+                                </th>
+                                <th class="px-3 py-2 font-medium">
+                                    {{ $t('Onderwerp') }}
+                                </th>
+                                <th class="px-3 py-2">
+                                    <span class="sr-only">
+                                        {{ $t('Acties') }}
+                                    </span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr
+                                v-for="rij in props.aanvragen"
+                                :key="rij.id"
+                                class="border-t"
+                            >
+                                <td
+                                    :data-label="$t('Wanneer')"
+                                    class="px-3 py-2 tabular-nums"
+                                >
+                                    {{ rij.wanneer }}
+                                </td>
+                                <td :data-label="$t('Naam')" class="px-3 py-2">
+                                    {{ rij.naam }}
+                                </td>
+                                <td
+                                    :data-label="$t('Onderwerp')"
+                                    class="px-3 py-2 text-muted-foreground"
+                                >
+                                    {{ rij.onderwerp }}
+                                </td>
+                                <td class="px-3 py-2">
+                                    <span class="flex justify-end">
+                                        <Button
+                                            variant="verwijderen-zacht"
+                                            size="icon-sm"
+                                            @click="verwijderAanvraag(rij)"
+                                        >
+                                            <Trash2 class="size-4" />
+                                            <span class="sr-only">
+                                                {{ $t('Verwijderen') }}
+                                            </span>
+                                        </Button>
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p
+                    class="mt-3 flex items-start gap-2 text-sm text-muted-foreground"
+                >
+                    <Trash2 class="mt-0.5 size-4 shrink-0" />
+                    <span>
+                        {{
+                            $t(
+                                'Deze mag je wél verwijderen als iemand daarom vraagt. Ze verdwijnen na :dagen dagen ook vanzelf. Let op: in je eigen mailbox staat het bericht dan nog, en dat moet je daar apart weghalen.',
+                                { dagen: props.termijnen.aanvragen },
                             )
                         }}
                     </span>

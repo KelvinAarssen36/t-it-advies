@@ -54,13 +54,30 @@ defineOptions({
     <div
         class="brand-schuif-x flex h-full flex-1 brand-scrollbar flex-col gap-4 rounded-xl p-4"
     >
+        <!--
+            De bovenste rij.
+
+            **Een vaste hoogte en niet `aspect-video`**, zoals de starter
+            het had. Een beeldverhouding van 16:9 klinkt netjes, maar hij
+            rekent met de breedte: hoe breder het scherm, hoe hoger deze
+            drie vakken worden. Op een groot scherm werden het daardoor
+            drie hoge vlakken met weinig in, en stond alles eronder onnodig
+            laag.
+
+            `h-32` op een telefoon en `h-36` daarboven. Dat is hoog genoeg
+            voor het cijferblok: de twee cijfers staan daar náást elkaar in
+            plaats van gestapeld, precies zodat deze strook plat kan zijn.
+            Maak hem niet lager zonder naar BezoekBlok.vue te kijken, en
+            draai er `npm run build` achteraan -- anders zie je de oude
+            hoogte.
+        -->
         <div class="grid auto-rows-min gap-4 md:grid-cols-3">
             <!--
                 Wat de website doet. Dit vlak heeft geen eigen rand meer:
                 de kaart erin is zelf een link en tekent zijn eigen rand,
                 zodat je kunt zien dat hij reageert als je erover gaat.
             -->
-            <div class="relative aspect-video">
+            <div class="relative h-32 md:h-36">
                 <BezoekBlok
                     :weergaven-totaal="props.bezoek.weergavenTotaal"
                     :bezoekers-vandaag="props.bezoek.bezoekersVandaag"
@@ -73,16 +90,16 @@ defineOptions({
             <!--
                 De klok. `order-first` haalt hem op een telefoon naar
                 boven; vanaf `md` staat hij weer op zijn eigen plek in de
-                rij, en dat is de middelste. Geen `aspect-video` op een
+                rij, en dat is de middelste. Geen vaste hoogte op een
                 telefoon: daar hoort dit een dunne strook te zijn en geen
-                vierkant.
+                vlak zo hoog als de andere twee.
             -->
             <div
-                class="brand-dashboardvak relative order-first overflow-hidden md:order-none md:aspect-video"
+                class="brand-dashboardvak relative order-first overflow-hidden md:order-none md:h-36"
             >
                 <DigitaleKlok :tijdzone="props.tijdzone" />
             </div>
-            <div class="relative aspect-video">
+            <div class="relative h-32 md:h-36">
                 <LeegVak />
             </div>
         </div>

@@ -148,6 +148,56 @@ stopwaitsecs=3600
 Op Laravel Cloud, Forge of Ploi klik je dit in de interface aan; de instellingen
 zijn dezelfde.
 
+### Op gedeelde hosting, zoals Strato
+
+**Daar bestaat Supervisor niet**, en je mag geen proces laten draaien dat
+blijft staan. Het bovenstaande kan er dus niet, en dat is geen detail: álle
+mail van deze site gaat via de wachtrij -- de melding aan de eigenaar, de
+bevestiging aan de bezoeker, de beveiligingsmeldingen. Zonder worker blijven
+die in de tabel `jobs` staan.
+
+**En dat ziet er niet uit als een storing.** De bezoeker krijgt zijn
+bedankje, de aanvraag staat netjes onder Beheer → Aanvragen, en de eigenaar
+wacht op een mail die nooit komt. Er is geen foutmelding, geen rode balk,
+niets.
+
+De oplossing is een worker die zichzelf afsluit, per cron aangeroepen:
+
+```cron
+*/5 * * * * cd /pad/naar/site && php artisan queue:work --stop-when-empty --max-time=280 --tries=3 >> /dev/null 2>&1
+```
+
+Drie dingen die in die regel kloppen moeten:
+
+- **`--stop-when-empty`** laat hem stoppen zodra de wachtrij leeg is, in
+  plaats van te blijven wachten op werk. Zonder dit loopt hij door tot
+  `--max-time` en staan er bij elke cronronde meer processen naast elkaar.
+- **`--max-time` onder je cron-interval.** Bij elke vijf minuten is 280
+  seconden ruim: dan is hij altijd klaar voordat de volgende begint, ook als
+  er veel werk ligt.
+- **Neem de kortste interval die je pakket toestaat.** De vertraging die je
+  hier kiest is de vertraging waarmee een bezoeker zijn bevestigingsmail
+  krijgt. Vijf minuten is te verdedigen, een kwartier wordt ongemakkelijk.
+
+> **Niet `QUEUE_CONNECTION=sync` als uitweg.** Dan wordt de mail tijdens het
+> verzoek zelf verstuurd en wacht de bezoeker op de mailserver -- maar
+> erger: je verliest precies de dingen die dit project eraan heeft gehangen.
+> Een mislukte verzending komt dan niet in het mailoverzicht, de
+> `Failed`-rij die `AnomalyScanner` als mailprobleem telt wordt niet
+> geschreven, en een storing bij de provider slaat door naar het
+> contactformulier van de bezoeker.
+
+### En er is nu een alarm als dit toch misgaat
+
+Omdat dit de stilste storing van de applicatie is, kijkt `security:report`
+er elk uur naar: liggen er jobs die langer dan een kwartier over tijd zijn,
+dan gaat er een melding uit. Zie
+[onderhoudstaken](onderhoudstaken.md#werk-dat-in-de-wachtrij-blijft-liggen).
+
+Die melding gaat **niet** via de wachtrij -- dat zou het ene bericht dat je
+nodig hebt door het kapotte onderdeel sturen. `ReportSecurityAnomalies`
+gebruikt daarom `sendNow()`.
+
 ## Scheduler
 
 ```cron
@@ -182,6 +232,60 @@ Naast de standaard Laravel-variabelen:
 | `SECURITY_ALERT_COOLDOWN_MINUTES` | Pauze na een melding                            | nee, standaard 180                  |
 | `SECURITY_ALERT_FAILED_LOGINS`    | Drempel mislukte inlogpogingen                  | nee, standaard 25                   |
 | `SECURITY_ALERT_MAIL_PROBLEMS`    | Drempel mailproblemen                           | nee, standaard 5                    |
+| `CRASH_ALERT_COOLDOWN_MINUTES`    | Pauze na een crashmelding                       | nee, standaard 30                   |
+
+### Het bedrijf en zijn taal
+
+Deze vier horen bij het bedrijf en niet bij de server. Ze hebben allemaal een
+werkende standaardwaarde, dus een deploy valt niet om als je ze vergeet -- maar
+dan staat er wel iets anders op de site dan je bedoelde.
+
+| Variabele       | Waarvoor                                                    | Standaard                   |
+| --------------- | ----------------------------------------------------------- | --------------------------- |
+| `SITE_EMAIL`    | Het publieke adres, en waar het contactformulier binnenkomt | `info@atitadvies.nl`        |
+| `SITE_LOCALE`   | De taal waarin de eigenaar zijn eigen post leest            | `nl`                        |
+| `SITE_TIMEZONE` | De tijdzone waarin een "dag" wordt geteld                   | `Europe/Amsterdam`          |
+| `SITE_LINKEDIN` | De link achter de LinkedIn-knoppen                          | het profiel van de eigenaar |
+
+> **`SITE_LOCALE` is niet `APP_LOCALE`.** `APP_LOCALE` is de taal waarin een
+> bezoeker de site ziet en verandert tijdens elk verzoek;
+> `App::setLocale()` schrijft hem in de configuratie. `SITE_LOCALE` bepaalt de
+> taal van de mail aan de eigenaar en wordt door geen enkel verzoek omgezet.
+> Dat onderscheid heeft een echte fout opgeleverd; zie
+> [mail en queues](../architecture/mail-en-queues.md).
+
+### Bewaartermijnen
+
+Alle vier worden 's nachts afgedwongen door een geplande taak; zie
+[onderhoudstaken](onderhoudstaken.md). Geen van de vier is verplicht.
+
+| Variabele                     | Waarvoor                                                   | Standaard |
+| ----------------------------- | ---------------------------------------------------------- | --------- |
+| `CONTACT_RETENTION_DAYS`      | Hoe lang een bericht uit het contactformulier blijft staan | 365 dagen |
+| `SECURITY_LOG_RETENTION_DAYS` | Het beveiligingslogboek                                    | 365 dagen |
+| `ACTIVITY_LOG_RETENTION_DAYS` | Het activiteitenlogboek                                    | 365 dagen |
+| `MAIL_LOG_RETENTION_DAYS`     | Het mailoverzicht                                          | 180 dagen |
+| `SECURITY_LOG_DAILY_DAYS`     | De dagbestanden in `storage/logs`                          | 90 dagen  |
+
+> **`CONTACT_RETENTION_DAYS` is de enige die de bezoeker te zien krijgt.** Dit
+> is de termijn die over inhoud van een bezoeker gaat, en de
+> privacyverklaring leest hém uit -- verander je het getal, dan verandert die
+> tekst mee. Dat is met opzet zo geregeld, maar het betekent ook dat je hem
+> niet zonder nadenken omzet. Zie
+> [contact](../architecture/modules/contact.md).
+
+### De rest
+
+| Variabele                                      | Waarvoor                                      | Standaard               |
+| ---------------------------------------------- | --------------------------------------------- | ----------------------- |
+| `HONEYPOT_ENABLED`                             | De onzichtbare velden op openbare formulieren | aan                     |
+| `HONEYPOT_SECONDS`                             | Hoe snel een inzending "te snel" is           | 2 seconden              |
+| `TRANSLATE_ENABLED`                            | De knop "Vertaal automatisch" in het portaal  | aan                     |
+| `TRANSLATE_EMAIL`                              | Verhoogt het dagtegoed van de vertaaldienst   | leeg                    |
+| `TRUSTED_PROXIES`                              | Vertrouwde proxies, voor het echte IP-adres   | leeg; zie hieronder     |
+| `PORTAL_ACCOUNT_EMAIL`                         | Het inlogadres van de eigenaar                | `aarssen@atitadvies.nl` |
+| `MEDIA_LOGO_MAX_KB`                            | Hoe groot een geüpload logo mag zijn          | 1536 kB                 |
+| `MEDIA_LOGO_MIN_ZIJDE`, `MEDIA_LOGO_MAX_ZIJDE` | De grenzen in pixels                          | 48 en 3000              |
 
 Zonder `TURNSTILE_SECRET_KEY` weigert de applicatie in productie bewust elk
 beschermd formulier. Zonder `MAIL_WEBHOOK_SECRET` weigert het
@@ -227,38 +331,62 @@ inloggen en zijn passkeys opnieuw aanmaken. Vervelend, niet fataal.
    aanzetten. Zonder die twee logt de applicatie wel alles, maar krijgt
    niemand ooit bericht. Controleer het met
    `php artisan security:report --force --window=10080`.
-10. **`TRANSLATE_EMAIL` zetten.** Zonder dat adres telt de vertaaldienst het
+10. **Zoek op wat de kórtste cron-interval van je hostingpakket is, en reken
+    daar twee dingen op na.** Dit is het enige punt in deze lijst dat van de
+    hosting afhangt en niet van ons, en er hangen twee dingen aan:
+    - **De scheduler.** De regel hierboven is `* * * * *`, elke minuut. Kan
+      je pakket dat niet maar alleen elke vijf of vijftien minuten, dan
+      vuren de taken op vaste tijdstippen (03:05 tot 03:50, zie
+      [onderhoudstaken](onderhoudstaken.md)) onbetrouwbaar en groeien de
+      logboektabellen door. Zet die tijdstippen dan op een raster dat wél
+      wordt geraakt.
+    - **De queue worker.** Zie
+      [op gedeelde hosting](#op-gedeelde-hosting-zoals-strato). De interval
+      die je daar kiest is de vertraging waarmee een bezoeker zijn
+      bevestigingsmail krijgt, dus neem de kortste die mag.
+11. **Vul het contactformulier één keer in op het echte domein, en kijk of
+    beide mails aankomen**: de melding op `info@atitadvies.nl` en de
+    bevestiging op het adres dat je invulde. Dit is de stap die betrapt dat
+    de queue worker niet draait -- en dat is de enige storing in deze
+    applicatie die er van buiten volledig gezond uitziet. Staat er iets in
+    `jobs` dat blijft staan, dan is het dat.
+
+    ```bash
+    php artisan tinker --execute="echo DB::table('jobs')->count();"
+    ```
+
+12. **`TRANSLATE_EMAIL` zetten.** Zonder dat adres telt de vertaaldienst het
     dagtegoed per **IP-adres**, en op gedeelde hosting deel je dat met alle
     andere sites op die server -- dan kan het tegoed op zijn zonder dat er
     bij ons iemand op de knop heeft gedrukt. Mét adres telt hij per adres,
     en is het tegoed bovendien tien keer zo hoog. Zie
     [automatisch vertalen](../architecture/automatisch-vertalen.md).
-11. **Controleer of de server naar buiten mag** (uitgaand https). Sommige
+13. **Controleer of de server naar buiten mag** (uitgaand https). Sommige
     hostingpakketten staan dat niet toe. Kan het niet, dan blijft alles
     werken -- de knop geeft dan netjes een foutmelding -- maar zet hem dan
     liever uit met `TRANSLATE_ENABLED=false`, zodat hij niet elke keer
     teleurstelt.
-12. **`APP_URL` op het echte domein zetten, met `https://` ervoor.** Dat is
+14. **`APP_URL` op het echte domein zetten, met `https://` ervoor.** Dat is
     hier geen cosmetische instelling: passkeys halen hun _relying party id_
     en hun toegestane herkomst uit die waarde
     (`config/fortify.php`). Staat er nog `http://t-it-advies.test`, dan
     weigert de browser elke passkey -- zonder foutmelding die uitlegt
     waarom. Let ook op het domein zelf: dat is **atitadvies.nl** en niet
     `t-it-advies.nl`.
-13. **Kijk na wat de hostingpartij in zijn toegangslogboek zet en hoe lang
+15. **Kijk na wat de hostingpartij in zijn toegangslogboek zet en hoe lang
     hij dat bewaart.** De privacyverklaring noemt dat logbestand, maar
     zonder termijn, omdat wij die niet bepalen. Is hij bekend en vast, dan
     kan hij er alsnog bij -- maar alleen als hij klopt. Zie
     [bezoekcijfers](../architecture/bezoekcijfers.md#de-privacyverklaring).
-14. **Kies één vaste host en verwijs de andere door.** Dus `atitadvies.nl`
+16. **Kies één vaste host en verwijs de andere door.** Dus `atitadvies.nl`
     óf `www.atitadvies.nl`, met een 301 van de ene naar de andere. Een
     passkey zit vast aan de host waar hij is gemaakt; is de site op allebei
     bereikbaar, dan werkt een passkey van de ene niet op de andere en lijkt
     het alsof hij zomaar kwijt is. Dezelfde host hoort in `APP_URL`.
-15. **`PASSKEYS_USER_HANDLE_SECRET` zetten.** Zie het stuk hierboven: laat
+17. **`PASSKEYS_USER_HANDLE_SECRET` zetten.** Zie het stuk hierboven: laat
     je hem leeg, dan hangt hij aan `APP_KEY`, en dan sneuvelen alle
     passkeys zodra die ooit wordt vernieuwd.
-16. **Controleer dat `/.well-known/passkey-endpoints` een JSON-antwoord
+18. **Controleer dat `/.well-known/passkey-endpoints` een JSON-antwoord
     geeft** en geen 404 van de webserver. Op gedeelde hosting wordt
     `/.well-known/` soms door de server zelf afgehandeld -- dat is de map
     waar ook de certificaatcontrole van Let's Encrypt doorheen gaat. Vangt
@@ -275,7 +403,7 @@ werkt zie je pas op het echte adres.
 
 Ga dus na de lancering één keer naar **Instellingen → Beveiliging**, maak
 een passkey aan en log er één keer mee in. Lukt dat, dan is alles hierboven
-goed gezet. Lukt het niet, dan is het bijna altijd stap 12, 14 of 15.
+goed gezet. Lukt het niet, dan is het bijna altijd stap 14, 16 of 17.
 
 > Gaat dit mis, dan is dat **geen blokkade**: inloggen met wachtwoord en 2FA
 > werkt er los van.

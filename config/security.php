@@ -154,9 +154,34 @@ return [
          */
         'crash_cooldown_minutes' => (int) env('CRASH_ALERT_COOLDOWN_MINUTES', 30),
 
+        /*
+         * Vanaf wanneer werk in de wachtrij "blijft liggen" heet.
+         *
+         * **Dit is de stilste storing die deze applicatie heeft.** Alle mail
+         * gaat via de wachtrij, dus draait er geen worker, dan blijft een
+         * bericht in de tabel `jobs` staan: de bezoeker krijgt zijn
+         * bedankje, de aanvraag staat netjes in het portaal, en de eigenaar
+         * krijgt nooit een mail. Er is niets dat eruitziet als een fout.
+         *
+         * Een kwartier is ruim. Een worker die per cron draait doet dat
+         * vaak elke vijf minuten, en een enkele langzame verzending mag
+         * geen alarm geven.
+         */
+        'stuck_job_minutes' => (int) env('SECURITY_ALERT_STUCK_JOB_MINUTES', 15),
+
         'thresholds' => [
             'failed_logins' => (int) env('SECURITY_ALERT_FAILED_LOGINS', 25),
             'mail_problems' => (int) env('SECURITY_ALERT_MAIL_PROBLEMS', 5),
+
+            /*
+             * Eén is hier genoeg, anders dan bij de andere twee.
+             *
+             * Mislukte logins zijn er altijd een paar en mailbounces ook;
+             * daar gaat het om een piek. Een job die een kwartier over tijd
+             * is, is geen piek maar een worker die niet draait -- en dan is
+             * het tweede bericht net zo erg als het vijfde.
+             */
+            'stuck_jobs' => (int) env('SECURITY_ALERT_STUCK_JOBS', 1),
         ],
     ],
 

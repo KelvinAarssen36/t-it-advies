@@ -165,6 +165,23 @@ class SectionHeading extends Model
                 'intro_en' => 'No vague promises, just numbers. Scroll through and they fill themselves in.',
             ],
 
+            /*
+             * De kop boven het contactformulier.
+             *
+             * Die stond eerst hardgecodeerd in ContactSection.vue, als
+             * enige onderdeel met een kop die de klant niet kon wijzigen.
+             * Met de module Contact komt hij hiernaartoe, zoals bij alle
+             * andere onderdelen.
+             */
+            PageSectionKey::Contact => [
+                'eyebrow_nl' => 'Contact',
+                'eyebrow_en' => 'Contact',
+                'title_nl' => 'Laat een bericht achter',
+                'title_en' => 'Leave a message',
+                'intro_nl' => 'We reageren doorgaans binnen een werkdag.',
+                'intro_en' => 'We usually reply within one working day.',
+            ],
+
             default => ['title_nl' => ucfirst($sectie->value)],
         };
     }

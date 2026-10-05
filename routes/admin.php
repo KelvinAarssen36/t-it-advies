@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\ActivityController;
+use App\Http\Controllers\Admin\ContactSubmissionController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\LegalController;
 use App\Http\Controllers\Admin\MailLogController;
@@ -67,6 +68,30 @@ Route::middleware(['auth', 'verified', 'two-factor.required'])
         Route::get('mail', [MailLogController::class, 'index'])
             ->middleware('can:manage portal')
             ->name('mail.index');
+
+        /*
+         * De aanvragen uit het contactformulier.
+         *
+         * Hier en niet onder Website: dit is iets dat je naslaat, en het
+         * formulier zelf beheer je daar. Het staat naast het mailoverzicht
+         * omdat de twee bij elkaar horen -- daar zie je óf een bericht is
+         * aangekomen, hier wát er in stond.
+         *
+         * Verwijderen vraagt een verse code: daar verdwijnen gegevens van
+         * een bezoeker door. Het aanvinken van gelezen en beantwoord niet,
+         * dat is een kladblok.
+         */
+        Route::get('aanvragen', [ContactSubmissionController::class, 'index'])
+            ->middleware('can:manage portal')
+            ->name('submissions.index');
+
+        Route::patch('aanvragen/{submission}/stand', [ContactSubmissionController::class, 'stand'])
+            ->middleware('can:manage portal')
+            ->name('submissions.stand');
+
+        Route::delete('aanvragen/{submission}', [ContactSubmissionController::class, 'destroy'])
+            ->middleware(['can:manage portal', '2fa.confirm'])
+            ->name('submissions.destroy');
 
         Route::get('security', [SecurityEventController::class, 'index'])
             ->middleware('can:manage portal')

@@ -113,7 +113,12 @@ class TranslateController extends Controller
              * tegelijk -- en dan moet het antwoord ze uit elkaar kunnen
              * houden.
              */
-            'label_nl' => ['nullable', 'string', 'max:60'],
+            /*
+             * Tachtig en niet zestig tekens: dit veld doet sinds de
+             * module Contact ook de onderwerpen van het contactformulier,
+             * en die mogen iets langer dan het label van een statistiek.
+             */
+            'label_nl' => ['nullable', 'string', 'max:80'],
             'notitie_nl' => ['nullable', 'string', 'max:120'],
             'groep_nl' => ['nullable', 'string', 'max:60'],
         ]);

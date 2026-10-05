@@ -67,57 +67,56 @@ const beweging = computed(() => props.reeks.some((dag) => dag > 0));
 
         <template v-else>
             <!--
-                Twee cijfers die makkelijk door elkaar te halen zijn, dus
-                ze staan onder een eigen opschrift. Zonder die twee
-                woordjes is "1.284" een getal zonder tijdvak, en dan leest
-                iemand het als "deze maand" -- precies wat het niet is.
-            -->
-            <div class="brand-bezoekblok-totaal">
-                <p class="brand-bezoekblok-label">
-                    {{ $t('Totaal sinds de start') }}
-                </p>
-                <p class="brand-bezoekblok-getal">
-                    <span class="brand-bezoekblok-cijfer brand-text-gradient">
-                        {{ props.weergavenTotaal.toLocaleString('nl-NL') }}
-                    </span>
-                    <span class="brand-bezoekblok-eenheid">
-                        {{ $t('weergaven') }}
-                    </span>
-                </p>
-            </div>
+                De twee cijfers **naast** elkaar en niet onder elkaar.
 
-            <div class="brand-bezoekblok-vandaag">
-                <p class="brand-bezoekblok-label">{{ $t('Vandaag') }}</p>
-                <p class="brand-bezoekblok-regel">
-                    <template v-if="props.bezoekersVandaag === 0">
-                        {{ $t('Nog niemand langs geweest') }}
-                    </template>
-                    <template v-else>
-                        <span class="brand-bezoekblok-nadruk">
-                            <template v-if="props.bezoekersVandaag === 1">
-                                {{ $t('1 bezoeker') }}
-                            </template>
-                            <template v-else>
-                                {{
-                                    $t(':aantal bezoekers', {
-                                        aantal: props.bezoekersVandaag,
-                                    })
-                                }}
-                            </template>
+                Ze staan nog steeds elk onder hun eigen opschrift, want dat
+                was nodig: zonder "Totaal sinds de start" is 1.284 een getal
+                zonder tijdvak en leest iemand het als "deze maand". Maar
+                gestapeld maakten ze dit blok twee regels hoog, en de
+                bovenste rij van het dashboard hoort een platte strook te
+                zijn. Naast elkaar past hetzelfde verhaal in de helft van
+                de hoogte, en het leest zelfs beter: je ziet de twee
+                cijfers in één blik naast elkaar in plaats van ze te moeten
+                vergelijken over een streep heen.
+            -->
+            <div class="brand-bezoekblok-cijfers">
+                <div class="brand-bezoekblok-vak">
+                    <p class="brand-bezoekblok-label">
+                        {{ $t('Totaal') }}
+                    </p>
+                    <p class="brand-bezoekblok-getal">
+                        <span
+                            class="brand-bezoekblok-cijfer brand-text-gradient"
+                        >
+                            {{ props.weergavenTotaal.toLocaleString('nl-NL') }}
                         </span>
-                        <span aria-hidden="true"> · </span>
-                        <template v-if="props.weergavenVandaag === 1">
-                            {{ $t('1 weergave') }}
+                    </p>
+                    <p class="brand-bezoekblok-onder">
+                        {{ $t('weergaven sinds de start') }}
+                    </p>
+                </div>
+
+                <div class="brand-bezoekblok-vak" data-vandaag>
+                    <p class="brand-bezoekblok-label">{{ $t('Vandaag') }}</p>
+                    <p class="brand-bezoekblok-getal">
+                        {{ props.bezoekersVandaag.toLocaleString('nl-NL') }}
+                    </p>
+                    <p class="brand-bezoekblok-onder">
+                        <template v-if="props.bezoekersVandaag === 0">
+                            {{ $t('nog niemand langs geweest') }}
+                        </template>
+                        <template v-else-if="props.weergavenVandaag === 1">
+                            {{ $t('bezoekers, 1 weergave') }}
                         </template>
                         <template v-else>
                             {{
-                                $t(':aantal weergaven', {
+                                $t('bezoekers, :aantal weergaven', {
                                     aantal: props.weergavenVandaag,
                                 })
                             }}
                         </template>
-                    </template>
-                </p>
+                    </p>
+                </div>
             </div>
 
             <!--

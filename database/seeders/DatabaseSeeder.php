@@ -35,6 +35,10 @@ class DatabaseSeeder extends Seeder
             ExperienceStatSeeder::class,
             ServiceSeeder::class,
 
+            // De velden en de instellingen van het contactformulier. Geen
+            // onderwerpen: die verzint de klant zelf. Zie ContactSeeder.
+            ContactSeeder::class,
+
             // Eén seeder voor de koppen van alle onderdelen; die stonden
             // hier eerst als drie losse regels. Zie SectionHeadingSeeder.
             SectionHeadingSeeder::class,

@@ -36,6 +36,20 @@ import { home } from '@/routes';
  * kern: dit is de belofte aan de bezoeker, en de code eronder hoort hem na
  * te komen.
  *
+ * **De module Contact is daar het grootste voorbeeld van**, en het is geen
+ * correctie van een fout maar van een keuze. Drie alinea's hier zeiden dat
+ * een bericht de website verliet zodra het verstuurd was, en dat was tot
+ * dat moment waar. Sindsdien blijft een aanvraag een jaar in het portaal
+ * staan, zodat de eigenaar kan terugzoeken wie hem wanneer benaderde:
+ *
+ * - "daarna is het weg uit de website" is vervangen door hoe lang het blijft
+ *   staan en wie erbij kan;
+ * - de bewaarlijst noemt die termijn, uit `config('site.contact.retention_days')`;
+ * - er staat nu bij dat de bezoeker zelf een bevestiging krijgt, en dat zijn
+ *   adres daardoor in het mailoverzicht als ontvanger staat.
+ *
+ * Zie docs/architecture/modules/contact.md.
+ *
  * De bewaartermijnen en het adres komen van de server, uit de instellingen
  * die ze ook echt bepalen. Een getal dat hier met de hand staat, klopt tot
  * de dag dat iemand die instelling wijzigt.
@@ -45,6 +59,8 @@ import { home } from '@/routes';
 const props = defineProps<{
     email: string;
     bewaartermijnBeveiliging: number;
+    /** Hoe lang een bericht uit het contactformulier blijft staan. */
+    bewaartermijnAanvragen: number;
     bewaartermijnMail: number;
     /** Of de spamcontrole van Cloudflare daadwerkelijk aanstaat. */
     spamcontrole: boolean;
@@ -99,7 +115,7 @@ const props = defineProps<{
                         'is verantwoordelijk voor de gegevens die via deze website worden verwerkt. Je bereikt ons op:',
                     )
                 }}
-                <a :href="`mailto:${props.email}`" class="brand-privacy-mail">
+                <a :href="`mailto:${props.email}`" class="brand-sitemail">
                     {{ props.email }}
                 </a>
             </p>
@@ -155,14 +171,47 @@ const props = defineProps<{
                         'Wat je in het contactformulier invult -- je naam, je e-mailadres, je onderwerp en je bericht -- gebruiken we om je bericht te lezen en je te antwoorden. Het wordt per e-mail verstuurd naar:',
                     )
                 }}
-                <a :href="`mailto:${props.email}`" class="brand-privacy-mail">
+                <a :href="`mailto:${props.email}`" class="brand-sitemail">
                     {{ props.email }}
                 </a>
+            </p>
+            <!--
+                **Deze alinea zei eerder het tegenovergestelde**, en dat was
+                waar tot de module Contact. Toen verliet een bericht de
+                website zodra het verstuurd was; nu blijft het een jaar in
+                het portaal staan, zodat de eigenaar kan terugzoeken wie hem
+                wanneer benaderde.
+
+                Zie docs/architecture/modules/contact.md en het commentaar
+                bovenaan dit bestand: bij elke wijziging aan wat er wordt
+                bewaard hoort deze pagina in dezelfde wijziging mee.
+            -->
+            <p>
+                <strong>
+                    {{
+                        $t(
+                            'Je bericht blijft in het beheergedeelte van deze website staan, :dagen dagen lang.',
+                            { dagen: props.bewaartermijnAanvragen },
+                        )
+                    }}
+                </strong>
+                {{
+                    $t(
+                        'Dat is zodat we kunnen terugzoeken waar we het eerder over hadden. Daarna verdwijnt het vanzelf. Alleen de eigenaar van deze website kan erbij, en daarvoor moet hij inloggen met een wachtwoord en een code uit een app.',
+                    )
+                }}
             </p>
             <p>
                 {{
                     $t(
-                        'Tot het verstuurd is, staat je bericht kort in een wachtrij op onze server. Daarna is het weg uit de website en staat het alleen nog in onze mailbox, zoals gewone post. Lukt het versturen niet, dan blijft die poging hoogstens veertien dagen bewaard zodat hij opnieuw geprobeerd kan worden.',
+                        'Daarnaast wordt het per e-mail naar hem verstuurd, en staat het dus ook in zijn mailbox, zoals gewone post. Lukt dat versturen niet, dan blijft die poging hoogstens veertien dagen bewaard zodat hij opnieuw geprobeerd kan worden.',
+                    )
+                }}
+            </p>
+            <p>
+                {{
+                    $t(
+                        'Je krijgt zelf ook een bevestiging per mail. Daardoor staat je e-mailadres als ontvanger in het logboek hieronder.',
                     )
                 }}
             </p>
@@ -283,7 +332,8 @@ const props = defineProps<{
                 <li :style="{ '--stip-vertraging': '0.70s' }">
                     {{
                         $t(
-                            'Je bericht via het contactformulier: in onze mailbox zolang het nodig is om je vraag af te handelen. Op de website zelf alleen tot het verstuurd is.',
+                            'Je bericht via het contactformulier: :dagen dagen in het beheergedeelte van deze website, en daarnaast in onze mailbox zolang het nodig is om je vraag af te handelen.',
+                            { dagen: props.bewaartermijnAanvragen },
                         )
                     }}
                 </li>
@@ -330,7 +380,7 @@ const props = defineProps<{
                         'Je mag ons vragen welke gegevens we van je hebben, ze laten verbeteren, en bezwaar maken tegen de verwerking. Verwijderen kan ook, behalve waar we iets moeten bewaren om misbruik tegen te gaan -- dan zeggen we dat, met de reden. Stuur een bericht naar:',
                     )
                 }}
-                <a :href="`mailto:${props.email}`" class="brand-privacy-mail">
+                <a :href="`mailto:${props.email}`" class="brand-sitemail">
                     {{ props.email }}
                 </a>
                 {{ $t('en we reageren binnen een maand.') }}
@@ -338,7 +388,7 @@ const props = defineProps<{
             <p>
                 {{
                     $t(
-                        'Praktisch gezien gaat dat over je bericht via het contactformulier. Dat staat in onze mailbox en we kunnen het opzoeken, opsturen en verwijderen.',
+                        'Praktisch gezien gaat dat over je bericht via het contactformulier. Dat staat in het beheergedeelte van deze website en in onze mailbox; we kunnen het op allebei die plekken opzoeken, opsturen en verwijderen.',
                     )
                 }}
             </p>

@@ -7,6 +7,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\Portal\SiteEntryController;
 use App\Http\Controllers\PrivacyController;
+use App\Http\Controllers\PublicContactController;
 use App\Http\Controllers\Security\ConfirmTwoFactorController;
 use App\Http\Controllers\Security\PortalEntryController;
 use App\Http\Controllers\Security\TwoFactorSetupController;
@@ -43,6 +44,22 @@ Route::get('/', HomeController::class)
  * die software. Zie docs/architecture/bezoekcijfers.md.
  */
 Route::get('privacy', PrivacyController::class)->name('privacy');
+
+/*
+ * De aparte contactpagina.
+ *
+ * Bestaat alleen als de eigenaar voor die weergave heeft gekozen; anders
+ * geeft de controller een 404. Zie PublicContactController.
+ *
+ * **Mét `TelBezoek`.** Dit is een echte pagina van de website, dus een
+ * bezoek hoort mee te tellen -- anders zakken de cijfers zodra hij voor
+ * deze weergave kiest. Het commentaar bij de route van de landingspagina
+ * zegt dat een tweede publieke pagina deze middleware ook hoort te
+ * krijgen; dit is die tweede.
+ */
+Route::get('contact', PublicContactController::class)
+    ->middleware(TelBezoek::class)
+    ->name('contact');
 
 /*
  * Van taal wisselen. Open voor iedereen, want de publieke site moet ook

@@ -49,8 +49,17 @@ const bezigtekst = computed(
     () => props.loadingLabel ?? t('Bezig met inloggen…'),
 );
 
+/*
+ * **Een label en geen opdracht.** Hier stond "Of log in met je
+ * e-mailadres", en op het scherm Even je wachtwoord "Of bevestig met je
+ * wachtwoord". Dat laatste viel op: de knop erboven zegt "Bevestig met een
+ * passkey", de knop eronder "Bevestigen", en daartussen stond een derde
+ * keer hetzelfde werkwoord -- in hoofdletters, want deze regel wordt
+ * `uppercase` getekend. Een scheidingsregel hoort te zeggen wát het andere
+ * is, niet wat je moet doen; het werkwoord staat al op de knop.
+ */
 const scheidingstekst = computed(
-    () => props.separator ?? t('Of log in met je e-mailadres'),
+    () => props.separator ?? t('Of met je e-mailadres'),
 );
 
 const { verify, isLoading, error, isSupported } = usePasskeyVerify({
@@ -88,15 +97,35 @@ const { verify, isLoading, error, isSupported } = usePasskeyVerify({
             </div>
         </div>
 
-        <div class="relative my-6">
-            <div class="absolute inset-0 flex items-center">
-                <Separator class="w-full" />
-            </div>
-            <div class="relative flex justify-center text-xs uppercase">
-                <span class="bg-background px-2 text-muted-foreground">
-                    {{ scheidingstekst }}
-                </span>
-            </div>
+        <!--
+            **Twee streepjes met de tekst ertussen, en geen tekst óver een
+            streep heen.**
+
+            Hier lag één streep over de volle breedte met de tekst erop, en
+            die tekst had een eigen achtergrond om een gat in de streep te
+            maken. Dat gat was `bg-background` -- de kleur van de pagina --
+            terwijl dit blok op een kaart staat met `bg-card`. Twee
+            verschillende kleuren, dus je zag geen gat maar een lichter
+            vlakje met harde randen om de tekst.
+
+            Het is daar ook niet op te lossen door de goede kleur te
+            kiezen: bij de merkvariant is de kaart `bg-card/70` met een
+            waas en een gradient erachter, dus er ís geen dekkende kleur
+            die klopt.
+
+            Twee streepjes die de ruimte verdelen hebben geen achtergrond
+            nodig en weten dus niets over het vlak waar ze op staan. Het
+            streepje zit in een `flex-1`-omhulsel omdat `Separator` zelf
+            `shrink-0` en `w-full` meebrengt.
+        -->
+        <div class="my-6 flex items-center gap-3">
+            <div class="flex-1"><Separator /></div>
+            <span
+                class="text-xs whitespace-nowrap text-muted-foreground uppercase"
+            >
+                {{ scheidingstekst }}
+            </span>
+            <div class="flex-1"><Separator /></div>
         </div>
     </div>
 </template>

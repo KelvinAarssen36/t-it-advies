@@ -173,4 +173,32 @@ return [
 
     'log_retention_days' => (int) env('MAIL_LOG_RETENTION_DAYS', 180),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Hoe een mail eruitziet
+    |--------------------------------------------------------------------------
+    |
+    | **Eén huisstijl voor álle mail die deze applicatie verstuurt.** Niet
+    | alleen de bevestiging aan een bezoeker, maar ook de
+    | beveiligingsmeldingen en de crashmelding: die komen allemaal bij
+    | iemand binnen, en een mail die eruitziet als een standaardsjabloon
+    | leest als iets dat niet van dit bedrijf komt.
+    |
+    | Het thema `atit` staat in resources/views/vendor/mail/html/themes/ en
+    | is Laravel's eigen thema met onze kleuren erin. Bewust een kopie en
+    | geen eigen sjabloon: de opbouw van een mail is uitgevochten tegen
+    | twintig jaar mailprogramma's, en die strijd doen we niet over.
+    |
+    | Zie docs/architecture/mail-en-queues.md.
+    |
+    */
+
+    'markdown' => [
+        'theme' => 'atit',
+
+        'paths' => [
+            resource_path('views/vendor/mail'),
+        ],
+    ],
+
 ];

@@ -77,9 +77,21 @@ het pas vanaf 48rem het vlak dat naast de twee andere blokken past.
 |        | Telefoon                                  | Vanaf 48rem                       |
 | ------ | ----------------------------------------- | --------------------------------- |
 | Vorm   | Eén regel: tijd links, korte datum rechts | Gestapeld en gecentreerd          |
-| Hoogte | Wat de inhoud nodig heeft                 | `aspect-video`, zoals de buren    |
+| Hoogte | Wat de inhoud nodig heeft                 | `h-36`, zoals de buren            |
 | Datum  | Kort ("do 1 okt")                         | Lang ("donderdag 1 oktober 2026") |
 | Gloed  | Uit                                       | Aan                               |
+
+### De rij heeft een vaste hoogte en geen beeldverhouding
+
+De drie vlakken stonden op `aspect-video`, zoals de starter het had. Dat
+klinkt netjes maar het rekent met de **breedte**: hoe breder het scherm, hoe
+hoger deze rij wordt. Op een groot scherm werden het drie hoge vlakken met
+weinig erin, en stond alles eronder onnodig laag.
+
+Nu is het `h-32` op een telefoon en `h-36` daarboven -- een platte strook,
+op elk scherm even hoog. Het bezoekblok is daarvoor aangepast (zie
+hieronder); maak de rij niet lager zonder daar te kijken, en draai er
+`npm run build` achteraan, anders zie je de oude hoogte.
 
 Dat het vlak bovenaan komt is **één klasse op dat vlak**:
 `order-first md:order-none`. De andere twee kleine vlakken en het grote
@@ -113,21 +125,29 @@ en geen dashboard.
 | De bezoekers van vandaag    | Of er nú iets gebeurt                                          |
 | Veertien staafjes           | De vorm van de laatste twee weken, zonder cijfers en zonder as |
 
-### Elk cijfer staat onder zijn eigen opschrift
+### Elk cijfer staat onder zijn eigen opschrift, en ze staan náást elkaar
 
-Boven het grote getal staat **TOTAAL SINDS DE START** en boven de regel
-eronder **VANDAAG**, met een streepje ertussen.
+Boven het ene getal staat **TOTAAL** en boven het andere **VANDAAG**, met
+een streepje ertussen.
 
-Die twee woordjes zijn het verschil tussen een cijfer en een cijfer dat je
+Die opschriften zijn het verschil tussen een cijfer en een cijfer dat je
 begrijpt. Zonder opschrift is "1.284" een getal zonder tijdvak, en dan leest
-iemand het als "deze maand" -- precies wat het niet is. Twee cijfers onder
-elkaar in hetzelfde vlak zijn bovendien makkelijk te verwisselen, en dan
-denkt de eigenaar dat er vandaag duizend mensen langskwamen.
+iemand het als "deze maand" -- precies wat het niet is. Twee cijfers in
+hetzelfde vlak zijn bovendien makkelijk te verwisselen, en dan denkt de
+eigenaar dat er vandaag duizend mensen langskwamen.
 
-De regel van vandaag noemt de bezoekers én de weergaven ("7 bezoekers · 12
-weergaven"), want dat zijn twee verschillende dingen: één bezoeker die drie
-pagina's opent is drie weergaven. Het aantal bezoekers staat dik, omdat dat
-het cijfer is waar iemand naar zoekt.
+**Ze stonden eerst gestapeld, met het streepje horizontaal.** Daarmee was dit
+blok twee regels hoog en trok het de hele bovenste rij mee omhoog. Naast
+elkaar past hetzelfde verhaal in de helft van de hoogte, en het leest zelfs
+beter: je ziet de twee cijfers in één blik naast elkaar in plaats van ze te
+moeten vergelijken over een streep heen. Het streepje staat er nog, nu
+verticaal, als `::before` in kolom 2 van een raster van drie.
+
+Onder elk getal staat klein wat het betekent: "weergaven sinds de start" en
+"bezoekers, 12 weergaven". Die tweede noemt beide, want dat zijn twee
+verschillende dingen: één bezoeker die drie pagina's opent is drie
+weergaven. Het grote cijfer is het aantal bezoekers, omdat dat het cijfer is
+waar iemand naar zoekt.
 
 **De hele kaart is een link** naar Beheer → Bezoekers, en niet een vlak met
 een knop in een hoek: je kijkt ernaar en denkt "hoeveel waren het er deze

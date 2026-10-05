@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Website\CertificateController;
+use App\Http\Controllers\Website\ContactModuleController;
 use App\Http\Controllers\Website\ExperienceController;
 use App\Http\Controllers\Website\HeroController;
 use App\Http\Controllers\Website\LayoutController;
@@ -152,6 +153,32 @@ Route::middleware(['auth', 'verified', 'two-factor.required', 'can:manage portal
             Route::put('{statistic}', [StatisticController::class, 'update'])->name('update');
             Route::patch('{statistic}/online', [StatisticController::class, 'online'])->name('online');
             Route::delete('{statistic}', [StatisticController::class, 'destroy'])->name('destroy');
+        });
+
+        /*
+         * Het contactformulier: de onderwerpen, de velden en de
+         * instellingen.
+         *
+         * **De binnengekomen aanvragen staan hier níet.** Die horen in
+         * routes/admin.php, naast het mailoverzicht: dáár staat wat je
+         * naslaat, hier staat wat je maakt.
+         *
+         * `kop`, `volgorde`, `velden` en `instellingen` staan vóór
+         * `{subject}`, want het zijn allemaal een PUT of PATCH op
+         * hetzelfde patroon en de eerste die past wint.
+         */
+        Route::prefix('contact')->name('contact.')->group(function () {
+            Route::get('/', [ContactModuleController::class, 'index'])->name('index');
+            Route::post('/', [ContactModuleController::class, 'store'])->name('store');
+
+            Route::put('kop', [ContactModuleController::class, 'kop'])->name('kop');
+            Route::put('volgorde', [ContactModuleController::class, 'volgorde'])->name('volgorde');
+            Route::put('velden', [ContactModuleController::class, 'velden'])->name('velden');
+            Route::put('instellingen', [ContactModuleController::class, 'instellingen'])->name('instellingen');
+
+            Route::put('{subject}', [ContactModuleController::class, 'update'])->name('update');
+            Route::patch('{subject}/online', [ContactModuleController::class, 'online'])->name('online');
+            Route::delete('{subject}', [ContactModuleController::class, 'destroy'])->name('destroy');
         });
 
         /*

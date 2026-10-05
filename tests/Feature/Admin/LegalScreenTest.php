@@ -3,6 +3,7 @@
 namespace Tests\Feature\Admin;
 
 use App\Enums\SecurityEventType;
+use App\Models\ContactSubmission;
 use App\Models\SecurityEvent;
 use App\Models\User;
 use App\Support\Juridisch\Gegevensoverzicht;
@@ -207,6 +208,77 @@ class LegalScreenTest extends TestCase
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->where('zoekterm', 'iemand@anders.nl')
                 ->has('resultaten', 0));
+    }
+
+    /* --- De contactaanvragen ---------------------------------------------- */
+
+    /**
+     * Het scherm vindt nu ook de berichten uit het contactformulier.
+     *
+     * **Dit is waarom dit scherm beter is geworden.** Een verzoek om
+     * verwijdering ging eerst altijd over de mailbox, waar de applicatie
+     * niets kan. Sinds de module Contact staan de aanvragen in het portaal,
+     * en kan de eigenaar het hier vinden én weghalen.
+     */
+    public function test_a_contact_request_is_found(): void
+    {
+        ContactSubmission::factory()->create([
+            'email' => 'bezoeker@example.com',
+            'name' => 'Kees Jansen',
+            'subject_text' => 'Vraag over een migratie',
+        ]);
+
+        $this->actingAs($this->beheerder())
+            ->get(route('admin.legal.index', ['zoek' => 'bezoeker@example.com']))
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('aanvragen', 1)
+                ->where('aanvragen.0.naam', 'Kees Jansen')
+                ->where('aanvragen.0.onderwerp', 'Vraag over een migratie'));
+    }
+
+    /**
+     * Het bericht zelf staat niet op dit scherm.
+     *
+     * Dit scherm is er om te kunnen zeggen dát er iets van iemand staat en
+     * om het te verwijderen. Lezen doe je op het scherm Aanvragen; het
+     * bericht van een bezoeker hoeft niet op twee plekken te staan.
+     */
+    public function test_the_message_itself_is_not_on_this_screen(): void
+    {
+        ContactSubmission::factory()->create([
+            'email' => 'bezoeker@example.com',
+            'message' => 'Dit bericht hoort hier niet te staan.',
+        ]);
+
+        $this->actingAs($this->beheerder())
+            ->get(route('admin.legal.index', ['zoek' => 'bezoeker@example.com']))
+            ->assertDontSee('Dit bericht hoort hier niet te staan.', false);
+    }
+
+    /** En ze zijn er ook als er niets in het beveiligingslogboek staat. */
+    public function test_requests_are_found_without_a_security_event(): void
+    {
+        ContactSubmission::factory()->create([
+            'email' => 'alleen-contact@example.com',
+        ]);
+
+        $this->actingAs($this->beheerder())
+            ->get(route('admin.legal.index', ['zoek' => 'alleen-contact@example.com']))
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('resultaten', 0)
+                ->has('aanvragen', 1));
+    }
+
+    /** De aanvragen staan als zoekbare én wisbare plek in het overzicht. */
+    public function test_the_requests_are_a_searchable_and_erasable_place(): void
+    {
+        $plekken = collect(app(Gegevensoverzicht::class)->plekken());
+
+        $aanvragen = $plekken->firstWhere('sleutel', 'aanvragen');
+
+        $this->assertNotNull($aanvragen);
+        $this->assertTrue($aanvragen['zoekbaar']);
+        $this->assertTrue($aanvragen['wisbaar']);
     }
 
     /* --- De antwoordtekst ------------------------------------------------- */

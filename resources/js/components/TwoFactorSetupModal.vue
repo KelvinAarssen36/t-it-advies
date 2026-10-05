@@ -193,18 +193,27 @@ watch(
                             </Button>
                         </div>
 
-                        <div
-                            class="relative flex w-full items-center justify-center"
-                        >
-                            <div
-                                class="absolute inset-0 top-1/2 h-px w-full bg-border"
-                            />
+                        <!--
+                            Dezelfde scheidingsregel als in PasskeyVerify,
+                            en hij had dezelfde fout: de tekst lag over een
+                            streep met `bg-card` eronder om een gat te
+                            maken, terwijl een venster `bg-background` is.
+                            Dat zijn twee kleuren, dus er stond een vlakje
+                            om de tekst in plaats van een gat in de streep.
+
+                            Twee streepjes met de tekst ertussen hebben
+                            geen achtergrond nodig en kunnen die fout dus
+                            niet maken. Zie PasskeyVerify.vue.
+                        -->
+                        <div class="flex w-full items-center gap-3">
+                            <div class="h-px flex-1 bg-border" />
                             <span
-                                class="relative bg-card px-2 py-1 text-sm text-muted-foreground"
+                                class="text-sm whitespace-nowrap text-muted-foreground"
                                 >{{
                                     $t('of vul de sleutel handmatig in')
                                 }}</span
                             >
+                            <div class="h-px flex-1 bg-border" />
                         </div>
 
                         <div

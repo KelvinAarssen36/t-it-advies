@@ -563,6 +563,38 @@ browser vertelt welke kant we op zitten; zonder die regel tekent hij
 keuzerondjes, datumprikkers en de schuifbalk van een `<textarea>` in zijn
 eigen lichte variant, ook midden in een donker portaal.
 
+### De schuifbalk van een mail
+
+Een mail is een eigen document en hoort daarom niet bij het bovenstaande. Je
+ziet die balk op twee plekken: in het voorbeeld onder Instellingen → Weergave
+(een `iframe` met de échte mailpagina erin) en bij een ontvanger die zijn mail
+in een browser opent.
+
+Hij staat in de **thema's** en niet in de maillayout, want het is kleur:
+[`atit.css`](../../resources/views/vendor/mail/html/themes/atit.css) en
+[`atit-huisstijl.css`](../../resources/views/vendor/mail/html/themes/atit-huisstijl.css),
+elk met een regel op `html`. Dezelfde waarden als `--scrollbar-thumb` hier, zodat
+het voorbeeld dezelfde balk heeft als het portaal eromheen.
+
+Twee dingen die daarbij anders werken dan op een gewone pagina:
+
+- **`::-webkit-scrollbar` kan er niet in.** Laravel voegt een mailthema met
+  CssToInlineStyles in de tags van de mail, en dat gereedschap kan alleen
+  selectors inzetten die een element aanwijzen. Een pseudo-element wijst niets
+  aan, dus zo'n regel wordt stil weggegooid -- hij haalt de mail niet eens.
+  `scrollbar-width` en `scrollbar-color` zijn gewone eigenschappen en komen dus
+  wél in de `<html>`-tag terecht.
+- **Het document moet zeggen welke kant het op zit.** Dat deed het niet: Laravel
+  zet in élke mail `<meta name="color-scheme" content="light">`, vast erin
+  getypt. Een donkerblauwe mail die "licht" zegt krijgt een witte schuifbalk met
+  pijltjes ernaast, en Apple Mail en Outlook.com gaan hem zelf omkleuren.
+  Daarom is
+  [`layout.blade.php`](../../resources/views/vendor/mail/html/layout.blade.php)
+  gepubliceerd: de twee metategels volgen nu de gekozen stijl. De
+  `color-scheme`-eigenschap in het thema wint van de metategel, dus die bepaalt
+  de balk; de metategel is er voor de mailprogramma's, die geen CSS op `html`
+  lezen.
+
 ### `brand-scrollbar`
 
 Voor alles wat bínnen de pagina kan schuiven:
@@ -689,6 +721,7 @@ als zijn inhoud en een pagina die normaal schuift, is rustiger.
 | Plek                                                                                              | Wat er schuift                            |
 | ------------------------------------------------------------------------------------------------- | ----------------------------------------- |
 | `html`                                                                                            | De pagina zelf.                           |
+| [De twee mailthema's](../../resources/views/vendor/mail/html/themes/)                             | De mail, en zijn voorbeeld.               |
 | [BrandSelect.vue](../../resources/js/components/BrandSelect.vue)                                  | De uitgeklapte lijst van een keuzeveld.   |
 | [SidebarContent.vue](../../resources/js/components/ui/sidebar/SidebarContent.vue)                 | Het menu, als het langer wordt.           |
 | [SelectContent.vue](../../resources/js/components/ui/select/SelectContent.vue)                    | De lijst van de kale shadcn-select.       |

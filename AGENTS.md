@@ -266,6 +266,19 @@ niet weet:
   kan erin.
 - **PHPUnit 12 kent `@dataProvider` niet meer.** Gebruik het attribuut
   `#[DataProvider]`.
+- **Een seeder is productiedata, tenzij er "voorbeeld" in de naam staat.**
+  Alles in `DatabaseSeeder` draait in élke omgeving: de rollen, het account
+  van de eigenaar, de secties, de echte loopbaan van de klant. Verzin daar
+  niets bij. Wie verzonnen data nodig heeft om een scherm te bekijken
+  gebruikt `php artisan voorbeeld:zaaien`; die seeder staat bewust niet in
+  `DatabaseSeeder`, weigert buiten `local` en `testing`, en zet alles op
+  `@voorbeeld.test` zodat `voorbeeld:opruimen` het terug kan vinden. Zie
+  [setup](docs/development/setup.md).
+- **Een seeder heeft niet altijd een terminal.** `Seeder::$command` is
+  volgens Laravel nooit leeg, dus PHPStan keurt zowel `?->` als `isset()`
+  erop af -- terwijl hij bij een rechtstreekse aanroep wél leeg is. Wil een
+  seeder iets melden, zet dan een opdracht ervoor die het werk aanroept.
+  Zie `ZaaienVoorbeeldData`.
 
 ## Wat je niet doet
 

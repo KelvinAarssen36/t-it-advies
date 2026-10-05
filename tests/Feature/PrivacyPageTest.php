@@ -135,6 +135,43 @@ class PrivacyPageTest extends TestCase
      * en niet de HTML: de tekst staat in het sjabloon en wordt pas in de
      * browser opgebouwd.
      */
+    /**
+     * De verklaring belooft niet meer dat een bericht de website verlaat.
+     *
+     * **Dit is de test voor de grootste verandering die deze verklaring
+     * heeft gehad.** Tot de module Contact stond er dat een bericht "weg is
+     * uit de website" zodra het verstuurd was, en dat was waar. Sinds die
+     * module blijft een aanvraag een jaar in het portaal staan.
+     *
+     * Zou iemand die oude zin terugzetten, dan staat er een onwaarheid in
+     * een juridische tekst -- en dan valt deze test om.
+     */
+    public function test_the_statement_no_longer_claims_the_message_leaves(): void
+    {
+        $verklaring = (string) file_get_contents(
+            resource_path('js/pages/public/Privacy.vue'),
+        );
+
+        foreach ([
+            'Daarna is het weg uit de website',
+            'Op de website zelf alleen tot het verstuurd is',
+        ] as $oud) {
+            $this->assertStringNotContainsString(
+                $oud,
+                $verklaring,
+                'De privacyverklaring belooft weer dat een bericht de website verlaat, '
+                    .'terwijl de aanvragen worden bewaard. Zie '
+                    .'docs/architecture/modules/contact.md.',
+            );
+        }
+
+        // En de termijn komt van de server.
+        $this->assertStringContainsString(
+            'props.bewaartermijnAanvragen',
+            $verklaring,
+        );
+    }
+
     public function test_the_server_log_is_disclosed(): void
     {
         $verklaring = (string) file_get_contents(

@@ -177,6 +177,7 @@ enum PageSectionKey: string
             self::Ervaring => 'website.ervaring.index',
             self::Certificaten => 'website.certificaten.index',
             self::Statistieken => 'website.statistieken.index',
+            self::Contact => 'website.contact.index',
             default => null,
         };
     }

@@ -252,6 +252,30 @@ browser opgebouwd.
 > zet en hoe lang ze blijven staan. Is dat bekend en vast, dan kan de
 > termijn er alsnog bij -- maar alleen als hij klopt.
 
+### En de grootste wijziging: de module Contact
+
+Hierboven staan correcties van **fouten**. Dit is iets anders: een correctie
+van een **keuze**, en daarmee het duidelijkste voorbeeld van waarom de regel
+bovenaan bestaat.
+
+Drie alinea's zeiden dat een bericht uit het contactformulier de website
+verliet zodra het verstuurd was. Dat was waar -- tot
+[de module Contact](modules/contact.md), die aanvragen een jaar in het
+portaal bewaart zodat de eigenaar kan terugzoeken wie hem wanneer benaderde.
+
+| Wat er stond                                                               | Wat er nu staat                                                                                   |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| "Daarna is het weg uit de website en staat het alleen nog in onze mailbox" | Hoe lang het blijft staan, en dat alleen de eigenaar erbij kan, achter een wachtwoord en een code |
+| "Op de website zelf alleen tot het verstuurd is"                           | De termijn, uit `config('site.contact.retention_days')`                                           |
+| _(niets over een bevestiging aan de bezoeker)_                             | Dat hij er zelf een krijgt, en dat zijn adres daardoor als ontvanger in het mailoverzicht staat   |
+
+Die laatste is het soort gevolg dat je makkelijk mist: de nieuwe mail maakte
+een bestaande alinea over het mailoverzicht onwaar, terwijl die alinea zelf
+niet veranderde.
+
+`PrivacyPageTest::test_the_statement_no_longer_claims_the_message_leaves`
+houdt het vast. Zou iemand de oude zin terugzetten, dan valt die test om.
+
 ## Twee valkuilen voor productie
 
 ### 1. Een proxy ervoor, en iedereen is één bezoeker

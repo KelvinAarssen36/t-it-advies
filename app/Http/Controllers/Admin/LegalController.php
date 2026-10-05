@@ -51,11 +51,21 @@ class LegalController extends Controller
 
         $gebeurtenissen = $overzicht->zoek($term);
 
+        /*
+         * De contactaanvragen van deze persoon. **Dit is de reden dat dit
+         * scherm beter is geworden**: een verzoek om verwijdering ging
+         * eerst altijd over de mailbox, waar de applicatie niets kan. Nu
+         * kan de eigenaar het hier vinden en hier weghalen.
+         */
+        $aanvragen = $overzicht->aanvragenVan($term);
+
         $bewaartermijnBeveiliging = (int) config('security.logging.retention_days');
+        $bewaartermijnAanvragen = (int) config('site.contact.retention_days');
 
         return Inertia::render('admin/Juridisch', [
             'zoekterm' => $term,
             'resultaten' => $overzicht->regels($gebeurtenissen),
+            'aanvragen' => $overzicht->aanvraagregels($aanvragen),
             'plekken' => $overzicht->plekken(),
             'mislukteMail' => $overzicht->mislukteMail(),
 
@@ -70,7 +80,9 @@ class LegalController extends Controller
             'antwoord' => $antwoord->voorElkeTaal(
                 $term,
                 $gebeurtenissen,
+                $aanvragen,
                 $bewaartermijnBeveiliging,
+                $bewaartermijnAanvragen,
             ),
 
             /*
@@ -80,6 +92,7 @@ class LegalController extends Controller
              */
             'termijnen' => [
                 'beveiliging' => $bewaartermijnBeveiliging,
+                'aanvragen' => $bewaartermijnAanvragen,
                 'mail' => (int) config('mail.log_retention_days'),
                 'sessie' => (int) config('session.lifetime'),
                 'mislukteMail' => Gegevensoverzicht::MISLUKTE_MAIL_DAGEN,
