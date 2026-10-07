@@ -9,6 +9,40 @@ erin leest niemand meer.
 
 ## Voor livegang
 
+### Beslissen wat we met SSR doen
+
+`config/inertia.php` zegt `ssr.enabled => true`, maar er wordt **nergens
+server-side gerenderd**: `npm run build` bouwt de SSR-bundel niet (dat doet
+alleen `npm run build:ssr`), en de deploystappen starten er geen proces
+voor. Inertia valt dan stil terug op opbouwen in de browser, dus dat werkt
+-- maar drie dingen zijn er niet zoals de config suggereert:
+
+- **Elke paginaweergave doet een mislukte verbindingspoging** naar
+  `127.0.0.1:13714` voordat hij terugvalt. Op gedeelde hosting kost dat
+  latency bij elk bezoek, voor niets.
+- **Een bezoeker ziet een lege pagina tot het JavaScript binnen is.** Met
+  SSR staat de tekst er meteen.
+- **Een crawler zonder JavaScript ziet geen inhoud.** Google voert het uit,
+  maar linkvoorbeelden op WhatsApp en LinkedIn en de crawlers van
+  AI-diensten doen dat vaak niet.
+
+Nagemeten dat SSR het wél doet: met `npm run build:ssr` en
+`php artisan inertia:start-ssr` komt de volledige pagina uit de server. Maar
+dat is een proces dat moet blijven draaien, en dat is bij Strato hetzelfde
+probleem als de queue worker hieronder.
+
+Twee uitwegen, en het is een keuze:
+
+1. **`SSR_ENABLED=false` zetten** en accepteren dat de site in de browser
+   wordt opgebouwd. Dan is de config in elk geval eerlijk en is die
+   mislukte verbindingspoging weg.
+2. **Hosting waar een proces mag draaien**, en dan `build:ssr` in de deploy
+   en de SSR-server ernaast. Dat lost dit én de queue worker in één keer op.
+
+> De vragenlijst is hier niet van afhankelijk: die zet zijn vragen als
+> structuurdata in de `<head>` vanuit Blade, dus die staan er ook zonder
+> JavaScript. Zie [FAQ](architecture/modules/faq.md).
+
 ### De kórtste cron-interval van het hostingpakket uitzoeken
 
 **Dit is het enige punt op deze lijst waar wij niets aan kunnen doen**: het

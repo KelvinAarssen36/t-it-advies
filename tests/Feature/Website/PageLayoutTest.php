@@ -377,6 +377,8 @@ class PageLayoutTest extends TestCase
 
     public function test_a_section_without_content_is_flagged_on_the_screen(): void
     {
+        $plek = $this->plekOpHetScherm(PageSectionKey::Diensten);
+
         /*
          * Aan, maar leeg. Dit is de toestand waar het scherm een
          * uitroepteken bij zet: de eigenaar denkt dat het onderdeel op zijn
@@ -387,15 +389,17 @@ class PageLayoutTest extends TestCase
         $this->actingAs($this->beheerder())
             ->get(route('website.index'))
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->where('sections.1.key', PageSectionKey::Diensten->value)
-                ->where('sections.1.visible', true)
-                ->where('sections.1.filled', false)
-                ->where('sections.1.count', 0)
-                ->where('sections.1.live', false));
+                ->where("sections.{$plek}.key", PageSectionKey::Diensten->value)
+                ->where("sections.{$plek}.visible", true)
+                ->where("sections.{$plek}.filled", false)
+                ->where("sections.{$plek}.count", 0)
+                ->where("sections.{$plek}.live", false));
     }
 
     public function test_a_section_the_owner_switched_off_is_not_flagged_as_empty(): void
     {
+        $plek = $this->plekOpHetScherm(PageSectionKey::Diensten);
+
         /*
          * Het verschil dat dit hele scherm rechtvaardigt: uitgezet is een
          * keuze en leeg is een probleem. Zouden ze er hetzelfde uitzien,
@@ -412,9 +416,29 @@ class PageLayoutTest extends TestCase
         $this->actingAs($this->beheerder())
             ->get(route('website.index'))
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->where('sections.1.key', PageSectionKey::Diensten->value)
-                ->where('sections.1.visible', false)
-                ->where('sections.1.filled', true)
-                ->where('sections.1.live', false));
+                ->where("sections.{$plek}.key", PageSectionKey::Diensten->value)
+                ->where("sections.{$plek}.visible", false)
+                ->where("sections.{$plek}.filled", true)
+                ->where("sections.{$plek}.live", false));
+    }
+
+    /**
+     * Op welke plek een onderdeel op het indelingsscherm staat.
+     *
+     * **Uitgerekend en niet opgeschreven.** Hier stond een vast getal, en
+     * dat klopte tot er een module vóór de diensten bij kwam -- toen viel
+     * deze test om op iets dat niets met zijn onderwerp te maken had. De
+     * plek volgt uit `standaardPositie()`, dus die rekenen we hier uit.
+     */
+    private function plekOpHetScherm(PageSectionKey $sectie): int
+    {
+        $alles = PageSectionKey::cases();
+
+        usort(
+            $alles,
+            fn (PageSectionKey $a, PageSectionKey $b) => $a->standaardPositie() <=> $b->standaardPositie(),
+        );
+
+        return (int) array_search($sectie, $alles, true);
     }
 }

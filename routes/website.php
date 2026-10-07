@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\Website\AboutController;
 use App\Http\Controllers\Website\CertificateController;
 use App\Http\Controllers\Website\ContactModuleController;
 use App\Http\Controllers\Website\ExperienceController;
+use App\Http\Controllers\Website\FaqController;
 use App\Http\Controllers\Website\HeroController;
 use App\Http\Controllers\Website\LayoutController;
 use App\Http\Controllers\Website\ServiceController;
@@ -153,6 +155,70 @@ Route::middleware(['auth', 'verified', 'two-factor.required', 'can:manage portal
             Route::put('{statistic}', [StatisticController::class, 'update'])->name('update');
             Route::patch('{statistic}/online', [StatisticController::class, 'online'])->name('online');
             Route::delete('{statistic}', [StatisticController::class, 'destroy'])->name('destroy');
+        });
+
+        /*
+         * Over mij: het korte stuk, de aparte pagina en de punten.
+         *
+         * **Een eindpunt per bewerkvenster en niet één voor alles.** Hier
+         * stond eerst één `PUT` op de wortel, omdat het scherm één
+         * formulier was. Sinds het een overzicht is met vensters erachter
+         * zou dat betekenen dat het ene venster de velden van het andere
+         * leeg bewaart. Nu valideert elk eindpunt precies zijn eigen
+         * velden.
+         *
+         * `pagina-aan` is het schuifje en staat los van `pagina`: één
+         * waarde omzetten hoort niet het hele formulier langs de validatie
+         * te sturen.
+         *
+         * `kop` en `punten` staan vóór `{point}` -- het zijn allemaal een
+         * PUT of POST op hetzelfde patroon, en de eerste die past wint.
+         */
+        Route::prefix('over-mij')->name('over-mij.')->group(function () {
+            Route::get('/', [AboutController::class, 'index'])->name('index');
+
+            Route::put('blok', [AboutController::class, 'blok'])->name('blok');
+            Route::put('pagina', [AboutController::class, 'pagina'])->name('pagina');
+
+            /*
+             * De foto staat op allebei de versies, dus hij hoort bij geen
+             * van de twee. Een eigen route dus; zie AboutController::foto().
+             */
+            Route::put('foto', [AboutController::class, 'foto'])->name('foto');
+
+            Route::patch('pagina-aan', [AboutController::class, 'paginaAan'])
+                ->name('pagina-aan');
+
+            Route::put('kop', [AboutController::class, 'kop'])->name('kop');
+
+            Route::prefix('punten')->name('punten.')->group(function () {
+                Route::post('/', [AboutController::class, 'puntStore'])->name('store');
+                Route::put('volgorde', [AboutController::class, 'puntVolgorde'])->name('volgorde');
+                Route::put('{point}', [AboutController::class, 'puntUpdate'])->name('update');
+                Route::delete('{point}', [AboutController::class, 'puntDestroy'])->name('destroy');
+            });
+        });
+
+        /*
+         * De veelgestelde vragen. Eén lijst, geen groepen, geen
+         * bijlagen -- de eenvoudigste module van allemaal.
+         *
+         * `kop` en `volgorde` staan ook hier vóór `{faqItem}`, want het
+         * zijn allemaal een PUT op hetzelfde patroon en de eerste die
+         * past wint. Staat de volgorde ooit andersom, dan komt een
+         * verzoek voor de kop bij `update()` terecht en faalt het op een
+         * ontbrekende vraag.
+         */
+        Route::prefix('faq')->name('faq.')->group(function () {
+            Route::get('/', [FaqController::class, 'index'])->name('index');
+            Route::post('/', [FaqController::class, 'store'])->name('store');
+
+            Route::put('kop', [FaqController::class, 'kop'])->name('kop');
+            Route::put('volgorde', [FaqController::class, 'volgorde'])->name('volgorde');
+
+            Route::put('{faqItem}', [FaqController::class, 'update'])->name('update');
+            Route::patch('{faqItem}/online', [FaqController::class, 'online'])->name('online');
+            Route::delete('{faqItem}', [FaqController::class, 'destroy'])->name('destroy');
         });
 
         /*

@@ -382,6 +382,94 @@ eigen oorzaak; zie [mail en queues](../mail-en-queues.md).
 de enige mail in het project die in twee talen de deur uit gaat: de melding
 aan de eigenaar en de alarmeringsmails staan vast op `config('site.locale')`.
 
+### Van Versturen naar de bevestiging, in één beweging
+
+Het bevestigingsvak animeerde al; wat eraan ontbrak was alles ervoor. Je
+drukte op Versturen, het formulier was er in één beeldje niet meer, en daar
+kwam los daarvan een vak op. Dat leest als een storing en niet als een
+bevestiging -- terwijl dit het enige moment op de hele site is waarop een
+bezoeker iets _doet_.
+
+Nu zijn het drie stappen die in elkaar overlopen:
+
+| Wanneer            | Wat je ziet                                                                                |
+| ------------------ | ------------------------------------------------------------------------------------------ |
+| Bij de klik        | De knop krijgt zijn spinner, en het formulier zakt weg naar 55% met `pointer-events: none` |
+| Het antwoord is er | Het formulier schuift 200 ms weg: wegvallend en tien beeldpunten omhoog                    |
+| Daarna             | Het vak komt op (500 ms), en het vinkje ploft er met een overshoot in                      |
+
+#### En dan sprong je naar de bovenkant van de pagina
+
+Dat was geen animatiefout maar een instelling die er altijd al verkeerd
+stond, en de animatie maakte hem zichtbaar. `preserveScroll` staat bij
+Inertia's `<Form>` standaard op `false`: na een geslaagde inzending springt
+de bezoeker naar boven, en kijkt hij dus naar de kop van de pagina terwijl
+zijn bevestiging onderaan staat. Op de aparte contactpagina net zo.
+
+Er zat een tweede, stillere kant aan. `preserveState` staat standaard op
+`null`, en dat is voor Inertia hetzelfde als "niet bewaren": het component
+wordt opnieuw opgebouwd. Dan bestaat het bevestigingsvak al bij de eerste
+tekening, is er geen wissel, en draait er **geen enkele animatie** -- ook
+die van vóór deze ronde niet, want een `watch` vuurt niet bij een eerste
+tekening. Het vak plofte er dus altijd zonder beweging in, onderaan een
+pagina waar je net vandaan was gesprongen.
+
+Allebei staan nu aan. Je blijft staan waar je bent, het component blijft
+bestaan, en daardoor is het een echte wissel met een echte overgang.
+
+> **En ze gaan via `:options` en niet als losse attributen, en dat kostte
+> een extra ronde.** Inertia's `<Form>` kent `preserveScroll` en
+> `preserveState` **niet** als prop -- alleen `<Link>` heeft die. Zet je ze
+> er toch op, dan rendert Vue ze als gewoon HTML-attribuut op het
+> `<form>`-element: geen foutmelding, geen waarschuwing, en precies niets
+> dat anders gaat. Wat de `Form` wél doorgeeft aan het verzoek is
+> `...props.options`, en dat spreidt hij als laatste uit over zijn eigen
+> opties. `useForm` geeft ze daarna ongewijzigd door aan de router.
+>
+> Dat is de valkuil om te onthouden: een onbekende prop op een
+> Vue-component verdwijnt stil in de attributen. Wie hier iets aan de
+> inzending wil veranderen, zet het in `VERSTUUROPTIES` en niet op de tag.
+
+Twee dingen die ik daarbij heb nagekeken, want `preserve-state` laat meer
+in leven dan alleen de velden:
+
+- **De honeypot blijft vers.** Zijn veldnamen en zijn versleutelde
+  tijdstempel komen uit de gedeelde props, en die zijn een closure in
+  `HandleInertiaRequests` -- dus ze worden bij élk antwoord opnieuw
+  gemaakt, bewaarde staat of niet. En `amount_of_seconds` is een
+  ondergrens, geen houdbaarheidsdatum.
+- **De Turnstile-reset is nu pas echt nodig.** Zolang het component bij
+  een mislukte validatie opnieuw werd opgebouwd, kreeg je vanzelf een
+  nieuwe widget. Nu blijft hij staan, en is `@error` → `reset()` het enige
+  dat een tweede poging laat lukken. Die reparatie zat er al; hij is hier
+  van netheid naar noodzaak gegaan.
+
+**Het dimmen is niet alleen vormgeving.** `pointer-events: none` hoort
+erbij: zonder dat kun je tijdens het versturen nog in een veld typen dat
+zometeen verdwijnt, of een tweede keer op de knop drukken.
+
+**Het komt van `start` en `finish` en niet uit `processing` in de slot.**
+Dat laatste bestaat alleen binnen de slot, en het dimmen gaat juist over het
+`<form>`-element zelf. En `finish` en niet alleen `error`: bij een mislukte
+verbinding komt geen van de twee andere, en dan zou het formulier gedimd en
+onaanklikbaar blijven staan.
+
+**De animatie van het vak hangt aan de overgang en niet meer aan een `watch`
+op de status.** Die `watch` draaide op het moment dat de status binnenkwam en
+zocht het vak met een selector. Sinds het formulier netjes wegschuift
+voordat de bevestiging komt -- `mode="out-in"` -- bestaat dat vak op dat
+moment nog niet, en had de animatie niets om op te spelen. Vue geeft het
+element nu mee zodra het er echt is.
+
+Het opkomen staat met opzet in GSAP en niet in CSS: dat vinkje hoort met een
+overshoot in te ploffen (`back.out(2.2)`), en dat is wat "gelukt" zegt.
+Zonder die overshoot leest het als nog een blok tekst dat verschijnt. Het
+weggaan is wél CSS, want dat is een rechttoe rechtaan overgang.
+
+Bij `prefers-reduced-motion` wisselt het vak gewoon om. **Het dimmen blijft
+daar wél staan**: dat is geen animatie maar een toestand, en zonder beweging
+is het het enige dat laat zien dat de klik is aangekomen.
+
 ### De Turnstile-reset, en waar hij hoort te hangen
 
 `TurnstileWidget` had altijd een `reset()`, en die werd nooit aangeroepen. Een

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { ArrowLeft, ChevronDown, Menu, X } from '@lucide/vue';
+import { ChevronDown, Menu, X } from '@lucide/vue';
 import {
     computed,
     nextTick,
@@ -25,6 +25,7 @@ import {
     scrollNaar,
     volgSecties,
 } from '@/lib/motion';
+import { useSectieLink } from '@/lib/sectielink';
 import { home } from '@/routes';
 import portal from '@/routes/portal';
 
@@ -64,6 +65,27 @@ const page = usePage();
 const items = computed<NavItem[]>(
     () => (page.props.navigation as NavItem[] | undefined) ?? [],
 );
+
+/**
+ * Wat een menu-item is, en waar het heen wijst.
+ *
+ * **Dit bepaalt de hele opzet van de kop.** Op de voorpagina is elk item een
+ * anker: een klik scrollt door dezelfde pagina, met de streep die
+ * meeschuift. Op een subpagina is datzelfde item een link naar de
+ * voorpagina bij dat onderdeel.
+ *
+ * Daarmee is de navigatie zelf de weg terug. Hier stond eerst het
+ * omgekeerde: was het menu leeg, dan verving de kop de hele balk door één
+ * "Terug naar de website" -- en omdat elke subpagina daar ook nog zijn
+ * eigen teruglink bij zette, stonden er op /privacy drie dezelfde links.
+ * Nu staat het menu er gewoon, en kom je in één klik bij het onderdeel dat
+ * je wilde in plaats van bovenaan.
+ *
+ * Het zit in [`sectielink`](../../lib/sectielink.ts) en niet hier, omdat de
+ * voettekst het ook nodig heeft -- en daar liep het mis zolang het twee
+ * keer bestond.
+ */
+const { opDeVoorpagina, anker, tag: menuTag } = useSectieLink();
 
 /**
  * Hoeveel onderdelen er los in de balk passen.
@@ -177,6 +199,26 @@ const gaNaar = (sleutel: string, gebeurtenis: MouseEvent): void => {
     requestAnimationFrame(() =>
         requestAnimationFrame(() => scrollNaar(sleutel)),
     );
+};
+
+/**
+ * Een klik op een menu-item, waar je ook staat.
+ *
+ * Op de voorpagina doet `gaNaar` alles: hij onderschept de klik, scrollt en
+ * sluit onderweg het uitklapmenu.
+ *
+ * **Buiten de voorpagina moet het menu hier dicht.** Daar bestaat het anker
+ * niet, dus `gaNaar` breekt meteen af en laat de link zijn werk doen -- en
+ * `gaNaar` is ook de plek waar `open` normaal op false gaat. De kop blijft
+ * bij een Inertia-bezoek staan, dus zonder deze regel staat het
+ * uitklapmenu bij aankomst op de voorpagina nog open.
+ */
+const kiesItem = (sleutel: string, gebeurtenis: MouseEvent): void => {
+    if (!opDeVoorpagina.value) {
+        open.value = false;
+    }
+
+    gaNaar(sleutel, gebeurtenis);
 };
 
 /* --- Waar sta je? ----------------------------------------------------- */
@@ -402,18 +444,26 @@ onBeforeUnmount(() => {
                 tekst ernaast is `aria-hidden`. Anders leest een
                 schermlezer "@T IT Advies" twee keer.
             -->
-            <a
-                href="#top"
+            <!--
+                Buiten de voorpagina is het merk een link naar huis en geen
+                anker. Dat was stuk: `#top` met een handler die voor 'top'
+                altijd afbreekt en naar de bovenkant van de huidige pagina
+                scrollt -- dus op /over-mij deed een klik op het logo niets,
+                terwijl dat op elke site de weg naar huis is.
+            -->
+            <component
+                :is="opDeVoorpagina ? 'a' : Link"
+                :href="opDeVoorpagina ? '#top' : home().url"
                 class="brand-merk"
                 aria-label="@T IT Advies"
-                @click="gaNaar('top', $event)"
+                @click="opDeVoorpagina && gaNaar('top', $event)"
             >
                 <AppLogoIcon class="brand-merk-teken" />
                 <span class="brand-merk-naam" aria-hidden="true">
                     <span class="brand-text-gradient">@T</span>
                     <span class="text-white"> IT Advies</span>
                 </span>
-            </a>
+            </component>
 
             <!--
                 De markering onder het actieve item ligt in dezelfde baan
@@ -422,25 +472,20 @@ onBeforeUnmount(() => {
                 te lichten, want de hero staat niet in het menu.
             -->
             <!--
-                Staat er geen navigatie, dan zijn we niet op de
-                landingspagina -- de privacyverklaring bijvoorbeeld. Dan
-                hoort er op die plek de weg terug te staan in plaats van
-                een lege balk. Zonder dit is de terugknop van de browser de
-                enige uitweg, en dat is geen navigatie.
+                Eén balk voor alle publieke pagina's.
+
+                **Hier stonden er twee**: een met het menu, en een met
+                "Terug naar de website" voor het geval het menu leeg was.
+                Dat tweede geval bestaat niet meer sinds de subpagina's hun
+                menu meesturen -- zie Navigatie op de server -- en het was
+                de oorzaak van de dubbele terugknoppen.
+
+                Blijft het menu toch leeg, bijvoorbeeld op een foutpagina,
+                dan staat er niets op deze plek. Dat is geen gat: het merk
+                links is daar de weg naar huis.
             -->
             <nav
-                v-if="items.length === 0"
-                class="hidden tablet:flex"
-                :aria-label="$t('Terug naar de website')"
-            >
-                <Link :href="home()" class="brand-terug">
-                    <ArrowLeft class="size-4" />
-                    {{ $t('Terug naar de website') }}
-                </Link>
-            </nav>
-
-            <nav
-                v-else
+                v-if="items.length > 0"
                 ref="balk"
                 class="brand-navbalk hidden tablet:flex"
                 :style="{
@@ -452,14 +497,15 @@ onBeforeUnmount(() => {
             >
                 <span class="brand-navstreep" aria-hidden="true" />
 
-                <a
+                <component
+                    :is="menuTag"
                     v-for="item in zichtbaar"
                     :key="item.key"
-                    :href="`#${item.key}`"
+                    :href="anker(item.key)"
                     class="brand-navlink"
                     :class="{ 'is-active': actief === item.key }"
                     :aria-current="actief === item.key ? 'true' : undefined"
-                    @click="gaNaar(item.key, $event)"
+                    @click="kiesItem(item.key, $event)"
                 >
                     <!--
                         Het woord zit in een eigen span zodat de markering
@@ -467,7 +513,7 @@ onBeforeUnmount(() => {
                         als het aanraakvlak eromheen. Zie meetStreep().
                     -->
                     <span :data-woord="item.key">{{ item.label }}</span>
-                </a>
+                </component>
 
                 <!--
                     Wat er niet in de balk past. Leeg zolang er vijf of
@@ -495,12 +541,13 @@ onBeforeUnmount(() => {
                             :key="item.key"
                             as-child
                         >
-                            <a
-                                :href="`#${item.key}`"
-                                @click="gaNaar(item.key, $event)"
+                            <component
+                                :is="menuTag"
+                                :href="anker(item.key)"
+                                @click="kiesItem(item.key, $event)"
                             >
                                 {{ item.label }}
-                            </a>
+                            </component>
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
@@ -570,28 +617,24 @@ onBeforeUnmount(() => {
             class="overflow-hidden border-t border-border bg-background tablet:hidden"
         >
             <nav class="mx-auto flex max-w-6xl flex-col gap-1 px-6 py-4">
-                <!-- Buiten de landingspagina: de weg terug. Zie de balk hierboven. -->
-                <Link
-                    v-if="items.length === 0"
-                    data-menu-regel
-                    :href="home()"
-                    class="brand-navlink-mobiel"
-                    @click="open = false"
-                >
-                    {{ $t('Terug naar de website') }}
-                </Link>
-
-                <a
+                <!--
+                    Dezelfde items als op de voorpagina, ook buiten de
+                    voorpagina. De terugregel die hier stond is weg: die
+                    bracht je naar de bovenkant van de voorpagina, terwijl
+                    deze regels je bij het onderdeel brengen dat je wilde.
+                -->
+                <component
+                    :is="menuTag"
                     v-for="item in items"
                     :key="item.key"
                     data-menu-regel
-                    :href="`#${item.key}`"
+                    :href="anker(item.key)"
                     class="brand-navlink-mobiel"
                     :class="{ 'is-active': actief === item.key }"
-                    @click="gaNaar(item.key, $event)"
+                    @click="kiesItem(item.key, $event)"
                 >
                     {{ item.label }}
-                </a>
+                </component>
                 <Link
                     v-if="magPortaalZien"
                     data-menu-regel

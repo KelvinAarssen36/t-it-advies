@@ -3,6 +3,7 @@
 namespace Tests\Feature\Website;
 
 use App\Enums\ActivityAction;
+use App\Enums\PageSectionKey;
 use App\Models\ActivityEntry;
 use App\Models\Service;
 use App\Models\ServicePoint;
@@ -316,13 +317,35 @@ class ServiceCrudTest extends TestCase
     {
         // De diensten stonden op het indelingsscherm als "Nog niet te
         // beheren". Nu is er een scherm, dus hoort daar een link te staan.
+        $plek = $this->plekOpHetScherm(PageSectionKey::Diensten);
+
         $this->actingAs($this->beheerder())
             ->get(route('website.index'))
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->where(
-                    'sections.1.manageUrl',
+                    "sections.{$plek}.manageUrl",
                     route('website.diensten.index'),
                 )
                 ->etc());
+    }
+
+    /**
+     * Op welke plek een onderdeel op het indelingsscherm staat.
+     *
+     * **Uitgerekend en niet opgeschreven.** Hier stond een vast getal, en
+     * dat klopte tot er een module vóór de diensten bij kwam -- toen viel
+     * deze test om op iets dat niets met zijn onderwerp te maken had. De
+     * plek volgt uit `standaardPositie()`, dus die rekenen we hier uit.
+     */
+    private function plekOpHetScherm(PageSectionKey $sectie): int
+    {
+        $alles = PageSectionKey::cases();
+
+        usort(
+            $alles,
+            fn (PageSectionKey $a, PageSectionKey $b) => $a->standaardPositie() <=> $b->standaardPositie(),
+        );
+
+        return (int) array_search($sectie, $alles, true);
     }
 }

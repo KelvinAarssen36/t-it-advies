@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { Head, Link, usePage } from '@inertiajs/vue3';
-import { ArrowLeft, ArrowUpRight, Clock, Mail } from '@lucide/vue';
+import { Head, usePage } from '@inertiajs/vue3';
+import { ArrowUpRight, Clock, Mail } from '@lucide/vue';
 import { computed } from 'vue';
 import ContactFormulier from '@/components/site/ContactFormulier.vue';
-import { home } from '@/routes';
+import SiteKruimels from '@/components/site/SiteKruimels.vue';
+import SiteTerug from '@/components/site/SiteTerug.vue';
 import type { OnderwerpOpDeSite, VeldOpDeSite } from '@/types/contact';
 import type { SectieKop } from '@/types/secties';
 
@@ -65,18 +66,10 @@ const linkedin = computed(
 
     <section class="mx-auto max-w-6xl px-6 py-16 sm:py-24">
         <!--
-            De weg terug, bovenaan. De kop van de site laat op deze pagina
-            geen onderdelen zien -- die ankers bestaan hier niet -- dus
-            zonder deze link is de enige uitweg de terugknop van de browser.
-
-            **Eén keer en niet twee.** De privacyverklaring heeft hem boven
-            én onder omdat die pagina lang is; deze past op één schermhoogte,
-            en dan is twee keer dezelfde link ruis.
+            Waar je bent. Waar je heen kunt staat in de kop: die toont op
+            deze pagina gewoon het menu van de voorpagina.
         -->
-        <Link :href="home()" class="brand-terug">
-            <ArrowLeft class="size-4" />
-            {{ $t('Terug naar de website') }}
-        </Link>
+        <SiteKruimels :titel="'Contact'" />
 
         <header class="mt-8 max-w-2xl space-y-3" data-reveal>
             <p v-if="props.kop.opschrift" class="brand-contactpagina-opschrift">
@@ -178,5 +171,12 @@ const linkedin = computed(
                 </ul>
             </aside>
         </div>
+
+        <!--
+            Het einde van de pagina. Ook hier, al past hij op één
+            schermhoogte: elke subpagina eindigt op dezelfde manier, en een
+            uitzondering is iets wat je moet onthouden.
+        -->
+        <SiteTerug />
     </section>
 </template>

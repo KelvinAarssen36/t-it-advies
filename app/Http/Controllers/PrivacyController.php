@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Page\Navigatie;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -24,11 +25,23 @@ use Inertia\Response;
  */
 class PrivacyController extends Controller
 {
-    public function __invoke(): Response
+    public function __invoke(Navigatie $navigatie): Response
     {
         // `public/` en niet de hoofdmap: app.ts geeft elke pagina daar
         // vanzelf de layout van de publieke site. Zie de switch daar.
         return Inertia::render('public/Privacy', [
+            /*
+             * Het menu van de voorpagina.
+             *
+             * **Hier stond niets, en dat was de oorzaak van de dubbele
+             * terugknoppen.** Zonder deze lijst verving de kop de hele
+             * navigatiebalk door één "Terug naar de website", en zette
+             * deze pagina er ook nog eens zelf een teruglink bij. Met het
+             * menu erin is de navigatie zelf de weg terug -- en dan kom je
+             * in één klik bij het onderdeel dat je wilde.
+             */
+            'navigation' => $navigatie->menu(),
+
             'email' => config('site.email'),
 
             /*

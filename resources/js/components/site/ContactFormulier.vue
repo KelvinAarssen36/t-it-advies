@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Form, usePage } from '@inertiajs/vue3';
 import { CheckCheck, Send, TriangleAlert } from '@lucide/vue';
-import { computed, nextTick, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import BrandSelect from '@/components/BrandSelect.vue';
 import HoneypotFields from '@/components/HoneypotFields.vue';
 import InputError from '@/components/InputError.vue';
@@ -109,32 +109,106 @@ const eigenOnderwerp = computed(
  * bleef het lege formulier staan met een regel erboven, en dat leest
  * alsof er niets is gebeurd -- je hebt net iets verstuurd en je kijkt
  * naar hetzelfde scherm. Nu neemt de bevestiging zijn plek in.
+ *
+ * **Vanuit de overgang en niet uit een `watch` op de status, en dat is een
+ * correctie.** Die `watch` draaide op het moment dat de status binnenkwam
+ * en zocht het vak met een selector. Sinds het formulier netjes wegschuift
+ * voordat de bevestiging komt, bestaat dat vak op dat moment nog niet --
+ * dan had de animatie niets om op te spelen. Nu geeft Vue het element mee
+ * zodra het er echt is.
+ *
+ * Twee bewegingen, en de tweede is de hele pointe. Het vak komt rustig
+ * omhoog, en het vinkje ploft er met een overshoot in: dat laatste is wat
+ * "het is gelukt" zegt. Zonder die overshoot leest het als nog een blok
+ * tekst dat verschijnt.
  */
-watch(status, (nieuw) => {
-    if (!nieuw || prefersReducedMotion()) {
+/**
+ * Hoe de inzending verstuurd moet worden.
+ *
+ * **Via `options` en niet als losse attributen op `<Form>`, en dat is een
+ * correctie die me een ronde heeft gekost.** Inertia's `<Form>` kent geen
+ * `preserveScroll` of `preserveState` als prop -- alleen `<Link>` heeft
+ * die. Zet je ze er toch op, dan rendert Vue ze als gewoon HTML-attribuut
+ * op het `<form>`-element en gebeurt er niets. Wat de `Form` wél
+ * doorgeeft aan het verzoek is `...props.options`, en dat spreidt hij als
+ * laatste uit over zijn eigen opties.
+ *
+ * **Wat de twee doen, en waarom ze allebei moeten:**
+ *
+ * - `preserveScroll`: anders springt de bezoeker na het versturen naar de
+ *   bovenkant van de pagina en kijkt hij naar de kop terwijl zijn
+ *   bevestiging onderaan staat.
+ * - `preserveState`: zonder dit bouwt Inertia het component opnieuw op.
+ *   Dan bestaat het bevestigingsvak al bij de eerste tekening, is er geen
+ *   wissel, en draait er geen enkele animatie.
+ *
+ * Als constante en niet als letterlijk object in het sjabloon: dat laatste
+ * is bij elke tekening een nieuw object, en dan ziet de `Form` elke keer
+ * een gewijzigde prop.
+ */
+const VERSTUUROPTIES = {
+    preserveScroll: true,
+    preserveState: true,
+} as const;
+
+/**
+ * Of er een inzending onderweg is.
+ *
+ * **Van de gebeurtenissen van het formulier en niet uit de slot.** `Form`
+ * geeft `processing` in zijn slot, maar dat is binnen de slot en niet op
+ * het `<form>`-element zelf -- en het dimmen gaat juist over dat element.
+ * `start` en `finish` zijn dezelfde toestand, een laag hoger.
+ *
+ * `finish` en niet alleen `error`: bij een mislukte verbinding komt er geen
+ * van de twee andere, en dan zou het formulier gedimd en onaanklikbaar
+ * blijven staan.
+ */
+const bezig = ref(false);
+
+const animeerBevestiging = (el: Element): void => {
+    /*
+     * Deze haak vuurt voor allebei de takken van de wissel, en met `appear`
+     * ook bij de eerste tekening. Het formulier hoort hier niets mee te
+     * doen -- alleen het bevestigingsvak, en dat is te herkennen aan zijn
+     * eigen merkje.
+     *
+     * `appear` staat erop als verzekering: zou Inertia het component ooit
+     * tóch opnieuw opbouwen in plaats van het te laten staan, dan is er
+     * geen wissel en dus geen gewone enter -- en dan ploft de bevestiging
+     * er zonder animatie in. Dát was de oude toestand.
+     */
+    if (!(el instanceof HTMLElement) || el.dataset.bevestiging === undefined) {
         return;
     }
 
-    void nextTick(() => {
-        gsap.fromTo(
-            '[data-bevestiging]',
-            { opacity: 0, y: 12, scale: 0.98 },
-            { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: 'power3.out' },
-        );
+    if (prefersReducedMotion()) {
+        return;
+    }
 
-        gsap.fromTo(
-            '[data-bevestiging-vink]',
-            { scale: 0, rotate: -25 },
-            {
-                scale: 1,
-                rotate: 0,
-                duration: 0.5,
-                delay: 0.12,
-                ease: 'back.out(2.2)',
-            },
-        );
-    });
-});
+    gsap.fromTo(
+        el,
+        { opacity: 0, y: 16, scale: 0.98 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: 'power3.out' },
+    );
+
+    const vink = el.querySelector('[data-bevestiging-vink]');
+
+    if (vink === null) {
+        return;
+    }
+
+    gsap.fromTo(
+        vink,
+        { scale: 0, rotate: -25 },
+        {
+            scale: 1,
+            rotate: 0,
+            duration: 0.5,
+            delay: 0.18,
+            ease: 'back.out(2.2)',
+        },
+    );
+};
 
 /* --- Turnstile ---------------------------------------------------------- */
 
@@ -175,42 +249,70 @@ const invoertype = (soort: string): string => {
 
 <template>
     <!--
-        Gelukt. De bevestiging neemt de plek van het formulier in; zie het
-        commentaar bij `watch(status)`.
+        Van formulier naar bevestiging, in één beweging.
+
+        **Hier zat een harde knip.** Het formulier verdween op het moment
+        dat het antwoord binnenkwam en de bevestiging kwam los daarvan op.
+        Je hebt net op Versturen gedrukt, en het ding waar je op drukte is
+        er in één beeldje niet meer -- dat leest als een storing, niet als
+        een bevestiging.
+
+        Nu schuift het formulier eerst weg (200 ms, iets omhoog en
+        wegvallend) en komt de bevestiging daarna op. `out-in` dus, want
+        allebei tegelijk is twee blokken over elkaar met verschillende
+        hoogtes.
+
+        Het komen zelf staat niet in CSS maar in `animeerBevestiging`: dat
+        vinkje hoort met een overshoot in te ploffen, en dat is wat GSAP
+        beter doet dan een overgang.
     -->
-    <div v-if="status" data-bevestiging class="brand-contactgelukt">
-        <span class="brand-contactgelukt-vink" aria-hidden="true">
-            <CheckCheck data-bevestiging-vink class="size-6" />
-        </span>
-
-        <h3 class="text-lg font-semibold">{{ $t('Aanvraag gelukt') }}</h3>
-
-        <p class="max-w-prose text-pretty text-muted-foreground">
-            {{ status }}
-        </p>
-    </div>
-
-    <Form
-        v-else
-        v-bind="contactStore.form()"
-        reset-on-success
-        v-slot="{ errors, processing }"
-        class="brand-contactformulier"
-        @success="opnieuw"
-        @error="opnieuw"
+    <Transition
+        name="brand-contactwissel"
+        mode="out-in"
+        appear
+        @enter="animeerBevestiging"
     >
-        <HoneypotFields />
+        <div v-if="status" data-bevestiging class="brand-contactgelukt">
+            <span class="brand-contactgelukt-vink" aria-hidden="true">
+                <CheckCheck data-bevestiging-vink class="size-6" />
+            </span>
 
-        <!--
+            <h3 class="text-lg font-semibold">{{ $t('Aanvraag gelukt') }}</h3>
+
+            <p class="max-w-prose text-pretty text-muted-foreground">
+                {{ status }}
+            </p>
+        </div>
+
+        <Form
+            v-else
+            v-bind="contactStore.form()"
+            reset-on-success
+            :options="VERSTUUROPTIES"
+            v-slot="{ errors, processing }"
+            class="brand-contactformulier"
+            :data-bezig="bezig ? '' : undefined"
+            @start="bezig = true"
+            @finish="bezig = false"
+            @success="opnieuw"
+            @error="opnieuw"
+        >
+            <HoneypotFields />
+
+            <!--
             De vingerafdruk van de instellingen; zie ContactRequest::after().
 
             Na een foutantwoord tekent Inertia deze pagina opnieuw met verse
             props, dus hier staat dan meteen de nieuwe vingerafdruk -- en
             daarom lukt opnieuw versturen wél.
         -->
-        <input type="hidden" name="instellingen" :value="props.instellingen" />
+            <input
+                type="hidden"
+                name="instellingen"
+                :value="props.instellingen"
+            />
 
-        <!--
+            <!--
             Het formulier is onderweg gewijzigd.
 
             **Een waarschuwing en geen succes, en dat was precies de fout.**
@@ -222,138 +324,148 @@ const invoertype = (soort: string): string => {
             Nu is het een validatiefout. Die hoort bovenaan en niet bij een
             veld: er is geen veld dat de bezoeker kan verbeteren.
         -->
-        <p
-            v-if="errors.instellingen"
-            class="brand-contactwaarschuwing"
-            role="alert"
-        >
-            <TriangleAlert class="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-            <span>{{ errors.instellingen }}</span>
-        </p>
+            <p
+                v-if="errors.instellingen"
+                class="brand-contactwaarschuwing"
+                role="alert"
+            >
+                <TriangleAlert
+                    class="mt-0.5 size-4 shrink-0"
+                    aria-hidden="true"
+                />
+                <span>{{ errors.instellingen }}</span>
+            </p>
 
-        <!--
+            <!--
             De velden in de volgorde die de eigenaar heeft gekozen. Naam en
             e-mailadres staan naast elkaar vanaf 40rem; het onderwerp en
             het bericht over de volle breedte. Een formulier dat één kolom
             blijft terwijl er ruimte is, leest als een enquête.
         -->
-        <div class="brand-contactvelden">
-            <template v-for="veld in props.velden" :key="veld.naam">
-                <!-- Het onderwerp: een keuzelijst, een tekstveld, of beide. -->
-                <div
-                    v-if="veld.type === 'onderwerp'"
-                    class="brand-contactveld-vak is-breed"
-                >
-                    <Label
-                        :for="`contact-${veld.naam}`"
-                        :verplicht="veld.verplicht"
+            <div class="brand-contactvelden">
+                <template v-for="veld in props.velden" :key="veld.naam">
+                    <!-- Het onderwerp: een keuzelijst, een tekstveld, of beide. -->
+                    <div
+                        v-if="veld.type === 'onderwerp'"
+                        class="brand-contactveld-vak is-breed"
                     >
-                        {{ veld.label }}
-                    </Label>
+                        <Label
+                            :for="`contact-${veld.naam}`"
+                            :verplicht="veld.verplicht"
+                        >
+                            {{ veld.label }}
+                        </Label>
 
-                    <BrandSelect
-                        v-if="heeftLijst"
-                        :id="`contact-${veld.naam}`"
-                        v-model="gekozenOnderwerp"
-                        :options="onderwerpOpties"
-                        :placeholder="$t('Kies een onderwerp')"
-                    />
+                        <BrandSelect
+                            v-if="heeftLijst"
+                            :id="`contact-${veld.naam}`"
+                            v-model="gekozenOnderwerp"
+                            :options="onderwerpOpties"
+                            :placeholder="$t('Kies een onderwerp')"
+                        />
 
-                    <!--
+                        <!--
                         Het id gaat als verborgen veld mee: met een
                         `BrandSelect` is er geen `<select name>` om mee te
                         sturen, en dit is het veld waarop de server
                         valideert.
                     -->
-                    <input
-                        v-if="heeftLijst && !eigenOnderwerp"
-                        type="hidden"
-                        name="subject_id"
-                        :value="gekozenOnderwerp"
-                    />
+                        <input
+                            v-if="heeftLijst && !eigenOnderwerp"
+                            type="hidden"
+                            name="subject_id"
+                            :value="gekozenOnderwerp"
+                        />
 
-                    <Input
-                        v-if="eigenOnderwerp"
-                        :id="heeftLijst ? undefined : `contact-${veld.naam}`"
-                        name="subject_text"
-                        :maxlength="veld.maximum"
-                        :placeholder="
-                            heeftLijst ? $t('Waar gaat het over?') : undefined
-                        "
-                        :aria-label="heeftLijst ? veld.label : undefined"
-                    />
+                        <Input
+                            v-if="eigenOnderwerp"
+                            :id="
+                                heeftLijst ? undefined : `contact-${veld.naam}`
+                            "
+                            name="subject_text"
+                            :maxlength="veld.maximum"
+                            :placeholder="
+                                heeftLijst
+                                    ? $t('Waar gaat het over?')
+                                    : undefined
+                            "
+                            :aria-label="heeftLijst ? veld.label : undefined"
+                        />
 
-                    <InputError :message="errors.subject_id" />
-                    <InputError :message="errors.subject_text" />
-                </div>
+                        <InputError :message="errors.subject_id" />
+                        <InputError :message="errors.subject_text" />
+                    </div>
 
-                <!-- Het bericht: altijd over de volle breedte. -->
-                <div
-                    v-else-if="veld.type === 'tekstvak'"
-                    class="brand-contactveld-vak is-breed"
+                    <!-- Het bericht: altijd over de volle breedte. -->
+                    <div
+                        v-else-if="veld.type === 'tekstvak'"
+                        class="brand-contactveld-vak is-breed"
+                    >
+                        <Label
+                            :for="`contact-${veld.naam}`"
+                            :verplicht="veld.verplicht"
+                        >
+                            {{ veld.label }}
+                        </Label>
+                        <Textarea
+                            :id="`contact-${veld.naam}`"
+                            :name="veld.naam"
+                            :maxlength="veld.maximum"
+                            rows="6"
+                        />
+                        <InputError :message="errors[veld.naam]" />
+                    </div>
+
+                    <!-- De gewone velden. -->
+                    <div v-else class="brand-contactveld-vak">
+                        <Label
+                            :for="`contact-${veld.naam}`"
+                            :verplicht="veld.verplicht"
+                        >
+                            {{ veld.label }}
+                        </Label>
+                        <Input
+                            :id="`contact-${veld.naam}`"
+                            :name="veld.naam"
+                            :type="invoertype(veld.type)"
+                            :maxlength="veld.maximum"
+                            :autocomplete="veld.autocomplete ?? undefined"
+                        />
+                        <InputError :message="errors[veld.naam]" />
+                    </div>
+                </template>
+            </div>
+
+            <TurnstileWidget ref="widget" />
+            <InputError :message="errors['cf-turnstile-response']" />
+
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-3">
+                <Button
+                    :disabled="processing"
+                    variant="brand"
+                    class="w-full sm:w-auto"
                 >
-                    <Label
-                        :for="`contact-${veld.naam}`"
-                        :verplicht="veld.verplicht"
-                    >
-                        {{ veld.label }}
-                    </Label>
-                    <Textarea
-                        :id="`contact-${veld.naam}`"
-                        :name="veld.naam"
-                        :maxlength="veld.maximum"
-                        rows="6"
-                    />
-                    <InputError :message="errors[veld.naam]" />
-                </div>
+                    <Spinner v-if="processing" />
+                    <Send v-else class="size-4" />
+                    {{
+                        processing
+                            ? $t('Bezig met versturen...')
+                            : $t('Versturen')
+                    }}
+                </Button>
 
-                <!-- De gewone velden. -->
-                <div v-else class="brand-contactveld-vak">
-                    <Label
-                        :for="`contact-${veld.naam}`"
-                        :verplicht="veld.verplicht"
-                    >
-                        {{ veld.label }}
-                    </Label>
-                    <Input
-                        :id="`contact-${veld.naam}`"
-                        :name="veld.naam"
-                        :type="invoertype(veld.type)"
-                        :maxlength="veld.maximum"
-                        :autocomplete="veld.autocomplete ?? undefined"
-                    />
-                    <InputError :message="errors[veld.naam]" />
-                </div>
-            </template>
-        </div>
-
-        <TurnstileWidget ref="widget" />
-        <InputError :message="errors['cf-turnstile-response']" />
-
-        <div class="flex flex-wrap items-center gap-x-4 gap-y-3">
-            <Button
-                :disabled="processing"
-                variant="brand"
-                class="w-full sm:w-auto"
-            >
-                <Spinner v-if="processing" />
-                <Send v-else class="size-4" />
-                {{
-                    processing ? $t('Bezig met versturen...') : $t('Versturen')
-                }}
-            </Button>
-
-            <!--
+                <!--
                 De uitweg. Zie de prop `email`: zonder Turnstile is dit
                 formulier bewust niet te versturen, en dan mag een bezoeker
                 niet met lege handen staan.
             -->
-            <p class="text-sm text-pretty text-muted-foreground">
-                {{ $t('Of mail rechtstreeks:') }}
-                <a :href="`mailto:${props.email}`" class="brand-sitemail">
-                    {{ props.email }}
-                </a>
-            </p>
-        </div>
-    </Form>
+                <p class="text-sm text-pretty text-muted-foreground">
+                    {{ $t('Of mail rechtstreeks:') }}
+                    <a :href="`mailto:${props.email}`" class="brand-sitemail">
+                        {{ props.email }}
+                    </a>
+                </p>
+            </div>
+        </Form>
+    </Transition>
 </template>

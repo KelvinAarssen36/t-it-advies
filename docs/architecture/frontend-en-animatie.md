@@ -619,6 +619,170 @@ gekregen, `brand` en `brand-outline`. Een knop in de merkgradient is geen
 ander gedrag maar dezelfde knop in een andere jas; een wikkelcomponent zou
 alleen maar een tweede plek opleveren waar de maten uit elkaar kunnen lopen.
 
+## De overgang tussen twee pagina's
+
+Er zit een korte overgang op `<main>`, en de reden om hem te maken was niet
+"het mag wat levendiger". Er zát al een haperingsbron, en die is ermee
+opgelost.
+
+**Wat er misging.** Bij een navigatie wisselt Inertia de inhoud meteen om.
+Een tel later pas draait `scanReveals` in
+[`PublicLayout`](../../resources/js/layouts/PublicLayout.vue), en
+`revealOnScroll` doet een `gsap.fromTo` die élk blok eerst op `opacity: 0`
+zet om het daarna op te laten komen. De nieuwe pagina werd dus één of twee
+beeldjes volledig getekend, knipperde naar onzichtbaar, en kwam daarna pas
+op.
+
+**Wat het nu is.** Een Vue-`<Transition>` met `mode="out-in"` om `<main>`
+heen, met de taal én de paginanaam als sleutel. De nieuwe `main` begint op
+`opacity: 0`, dus het moment waarop `scanReveals` alles op nul zet valt
+binnen die onzichtbare fase. Eén beweging in plaats van een flits gevolgd
+door een beweging.
+
+|     |                                                                                 |
+| --- | ------------------------------------------------------------------------------- |
+| Uit | 160 ms, alleen `opacity`                                                        |
+| In  | 420 ms, `opacity` en 12 beeldpunten omhoog, met `cubic-bezier(0.16, 1, 0.3, 1)` |
+
+Het weggaan is sneller dan het komen: wachten tot iets verdwenen is voelt
+als vertraging, iets dat opkomt leest als aankomst. Alleen `opacity` en
+`translate`, want die doet de browser op de grafische kaart zonder de
+pagina opnieuw op te meten -- een overgang die de opmaak laat herberekenen
+hapert op een telefoon, en dan heb je een animatie toegevoegd die het juist
+slechter maakt.
+
+Die tijden waren eerst 140 en 260, en dat voelde schokkerig in plaats van
+snel: een overgang die net te kort is leest als een sprong met een waas
+eroverheen. De versoepeling zit vooral in de curve -- die begint snel en
+komt lang en zacht tot stilstand, dus het laatste stukje glijdt uit in
+plaats van te stoppen.
+
+`out-in` en niet tegelijk: twee pagina's over elkaar heen hebben allebei
+hun eigen hoogte, en dan springt de voettekst tijdens de overgang op en
+neer.
+
+**Alleen `<main>`, niet de hele pagina.** De kop en de voettekst blijven
+staan. Dat is wat continuïteit geeft: de navigatieknop die je net
+aanklikte blijft op zijn plek.
+
+### Scannen hoort bij `before-enter` en niet bij `navigate`
+
+**Dit is de val van dit hoofdstuk**, en hij kostte een pagina zonder tekst.
+
+De markup van een reveal draagt `opacity-0` als klasse -- zie
+[`SectionHeading.vue`](../../resources/js/components/site/SectionHeading.vue)
+-- en `revealOnScroll` haalt die er met een inline stijl weer af. Een
+element dat niet wordt gescand blijft dus onzichtbaar. Dat is geen
+vertraagde animatie maar verdwenen inhoud.
+
+Zolang `<main>` geen overgang had, viel dat goed samen: Inertia wisselde de
+inhoud om, en een `nextTick` na `navigate` stonden de nieuwe elementen er.
+Met `mode="out-in"` is dat niet meer waar. `navigate` vuurt bij het
+omwisselen, maar de nieuwe `main` wordt pas ingevoegd nadat de oude is
+weggegaan -- honderdzestig milliseconden later. Die herscan pakte dus de
+vertrekkende pagina, en de aankomende nooit. Ga je van een subpagina terug
+naar de voorpagina, dan bleef vrijwel alle tekst weg.
+
+Daarom staat de herscan nu in `before-enter`, als de nieuwe `main` er wél
+is en nog onzichtbaar. De luisteraar op `navigate` is er nog steeds, maar
+alleen voor een navigatie die de pagina **niet** wisselt -- het
+contactformulier dat zichzelf opnieuw laadt en zijn bevestiging toont, dat
+soort geval. Wisselt de pagina wel, dan slaat hij over.
+
+**Twee beeldjes wachten voordat je scant.** `alInBeeld` meet met
+`getBoundingClientRect`, en Lenis zet zijn scrollpositie door in zijn eigen
+beeldje -- dat hangt aan de ticker van GSAP en niet aan een losse
+`requestAnimationFrame`. Meet je meteen, dan reken je met de plek waar je
+vandaan kwam, en krijgt een blok dat allang in beeld staat een
+scroll-trigger die nooit meer langskomt. Dezelfde onzichtbare tekst, via
+een andere weg.
+
+**En er ligt een vangnet in `after-enter`.** Dat loopt na de overgang de
+reveals na die ín beeld staan en tóch nog op nul: die zet het aan. Het hoort
+niets te vinden; het staat er omdat de fout die het afvangt een pagina
+zonder tekst oplevert, en dat is het ergste wat er met deze site kan
+gebeuren. Vindt het toch iets, dan is er iets mis met het moment waarop
+gescand wordt -- niet met die regel.
+
+### Een herscan mag niet laten knipperen
+
+`revealOnScroll` en `splitReveal` mogen meer dan eens over dezelfde pagina
+lopen -- bij een navigatie die het component laat staan gebeurt dat. Zonder
+zeef zet zo'n herscan álles wat je op dat moment ziet terug op nul om het
+opnieuw op te laten komen. Verstuur je het contactformulier onderaan de
+voorpagina, dan knippert daarmee de halve pagina.
+
+Beide functies slaan daarom over wat `data-gezien` draagt. Dat merkje komt
+er bij `revealOnScroll` pas als de beweging klaar is: een blok dat nog op
+zijn scroll-trigger wacht is dus niet gemerkt, en wordt bij een herscan
+gewoon opgepakt -- precies wat je wil, want dat is nog onzichtbaar. Bij
+`splitReveal` komt het merkje meteen, want daar staat de kop vanaf de split
+al op doorzichtigheid 1 en schuiven alleen de regels nog achter hun masker
+omhoog.
+
+Het vangnet in `after-enter` merkt ook wat het aanzet. Anders pakt een
+volgende herscan precies het blok op dat het net heeft gered.
+
+### Lenis en ScrollTrigger moeten opnieuw opmeten
+
+**Een paginawissel is geen `resize`, en dat kost je de helft van je
+scrollsprongen.** Allebei houden ze de hoogte van het document in een cache
+en werken die bij als het venster van maat verandert. Bij een
+Inertia-navigatie wordt de inhoud vervangen en wordt de pagina een paar
+schermen langer of korter, terwijl zij met het oude getal blijven rekenen.
+
+Voor Lenis is dat hard: `scrollTo` doet `clamp(0, target, this.limit)`.
+Kom je van een korte subpagina terug naar de lange voorpagina en klik je op
+"LinkedIn", dan wordt dat doel afgeknipt op de hoogte van de pagina waar je
+vandaan kwam -- en land je ergens halverwege. Klik je nog een keer, dan is
+Lenis zichzelf ondertussen via zijn eigen waarnemer bijgekomen en klopt het
+wel. Precies de klacht "je moet nog een keer drukken".
+
+Voor ScrollTrigger is het zachter maar even vervelend: een nieuw aangemaakte
+trigger berekent zijn begin- en eindpunt met een verkeerde maximale
+scrollpositie, en gaat dus op de verkeerde hoogte af of helemaal niet.
+
+Twee plekken lossen dat op, en ze dekken verschillende gevallen:
+
+| Waar                           | Wat               | Waarom daar                                                                                    |
+| ------------------------------ | ----------------- | ---------------------------------------------------------------------------------------------- |
+| `scrollNaar`, bij `direct`     | `lenis.resize()`  | Een directe sprong is het geval waarin de pagina net gewisseld kan zijn                        |
+| `scanReveals`, na het aanmaken | `hermeetScroll()` | Dan rekent de verversing met de triggers die er nú zijn, niet met die van de vertrokken pagina |
+
+Een gewone klik op een anker binnen dezelfde pagina hermeet niet: daar is
+niets veranderd, en een hermeting dwingt de browser de hele opmaak opnieuw
+door te rekenen.
+
+### De scroll hoort in de onzichtbare fase
+
+Inertia zet de scroll normaal terug naar boven op het moment van
+omwisselen -- dus vóórdat je iets ziet veranderen, en dan voelt het als een
+schok die losstaat van je klik. Nu gebeurt het in `before-enter`, als het
+scherm leeg is. Daar hoort `scrollNaar(..., { direct: true })` bij: een
+glijbeweging achter een doorzichtige laag is tijd die je kwijt bent zonder
+dat iemand het ziet.
+
+Die sprong is verdeeld over twee plekken, en dat is geen slordigheid:
+
+| Geval                               | Wie het doet                      |
+| ----------------------------------- | --------------------------------- |
+| Geen anker in het adres: naar boven | `PublicLayout`, in `before-enter` |
+| Wél een anker: naar dat onderdeel   | `Welcome.vue`, in `onMounted`     |
+
+De tweede staat daar omdat hij ook zonder overgang moet werken. Open je
+`/#diensten` rechtstreeks uit een zoekresultaat of ververs je de pagina,
+dan is er geen wissel en dus geen `before-enter` -- maar wel een
+`onMounted`.
+
+**De voortgangsbalk van Inertia blijft zoals hij is.** Die verschijnt pas
+na 250 ms, dus bij een snelle navigatie zie je hem niet en bij een trage
+wel. Precies goed, en niets om aan te zetten.
+
+**Bij `prefers-reduced-motion` is er geen overgang**, en niet een korte.
+Twintig milliseconden is geen rustiger animatie maar een flikkering. Er
+gaat ook niets verloren: `revealOnScroll` zet daar alles meteen op zijn
+plek, dus de knippering die deze overgang afdekt bestaat er niet.
+
 ## Animatie
 
 De animatielaag zit in [`resources/js/lib/motion.ts`](../../resources/js/lib/motion.ts):

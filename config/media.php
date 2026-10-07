@@ -72,4 +72,47 @@ return [
 
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | De foto bij "Over mij"
+    |--------------------------------------------------------------------------
+    |
+    | Een eigen blok en niet de grenzen van een logo hergebruikt, want het is
+    | een ander soort beeld. Twee verschillen die ertoe doen:
+    |
+    | **De kortste zijde ligt veel hoger.** Een logo van 48 pixels is nog
+    | bruikbaar in een belletje op de tijdlijn; een portret van 48 pixels op
+    | een pagina is een vlek. Tweehonderdveertig is de ondergrens waarmee de
+    | uitsnede van 640 nog scherp kan worden.
+    |
+    | **Er mag meer bestand in.** Een foto van een mens heeft veel meer
+    | kleurverloop dan een logo, dus dezelfde pixelmaat levert een groter
+    | bestand op. Twee megabyte zou mooi zijn, maar PHP staat op gedeelde
+    | hosting vaak op precies 2M -- en dan kapt PHP het verzoek af vóórdat
+    | Laravel het ziet: geen bestand, geen foutmelding, een formulier dat
+    | niets doet. Vandaar dezelfde veilige anderhalve megabyte als bij een
+    | logo. De browser verkleint een te groot bestand bovendien al vóór het
+    | versturen; zie resources/js/lib/beeldmerk.ts.
+    |
+    | De uitsnede zelf is 640 bij 640 en staat als constante op het model,
+    | naast het medaillon dat dezelfde maten heeft; zie
+    | App\Models\AboutSetting::FOTO_MAAT.
+    |
+    */
+
+    'portret' => [
+
+        'max_kb' => (int) env('MEDIA_PORTRET_MAX_KB', 1536),
+
+        'min_zijde' => (int) env('MEDIA_PORTRET_MIN_ZIJDE', 240),
+
+        /*
+         * Dezelfde reden als bij een logo: dit gaat over werkgeheugen. GD
+         * zet een beeld uitgepakt in het geheugen, vier bytes per beeldpunt,
+         * dus 3000 bij 3000 is 36 MB.
+         */
+        'max_zijde' => (int) env('MEDIA_PORTRET_MAX_ZIJDE', 3000),
+
+    ],
+
 ];

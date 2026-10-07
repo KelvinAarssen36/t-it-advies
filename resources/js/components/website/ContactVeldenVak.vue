@@ -4,7 +4,6 @@ import { Info, Lock } from '@lucide/vue';
 import { ref, watch } from 'vue';
 import BrandSelect from '@/components/BrandSelect.vue';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { bevestigBewerken } from '@/lib/bevestiging';
 import { t } from '@/lib/i18n';

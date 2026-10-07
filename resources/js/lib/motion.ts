@@ -140,10 +140,22 @@ export function revealOnScroll(
     selector: string,
     scope?: Element | null,
 ): () => void {
-    const targets = gsap.utils.toArray<HTMLElement>(
-        selector,
-        scope ?? undefined,
-    );
+    /*
+     * **Wat al eens is opgekomen, blijft staan.** Dit mag meer dan eens
+     * over dezelfde pagina lopen: bij een navigatie die het component laat
+     * staan wordt er opnieuw gescand, en zonder deze zeef zet die scan
+     * alles wat je op dat moment ziet terug op nul om het weer op te laten
+     * komen. Dan knippert de halve pagina omdat je een formulier hebt
+     * verstuurd.
+     *
+     * Het merkje komt er pas als de beweging klaar is. Een blok dat nog op
+     * zijn scroll-trigger wacht is dus niet gemerkt, en wordt bij een
+     * herscan gewoon opnieuw opgepakt -- precies wat je wil, want dat is
+     * nog onzichtbaar.
+     */
+    const targets = gsap.utils
+        .toArray<HTMLElement>(selector, scope ?? undefined)
+        .filter((target) => target.dataset.gezien === undefined);
 
     if (targets.length === 0) {
         return () => {};
@@ -151,6 +163,10 @@ export function revealOnScroll(
 
     if (prefersReducedMotion()) {
         gsap.set(targets, { opacity: 1, y: 0 });
+
+        targets.forEach((target) => {
+            target.dataset.gezien = '';
+        });
 
         return () => {};
     }
@@ -164,6 +180,11 @@ export function revealOnScroll(
                 y: 0,
                 duration: 0.8,
                 ease: 'power2.out',
+
+                // Klaar, dus bij een herscan overslaan. Zie de zeef boven.
+                onComplete: () => {
+                    target.dataset.gezien = '';
+                },
 
                 /*
                  * Staat het al in beeld, dan geen scroll-trigger maar
@@ -668,10 +689,10 @@ export function splitReveal(
     selector: string,
     scope?: Element | null,
 ): () => void {
-    const targets = gsap.utils.toArray<HTMLElement>(
-        selector,
-        scope ?? undefined,
-    );
+    /* Dezelfde zeef als bij `revealOnScroll`, en om dezelfde reden. */
+    const targets = gsap.utils
+        .toArray<HTMLElement>(selector, scope ?? undefined)
+        .filter((target) => target.dataset.gezien === undefined);
 
     if (targets.length === 0) {
         return () => {};
@@ -680,11 +701,23 @@ export function splitReveal(
     if (prefersReducedMotion()) {
         gsap.set(targets, { opacity: 1, y: 0 });
 
+        targets.forEach((target) => {
+            target.dataset.gezien = '';
+        });
+
         return () => {};
     }
 
     const splits = targets.map((target) => {
         gsap.set(target, { opacity: 1 });
+
+        /*
+         * Hier meteen en niet na de beweging. Vanaf deze regel staat de kop
+         * op doorzichtigheid 1 en is hij dus zichtbaar; de regels schuiven
+         * alleen nog achter hun masker omhoog. Zou het merkje pas aan het
+         * eind komen, dan hersplitst een herscan een kop die je al leest.
+         */
+        target.dataset.gezien = '';
 
         return SplitText.create(target, {
             type: 'lines',
@@ -1370,11 +1403,21 @@ export function tekenRing(
  * directe sprong; een lange glijbeweging over de hele pagina is precies
  * waar iemand met bewegingsklachten last van heeft.
  *
+ * **`direct` springt er zonder glijbeweging heen.** Dat is voor het moment
+ * waarop de pagina nog onzichtbaar is, tijdens de overgang tussen twee
+ * pagina's: dan hoort de bezoeker niet te zien dát er gescrold wordt, hij
+ * hoort er gewoon te staan zodra het beeld komt. Een glijbeweging achter
+ * een doorzichtige laag is tijd die je kwijt bent zonder dat iemand het
+ * ziet. Zie PublicLayout.
+ *
  * Geeft terug of het gelukt is. Bestaat het doel niet -- de klant heeft
  * dat onderdeel net uitgezet -- dan `false`, en dan hoort de aanroeper de
  * link gewoon zijn werk te laten doen.
  */
-export function scrollNaar(doel: string, { verschuiving = -72 } = {}): boolean {
+export function scrollNaar(
+    doel: string,
+    { verschuiving = -72, direct = false } = {},
+): boolean {
     if (typeof document === 'undefined') {
         return false;
     }
@@ -1387,8 +1430,29 @@ export function scrollNaar(doel: string, { verschuiving = -72 } = {}): boolean {
     }
 
     const naarBoven = doel === 'top';
+    const zonderBeweging = direct || prefersReducedMotion();
 
-    if (prefersReducedMotion() || lenis === undefined) {
+    /*
+     * **Eerst hermeten, dan springen.** Lenis houdt de hoogte van de pagina
+     * in een cache en knipt elk doel af op die hoogte:
+     * `clamp(0, target, this.limit)`. Komt de bezoeker net van een korte
+     * subpagina naar de lange voorpagina, dan staat die limiet nog op de
+     * oude hoogte -- en dan land je ergens halverwege in plaats van bij het
+     * onderdeel waar je op klikte. Pas bij een tweede klik, als Lenis
+     * zichzelf via zijn eigen waarnemer heeft bijgewerkt, klopt het wel.
+     *
+     * Dat was precies de klacht: "je moet nog een keer drukken".
+     *
+     * Alleen bij een directe sprong, want dat is het geval waarin de pagina
+     * net gewisseld kan zijn. Een gewone klik op een anker binnen dezelfde
+     * pagina hoeft dit niet, en een hermeting kost een herberekening van de
+     * opmaak.
+     */
+    if (lenis !== undefined && zonderBeweging) {
+        lenis.resize();
+    }
+
+    if (lenis === undefined) {
         element.scrollIntoView({ block: 'start' });
 
         if (!naarBoven) {
@@ -1398,13 +1462,45 @@ export function scrollNaar(doel: string, { verschuiving = -72 } = {}): boolean {
         return true;
     }
 
+    /*
+     * Ook een directe sprong gaat via Lenis. `window.scrollTo` zou de
+     * pagina ergens neerzetten waar Lenis niets van weet, en die duwt zijn
+     * eigen positie het beeldje daarna gewoon terug.
+     */
     lenis.scrollTo(naarBoven ? 0 : element, {
         offset: naarBoven ? 0 : verschuiving,
-        duration: 0.7,
-        easing: (t: number) => 1 - Math.pow(1 - t, 3),
+        ...(zonderBeweging
+            ? { immediate: true }
+            : {
+                  duration: 0.7,
+                  easing: (t: number) => 1 - Math.pow(1 - t, 3),
+              }),
     });
 
     return true;
+}
+
+/**
+ * Laat Lenis en ScrollTrigger de pagina opnieuw opmeten.
+ *
+ * **Nodig na een paginawissel, en om twee redenen tegelijk.** Allebei
+ * houden ze de hoogte van het document in een cache en werken die bij op
+ * een `resize` van het venster. Een Inertia-navigatie is geen resize: de
+ * inhoud wordt vervangen en de pagina wordt een paar schermen langer of
+ * korter, terwijl zij met het oude getal blijven rekenen.
+ *
+ * Voor Lenis betekent dat een doel dat wordt afgeknipt -- zie `scrollNaar`.
+ * Voor ScrollTrigger betekent het dat een nieuw aangemaakte trigger zijn
+ * begin- en eindpunt berekent met een verkeerde maximale scrollpositie, en
+ * dus op de verkeerde hoogte afgaat of helemaal niet.
+ *
+ * Roep dit aan nadat de nieuwe animaties zijn aangemaakt; dan rekent de
+ * verversing met de triggers die er echt zijn en niet met die van de
+ * pagina die net is vertrokken.
+ */
+export function hermeetScroll(): void {
+    lenis?.resize();
+    ScrollTrigger.refresh();
 }
 
 /**

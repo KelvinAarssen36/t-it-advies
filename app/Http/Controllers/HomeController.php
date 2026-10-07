@@ -4,17 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Enums\ContactWeergave;
 use App\Enums\PageSectionKey;
+use App\Models\AboutSetting;
 use App\Models\Certificate;
 use App\Models\ContactSetting;
 use App\Models\Education;
 use App\Models\Experience;
-use App\Models\PageSection;
+use App\Models\FaqItem;
 use App\Models\SectionHeading;
 use App\Models\Service;
 use App\Models\Statistic;
 use App\Support\Contact\Contactformulier;
 use App\Support\Loopbaan;
-use App\Support\Page\SectionContent;
+use App\Support\Page\Navigatie;
 use Illuminate\Database\Eloquent\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -35,11 +36,11 @@ use Inertia\Response;
 class HomeController extends Controller
 {
     public function __invoke(
-        SectionContent $inhoud,
+        Navigatie $navigatie,
         Loopbaan $loopbaanCijfers,
         Contactformulier $formulier,
     ): Response {
-        $secties = $this->secties($inhoud);
+        $secties = $navigatie->sleutels();
 
         /*
          * De inhoud van een onderdeel gaat alleen mee als dat onderdeel er
@@ -75,6 +76,23 @@ class HomeController extends Controller
             ? Statistic::query()->online()->opVolgorde()->get()
             : new Collection;
 
+        $vragen = in_array(PageSectionKey::Faq->value, $secties, true)
+            ? FaqItem::query()->online()->opVolgorde()->get()
+            : new Collection;
+
+        /*
+         * Het korte stuk over de eigenaar.
+         *
+         * `voorDeSite()` geeft `null` zodra er geen samenvatting in de taal
+         * van de bezoeker staat. Dat kan hier niet gebeuren -- de teller in
+         * AppServiceProvider heeft het onderdeel dan al uit `$secties`
+         * gehouden -- maar het staat er zodat de ene plek de andere niet
+         * hoeft te vertrouwen.
+         */
+        $overMij = in_array(PageSectionKey::OverMij->value, $secties, true)
+            ? AboutSetting::huidige()->voorDeSite()
+            : null;
+
         return Inertia::render('Welcome', [
             'sections' => $secties,
 
@@ -104,13 +122,7 @@ class HomeController extends Controller
              * De labels komen van de server en niet uit een tabel in de
              * frontend, want ze zijn vertaald. Zie PageSectionKey::label().
              */
-            'navigation' => array_map(
-                fn (string $sleutel) => [
-                    'key' => $sleutel,
-                    'label' => PageSectionKey::from($sleutel)->label(),
-                ],
-                $secties,
-            ),
+            'navigation' => $navigatie->menu($secties),
 
             /*
              * De diensten, in de taal van de bezoeker. Leeg als het
@@ -183,6 +195,48 @@ class HomeController extends Controller
                 : null,
 
             /*
+             * Het korte stuk over de eigenaar, en de kop erboven.
+             *
+             * Allebei `null` als het onderdeel er niet staat, zoals bij de
+             * andere blokken. In `about` zit ook of de aparte pagina
+             * klaarstaat; dat bepaalt of er een knop onder komt. Eén bron,
+             * zodat de knop en de route niet uiteen kunnen lopen -- zie
+             * AboutSetting::paginaStaatKlaar().
+             */
+            'about' => $overMij,
+
+            'aboutHeading' => in_array(PageSectionKey::OverMij->value, $secties, true)
+                ? SectionHeading::voor(PageSectionKey::OverMij)->voorDeSite()
+                : null,
+
+            /*
+             * De veelgestelde vragen.
+             *
+             * **Álle vragen gaan mee, ook die buiten de eerste
+             * bladzijde vallen.** Het blok bladert per zes, en het zou
+             * schelen om alleen die zes te sturen -- maar dan bestaat de
+             * rest niet voor een zoekmachine, en juist bij een
+             * vragenlijst is dat zonde: vragen zijn precies waarop
+             * gezocht wordt.
+             *
+             * Het blok zet de vragen buiten de huidige bladzijde op
+             * `hidden` in plaats van ze weg te laten, dus ze staan in de
+             * DOM -- of die nu door de SSR-server of door de browser
+             * wordt opgebouwd. En het briefje hieronder staat los
+             * daarvan in de `<head>`, dus de vragen zijn ook te vinden
+             * zonder dat er JavaScript draait.
+             *
+             * Zie docs/architecture/modules/faq.md.
+             */
+            'faq' => $vragen
+                ->map(fn (FaqItem $vraag) => $vraag->voorDeSite())
+                ->all(),
+
+            'faqHeading' => in_array(PageSectionKey::Faq->value, $secties, true)
+                ? SectionHeading::voor(PageSectionKey::Faq)->voorDeSite()
+                : null,
+
+            /*
              * Het contactformulier.
              *
              * **De velden komen van de server en staan niet in de Vue.**
@@ -196,7 +250,54 @@ class HomeController extends Controller
              * staat er op de landing een knop en geen formulier.
              */
             'contact' => $this->contactblok($secties, $formulier),
+        ])->withViewData([
+            /*
+             * De vragen als structuurdata, voor de zoekmachines.
+             *
+             * **Via de rootview en niet via Vue.** Dit hoort in de `<head>`,
+             * en Inertia's `Head`-component laat zo'n tag er niet door --
+             * dat is nagemeten. Belangrijker: het is een beslissing over
+             * inhoud, en die horen in dit project op de server te staan.
+             *
+             * Zie het kopje erover in docs/architecture/modules/faq.md,
+             * inclusief wat dit sinds 2023 níet meer oplevert.
+             */
+            'vragenBriefje' => $this->vragenBriefje($vragen),
         ]);
+    }
+
+    /**
+     * De vragenlijst als `FAQPage`-structuurdata, of `null`.
+     *
+     * **`JSON_HEX_TAG` is hier geen opsmuk maar de beveiliging.** Deze
+     * tekst komt tussen `<script>`-tags te staan, en de eigenaar typt hem
+     * zelf. Zou er `</script>` in een antwoord staan, dan sluit dat de tag
+     * en is alles erna gewone HTML. Met deze vlag wordt elke `<` een
+     * `<`: geldige JSON, en niets dat een tag kan afbreken.
+     *
+     * `null` zodra er geen vragen zijn, en dan staat er niets in de head --
+     * een lege lijst opgeven is erger dan hem weglaten.
+     *
+     * @param  Collection<int, FaqItem>  $vragen
+     */
+    private function vragenBriefje(Collection $vragen): ?string
+    {
+        if ($vragen->isEmpty()) {
+            return null;
+        }
+
+        return json_encode([
+            '@context' => 'https://schema.org',
+            '@type' => 'FAQPage',
+            'mainEntity' => $vragen->map(fn (FaqItem $vraag) => [
+                '@type' => 'Question',
+                'name' => $vraag->vraag(),
+                'acceptedAnswer' => [
+                    '@type' => 'Answer',
+                    'text' => $vraag->antwoord(),
+                ],
+            ])->all(),
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) ?: null;
     }
 
     /**
@@ -551,27 +652,4 @@ class HomeController extends Controller
      *
      * @return array<int, string>
      */
-    private function secties(SectionContent $inhoud): array
-    {
-        $rijen = PageSection::query()->aangezet()->opVolgorde()->get();
-
-        /*
-         * Is er nog nooit geseed, dan valt de pagina terug op de volgorde
-         * uit de code. Anders levert een vergeten `db:seed` een website op
-         * die alleen nog uit een kop en een voettekst bestaat -- en dat is
-         * precies het soort fout dat je op de publieke site niet wilt laten
-         * afhangen van of iemand eraan gedacht heeft.
-         */
-        $sleutels = $rijen->isEmpty()
-            ? PageSectionKey::verplaatsbaar()
-            : $rijen->map(fn (PageSection $rij) => $rij->key)->all();
-
-        return array_values(array_map(
-            fn (PageSectionKey $sectie) => $sectie->value,
-            array_filter(
-                $sleutels,
-                fn (PageSectionKey $sectie) => ! $sectie->vast() && $inhoud->gevuld($sectie),
-            ),
-        ));
-    }
 }

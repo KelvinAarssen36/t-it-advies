@@ -29,11 +29,13 @@ namespace App\Enums;
 enum PageSectionKey: string
 {
     case Hero = 'hero';
+    case OverMij = 'over-mij';
     case Diensten = 'diensten';
     case Werkwijze = 'werkwijze';
     case Ervaring = 'ervaring';
     case Certificaten = 'certificaten';
     case Statistieken = 'statistieken';
+    case Faq = 'faq';
     case Contact = 'contact';
     case Linkedin = 'linkedin';
     case Footer = 'footer';
@@ -47,11 +49,13 @@ enum PageSectionKey: string
     {
         return match ($this) {
             self::Hero => __('Kop'),
+            self::OverMij => __('Over mij'),
             self::Diensten => __('Diensten'),
             self::Werkwijze => __('Werkwijze'),
             self::Ervaring => __('Ervaring'),
             self::Certificaten => __('Certificaten'),
             self::Statistieken => __('Statistieken'),
+            self::Faq => __('Vragen'),
             self::Contact => __('Contact'),
             self::Linkedin => __('LinkedIn'),
             self::Footer => __('Voettekst'),
@@ -63,11 +67,13 @@ enum PageSectionKey: string
     {
         return match ($this) {
             self::Hero => __('Het eerste dat een bezoeker ziet: de titel, de ondertitel en de twee knoppen.'),
+            self::OverMij => __('Een kort stuk over jezelf, met een foto. Eventueel met een knop naar een uitgebreidere pagina.'),
             self::Diensten => __('De diensten die je aanbiedt, elk met een korte toelichting en de expertise die eronder valt.'),
             self::Werkwijze => __('De stappen van kennismaken tot overdragen.'),
             self::Ervaring => __('De tijdlijn met functies en organisaties, van nu naar vroeger.'),
             self::Certificaten => __('De certificaten die je hebt gehaald, en eventueel je opleiding.'),
             self::Statistieken => __('Je vaardigheden en kengetallen, als balken, ringen en tellers.'),
+            self::Faq => __('De vragen die je vaker krijgt, met je antwoord eronder.'),
             self::Contact => __('Het contactformulier.'),
             self::Linkedin => __('De uitnodiging om je op LinkedIn te volgen, met een knop naar je profiel.'),
             self::Footer => __('De afsluiting onderaan elke pagina.'),
@@ -133,29 +139,48 @@ enum PageSectionKey: string
     {
         return match ($this) {
             self::Hero => 0,
-            self::Diensten => 1,
-            self::Werkwijze => 2,
-            self::Ervaring => 3,
+
+            /*
+             * Vlak na de kop: "wie ben ik" komt voor "wat doe ik". Een
+             * bezoeker die net heeft gelezen wát je aanbiedt weet nog
+             * niet van wie hij het koopt, en bij een eenmanszaak is dat
+             * precies de vraag die eerst komt.
+             */
+            self::OverMij => 1,
+
+            self::Diensten => 2,
+            self::Werkwijze => 3,
+            self::Ervaring => 4,
 
             // Direct ná de tijdlijn: die vertelt wat hij heeft gedaan,
             // dit is het bewijs erbij. Uit elkaar trekken maakt van twee
             // halve verhalen twee losse blokken.
-            self::Certificaten => 4,
+            self::Certificaten => 5,
 
             /*
              * En daarna de cijfers. De rij leest zo als één verhaal:
              * wat hij deed, waarvoor hij is getoetst, en waar hij goed
-             * in is. Het is ook het laatste blok vóór de vraag om
-             * contact, en dat is de plek waar je iemand wilt hebben als
-             * hij gaat mailen.
+             * in is.
+             *
+             * Hier stond dat dit het laatste blok vóór de vraag om
+             * contact was. Dat is het niet meer sinds de vragen bestaan;
+             * zie hieronder.
              */
-            self::Statistieken => 5,
+            self::Statistieken => 6,
 
-            self::Contact => 6,
+            /*
+             * En dan de vragen, vlak vóór het contactformulier. Dat is
+             * geen willekeur: een vragenlijst neemt de laatste twijfel
+             * weg, en de knop om te mailen hoort meteen daarna te komen.
+             * Erboven zou hij de twijfel wegnemen die nog niet bestond.
+             */
+            self::Faq => 7,
+
+            self::Contact => 8,
 
             // Ná het contactformulier: "en volg me verder op LinkedIn"
             // is een afsluiter en geen uitnodiging om te mailen.
-            self::Linkedin => 7,
+            self::Linkedin => 9,
 
             self::Footer => 1000,
         };
@@ -173,10 +198,12 @@ enum PageSectionKey: string
     {
         return match ($this) {
             self::Hero => 'website.kop.index',
+            self::OverMij => 'website.over-mij.index',
             self::Diensten => 'website.diensten.index',
             self::Ervaring => 'website.ervaring.index',
             self::Certificaten => 'website.certificaten.index',
             self::Statistieken => 'website.statistieken.index',
+            self::Faq => 'website.faq.index',
             self::Contact => 'website.contact.index',
             default => null,
         };

@@ -310,8 +310,36 @@
     --control-border: var(--brand-border-dark);
     --control-fg: #ffffff;
     --control-muted: var(--brand-silver);
-    --control-hover: var(--brand-navy-raised);
-    --control-active: var(--brand-border-dark);
+    /*
+      **Een hoverkleur mag nooit gelijk zijn aan het vlak waar hij op
+      ligt.** Hier stond `--brand-navy-raised`, en dat is precies de
+      achtergrond van elk zwevend paneel op donker (`--control-bg-elevated`
+      en `--popover` wijzen er allebei naar). Hoveren over een regel in een
+      keuzelijst of een menu gaf dus geen enkele verandering: je kleurde
+      naar de kleur die er al stond.
+
+      In het lichte thema viel dat niet op -- daar is het paneel wit en de
+      hover Cloud -- en op de publieke site, die altijd donker staat,
+      bestond het enige menu met regels nog niet. Dat menu ("Meer" in de
+      kop) verscheen pas toen er een zesde onderdeel bij kwam, en toen was
+      het meteen te zien.
+
+      Nu een stap lichter dan dat paneel, met een vleug cyaan erin zodat
+      een hover ook op donker als "dit kun je aanklikken" leest en niet als
+      grijs. `--control-active` ligt daar nog een stap boven, want een
+      gekozen regel hoort sterker te staan dan een regel waar je alleen
+      over heen gaat.
+    */
+    --control-hover: color-mix(
+        in srgb,
+        var(--brand-cyan) 12%,
+        var(--brand-navy-raised)
+    );
+    --control-active: color-mix(
+        in srgb,
+        var(--brand-cyan) 22%,
+        var(--brand-navy-raised)
+    );
     --control-ring: var(--brand-cyan);
 
     /*
@@ -341,7 +369,15 @@
     --secondary-foreground: #ffffff;
     --muted: var(--brand-navy-deep);
     --muted-foreground: var(--brand-silver);
-    --accent: var(--brand-navy-raised);
+    /*
+      Dezelfde correctie als bij `--control-hover` hierboven, en om dezelfde
+      reden: de regels van een `DropdownMenu` kleuren met `bg-accent`, en
+      die lag op de achtergrondkleur van het menu zelf. Eén bron zou hier
+      netter zijn, maar `--accent` is een naam van shadcn en `--control-*`
+      is van ons; ze wijzen daarom naar dezelfde berekening in plaats van
+      naar elkaar.
+    */
+    --accent: var(--control-hover);
     --accent-foreground: #ffffff;
     --destructive: var(--error);
     --destructive-foreground: #ffffff;
@@ -1599,7 +1635,24 @@ html:has(.brand-dark-page) {
   focusring niet: die is een `box-shadow` op de knop zelf, en overflow
   snijdt alleen wat erin zit.
 
-  Zie resources/js/components/ui/button/index.ts.
+  ---------------------------------------------------------------------------
+  **Wil je dit elders hergebruiken: lees dit eerst.**
+  ---------------------------------------------------------------------------
+
+  Dit is niet "een veeg" maar **de veeg van de actieknop**, en de twee maten
+  hieronder horen bij dat formaat: 35% van de breedte aan 55% wit is op een
+  knop van 200 pixels een glinstering van 70. Op een element van de volle
+  sectiebreedte is het een witte baan van ruim 200 -- en dan ziet het eruit
+  als een wit vlak dat voorbij raast. Dat is bij de veelgestelde vragen één
+  keer gebeurd.
+
+  En let op: deze regels staan **buiten** `@layer components`. Een gelaagde
+  regel kan ze dus niet bijstellen, ook niet met meer specificiteit of een
+  latere plek in het bestand -- ongelaagd wint. Heb je een veeg nodig op iets
+  anders, schrijf er dan een eigen voor, zoals `brand-faq-knop` doet.
+
+  Zie resources/js/components/ui/button/index.ts en
+  docs/architecture/modules/faq.md.
 */
 .brand-glans {
     position: relative;
@@ -7758,6 +7811,49 @@ button:hover > .brand-verlaat,
       een regel erboven, en dan lijkt het alsof er niets is gebeurd. Nu is
       er geen formulier meer om naar te kijken.
     */
+    /*
+      Het formulier terwijl het onderweg is.
+
+      **Vanaf de klik op Versturen is er iets te zien, en dat was het hele
+      gat.** De knop had een spinner, maar het formulier eronder stond er
+      net zo bij als daarvoor -- en dan voelt de klik alsof hij niet
+      aankwam. Nu zakt het geheel een tikje weg: het is uit jouw handen.
+
+      `pointer-events: none` is geen sier maar nodig. Zonder dat kun je
+      tijdens het versturen nog in een veld typen dat zo verdwijnt, of een
+      tweede keer op de knop drukken.
+    */
+    .brand-contactformulier {
+        transition:
+            opacity 200ms ease,
+            filter 200ms ease;
+    }
+
+    .brand-contactformulier[data-bezig] {
+        opacity: 0.55;
+        filter: saturate(0.8);
+        pointer-events: none;
+    }
+
+    /*
+      En het wegschuiven, als het gelukt is.
+
+      Alleen het weggaan staat hier. Het opkomen van de bevestiging doet
+      GSAP, want daar hoort het vinkje met een overshoot in te ploffen en
+      dat is geen overgang. Vue zet zijn enter-klassen er wel op; die
+      hebben hier met opzet geen regels.
+    */
+    .brand-contactwissel-leave-active {
+        transition:
+            opacity 200ms ease-in,
+            translate 200ms ease-in;
+    }
+
+    .brand-contactwissel-leave-to {
+        opacity: 0;
+        translate: 0 -10px;
+    }
+
     .brand-contactgelukt {
         margin-top: 2.5rem;
         display: flex;
@@ -8388,7 +8484,22 @@ button:hover > .brand-verlaat,
       contactpagina en onder het contactformulier zelf, en dan is een naam
       die één pagina noemt een uitnodiging om een bijna-kopie te maken.
     */
+    /*
+      **`inline-flex` en geen gewone inline-link, en dat is een correctie.**
+      Op twee plekken staat er een icoontje vóór de tekst, en Tailwind zet
+      elke `svg` op `display: block`. In een inline-link duwt dat de tekst
+      naar de volgende regel: het envelopje stond boven het adres in plaats
+      van ernaast. Dat was op de contactpagina net zo.
+
+      De onderstreping loopt daarmee ook onder het icoontje door. Dat is
+      hier geen probleem -- hij staat op 40% en op drie pixels afstand -- en
+      het alternatief is de tekst in een eigen `span` wikkelen op negen
+      plekken, waarvan zeven er geen icoon hebben.
+    */
     .brand-sitemail {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
         color: var(--brand-cyan);
         text-decoration: underline;
         text-decoration-color: color-mix(
@@ -8408,32 +8519,77 @@ button:hover > .brand-verlaat,
     }
 
     /*
-      De weg terug naar de website.
+      De overgang tussen twee publieke pagina's.
 
-      Het pijltje schuift bij het aanwijzen een pixel naar links, in de
-      richting waarin het wijst -- genoeg om te merken dat het bij de link
-      hoort, te weinig om ernaar te gaan kijken. Dezelfde gedachte als het
-      tekentje achter een link die het portaal verlaat.
+      **Kort, en expres niet opvallend.** Honderdzestig milliseconden uit,
+      vierhonderdtwintig in, met twaalf beeldpunten omhoog. Het weggaan is
+      sneller dan het komen, want wachten tot iets verdwenen is voelt als
+      vertraging, terwijl iets dat opkomt leest als aankomst.
+
+      Die tijden waren eerst korter -- 140 en 260 -- en dat voelde schokkerig
+      in plaats van snel. Een overgang die net te kort is leest als een
+      sprong met een waas eroverheen; hij moet lang genoeg duren om als één
+      beweging gezien te worden. De versoepeling zit vooral in de curve:
+      `cubic-bezier(0.16, 1, 0.3, 1)` begint snel en komt lang en zacht tot
+      stilstand, dus het laatste stukje glijdt uit in plaats van te stoppen.
+
+      **Alleen `opacity` en `translate`.** Allebei dingen die de browser op
+      de grafische kaart doet zonder de pagina opnieuw op te meten. Een
+      overgang die de opmaak laat herberekenen hapert op een telefoon, en
+      dan heb je een animatie toegevoegd die het juist slechter maakt.
+
+      De klassen worden door Vue op `<main>` gezet; zie `PublicLayout.vue`
+      voor waarom het alleen dat element is en wat het onderweg oplost.
     */
-    .brand-terug {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.45rem;
-        font-size: 0.875rem;
-        color: var(--muted-foreground);
-        transition: color 150ms ease;
+    .brand-pagina-enter-active {
+        transition:
+            opacity 420ms cubic-bezier(0.16, 1, 0.3, 1),
+            translate 420ms cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .brand-terug:hover {
-        color: var(--brand-cyan);
+    .brand-pagina-leave-active {
+        transition: opacity 160ms cubic-bezier(0.4, 0, 1, 1);
     }
 
-    .brand-terug svg {
-        transition: translate 150ms ease;
+    .brand-pagina-enter-from {
+        opacity: 0;
+        translate: 0 12px;
     }
 
-    .brand-terug:hover svg {
-        translate: -2px 0;
+    .brand-pagina-leave-to {
+        opacity: 0;
+    }
+
+    /*
+      Het kruimelpad boven aan een subpagina.
+
+      **Dit verving `.brand-terug`, de losse teruglink die hier stond.** Die
+      deed hetzelfde als de kop -- en op de privacyverklaring stond hij er
+      twee keer, naast die in de kop. Nu zegt de kop waar je heen kunt en
+      dit waar je bent, en dat zijn twee verschillende vragen.
+
+      De vorm komt uit het kruimelpad van het portaal, dus hier staat alleen
+      de ruimte eronder. Verder niets: als dit meer dan dat nodig had, hoorde
+      het in dat gedeelde onderdeel thuis en niet hier.
+    */
+    .brand-sitekruimels {
+        margin-bottom: 2rem;
+    }
+
+    /*
+      De knop onder aan een subpagina.
+
+      Een streep erboven en ruimte eromheen, want dit is het einde van de
+      pagina en niet nog een regel tekst. Gecentreerd: er staat verder niets
+      op die hoogte, en links uitgelijnd zou hij eruitzien alsof er iets
+      naast hoort te staan.
+    */
+    .brand-siteterug {
+        display: flex;
+        justify-content: center;
+        margin-top: 4rem;
+        border-top: 1px solid var(--border);
+        padding-top: 2rem;
     }
 
     /* --- De bezoekcijfers -------------------------------------------- */
@@ -9900,6 +10056,988 @@ button:hover > .brand-verlaat,
     .brand-stap-terug-enter-from {
         opacity: 0;
         transform: translateX(-1.5rem);
+    }
+
+    /* --- Over mij: het beheerscherm ----------------------------------- */
+
+    /*
+      Eén blok op het scherm "Over mij".
+
+      **De twee blokken zijn visueel gescheiden, en dat is het ontwerp.**
+      De eigenaar moet in één oogopslag zien wat er op zijn voorpagina komt
+      en wat alleen op de aparte pagina. Zonder die scheiding vult hij zijn
+      samenvatting vol met zijn hele verhaal.
+    */
+    .brand-overmij-blok {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        border: 1px solid var(--border);
+        border-radius: 0.75rem;
+        padding: 1.25rem;
+        background-color: color-mix(in srgb, var(--muted) 25%, transparent);
+    }
+
+    /*
+      Vergrijsd als de aparte pagina uit staat.
+
+      **Niet weggehaald.** Zou het weg zijn, dan weet je niet dat het
+      bestaat -- en dan vul je je samenvatting vol met je hele verhaal.
+      Zelfde keuze als de vaste velden op het contactformulier.
+
+      `opacity` en geen `pointer-events: none`: alles blijft invulbaar. Wat
+      je hier schrijft wordt bewaard en staat klaar voor het moment dat je
+      de pagina aanzet.
+    */
+    .brand-overmij-blok[data-uit] {
+        opacity: 0.62;
+    }
+
+    .brand-overmij-blokkop {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.75rem;
+    }
+
+    .brand-overmij-bloktitel {
+        font-size: 0.9375rem;
+        font-weight: 600;
+    }
+
+    .brand-overmij-blokuitleg {
+        margin-top: 0.25rem;
+        max-width: 60ch;
+        font-size: 0.8125rem;
+        text-wrap: pretty;
+        color: var(--muted-foreground);
+    }
+
+    .brand-overmij-schakelaar {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.625rem;
+        cursor: pointer;
+    }
+
+    .brand-overmij-uitmelding {
+        border-left: 3px solid var(--border);
+        padding-left: 0.75rem;
+        font-size: 0.8125rem;
+        text-wrap: pretty;
+        color: var(--muted-foreground);
+    }
+
+    /*
+      Het voorbeeld in het overzicht.
+
+      **Dit is een weergave en geen formulier.** Het scherm toont wat er
+      staat; bewerken gebeurt in een venster. Vandaar leesbare tekst in
+      plaats van invoervelden -- zie de uitleg bovenaan OverMij.vue.
+    */
+    .brand-overmij-voorbeeld {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+
+    @media (min-width: 40rem) {
+        .brand-overmij-voorbeeld {
+            flex-direction: row;
+            align-items: flex-start;
+            gap: 1.5rem;
+        }
+    }
+
+    /*
+      De foto zoals hij op de site staat.
+
+      Rond, want dat is hij daar ook. Met een naamplaatje eronder dat zegt
+      wélke foto het is: zonder die regel weet de eigenaar niet of hij naar
+      zijn eigen upload kijkt of naar het portret uit zijn kop.
+    */
+    .brand-overmij-voorbeeldfoto {
+        flex: 0 0 auto;
+        width: 7rem;
+        text-align: center;
+    }
+
+    .brand-overmij-voorbeeldfoto img {
+        display: block;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1;
+        border-radius: 9999px;
+        object-fit: cover;
+        box-shadow: 0 0 0 1px var(--border);
+    }
+
+    /*
+      Het naamplaatje onder de foto.
+
+      **Zonder tekentje ervoor, en dat is een correctie.** Hier stond een
+      plaatjesicoontje van 0.875rem in een `inline-flex`. Bij een label van
+      één regel zag dat er nog uit; zodra de tekst over twee regels liep
+      stond het tekentje op de middelste hoogte van dat blok, links buiten de
+      tekst, en lag het los van alles. Een icoontje onder een foto zegt ook
+      niets wat de foto zelf niet al zegt.
+
+      Een blok dus, en `balance` in plaats van `pretty`: bij een kort
+      gecentreerd label wil je twee gelijke regels en niet een lange met een
+      kort staartje.
+    */
+    .brand-overmij-voorbeeldfoto figcaption {
+        display: block;
+        margin-top: 0.625rem;
+        font-size: 0.6875rem;
+        line-height: 1.35;
+        text-wrap: balance;
+        color: var(--muted-foreground);
+    }
+
+    .brand-overmij-voorbeeldtitel {
+        font-size: 1rem;
+        font-weight: 500;
+        text-wrap: pretty;
+    }
+
+    .brand-overmij-voorbeeldtekst {
+        max-width: 68ch;
+        font-size: 0.875rem;
+        line-height: 1.7;
+        text-wrap: pretty;
+        white-space: pre-line;
+        color: var(--muted-foreground);
+    }
+
+    /*
+      De feiten onder het voorbeeld: lengte, of het Engels er staat, waar de
+      pagina te vinden is. Twee kolommen op een breed scherm, want het zijn
+      korte paren en onder elkaar zou dat een lange sliert worden.
+    */
+    .brand-overmij-feiten {
+        display: grid;
+        gap: 0.625rem 1.5rem;
+        padding-top: 0.25rem;
+        font-size: 0.8125rem;
+    }
+
+    @media (min-width: 48rem) {
+        .brand-overmij-feiten {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            /*
+              Dezelfde maat als de alinea erboven, die op 68ch stopt (bij
+              0.875rem is dat ongeveer 30rem). Zonder deze grens rekken twee
+              kolommen van 1fr door tot de rand van het scherm: op een breed
+              venster staat "Engels" dan links en "Te bezoeken op" een halve
+              meter verderop, los van de tekst waar ze bij horen. In `rem` en
+              niet in `ch`, want `ch` rekent met de eigen lettergrootte en
+              die is hier kleiner.
+            */
+            max-width: 30rem;
+        }
+    }
+
+    .brand-overmij-feiten dt {
+        color: var(--muted-foreground);
+    }
+
+    .brand-overmij-feiten dd {
+        margin-top: 0.125rem;
+        font-weight: 500;
+    }
+
+    /* De punten horen bij de aparte pagina en staan in hun eigen vak. */
+    .brand-overmij-punten-vak {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        border-top: 1px solid var(--border);
+        padding-top: 1.25rem;
+    }
+
+    .brand-overmij-punten {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .brand-overmij-punt {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        border: 1px solid var(--border);
+        border-radius: 0.625rem;
+        padding: 0.5rem 0.75rem;
+        background-color: var(--card);
+        font-size: 0.875rem;
+    }
+
+    /* --- Over mij: het blok op de voorpagina -------------------------- */
+
+    .brand-overmij-rij {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.75rem;
+        margin-top: 2.5rem;
+        text-align: center;
+    }
+
+    /*
+      Vanaf de tabletgrens naast elkaar, met de foto links.
+
+      **De tekst is waar het om gaat, dus die krijgt de ruimte.** De foto
+      heeft een vaste maat en de alinea vult de rest; omgekeerd zou een
+      korte samenvatting een enorme foto naast zich krijgen.
+    */
+    @media (min-width: 48rem) {
+        .brand-overmij-rij {
+            flex-direction: row;
+            align-items: center;
+            gap: 2.5rem;
+            text-align: left;
+        }
+    }
+
+    /*
+      Het beeld: rond, en met dezelfde gloed als het medaillon in de kop.
+
+      Rond en niet vierkant omdat het medaillon rond is -- en dat is de
+      standaard. Zou een eigen foto vierkant staan en het medaillon rond,
+      dan verspringt de pagina zodra de eigenaar er een inzet.
+    */
+    .brand-overmij-beeld {
+        flex: 0 0 auto;
+        width: 12rem;
+        max-width: 60vw;
+    }
+
+    @media (min-width: 64rem) {
+        .brand-overmij-beeld {
+            width: 16rem;
+        }
+    }
+
+    .brand-overmij-beeld img {
+        display: block;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1;
+        border-radius: 9999px;
+        object-fit: cover;
+        filter: drop-shadow(0 0 30px rgb(7 135 232 / 0.25));
+    }
+
+    .brand-overmij-tekst {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+        min-width: 0;
+    }
+
+    @media (min-width: 48rem) {
+        .brand-overmij-tekst {
+            align-items: flex-start;
+        }
+    }
+
+    .brand-overmij-samenvatting {
+        max-width: 56ch;
+        font-size: 1rem;
+        line-height: 1.75;
+        text-wrap: pretty;
+        white-space: pre-line;
+        color: var(--muted-foreground);
+    }
+
+    @media (min-width: 48rem) {
+        .brand-overmij-samenvatting {
+            font-size: 1.0625rem;
+        }
+    }
+
+    /* --- Over mij: de aparte pagina ----------------------------------- */
+
+    .brand-overmijpagina-kop {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+        text-align: center;
+    }
+
+    @media (min-width: 48rem) {
+        .brand-overmijpagina-kop {
+            flex-direction: row;
+            align-items: center;
+            gap: 2.5rem;
+            text-align: left;
+        }
+    }
+
+    .brand-overmijpagina-beeld {
+        flex: 0 0 auto;
+        width: 10rem;
+    }
+
+    @media (min-width: 48rem) {
+        .brand-overmijpagina-beeld {
+            width: 14rem;
+        }
+    }
+
+    /*
+      De gloed achter het portret.
+
+      **Twee lagen die los van elkaar bewegen**, want één bewegende laag
+      leest als een knipperlicht en twee als licht dat leeft: een brede
+      wolk die langzaam ademt, en een smalle ring die rondtrekt. Allebei
+      achter het beeld (`z-index: -1`), dus ze raken de foto zelf niet.
+
+      De ring is een `conic-gradient` die ronddraait. Dat kan niet met een
+      gewone `border`: een rand kun je niet laten roteren zonder het hele
+      element te draaien, en dan draait de foto mee. Een pseudo-element
+      eronder draait wél, en het ronde masker maakt er een ring van.
+
+      Bij `prefers-reduced-motion` staat alles stil. De gloed blijft dan
+      staan -- die hoort bij het ontwerp -- maar beweegt niet.
+    */
+    .brand-overmijpagina-beeld {
+        position: relative;
+        isolation: isolate;
+    }
+
+    .brand-overmijpagina-beeld::before,
+    .brand-overmijpagina-beeld::after {
+        content: '';
+        position: absolute;
+        border-radius: 9999px;
+        z-index: -1;
+        pointer-events: none;
+    }
+
+    /* De wolk: breed, zacht, ademt. */
+    .brand-overmijpagina-beeld::before {
+        inset: -18%;
+        background: radial-gradient(
+            circle,
+            color-mix(in srgb, var(--brand-cyan) 28%, transparent) 0%,
+            color-mix(in srgb, var(--brand-blue) 18%, transparent) 45%,
+            transparent 72%
+        );
+        filter: blur(18px);
+        animation: brand-portret-adem 7s ease-in-out infinite;
+    }
+
+    /*
+      De ring: smal, scherp, draait rond.
+
+      `mask` snijdt het midden eruit, zodat er van het draaiende vlak een
+      ring overblijft. Zonder dat masker is het een draaiende schijf achter
+      de foto, en dan zie je aan de randen een kleurzweem.
+    */
+    .brand-overmijpagina-beeld::after {
+        inset: -4%;
+        background: conic-gradient(
+            from 0deg,
+            transparent 0deg,
+            color-mix(in srgb, var(--brand-cyan) 70%, transparent) 40deg,
+            transparent 110deg,
+            transparent 240deg,
+            color-mix(in srgb, var(--brand-blue) 55%, transparent) 290deg,
+            transparent 350deg
+        );
+        mask: radial-gradient(
+            circle,
+            transparent 0,
+            transparent 48%,
+            #000 52%,
+            #000 100%
+        );
+        animation: brand-portret-draai 14s linear infinite;
+    }
+
+    .brand-overmijpagina-beeld img {
+        display: block;
+        position: relative;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1;
+        border-radius: 9999px;
+        object-fit: cover;
+        /* Een dunne rand houdt het portret los van de gloed erachter. */
+        box-shadow: 0 0 0 1px
+            color-mix(in srgb, var(--brand-cyan) 22%, transparent);
+    }
+
+    /* --- De twee links als kaartjes ----------------------------------- */
+
+    /*
+      **Kaartjes en geen onderstreepte links.** Op een pagina die over de
+      eigenaar gaat zijn dit de twee dingen die je kunt dóen, en dan horen
+      ze eruit te zien als iets om aan te klikken. Als gewone link stonden
+      ze onderaan een alinea weggestopt, met het icoontje boven de tekst
+      omdat `svg` op `display: block` staat -- zie `brand-sitemail`.
+    */
+    .brand-overmijpagina-kaartje {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        border: 1px solid var(--brand-border-dark);
+        border-radius: 9999px;
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        color: var(--foreground);
+        transition:
+            border-color 200ms ease,
+            background-color 200ms ease,
+            translate 200ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .brand-overmijpagina-kaartje svg {
+        color: var(--brand-cyan);
+    }
+
+    .brand-overmijpagina-kaartje:hover {
+        border-color: color-mix(in srgb, var(--brand-cyan) 45%, transparent);
+        background-color: color-mix(in srgb, var(--brand-cyan) 8%, transparent);
+        translate: 0 -2px;
+    }
+
+    .brand-overmijpagina-kaartje:focus-visible {
+        outline: 2px solid var(--brand-cyan);
+        outline-offset: 2px;
+    }
+
+    .brand-overmijpagina-titel {
+        font-size: 1.875rem;
+        font-weight: 600;
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+        text-wrap: balance;
+    }
+
+    @media (min-width: 48rem) {
+        .brand-overmijpagina-titel {
+            font-size: 2.25rem;
+        }
+    }
+
+    .brand-overmijpagina-inleiding {
+        margin-top: 0.75rem;
+        max-width: 52ch;
+        font-size: 1.0625rem;
+        line-height: 1.6;
+        text-wrap: pretty;
+        color: var(--muted-foreground);
+    }
+
+    .brand-overmijpagina-naam {
+        margin-top: 1.25rem;
+        font-weight: 500;
+    }
+
+    .brand-overmijpagina-links {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.25rem 1.25rem;
+        margin-top: 0.375rem;
+    }
+
+    @media (min-width: 48rem) {
+        .brand-overmijpagina-links {
+            justify-content: flex-start;
+        }
+    }
+
+    .brand-overmijpagina-blad {
+        margin-top: 3rem;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    /*
+      Het verhaal.
+
+      **Hoogstens 68 tekens per regel.** Een alinea over de volle breedte
+      van een scherm raak je kwijt als je naar het begin van de volgende
+      regel terugkijkt, en bij een persoonlijk verhaal is dat hinderlijker
+      dan bij een opsomming.
+
+      `white-space: pre-line` maakt van de witregels alinea's -- dezelfde
+      afspraak als bij een dienst en bij een antwoord in de vragenlijst.
+    */
+    /*
+      Het verhaal zelf.
+
+      **Lichter dan de andere leestekst op de site, en dat is met opzet.**
+      Overal elders staat bodytekst op `--muted-foreground`, want dat is een
+      regel of twee naast iets anders. Dit is het enige stuk op de hele site
+      dat je echt gaat zitten lezen -- zeshonderd tekens over de eigenaar --
+      en op donker leest Steel Silver dan te zwak. Dus `--foreground`, de
+      kleur die de site ook voor zijn koppen gebruikt.
+
+      Het maakt de pagina bovendien samenhangend: de punten eronder hebben
+      geen eigen kleur en erven deze al. Met het verhaal op gedempt stond het
+      belangrijkste stuk van de pagina zwakker dan de opsomming erna.
+    */
+    .brand-overmijpagina-verhaal {
+        max-width: 68ch;
+        font-size: 1rem;
+        line-height: 1.8;
+        text-wrap: pretty;
+        white-space: pre-line;
+        color: var(--foreground);
+    }
+
+    .brand-overmijpagina-punten {
+        display: grid;
+        gap: 0.625rem;
+        max-width: 68ch;
+    }
+
+    @media (min-width: 40rem) {
+        .brand-overmijpagina-punten {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.625rem 1.5rem;
+        }
+    }
+
+    .brand-overmijpagina-punten li {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.625rem;
+        font-size: 0.9375rem;
+        line-height: 1.5;
+        text-wrap: pretty;
+    }
+
+    .brand-overmijpagina-punten li svg {
+        margin-top: 0.1875rem;
+        color: var(--brand-cyan);
+    }
+
+    /* --- De veelgestelde vragen --------------------------------------- */
+
+    /*
+      Het blok met de vragen.
+
+      **Elke regel is dichtgeklapt even hoog, en dat is het hele ontwerp.**
+      Een vragenlijst waarin de regels verschillende hoogtes hebben leest
+      als losse kaartjes in plaats van als een lijst die je afscant, en
+      dan moet je elke vraag lezen om te zien waar de volgende begint.
+    */
+    .brand-faq-lijst {
+        margin-top: 2rem;
+        border-top: 1px solid var(--brand-border-dark);
+    }
+
+    .brand-faq-item {
+        border-bottom: 1px solid var(--brand-border-dark);
+    }
+
+    /*
+      De kop is een `h3` van reka-ui. Zijn eigen marges weg: de ruimte
+      hoort bij de knop erin, zodat het hele vlak aanklikbaar is en niet
+      alleen de tekst.
+    */
+    .brand-faq-kop {
+        margin: 0;
+    }
+
+    .brand-faq-knop {
+        display: flex;
+        width: 100%;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.125rem 0.25rem;
+        text-align: left;
+        color: var(--foreground);
+        cursor: pointer;
+        transition: color 150ms ease;
+    }
+
+    .brand-faq-knop:hover {
+        color: var(--brand-cyan);
+    }
+
+    /*
+      De focusring hoort om de hele regel en niet om de tekst: dat is wat
+      je met Tab selecteert. `outline-offset` negatief, anders valt de ring
+      buiten het vak en over de streep van de regel erboven.
+    */
+    .brand-faq-knop:focus-visible {
+        outline: 2px solid var(--brand-cyan);
+        outline-offset: -2px;
+        border-radius: 0.5rem;
+    }
+
+    .brand-faq-vraag {
+        flex: 1 1 auto;
+        font-size: 1rem;
+        font-weight: 500;
+        line-height: 1.45;
+        text-wrap: pretty;
+    }
+
+    @media (min-width: 40rem) {
+        .brand-faq-vraag {
+            font-size: 1.0625rem;
+        }
+    }
+
+    .brand-faq-pijl {
+        flex: 0 0 auto;
+        width: 1.125rem;
+        height: 1.125rem;
+        color: var(--muted-foreground);
+        transition:
+            rotate 220ms cubic-bezier(0.22, 1, 0.36, 1),
+            color 150ms ease;
+    }
+
+    .brand-faq-knop[data-state='open'] .brand-faq-pijl {
+        rotate: 180deg;
+        color: var(--brand-cyan);
+    }
+
+    /*
+      De glans, één keer bij het openklappen.
+
+      **Eigen veeg, en niet `brand-glans`.** Dat was de eerste opzet en die
+      is teruggedraaid, om twee redenen die allebei zwaar wegen:
+
+      1. **De maten van die utility horen bij een knop.** Hij is 35% van de
+         breedte aan 55% wit. Op een knop van 200 pixels is dat een
+         glinstering van 70 pixels; op een regel van de volle sectiebreedte
+         is het een witte baan van ruim 200. Precies zoals het werd
+         beschreven: een wit vlak dat voorbij raast.
+
+      2. **Overrulen lukte niet.** `brand-glans` staat buiten
+         `@layer components` en deze regels staan erin, en in CSS wint een
+         ongelaagde regel van een gelaagde -- ongeacht volgorde of
+         specificiteit. De `animation: none` hieronder deed dus niets en de
+         lus van zeven seconden liep gewoon door, op elke zichtbare regel
+         tegelijk.
+
+      Wat er nu staat is een glimp en geen vlak:
+
+      - **Vaste maat van 7rem** en geen percentage, dus hij groeit niet mee
+        met de breedte van de regel en ziet er op elke sectie hetzelfde uit.
+      - **6% wit in het midden** in plaats van 55, met een zachte uitloop
+        naar beide kanten, zodat er geen zichtbare rand is.
+      - **Eén keer, bij het openklappen**, en met een piek in het midden in
+        plaats van een plateau -- een veeg die op volle sterkte blijft staan
+        leest als een voorwerp dat langsschuift.
+
+      Dit vlak heeft zijn eigen `position` en `overflow` nodig, want die
+      kwamen eerst van `brand-glans`.
+    */
+    .brand-faq-knop {
+        position: relative;
+        overflow: hidden;
+        isolation: isolate;
+    }
+
+    .brand-faq-knop::after {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: 0;
+        z-index: 1;
+        height: 200%;
+        width: 7rem;
+        translate: -130% 0;
+        rotate: 14deg;
+        background-image: linear-gradient(
+            90deg,
+            transparent,
+            color-mix(in srgb, #fff 3%, transparent) 25%,
+            color-mix(in srgb, #fff 6%, transparent) 50%,
+            color-mix(in srgb, #fff 3%, transparent) 75%,
+            transparent
+        );
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .brand-faq-knop[data-state='open']::after {
+        animation: brand-faq-veeg 1100ms cubic-bezier(0.33, 1, 0.68, 1) 1;
+    }
+
+    /*
+      Het antwoord.
+
+      De hoogte komt van reka-ui in `--reka-accordion-content-height`; dat
+      is de enige manier om naar "zo hoog als de inhoud" te animeren
+      zonder die hoogte zelf te meten.
+    */
+    .brand-faq-antwoord {
+        overflow: hidden;
+    }
+
+    .brand-faq-antwoord[data-state='open'] {
+        animation: brand-faq-open 260ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .brand-faq-antwoord[data-state='closed'] {
+        animation: brand-faq-dicht 200ms cubic-bezier(0.4, 0, 1, 1);
+    }
+
+    /*
+      De tekst van het antwoord.
+
+      **Een eigen klasse en niet `brand-blad-tekst`**, al doet die het
+      alineawerk ook. Die klasse is gemaakt voor een venster: hij heeft een
+      streep erboven en op een breed scherm een eigen schuifgebied van
+      46svh. Een vak dat binnen een opengeklapt antwoord zelf gaat schuiven
+      is precies wat je hier niet wil. Wat ervan overblijft is één
+      eigenschap -- `white-space: pre-line` -- en die staat hieronder.
+
+      `60ch` omdat dit gewone leestekst is en geen kop: een regel van de
+      volle sectiebreedte raak je kwijt als je naar het begin terugkijkt.
+    */
+    .brand-faq-tekst {
+        padding: 0 0.25rem 1.25rem;
+        max-width: 60ch;
+        font-size: 0.9375rem;
+        line-height: 1.7;
+        text-wrap: pretty;
+        white-space: pre-line;
+        color: var(--muted-foreground);
+    }
+
+    /* De knopjes om te bladeren; dezelfde vorm als bij de diensten. */
+    .brand-faq-bladeren {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.375rem;
+        margin-top: 1.75rem;
+    }
+
+    .brand-faq-nummer,
+    .brand-faq-stap {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2.25rem;
+        height: 2.25rem;
+        padding: 0 0.5rem;
+        border: 1px solid var(--brand-border-dark);
+        border-radius: 0.625rem;
+        background-color: transparent;
+        color: var(--muted-foreground);
+        font-size: 0.875rem;
+        font-variant-numeric: tabular-nums;
+        cursor: pointer;
+        transition:
+            border-color 150ms ease,
+            color 150ms ease;
+    }
+
+    .brand-faq-nummer:hover,
+    .brand-faq-stap:not(:disabled):hover {
+        border-color: var(--brand-border-dark-strong);
+        color: var(--foreground);
+    }
+
+    .brand-faq-nummer[data-hier] {
+        border-color: var(--brand-cyan);
+        color: var(--brand-cyan);
+    }
+
+    .brand-faq-stap:disabled {
+        opacity: 0.4;
+        cursor: default;
+    }
+
+    /*
+      Eén pijlicoon voor allebei de stapknoppen, gedraaid.
+
+      Dat is met opzet: `ChevronLeft` en `ChevronRight` erbij halen zou
+      twee iconen laden voor iets wat één icoon met een kwartslag is.
+    */
+    .brand-faq-stap-pijl {
+        width: 1rem;
+        height: 1rem;
+    }
+
+    .brand-faq-stap-pijl.is-vorige {
+        rotate: 90deg;
+    }
+
+    .brand-faq-stap-pijl.is-volgende {
+        rotate: -90deg;
+    }
+
+    .brand-faq-gat {
+        padding: 0 0.125rem;
+        color: var(--muted-foreground);
+    }
+}
+
+@keyframes brand-faq-open {
+    from {
+        height: 0;
+    }
+
+    to {
+        height: var(--reka-accordion-content-height);
+    }
+}
+
+@keyframes brand-faq-dicht {
+    from {
+        height: var(--reka-accordion-content-height);
+    }
+
+    to {
+        height: 0;
+    }
+}
+
+/*
+  De veeg over een vraag die opengaat.
+
+  **Eén piek in het midden en geen plateau.** `brand-glans-veeg` houdt zijn
+  doorzichtigheid tussen 4% en 18% op vol en is daarna klaar; dat werkt in
+  een lus met een lange pauze, maar als losse veeg leest het als een
+  voorwerp dat met gelijke helderheid langsschuift. Hier zwelt hij aan tot
+  het midden en zakt daarna weg terwijl hij doorloopt -- dat is wat een
+  glimp van licht doet.
+
+  Hij loopt niet helemaal van rand tot rand: op 85% is hij al bijna weg, dus
+  je ziet hem niet tegen de rechterkant aan lopen.
+*/
+/*
+  De twee bewegingen achter het portret op de pagina "Over mij".
+
+  Ze hebben met opzet een oneven verhouding -- zeven en veertien seconden --
+  zodat ze niet steeds op hetzelfde moment samenvallen. Vielen ze samen, dan
+  krijg je een hartslag in plaats van licht dat leeft.
+*/
+@keyframes brand-portret-adem {
+    0%,
+    100% {
+        opacity: 0.75;
+        scale: 1;
+    }
+
+    50% {
+        opacity: 1;
+        scale: 1.04;
+    }
+}
+
+@keyframes brand-portret-draai {
+    from {
+        rotate: 0deg;
+    }
+
+    to {
+        rotate: 360deg;
+    }
+}
+
+@keyframes brand-faq-veeg {
+    0% {
+        translate: -130% 0;
+        opacity: 0;
+    }
+
+    45% {
+        opacity: 1;
+    }
+
+    85% {
+        opacity: 0.15;
+    }
+
+    100% {
+        translate: 260% 0;
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    /*
+      De pagina wisselt dan gewoon om, zonder fade en zonder verschuiving.
+
+      Weggehaald en niet verkort: een overgang van twintig milliseconden is
+      geen rustiger animatie maar een flikkering. En er gaat niets verloren
+      -- de overgang dekte een knippering af die hier niet bestaat, want
+      `revealOnScroll` zet bij reduced motion alles meteen op zijn plek in
+      plaats van het te laten opkomen.
+    */
+    .brand-pagina-enter-active,
+    .brand-pagina-leave-active {
+        transition: none;
+    }
+
+    .brand-pagina-enter-from {
+        translate: none;
+    }
+
+    /*
+      Het contactformulier wisselt ook zonder beweging naar de bevestiging.
+      Het dimmen tijdens het versturen blijft wél: dat is geen animatie maar
+      een toestand, en die is hier juist nodig -- zonder beweging is het het
+      enige dat laat zien dat je klik is aangekomen.
+    */
+    .brand-contactwissel-leave-active {
+        transition: none;
+    }
+
+    .brand-contactwissel-leave-to {
+        translate: none;
+    }
+
+    .brand-contactformulier {
+        transition: none;
+    }
+
+    /*
+      Een antwoord springt open in plaats van te groeien, en er glanst
+      niets. Allebei nog gewoon te gebruiken -- alleen zonder beweging.
+    */
+    .brand-faq-antwoord[data-state='open'],
+    .brand-faq-antwoord[data-state='closed'] {
+        animation: none;
+    }
+
+    .brand-faq-knop[data-state='open']::after {
+        animation: none;
+        opacity: 0;
+    }
+
+    .brand-faq-pijl {
+        transition: none;
+    }
+
+    /*
+      De gloed achter het portret blijft staan -- die hoort bij het ontwerp
+      -- maar hij ademt en draait niet meer. Stilgezet en niet weggehaald:
+      een portret zonder gloed staat er kaal bij, en dat is een ander
+      ontwerp in plaats van hetzelfde zonder beweging.
+    */
+    .brand-overmijpagina-beeld::before,
+    .brand-overmijpagina-beeld::after {
+        animation: none;
+    }
+
+    .brand-overmijpagina-kaartje {
+        transition: none;
+    }
+
+    .brand-overmijpagina-kaartje:hover {
+        translate: none;
     }
 }
 

@@ -14,11 +14,36 @@ use Illuminate\Http\UploadedFile;
  * die uit elkaar gaan lopen -- en dan accepteert het ene scherm een
  * bestand dat het andere weigert.
  *
+ * **Sinds "Over mij" doet hij twee soorten beeld.** De foto van de
+ * eigenaar heeft precies dezelfde controles nodig, maar een eigen veldnaam
+ * en eigen grenzen: een portret van 48 pixels is een vlek waar een logo van
+ * 48 nog bruikbaar is. Daarom zijn de veldnaam en de configuratiesleutel
+ * overschrijfbaar en staat de validatie nog steeds op één plek. De publieke
+ * methoden heten nog `logo()` en `wilLogoWeg()`, zodat de bestaande
+ * aanroepers niets merken.
+ *
  * Zie docs/architecture/formulieren-en-schuifbalken.md voor wat de
  * browser er vooraf al mee doet, en config/media.php voor de grenzen.
  */
 trait LogoVelden
 {
+    /**
+     * Hoe het veld in het formulier heet.
+     *
+     * Alle andere namen worden hiervan afgeleid: `<veld>_verwijderen`,
+     * `<veld>_zoom`, en zo verder.
+     */
+    protected function beeldVeld(): string
+    {
+        return 'logo';
+    }
+
+    /** Onder welke sleutel de grenzen in config/media.php staan. */
+    protected function mediaSleutel(): string
+    {
+        return 'logo';
+    }
+
     /**
      * De regels voor het bestand en het uitsnijvenster.
      *
@@ -45,8 +70,10 @@ trait LogoVelden
      */
     protected function logoRegels(): array
     {
+        $veld = $this->beeldVeld();
+
         return [
-            'logo' => [
+            $veld => [
                 'nullable',
                 'image',
                 'mimes:jpg,jpeg,png,webp',
@@ -58,8 +85,8 @@ trait LogoVelden
                 ),
             ],
 
-            /** Het bestaande logo weghalen zonder er een nieuw voor terug. */
-            'logo_verwijderen' => ['boolean'],
+            /** Het bestaande beeld weghalen zonder er een nieuw voor terug. */
+            $veld.'_verwijderen' => ['boolean'],
 
             /*
              * Hoe de klant het beeld in het vakje heeft gezet. De grenzen
@@ -68,10 +95,10 @@ trait LogoVelden
              * van nul levert daar geen foutmelding op maar een onzinnig
              * plaatje.
              */
-            'logo_zoom' => ['nullable', 'numeric', 'min:1', 'max:5'],
-            'logo_x' => ['nullable', 'numeric', 'min:-1', 'max:1'],
-            'logo_y' => ['nullable', 'numeric', 'min:-1', 'max:1'],
-            'logo_plaat' => ['boolean'],
+            $veld.'_zoom' => ['nullable', 'numeric', 'min:1', 'max:5'],
+            $veld.'_x' => ['nullable', 'numeric', 'min:-1', 'max:1'],
+            $veld.'_y' => ['nullable', 'numeric', 'min:-1', 'max:1'],
+            $veld.'_plaat' => ['boolean'],
         ];
     }
 
@@ -83,11 +110,11 @@ trait LogoVelden
     protected function logoBerichten(): array
     {
         return [
-            'logo.dimensions' => __(
+            $this->beeldVeld().'.dimensions' => __(
                 'Dit plaatje is te klein of te groot. Gebruik een afbeelding van minstens :min en hoogstens :max pixels.',
                 ['min' => $this->minZijde(), 'max' => $this->maxZijde()],
             ),
-            'logo.max' => __(
+            $this->beeldVeld().'.max' => __(
                 'Het logo mag hoogstens :aantal MB zijn.',
                 ['aantal' => round($this->maxKilobytes() / 1024, 1)],
             ),
@@ -97,7 +124,7 @@ trait LogoVelden
     /** Het geüploade logo, of null als er geen nieuw bestand meekwam. */
     public function logo(): ?UploadedFile
     {
-        $bestand = $this->file('logo');
+        $bestand = $this->file($this->beeldVeld());
 
         return $bestand instanceof UploadedFile ? $bestand : null;
     }
@@ -112,10 +139,10 @@ trait LogoVelden
     public function uitsnede(): Uitsnede
     {
         return new Uitsnede(
-            (float) ($this->input('logo_zoom') ?? 1.0),
-            (float) ($this->input('logo_x') ?? 0.0),
-            (float) ($this->input('logo_y') ?? 0.0),
-            $this->boolean('logo_plaat', true),
+            (float) ($this->input($this->beeldVeld().'_zoom') ?? 1.0),
+            (float) ($this->input($this->beeldVeld().'_x') ?? 0.0),
+            (float) ($this->input($this->beeldVeld().'_y') ?? 0.0),
+            $this->boolean($this->beeldVeld().'_plaat', true),
         );
     }
 
@@ -129,24 +156,24 @@ trait LogoVelden
      */
     public function wilLogoWeg(): bool
     {
-        return $this->boolean('logo_verwijderen');
+        return $this->boolean($this->beeldVeld().'_verwijderen');
     }
 
     /** De grootste upload die we accepteren, in kilobytes. */
     private function maxKilobytes(): int
     {
-        return (int) config('media.logo.max_kb', 2048);
+        return (int) config('media.'.$this->mediaSleutel().'.max_kb', 2048);
     }
 
     /** De kortste zijde die nog bruikbaar is. */
     private function minZijde(): int
     {
-        return (int) config('media.logo.min_zijde', 48);
+        return (int) config('media.'.$this->mediaSleutel().'.min_zijde', 48);
     }
 
     /** De langste zijde die we aan GD durven te geven. */
     private function maxZijde(): int
     {
-        return (int) config('media.logo.max_zijde', 3000);
+        return (int) config('media.'.$this->mediaSleutel().'.max_zijde', 3000);
     }
 }

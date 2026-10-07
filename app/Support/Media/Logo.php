@@ -60,7 +60,19 @@ class Logo
     public const MAAT = 256;
 
     /**
-     * Het logo opslaan en het pad teruggeven, relatief aan de schijf.
+     * Het beeld opslaan en het pad teruggeven, relatief aan de schijf.
+     *
+     * **`$maat` is er omdat niet elk vierkant een logo is.** Deze klasse
+     * doet sinds "Over mij" ook de foto van de eigenaar, en die staat op
+     * een pagina in plaats van in een belletje op de tijdlijn: 256 pixels
+     * zou daar zichtbaar onscherp zijn. Laat je hem weg, dan is het de
+     * logomaat hierboven, en dan gedraagt deze klasse zich precies zoals
+     * voorheen.
+     *
+     * De rekensom in `verklein()` is verhoudingsgewijs -- zoom, en `x` en
+     * `y` in halve vierkanten -- dus een andere maat verandert niets aan
+     * wat de klant in het voorbeeld zag. Dat is precies waarom het
+     * voorbeeld in de browser geen pixelmaat kent.
      *
      * @return string bijvoorbeeld `ervaring/k3n8....webp`
      */
@@ -69,8 +81,13 @@ class Logo
         string $schijf,
         string $map,
         ?Uitsnede $uitsnede = null,
+        ?int $maat = null,
     ): string {
-        $verkleind = $this->verklein($bestand, $uitsnede ?? Uitsnede::standaard());
+        $verkleind = $this->verklein(
+            $bestand,
+            $uitsnede ?? Uitsnede::standaard(),
+            $maat ?? self::MAAT,
+        );
 
         if ($verkleind === null) {
             /*
@@ -102,11 +119,23 @@ class Logo
      * @return array{string, string}|null de bytes en de extensie, of null
      *                                    als er geen GD is
      */
-    private function verklein(UploadedFile $bestand, Uitsnede $uitsnede): ?array
-    {
+    private function verklein(
+        UploadedFile $bestand,
+        Uitsnede $uitsnede,
+        int $maat = self::MAAT,
+    ): ?array {
         if (! function_exists('imagecreatefromstring')) {
             return null;
         }
+
+        /*
+         * De maat was een constante en is nu een parameter, dus hij kan in
+         * theorie nul of negatief zijn -- en `imagecreatetruecolor` wil
+         * minstens één. Eén pixel is onzin maar geen crash, en dat is hier
+         * de juiste uitkomst: deze klasse hoort een mail of een pagina niet
+         * om te gooien omdat er een verkeerd getal is meegegeven.
+         */
+        $maat = max(1, $maat);
 
         $bron = @imagecreatefromstring((string) file_get_contents($bestand->getRealPath()));
 
@@ -118,12 +147,12 @@ class Logo
         $hoogte = imagesy($bron);
 
         // Bij zoom 1 past de langste zijde precies in het vierkant.
-        $schaal = (self::MAAT / max($breedte, $hoogte)) * $uitsnede->zoom;
+        $schaal = ($maat / max($breedte, $hoogte)) * $uitsnede->zoom;
 
         $nieuweBreedte = max(1, (int) round($breedte * $schaal));
         $nieuweHoogte = max(1, (int) round($hoogte * $schaal));
 
-        $doel = imagecreatetruecolor(self::MAAT, self::MAAT);
+        $doel = imagecreatetruecolor($maat, $maat);
 
         $this->vulAchtergrond($doel, $uitsnede->plaat);
 
@@ -132,10 +161,10 @@ class Logo
             $bron,
             // Gecentreerd, plus de verschuiving van de klant.
             (int) round(
-                (self::MAAT - $nieuweBreedte) / 2 + $uitsnede->x * self::MAAT / 2,
+                ($maat - $nieuweBreedte) / 2 + $uitsnede->x * $maat / 2,
             ),
             (int) round(
-                (self::MAAT - $nieuweHoogte) / 2 + $uitsnede->y * self::MAAT / 2,
+                ($maat - $nieuweHoogte) / 2 + $uitsnede->y * $maat / 2,
             ),
             0,
             0,

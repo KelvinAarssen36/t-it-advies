@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import type { Component } from 'vue';
+import { onMounted, type Component } from 'vue';
 import CertificatenSection from '@/components/site/sections/CertificatenSection.vue';
 import ContactSection from '@/components/site/sections/ContactSection.vue';
 import DienstenSection from '@/components/site/sections/DienstenSection.vue';
 import ErvaringSection from '@/components/site/sections/ErvaringSection.vue';
+import FaqSection from '@/components/site/sections/FaqSection.vue';
 import HeroSection from '@/components/site/sections/HeroSection.vue';
 import LinkedinSection from '@/components/site/sections/LinkedinSection.vue';
+import OverMijSection from '@/components/site/sections/OverMijSection.vue';
 import StatistiekenSection from '@/components/site/sections/StatistiekenSection.vue';
 import WerkwijzeSection from '@/components/site/sections/WerkwijzeSection.vue';
+import { scrollNaar } from '@/lib/motion';
 import type { SiteKop } from '@/types/ervaring';
 import type { SectieSleutel } from '@/types/secties';
 
@@ -45,11 +48,13 @@ const props = defineProps<{
  * loopt hier stuk in plaats van op de website.
  */
 const componenten: Record<SectieSleutel, Component> = {
+    'over-mij': OverMijSection,
     diensten: DienstenSection,
     werkwijze: WerkwijzeSection,
     ervaring: ErvaringSection,
     certificaten: CertificatenSection,
     statistieken: StatistiekenSection,
+    faq: FaqSection,
     contact: ContactSection,
     linkedin: LinkedinSection,
 };
@@ -62,6 +67,40 @@ const componenten: Record<SectieSleutel, Component> = {
  */
 const toonVoor = (index: number): 'base' | 'raised' =>
     index % 2 === 0 ? 'base' : 'raised';
+
+/**
+ * Aankomen bij het onderdeel dat in het adres staat.
+ *
+ * **Dit hoort bij de navigatie op de subpagina's.** Daar is elk menu-item
+ * een link naar `/#diensten`; zonder dit kom je dus bovenaan de voorpagina
+ * uit en moet je zelf gaan zoeken -- en dan is zo'n link niets beter dan de
+ * terugknop die er eerst stond.
+ *
+ * **Een sprong en geen glijbeweging.** Dit draait terwijl deze pagina nog
+ * onzichtbaar is -- hij komt net binnen in de overgang van PublicLayout --
+ * dus een glijbeweging zou zich achter een doorzichtige laag afspelen. Je
+ * hoort er gewoon te staan zodra het beeld komt.
+ *
+ * Twee frames wachten, om dezelfde reden als in SiteHeader: de secties
+ * moeten eerst getekend zijn, anders staat de plek van het doel nog niet
+ * vast. Dat valt ruim binnen de tijd die het infaden kost.
+ *
+ * **Hier en niet in de layout**, want dit werkt ook zonder overgang: open je
+ * `/#diensten` rechtstreeks uit een zoekresultaat of ververs je de pagina,
+ * dan is er geen wissel en dus geen `before-enter`, maar wel een `onMounted`.
+ * De layout doet het omgekeerde geval: naar boven, als er géén anker staat.
+ */
+onMounted(() => {
+    const sleutel = window.location.hash.replace(/^#/, '');
+
+    if (sleutel === '') {
+        return;
+    }
+
+    requestAnimationFrame(() =>
+        requestAnimationFrame(() => scrollNaar(sleutel, { direct: true })),
+    );
+});
 </script>
 
 <template>

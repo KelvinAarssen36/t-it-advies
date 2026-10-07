@@ -6,8 +6,11 @@ use App\Enums\MailStatus;
 use App\Mail\ContactBevestigingMail;
 use App\Mail\ContactMessageMail;
 use App\Mail\SecurityAlertMail;
+use App\Models\AboutPoint;
+use App\Models\AboutSetting;
 use App\Models\ContactSubject;
 use App\Models\ContactSubmission;
+use App\Models\FaqItem;
 use App\Models\MailLog;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -87,6 +90,174 @@ class VoorbeeldDataSeeder extends Seeder
 
         $this->aanvragen($this->onderwerpen());
         $this->mailoverzicht();
+        $this->vragen();
+        $this->overMij();
+    }
+
+    /**
+     * Het onderdeel "Over mij", met de aparte pagina aan.
+     *
+     * **De pagina staat aan en er staat een verhaal in**, want anders zie
+     * je de helft van deze module niet: zonder verhaal bestaat die pagina
+     * niet en komt er ook geen knop op de voorpagina.
+     *
+     * De foto blijft met opzet het medaillon. Een verzonnen foto neerzetten
+     * zou een bestand in de uploadmap betekenen dat het opruimen moet
+     * kennen, en het medaillon is bovendien de stand waarin de eigenaar
+     * begint.
+     */
+    private function overMij(): void
+    {
+        AboutSetting::query()->updateOrCreate(
+            // Eén rij; welke dat is maakt niet uit, er is er maar één.
+            [],
+            [
+                'summary_nl' => 'Ik werk sinds 2008 in de IT en sinds 2016 voor mezelf. '
+                    .'Geen bureau met een accountmanager ertussen: je hebt met mij te maken, '
+                    .'en dat blijft zo tot het werk is overgedragen.',
+                'summary_en' => 'I have worked in IT since 2008, and for myself since 2016. '
+                    .'No agency with an account manager in between: you deal with me, '
+                    .'and that stays that way until the work is handed over.',
+
+                'page_enabled' => true,
+
+                'page_title_nl' => 'Even voorstellen',
+                'page_title_en' => 'Let me introduce myself',
+                'page_intro_nl' => 'Hoe ik hier terecht ben gekomen, en waarom ik het zo doe.',
+                'page_intro_en' => 'How I ended up here, and why I work this way.',
+
+                'story_nl' => 'Ik begon in 2008 aan een helpdesk, en dat is de beste leerschool die er is: '
+                    ."je ziet elke dag wat er in de praktijk omvalt in plaats van wat er op papier zou moeten werken.\n\n"
+                    .'Daarna heb ik twaalf jaar aan de binnenkant van organisaties gewerkt -- beheer, migraties, '
+                    .'en een paar keer de wat minder leuke klus van iets opruimen dat door drie leveranciers was '
+                    .'achtergelaten. Dat laatste bepaalt nog steeds hoe ik werk: ik lever de documentatie mee '
+                    ."waarmee een ander het kan overnemen.\n\n"
+                    .'Sinds 2016 doe ik dat voor mezelf. Dat betekent dat ik minder klanten heb dan een bureau, '
+                    .'en dat is geen nadeel maar de opzet.',
+                'story_en' => 'I started on a helpdesk in 2008, and that is the best training there is: '
+                    ."you see every day what actually falls over, instead of what should work on paper.\n\n"
+                    .'After that I spent twelve years on the inside of organisations -- management, migrations, '
+                    .'and a few times the less enjoyable job of clearing up something three suppliers had left '
+                    .'behind. That last part still shapes how I work: I hand over the documentation someone else '
+                    ."needs to take it on.\n\n"
+                    .'Since 2016 I have done that for myself. That means I have fewer clients than an agency, '
+                    .'and that is not a drawback but the point.',
+            ],
+        );
+
+        // vraag-nl, vraag-en -- één zonder Engels, om de terugval te zien.
+        $punten = [
+            ['Geen afhankelijkheid van één leverancier', 'No dependence on a single supplier'],
+            ['Documentatie waarmee een ander het overneemt', 'Documentation so someone else can take over'],
+            ['Werkt met wat er al staat', 'Works with what you already have'],
+            ['Bereikbaar zonder tussenpersoon', null],
+        ];
+
+        foreach ($punten as $plek => [$nl, $en]) {
+            AboutPoint::query()->updateOrCreate(
+                ['text_nl' => $nl],
+                ['text_en' => $en, 'position' => $plek + 1],
+            );
+        }
+    }
+
+    /**
+     * De veelgestelde vragen.
+     *
+     * **Acht vragen, en dat getal is gekozen.** Het blok op de site bladert
+     * per zes, dus met acht zie je het bladeren echt gebeuren in plaats van
+     * dat je het op je woord moet geloven. Eén staat offline, dus er komen
+     * er zeven op de site: zes op de eerste bladzijde en één op de tweede.
+     *
+     * Verder zit er bewust een bijzonder geval in elk van de vier
+     * eigenschappen die je anders moet uitproberen: een vraag zonder
+     * Engels, een antwoord met een witregel, een antwoord dat bijna tegen
+     * de grens zit, en een vraag die offline staat.
+     */
+    private function vragen(): void
+    {
+        // vraag-nl, vraag-en, antwoord-nl, antwoord-en, online
+        $rijen = [
+            [
+                'Wat kost een migratie?',
+                'What does a migration cost?',
+                "Dat hangt af van je omvang en van wat er nu staat. Een kantoor met twaalf mensen is een ander verhaal dan een productieomgeving met ploegendiensten.\n\nIn het eerste gesprek geef ik een indicatie, en die onderbouw ik. Geen bedrag zonder uitleg waar het vandaan komt.",
+                "That depends on your size and on what you have now. An office with twelve people is a different story from a production environment running shifts.\n\nI give an indication in the first call, and I explain where it comes from. No figure without the reasoning behind it.",
+                true,
+            ],
+            [
+                'Hoe snel kun je beginnen?',
+                'How soon can you start?',
+                'Meestal binnen twee weken. Bij een storing dezelfde dag -- dan schuift het andere werk op.',
+                'Usually within two weeks. In the event of an outage the same day; other work moves back then.',
+                true,
+            ],
+            [
+                'Werk je ook voor kleine bedrijven?',
+                'Do you work for small businesses too?',
+                'Ja. Onder de tien mensen is het vaak juist eenvoudiger: er is minder dat al vastligt, dus er is meer te winnen met een paar goede keuzes.',
+                'Yes. Under ten people it is often simpler: less is already fixed in place, so a few good choices gain you more.',
+                true,
+            ],
+            [
+                'Zit ik daarna aan je vast?',
+                'Am I then tied to you?',
+                'Nee, en dat is het punt. Ik lever de documentatie mee waarmee een ander het kan overnemen. Dat hoort bij het werk en niet bij een eindafrekening.',
+                'No, and that is the point. I hand over the documentation someone else needs to take it on. That is part of the work, not part of a final invoice.',
+                true,
+            ],
+            [
+                'Doe je ook beheer, of alleen advies?',
+                'Do you also do management, or only advice?',
+                'Allebei. Advies zonder beheer blijft een rapport; beheer zonder advies wordt op een dag een probleem dat niemand heeft zien aankomen.',
+                'Both. Advice without management stays a report; management without advice becomes a problem nobody saw coming.',
+                true,
+            ],
+            /*
+             * Zonder Engelse vraag én zonder Engels antwoord: op de Engelse
+             * site valt deze helemaal terug op het Nederlands. Zo zie je
+             * dat gedrag zonder het te hoeven uitproberen.
+             */
+            [
+                'Wat gebeurt er als jij ziek bent?',
+                null,
+                'Dan is er een achterwacht die erbij kan. Wie dat is en hoe hij erin komt staat in de documentatie die je van mij krijgt -- dat is precies waarom die bestaat.',
+                null,
+                true,
+            ],
+            /*
+             * Deze valt op de tweede bladzijde. Handig om te zien dat het
+             * bladeren werkt én dat Google hem toch krijgt.
+             */
+            [
+                'Kun je met mijn huidige leverancier samenwerken?',
+                'Can you work with my current supplier?',
+                'Ja, en meestal is dat ook de bedoeling. Een overstap is zelden de goedkoopste oplossing; er valt vaak meer te winnen door de afspraken scherper te maken.',
+                'Yes, and usually that is the intention. Switching is rarely the cheapest answer; there is often more to gain by tightening the agreements.',
+                true,
+            ],
+            // En één die offline staat: die hoort niet op de site te komen.
+            [
+                'Geef je ook trainingen?',
+                'Do you give training as well?',
+                'Op aanvraag, en alleen over de omgeving die ik zelf heb gebouwd. Een cursus over software die ik niet beheer kan iemand anders beter geven.',
+                'On request, and only about the environment I built myself. A course on software I do not manage is better given by someone else.',
+                false,
+            ],
+        ];
+
+        foreach ($rijen as $plek => [$vraagNl, $vraagEn, $antwoordNl, $antwoordEn, $online]) {
+            FaqItem::query()->updateOrCreate(
+                ['question_nl' => $vraagNl],
+                [
+                    'question_en' => $vraagEn,
+                    'answer_nl' => $antwoordNl,
+                    'answer_en' => $antwoordEn,
+                    'published' => $online,
+                    'position' => $plek + 1,
+                ],
+            );
+        }
     }
 
     /**
@@ -101,9 +272,17 @@ class VoorbeeldDataSeeder extends Seeder
             'gesprek' => ['Vrijblijvend gesprek', 'Informal conversation', true, 1, false],
             'offerte' => ['Offerte aanvragen', 'Request a quote', true, 2, false],
 
-            // Uitgelicht: komt als snelkeuze bóven de keuzelijst. Spoed is
-            // het geval waarvoor dat bestaat -- wie een storing heeft wil
-            // niet eerst een lijst openklappen.
+            /*
+             * Uitgelicht. Hier stond dat zo'n onderwerp als snelkeuze
+             * bóven de keuzelijst komt; dat was de eerste lezing en die
+             * is teruggedraaid. Uitlichten gaat over de postbus: een
+             * aanvraag met dit onderwerp springt eruit onder Beheer →
+             * Aanvragen, met een sterretje en een gele tint. Op het
+             * formulier verandert er niets.
+             *
+             * Spoed is het geval waarvoor dat bestaat -- wie een storing
+             * meldt wil niet achteraan in de rij staan.
+             */
             'storing' => ['Storing of spoed', 'Outage or urgent', true, 3, true],
 
             // Zonder Engelse naam: op de Engelse site valt hij terug op het

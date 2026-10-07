@@ -5,6 +5,26 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         {{--
+            De veelgestelde vragen als structuurdata.
+
+            Staat er alleen op de landingspagina, en alleen als er vragen
+            zijn; HomeController zet hem klaar via `withViewData`. Het blok
+            op de pagina bladert per zes, maar álle vragen staan in de HTML
+            -- dit zegt er bovendien expliciet bij wát die tekst is.
+
+            `{!! !!}` en geen `{{ }}`: dit is JSON en geen HTML-tekst. Dat
+            is veilig omdat `vragenBriefje()` met `JSON_HEX_TAG` codeert,
+            waardoor elke `<` een `<` wordt en een `</script>` in een
+            antwoord de tag niet kan afbreken. Haal die vlag daar dus niet
+            weg.
+
+            Zie docs/architecture/modules/faq.md.
+        --}}
+        @isset($vragenBriefje)
+            <script type="application/ld+json">{!! $vragenBriefje !!}</script>
+        @endisset
+
+        {{--
             Hier stond een script dat de voorkeur van het besturingssysteem
             uitlas. Dat is niet meer nodig: er zijn nog twee thema's, licht
             en donker, en welke het is staat hierboven al op <html> op basis

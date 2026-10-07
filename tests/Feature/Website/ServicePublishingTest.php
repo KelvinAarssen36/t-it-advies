@@ -167,12 +167,27 @@ class ServicePublishingTest extends TestCase
         Service::factory()->create();
         Service::factory()->count(2)->offline()->create();
 
+        /*
+         * De plek wordt uitgerekend en niet opgeschreven. Hier stond een
+         * vast getal, en dat klopte tot er een module vóór de diensten bij
+         * kwam -- toen viel deze test om op iets dat niets met zijn
+         * onderwerp te maken had.
+         */
+        $alles = PageSectionKey::cases();
+
+        usort(
+            $alles,
+            fn (PageSectionKey $a, PageSectionKey $b) => $a->standaardPositie() <=> $b->standaardPositie(),
+        );
+
+        $plek = (int) array_search(PageSectionKey::Diensten, $alles, true);
+
         $this->actingAs($this->beheerder())
             ->get(route('website.index'))
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->where('sections.1.key', 'diensten')
-                ->where('sections.1.count', 1)
-                ->where('sections.1.filled', true)
+                ->where("sections.{$plek}.key", 'diensten')
+                ->where("sections.{$plek}.count", 1)
+                ->where("sections.{$plek}.filled", true)
                 ->etc());
     }
 

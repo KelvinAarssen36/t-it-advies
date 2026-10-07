@@ -2,8 +2,11 @@
 
 namespace App\Console\Commands;
 
+use App\Models\AboutPoint;
+use App\Models\AboutSetting;
 use App\Models\ContactSubject;
 use App\Models\ContactSubmission;
+use App\Models\FaqItem;
 use App\Models\MailLog;
 use Illuminate\Console\Command;
 
@@ -49,6 +52,37 @@ class OpruimenVoorbeeldData extends Command
         'Vacature of stage',
     ];
 
+    /**
+     * De vragen uit de voorbeelddata, op hun Nederlandse tekst.
+     *
+     * Net als bij de onderwerpen: er is geen adres om op te herkennen, dus
+     * dit gaat op tekst. Daarom waarschuwt het commando er ook voor.
+     *
+     * @var array<int, string>
+     */
+    private const VRAGEN = [
+        'Wat kost een migratie?',
+        'Hoe snel kun je beginnen?',
+        'Werk je ook voor kleine bedrijven?',
+        'Zit ik daarna aan je vast?',
+        'Doe je ook beheer, of alleen advies?',
+        'Wat gebeurt er als jij ziek bent?',
+        'Kun je met mijn huidige leverancier samenwerken?',
+        'Geef je ook trainingen?',
+    ];
+
+    /**
+     * De punten uit de voorbeelddata, op hun Nederlandse tekst.
+     *
+     * @var array<int, string>
+     */
+    private const PUNTEN = [
+        'Geen afhankelijkheid van één leverancier',
+        'Documentatie waarmee een ander het overneemt',
+        'Werkt met wat er al staat',
+        'Bereikbaar zonder tussenpersoon',
+    ];
+
     public function handle(): int
     {
         if (! app()->environment(['local', 'testing'])) {
@@ -71,7 +105,26 @@ class OpruimenVoorbeeldData extends Command
             ->whereIn('label_nl', self::ONDERWERPEN)
             ->count();
 
-        if ($aanvragen + $mail + $onderwerpen === 0) {
+        $vragen = FaqItem::query()
+            ->whereIn('question_nl', self::VRAGEN)
+            ->count();
+
+        /*
+         * "Over mij" is één rij, en die is niet op tekst te herkennen --
+         * de eigenaar heeft er maar één en die is óf van hem óf van de
+         * voorbeelddata. Daarom gaat hij op de samenvatting die de seeder
+         * neerzet; het commando waarschuwt daarvoor net als bij de
+         * onderwerpen en de vragen.
+         */
+        $overMij = AboutSetting::query()
+            ->where('summary_nl', 'like', 'Ik werk sinds 2008 in de IT%')
+            ->count();
+
+        $puntenAantal = AboutPoint::query()
+            ->whereIn('text_nl', self::PUNTEN)
+            ->count();
+
+        if ($aanvragen + $mail + $onderwerpen + $vragen + $overMij + $puntenAantal === 0) {
             $this->components->info('Er staat geen voorbeelddata in de database.');
 
             return self::SUCCESS;
@@ -80,16 +133,19 @@ class OpruimenVoorbeeldData extends Command
         $this->components->twoColumnDetail('Aanvragen', (string) $aanvragen);
         $this->components->twoColumnDetail('Regels in het mailoverzicht', (string) $mail);
         $this->components->twoColumnDetail('Onderwerpen', (string) $onderwerpen);
+        $this->components->twoColumnDetail('Vragen', (string) $vragen);
+        $this->components->twoColumnDetail('Over mij', (string) $overMij);
+        $this->components->twoColumnDetail('Punten bij Over mij', (string) $puntenAantal);
 
         /*
          * De onderwerpen gaan op naam en niet op adres, dus hier kan de
          * klant zijn eigen werk tussen zitten. Dat zeggen we met zoveel
          * woorden in plaats van het stil weg te halen.
          */
-        if ($onderwerpen > 0) {
+        if ($onderwerpen + $vragen + $overMij + $puntenAantal > 0) {
             $this->components->warn(
-                'De onderwerpen worden op naam gevonden. Heb je er zelf een met '
-                    .'dezelfde naam gemaakt, dan gaat die mee.'
+                'De onderwerpen en de vragen worden op tekst gevonden. Heb je er '
+                    .'zelf een met dezelfde tekst gemaakt, dan gaat die mee.'
             );
         }
 
@@ -117,6 +173,18 @@ class OpruimenVoorbeeldData extends Command
 
         ContactSubject::query()
             ->whereIn('label_nl', self::ONDERWERPEN)
+            ->delete();
+
+        FaqItem::query()
+            ->whereIn('question_nl', self::VRAGEN)
+            ->delete();
+
+        AboutPoint::query()
+            ->whereIn('text_nl', self::PUNTEN)
+            ->delete();
+
+        AboutSetting::query()
+            ->where('summary_nl', 'like', 'Ik werk sinds 2008 in de IT%')
             ->delete();
 
         $this->components->info('De voorbeelddata is weg.');

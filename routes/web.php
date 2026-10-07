@@ -7,6 +7,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\Portal\SiteEntryController;
 use App\Http\Controllers\PrivacyController;
+use App\Http\Controllers\PublicAboutController;
 use App\Http\Controllers\PublicContactController;
 use App\Http\Controllers\Security\ConfirmTwoFactorController;
 use App\Http\Controllers\Security\PortalEntryController;
@@ -60,6 +61,21 @@ Route::get('privacy', PrivacyController::class)->name('privacy');
 Route::get('contact', PublicContactController::class)
     ->middleware(TelBezoek::class)
     ->name('contact');
+
+/*
+ * De aparte pagina "Over mij".
+ *
+ * Bestaat alleen als de eigenaar hem aanzet én er een verhaal in staat;
+ * anders geeft de controller een 404. Die twee voorwaarden samen zijn met
+ * opzet: een pagina met alleen een kop, waar een knop op de voorpagina naar
+ * wijst, is erger dan geen pagina. Zie PublicAboutController.
+ *
+ * **Mét `TelBezoek`**, net als de contactpagina: dit is een echte pagina
+ * van de website, dus een bezoek hoort mee te tellen.
+ */
+Route::get('over-mij', PublicAboutController::class)
+    ->middleware(TelBezoek::class)
+    ->name('over-mij');
 
 /*
  * Van taal wisselen. Open voor iedereen, want de publieke site moet ook

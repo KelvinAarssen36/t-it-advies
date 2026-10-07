@@ -73,7 +73,17 @@ class PageSectionSeederTest extends TestCase
     {
         $this->seed(PageSectionSeeder::class);
 
-        // Zoals het indelingsscherm het opslaat: doorgenummerd vanaf 1.
+        /*
+         * Zoals het indelingsscherm het opslaat: doorgenummerd vanaf 1.
+         *
+         * **Álle versleepbare onderdelen staan hier**, en dat is geen
+         * volledigheid voor de sier. Dat scherm slaat de hele rij op, dus
+         * een lijst met er één te weinig is geen volgorde die de klant ooit
+         * kan hebben gezet -- en dan botst het ontbrekende onderdeel met
+         * een plek die al bezet is, waarna `herstelDubbelePlekken()`
+         * terecht alles opnieuw nummert. Deze test valt dus om zodra er een
+         * module bijkomt, en dat is precies de bedoeling.
+         */
         $eigen = [
             PageSectionKey::Contact,
             PageSectionKey::Diensten,
@@ -81,8 +91,24 @@ class PageSectionSeederTest extends TestCase
             PageSectionKey::Werkwijze,
             PageSectionKey::Certificaten,
             PageSectionKey::Statistieken,
+            PageSectionKey::Faq,
+            PageSectionKey::OverMij,
             PageSectionKey::Linkedin,
         ];
+
+        /*
+         * En de controle dat die lijst echt compleet is.
+         *
+         * Zonder deze regel valt de test hierboven om met een melding over
+         * een verschoven positie, en dan ga je zoeken in de seeder terwijl
+         * het probleem is dat er een onderdeel in deze lijst mist. Nu zegt
+         * hij wat er aan de hand is.
+         */
+        $this->assertCount(
+            count(PageSectionKey::verplaatsbaar()),
+            $eigen,
+            'Er is een versleepbaar onderdeel bijgekomen; zet het ook in deze lijst.',
+        );
 
         foreach ($eigen as $index => $sectie) {
             PageSection::query()

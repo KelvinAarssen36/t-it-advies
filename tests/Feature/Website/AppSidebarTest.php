@@ -43,9 +43,23 @@ class AppSidebarTest extends TestCase
              * De naam van de Wayfinder-module, afgeleid van de routenaam:
              * `website.ervaring.index` wordt `ervaring.index()`. Dat is
              * precies zoals de zijbalk hem aanroept.
+             *
+             * **Een streepje wordt een hoofdletter.** Een routenaam mag
+             * `over-mij` heten, maar een variabele in JavaScript niet --
+             * daar is het `overMij`. Hier stond die omzetting niet, en toen
+             * zocht deze test naar `over-mij.index()`: een tekst die er
+             * onmogelijk kon staan. De test viel dus om op zijn eigen
+             * aanname en niet op een ontbrekende zijbalkregel.
              */
             $delen = explode('.', $route);
-            $aanroep = $delen[count($delen) - 2].'.'.end($delen).'()';
+
+            $module = (string) preg_replace_callback(
+                '/-(.)/',
+                fn (array $treffer) => strtoupper($treffer[1]),
+                $delen[count($delen) - 2],
+            );
+
+            $aanroep = $module.'.'.end($delen).'()';
 
             $this->assertStringContainsString(
                 $aanroep,

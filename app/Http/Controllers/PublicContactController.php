@@ -7,6 +7,7 @@ use App\Enums\PageSectionKey;
 use App\Models\ContactSetting;
 use App\Models\SectionHeading;
 use App\Support\Contact\Contactformulier;
+use App\Support\Page\Navigatie;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -31,7 +32,7 @@ use Inertia\Response;
  */
 class PublicContactController extends Controller
 {
-    public function __invoke(Contactformulier $formulier): Response
+    public function __invoke(Contactformulier $formulier, Navigatie $navigatie): Response
     {
         $instellingen = ContactSetting::huidige();
 
@@ -51,6 +52,18 @@ class PublicContactController extends Controller
         abort_unless($formulier->staatAan(), 404);
 
         return Inertia::render('public/Contact', [
+            /*
+             * Het menu van de voorpagina.
+             *
+             * **Hier stond niets, en dat was de oorzaak van de dubbele
+             * terugknoppen.** Zonder deze lijst verving de kop de hele
+             * navigatiebalk door één "Terug naar de website", en zette
+             * deze pagina er ook nog eens zelf een teruglink bij. Met het
+             * menu erin is de navigatie zelf de weg terug -- en dan kom je
+             * in één klik bij het onderdeel dat je wilde.
+             */
+            'navigation' => $navigatie->menu(),
+
             'kop' => SectionHeading::voor(PageSectionKey::Contact)->voorDeSite(),
             'velden' => $formulier->voorDeSite(),
             'onderwerpen' => $formulier->onderwerpenVoorDeSite(),

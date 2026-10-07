@@ -166,6 +166,41 @@ class SectionHeading extends Model
             ],
 
             /*
+             * De kop boven het korte stuk over de eigenaar.
+             *
+             * De inleiding hier is de brug naar de rest van de pagina: het
+             * blok zelf is één alinea, en wie meer wil weten moet weten
+             * dát er meer is. Zet de eigenaar de aparte pagina aan, dan
+             * komt daar ook een knop onder.
+             */
+            PageSectionKey::OverMij => [
+                'eyebrow_nl' => 'Over mij',
+                'eyebrow_en' => 'About me',
+                'title_nl' => 'Wie het werk doet',
+                'title_en' => 'Who does the work',
+                'intro_nl' => 'Geen bureau met een accountmanager ertussen. Je hebt met één iemand te maken, en dat blijft zo.',
+                'intro_en' => 'No agency with an account manager in between. You deal with one person, and it stays that way.',
+            ],
+
+            /*
+             * De kop boven de vragen.
+             *
+             * De inleiding doet hier werk dat de vragen zelf niet kunnen
+             * doen: hij zegt wat er moet gebeuren als het antwoord er
+             * níet tussen staat. Zonder die regel is een vragenlijst een
+             * doodlopende weg voor precies de bezoeker met de vraag die
+             * jij nog niet had bedacht.
+             */
+            PageSectionKey::Faq => [
+                'eyebrow_nl' => 'Veelgestelde vragen',
+                'eyebrow_en' => 'Frequently asked questions',
+                'title_nl' => 'Wat mensen meestal eerst vragen',
+                'title_en' => 'What people usually ask first',
+                'intro_nl' => 'Staat jouw vraag er niet bij? Stel hem hieronder, dan krijg je gewoon antwoord.',
+                'intro_en' => 'Is your question not here? Ask it below and you will simply get an answer.',
+            ],
+
+            /*
              * De kop boven het contactformulier.
              *
              * Die stond eerst hardgecodeerd in ContactSection.vue, als

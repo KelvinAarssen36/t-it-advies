@@ -5,9 +5,11 @@ namespace App\Providers;
 use App\Enums\PageSectionKey;
 use App\Enums\SecurityEventType;
 use App\Listeners\RecordSecurityEvents;
+use App\Models\AboutSetting;
 use App\Models\Certificate;
 use App\Models\Education;
 use App\Models\Experience;
+use App\Models\FaqItem;
 use App\Models\Service;
 use App\Models\Statistic;
 use App\Models\User;
@@ -161,6 +163,35 @@ class AppServiceProvider extends ServiceProvider
         $this->app->make(SectionContent::class)->telt(
             PageSectionKey::Statistieken,
             fn () => Statistic::query()->online()->count(),
+        );
+
+        /*
+         * En de vragen. Hier is leeg ook echt leeg: een vragenlijst
+         * zonder vragen is een kop met niets eronder, en dat hoort van
+         * de site af tot de eigenaar zijn eerste vraag heeft geschreven.
+         */
+        $this->app->make(SectionContent::class)->telt(
+            PageSectionKey::Faq,
+            fn () => FaqItem::query()->online()->count(),
+        );
+
+        /*
+         * "Over mij" telt zijn **samenvatting** en niets anders.
+         *
+         * **Niet de punten.** Die staan alleen op de aparte pagina, en zou
+         * de teller daarop afgaan, dan valt het hele blok van de voorpagina
+         * tot de eigenaar zijn derde bulletje heeft getypt.
+         *
+         * **En hij rekent met de taal mee.** De samenvatting valt niet
+         * terug op het Nederlands -- een Engelse bezoeker die een
+         * Nederlandse alinea over de eigenaar krijgt, krijgt iets wat hij
+         * niet kan lezen op de plek waar hij vertrouwen moet opbouwen.
+         * Staat er geen Engels, dan hoort het blok op de Engelse site weg
+         * te vallen, en dan moet deze teller dat ook zeggen.
+         */
+        $this->app->make(SectionContent::class)->telt(
+            PageSectionKey::OverMij,
+            fn () => blank(AboutSetting::huidige()->samenvatting()) ? 0 : 1,
         );
     }
 

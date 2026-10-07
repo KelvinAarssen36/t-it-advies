@@ -376,6 +376,39 @@ losse uitzonderingen door de componenten heen slingeren.
 `popover` in de tabel hierboven wijst naar `--control-bg-elevated`, zodat
 de panelen van de UI-pakketten dezelfde bron gebruiken.
 
+#### Een hoverkleur mag nooit het vlak zijn waar hij op ligt
+
+Dat gebruik van één bron heeft een keerzijde, en die is één keer echt
+misgegaan. `--control-bg-elevated`, `--popover`, `--secondary`,
+`--sidebar-accent` **en** `--control-hover` wezen op donker allemaal naar
+`--brand-navy-raised` (`#102d4a`). Elk afzonderlijk klopte dat; samen
+betekende het dat hoveren over een regel in een keuzelijst of een menu naar
+de kleur kleurde die er al stond. Er was geen hover.
+
+Twee dingen hielden dat lang verborgen:
+
+- **In het lichte thema valt het niet op.** Daar is het paneel wit en de
+  hover Cloud, dus twee verschillende kleuren.
+- **De publieke site staat altijd donker, maar had nog geen menu met
+  regels.** Het menu "Meer" in de kop ontstond pas toen er een zesde
+  onderdeel bij kwam, en toen was het meteen te zien.
+
+`--control-hover` is nu een `color-mix` van twaalf procent Cyan door dat
+paneel heen, en `--control-active` tweeëntwintig procent -- een gekozen
+regel hoort sterker te staan dan een regel waar je alleen over heen gaat.
+Die vleug cyaan is er met opzet: een hover die alleen lichter grijs is leest
+op donker niet als "dit kun je aanklikken".
+
+`--accent` wijst naar diezelfde berekening, want de regels van een
+`DropdownMenu` en een `Select` kleuren met `bg-accent` en liepen op precies
+dezelfde manier vast. Naar elkáár wijzen doen ze niet: `--accent` is een
+naam van shadcn en `--control-*` is van ons.
+
+> **Controleer bij een nieuwe kleurvariabele op donker of hij al bestaat.**
+> `grep` op de waarde in `app.css` is genoeg. Twee rollen die hetzelfde
+> hex gebruiken is normaal; een hover of een rand die hetzelfde gebruikt
+> als de achtergrond waar hij op ligt, is een onzichtbaar element.
+
 De ronding van die elementen komt uit `--radius-xl`, afgeleid van `--radius`.
 Dat is ruimer dan de `rounded-md` van de starter kit, en dat is een keuze
 voor het hele portaal: zachte hoeken passen bij de rest van de huisstijl, en

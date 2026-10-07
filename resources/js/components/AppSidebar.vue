@@ -4,6 +4,7 @@ import {
     Activity,
     Award,
     ChartNoAxesColumn,
+    CircleQuestionMark,
     Eye,
     Globe,
     Heading,
@@ -17,6 +18,7 @@ import {
     Milestone,
     Scale,
     ShieldAlert,
+    UserRound,
     Users,
 } from '@lucide/vue';
 import { computed } from 'vue';
@@ -47,8 +49,10 @@ import certificaten from '@/routes/website/certificaten';
 import contact from '@/routes/website/contact';
 import diensten from '@/routes/website/diensten';
 import ervaring from '@/routes/website/ervaring';
+import faq from '@/routes/website/faq';
 import statistieken from '@/routes/website/statistieken';
 import kop from '@/routes/website/kop';
+import overMij from '@/routes/website/over-mij';
 import website from '@/routes/website';
 import type { NavItem } from '@/types';
 
@@ -132,6 +136,11 @@ const websiteItems = computed<NavItem[]>(() => [
         icon: Heading,
     },
     {
+        title: t('Over mij'),
+        href: overMij.index(),
+        icon: UserRound,
+    },
+    {
         title: t('Diensten'),
         href: diensten.index(),
         icon: Lightbulb,
@@ -150,6 +159,11 @@ const websiteItems = computed<NavItem[]>(() => [
         title: t('Statistieken'),
         href: statistieken.index(),
         icon: ChartNoAxesColumn,
+    },
+    {
+        title: t('Vragen'),
+        href: faq.index(),
+        icon: CircleQuestionMark,
     },
     {
         title: t('Contact'),

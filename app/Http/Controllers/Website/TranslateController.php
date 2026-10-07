@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Website;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Website\FaqItemRequest;
+use App\Models\AboutSetting;
 use App\Models\Service;
 use App\Support\Toast;
 use App\Support\Translation\VertaalFout;
@@ -65,10 +67,22 @@ class TranslateController extends Controller
             // de landingspagina en die boven de diensten allebei.
             'eyebrow_nl' => ['nullable', 'string', 'max:60'],
 
-            // De korte tekst op een dienstkaart. Apart van `intro_nl`,
-            // want die is de zin onder een kop en niet de tekst van een
-            // item -- het scherm moet weten waar het antwoord heen moet.
-            'summary_nl' => ['nullable', 'string', 'max:300'],
+            /*
+             * De korte tekst op een dienstkaart. Apart van `intro_nl`,
+             * want die is de zin onder een kop en niet de tekst van een
+             * item -- het scherm moet weten waar het antwoord heen moet.
+             *
+             * **Vierhonderd en niet driehonderd tekens.** Dit veld doet
+             * sinds "Over mij" ook de samenvatting daar, en die mag
+             * langer dan de tekst op een dienstkaart. De ruimste van de
+             * twee dus, net zoals `label_nl` hieronder werd opgerekt
+             * toen Contact hem ging gebruiken.
+             *
+             * Dat dit veld hier ruimer is dan een dienstkaart toestaat
+             * is geen gat: dit eindpunt slaat niets op. De grens per
+             * module staat in het formulier dat wél opslaat.
+             */
+            'summary_nl' => ['nullable', 'string', 'max:'.AboutSetting::SAMENVATTING_MAX],
 
             // Eén expertisepunt onder een dienst, voor het knopje naast
             // dat ene veld. Het venster onthoudt zelf welk punt het was.
@@ -121,6 +135,27 @@ class TranslateController extends Controller
             'label_nl' => ['nullable', 'string', 'max:80'],
             'notitie_nl' => ['nullable', 'string', 'max:120'],
             'groep_nl' => ['nullable', 'string', 'max:60'],
+
+            /*
+             * De twee velden van een veelgestelde vraag.
+             *
+             * Eigen namen en niet `title_nl` plus `body_nl` hergebruikt,
+             * want dit venster stuurt ze samen -- en dan moet het antwoord
+             * ze uit elkaar kunnen houden. De lengtes zijn die van de
+             * kolommen; zie FaqItemRequest.
+             */
+            /*
+             * De vier tekstvelden van "Over mij". Eigen namen, want dit
+             * scherm stuurt ze samen en dan moet het antwoord ze uit
+             * elkaar kunnen houden. De lengtes zijn die van de kolommen;
+             * zie AboutRequest.
+             */
+            'page_title_nl' => ['nullable', 'string', 'max:120'],
+            'page_intro_nl' => ['nullable', 'string', 'max:300'],
+            'story_nl' => ['nullable', 'string', 'max:'.AboutSetting::VERHAAL_MAX],
+
+            'question_nl' => ['nullable', 'string', 'max:160'],
+            'answer_nl' => ['nullable', 'string', 'max:'.FaqItemRequest::ANTWOORD_MAX],
         ]);
 
         /** @var array<int, string|null> $punten */

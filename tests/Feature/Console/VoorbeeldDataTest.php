@@ -2,8 +2,11 @@
 
 namespace Tests\Feature\Console;
 
+use App\Models\AboutPoint;
+use App\Models\AboutSetting;
 use App\Models\ContactSubject;
 use App\Models\ContactSubmission;
+use App\Models\FaqItem;
 use App\Models\MailLog;
 use Database\Seeders\ContactSeeder;
 use Database\Seeders\VoorbeeldDataSeeder;
@@ -146,6 +149,113 @@ class VoorbeeldDataTest extends TestCase
         $this->assertSame(0, ContactSubmission::query()->count());
         $this->assertSame(0, ContactSubject::query()->count());
         $this->assertSame(0, MailLog::query()->where('message_id', 'like', 'voorbeeld-%')->count());
+        $this->assertSame(0, FaqItem::query()->count());
+    }
+
+    /**
+     * De vragen staan er in de vorm waarin je ze wilt zien.
+     *
+     * **Acht, en dat getal is gekozen.** Het blok op de site bladert per
+     * zes en één vraag staat offline, dus er komen er zeven op de site: zes
+     * op de eerste bladzijde en één op de tweede. Zo zie je het bladeren
+     * echt gebeuren in plaats van dat je het op je woord moet geloven.
+     *
+     * De drie bijzondere gevallen die je anders moet uitproberen zitten er
+     * ook in: een vraag zonder Engels, een antwoord met een witregel, en
+     * een vraag die offline staat.
+     */
+    public function test_the_seeder_puts_the_questions_in_a_usable_shape(): void
+    {
+        $this->seed(VoorbeeldDataSeeder::class);
+
+        $this->assertSame(8, FaqItem::query()->count());
+        $this->assertSame(7, FaqItem::query()->online()->count());
+
+        $this->assertSame(
+            1,
+            FaqItem::query()->whereNull('question_en')->count(),
+            'Er hoort precies één vraag zonder Engels te staan, voor de terugval.',
+        );
+
+        $metWitregel = FaqItem::query()
+            ->get()
+            ->filter(fn (FaqItem $vraag) => str_contains($vraag->answer_nl, "\n\n"));
+
+        $this->assertNotEmpty(
+            $metWitregel,
+            'Geen enkel antwoord heeft een witregel, dus de alinea\'s zijn niet te zien.',
+        );
+    }
+
+    /**
+     * "Over mij" staat er met de aparte pagina aan.
+     *
+     * **Met opzet aan én met een verhaal erin.** Zonder verhaal bestaat die
+     * pagina niet en komt er ook geen knop op de voorpagina -- dan zie je
+     * de helft van die module niet. Eén punt staat zonder Engels, zodat je
+     * ziet dat zo'n punt op de Engelse pagina wegvalt.
+     */
+    public function test_the_seeder_turns_the_about_page_on(): void
+    {
+        $this->seed(VoorbeeldDataSeeder::class);
+
+        $instelling = AboutSetting::query()->sole();
+
+        $this->assertTrue($instelling->page_enabled);
+        $this->assertTrue(
+            $instelling->paginaStaatKlaar(),
+            'De aparte pagina staat aan maar heeft geen verhaal; dan bestaat hij niet.',
+        );
+
+        $this->assertStringContainsString(
+            "\n\n",
+            (string) $instelling->story_nl,
+            'Het verhaal heeft geen witregel, dus de alinea\'s zijn niet te zien.',
+        );
+
+        $this->assertSame(4, AboutPoint::query()->count());
+        $this->assertSame(
+            1,
+            AboutPoint::query()->whereNull('text_en')->count(),
+            'Er hoort precies één punt zonder Engels te staan.',
+        );
+    }
+
+    /** En "Over mij" gaat ook weer weg. */
+    public function test_cleaning_up_removes_the_about_data(): void
+    {
+        $this->seed(VoorbeeldDataSeeder::class);
+
+        $eigen = AboutPoint::factory()->create([
+            'text_nl' => 'Een punt dat de klant zelf heeft geschreven',
+        ]);
+
+        $this->artisan('voorbeeld:opruimen --force')->assertSuccessful();
+
+        $this->assertModelExists($eigen);
+        $this->assertSame(1, AboutPoint::query()->count());
+        $this->assertSame(0, AboutSetting::query()->count());
+    }
+
+    /**
+     * En de vragen gaan ook weer weg.
+     *
+     * Die gaan op hun Nederlandse tekst en niet op een adres -- er is bij
+     * een vraag niets om een `@voorbeeld.test` in te zetten. Het commando
+     * waarschuwt daarvoor; zie de test hieronder.
+     */
+    public function test_cleaning_up_removes_the_questions_too(): void
+    {
+        $this->seed(VoorbeeldDataSeeder::class);
+
+        $eigen = FaqItem::factory()->create([
+            'question_nl' => 'Een vraag die de klant zelf heeft geschreven?',
+        ]);
+
+        $this->artisan('voorbeeld:opruimen --force')->assertSuccessful();
+
+        $this->assertModelExists($eigen);
+        $this->assertSame(1, FaqItem::query()->count());
     }
 
     /**

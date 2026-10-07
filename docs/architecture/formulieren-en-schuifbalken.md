@@ -42,6 +42,14 @@ alle componenten. Voeg je een besturingselement toe dat een kleur nodig heeft
 die er nog niet is, zet die dan in beide blokken en in de tabel hierboven --
 niet in het component zelf.
 
+> **En `--control-hover` mag nooit dezelfde waarde krijgen als
+> `--control-bg-elevated`.** Op donker was dat een tijdlang wel zo -- beide
+> `#102d4a` -- en dan is er geen hover: je kleurt naar de kleur van het
+> paneel waar de regel op ligt. Hetzelfde geldt voor `--control-active` en
+> voor `--accent`, waarmee de UI-pakketten hun menuregels kleuren. Zie
+> [huisstijl en kleuren](huisstijl-en-kleuren.md) voor hoe dat kon gebeuren
+> en hoe het nu is opgelost.
+
 De ronding komt uit `--radius-xl`, die in `@theme inline` is afgeleid van
 `--radius`. Velden, keuzeknoppen en het paneel dat eruit klapt delen die ene
 waarde, zodat ze naast elkaar één familie vormen.

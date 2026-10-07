@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
-import { ArrowLeft } from '@lucide/vue';
-import { home } from '@/routes';
+import { Head } from '@inertiajs/vue3';
+import SiteKruimels from '@/components/site/SiteKruimels.vue';
+import SiteTerug from '@/components/site/SiteTerug.vue';
 
 /**
  * De privacyverklaring.
@@ -74,15 +74,12 @@ const props = defineProps<{
 
     <section class="mx-auto max-w-3xl px-6 py-16 sm:py-24">
         <!--
-            De weg terug, bovenaan. De kop van de site laat op deze pagina
-            geen onderdelen zien -- die ankers bestaan hier niet -- dus
-            zonder deze link is de enige uitweg de terugknop van de
-            browser.
+            Waar je bent. Waar je heen kunt staat in de kop: die toont op
+            deze pagina gewoon het menu van de voorpagina. Hier stond een
+            teruglink die hetzelfde deed als die kop, en onderaan nog een
+            keer dezelfde.
         -->
-        <Link :href="home()" class="brand-terug">
-            <ArrowLeft class="size-4" />
-            {{ $t('Terug naar de website') }}
-        </Link>
+        <SiteKruimels :titel="'Privacyverklaring'" />
 
         <h1
             class="mt-8 text-3xl font-semibold tracking-tight text-white sm:text-4xl"
@@ -415,14 +412,7 @@ const props = defineProps<{
             </p>
         </div>
 
-        <!--
-            En onderaan nog een keer de weg terug. Wie de hele verklaring
-            heeft doorgelezen staat onder aan een lange pagina, en dan is
-            een link bovenaan geen link.
-        -->
-        <Link :href="home()" class="brand-terug mt-12">
-            <ArrowLeft class="size-4" />
-            {{ $t('Terug naar de website') }}
-        </Link>
+        <!-- Het einde van de pagina: je bent klaar met lezen. -->
+        <SiteTerug />
     </section>
 </template>

@@ -2,8 +2,10 @@
 
 namespace App\Console\Commands;
 
+use App\Models\AboutPoint;
 use App\Models\ContactSubject;
 use App\Models\ContactSubmission;
+use App\Models\FaqItem;
 use App\Models\MailLog;
 use Database\Seeders\VoorbeeldDataSeeder;
 use Illuminate\Console\Command;
@@ -32,7 +34,7 @@ class ZaaienVoorbeeldData extends Command
 {
     protected $signature = 'voorbeeld:zaaien';
 
-    protected $description = 'Zet verzonnen contactonderwerpen, aanvragen en mailregels neer (alleen lokaal)';
+    protected $description = 'Zet verzonnen contactonderwerpen, aanvragen, mailregels, vragen en Over mij neer (alleen lokaal)';
 
     public function handle(): int
     {
@@ -68,6 +70,14 @@ class ZaaienVoorbeeldData extends Command
         $this->components->twoColumnDetail(
             'Regels in het mailoverzicht',
             (string) MailLog::query()->count(),
+        );
+        $this->components->twoColumnDetail(
+            'Vragen',
+            (string) FaqItem::query()->count(),
+        );
+        $this->components->twoColumnDetail(
+            'Punten bij Over mij',
+            (string) AboutPoint::query()->count(),
         );
 
         $this->newLine();

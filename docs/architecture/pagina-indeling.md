@@ -160,6 +160,78 @@ module die deze zes stappen doorloopt, en de keuzes die daar zijn gemaakt
 -- twee kolommen per vertaalbaar veld, het lege-veldenprobleem, een
 formulier in twee stappen -- gelden voor de volgende net zo goed.
 
+## Het menu staat ook op de subpagina's
+
+De lijst uit dit scherm is niet alleen de pagina maar ook het menu, en
+sinds kort op **alle** publieke pagina's. Dat is een correctie, en het is
+nuttig om te weten waarom, want het legt drie dubbele terugknoppen uit.
+
+`navigation` kwam alleen uit `HomeController`. Op `/privacy`, `/contact` en
+`/over-mij` was die lijst dus leeg, en `SiteHeader` deed daar wat op het
+eerste gezicht logisch is: is er geen menu, zet er dan "Terug naar de
+website". Alleen, omdat die balk daarmee niets nuttigs meer deed, zette
+elke subpagina er ook nog een eigen teruglink bij -- en de
+privacyverklaring er twee, boven en onder. Drie links naar dezelfde plek,
+met twee verschillende woorden ervoor.
+
+Nu staat de lijst in [`Navigatie`](../../app/Support/Page/Navigatie.php) en
+sturen alle vier de pagina's hem mee. Daarmee verandert wat een menu-item
+_is_:
+
+| Waar          | Wat een item is                                      |
+| ------------- | ---------------------------------------------------- |
+| De voorpagina | Een anker: `#diensten`, met de streep die meeschuift |
+| Een subpagina | Een Inertia-link naar `/#diensten`                   |
+
+**De navigatie is daarmee zelf de weg terug**, en beter dan een terugknop:
+je komt bij het onderdeel dat je wilde in plaats van bovenaan. De terugknop
+in de kop is weg, en de subpagina's hebben er geen eigen meer.
+
+Drie dingen die daarbij horen:
+
+- **`Welcome.vue` scrollt bij aankomst naar het anker uit het adres.** Zonder
+  dat kom je bovenaan uit en moet je zelf zoeken, en dan is zo'n link niets
+  beter dan de terugknop die er eerst stond.
+- **Het merk in de kop is buiten de voorpagina een link naar huis.** Dat was
+  stuk: `#top` met een handler die voor `top` altijd afbreekt en naar de
+  bovenkant van de huidige pagina scrollt.
+- **Het uitklapmenu op mobiel gaat dicht bij een klik die wegnavigeert.** Op
+  de voorpagina deed `gaNaar` dat al; buiten de voorpagina breekt die meteen
+  af, en de kop blijft bij een Inertia-bezoek staan. Zie `kiesItem`.
+
+**Niet via de gedeelde props van Inertia.** Dat zou één regel zijn, maar dan
+doet elk portaalverzoek deze query plus alle inhoudstellers voor een menu
+dat daar niet bestaat.
+
+### De voettekst deed niets, en dat kwam hierdoor boven
+
+De voettekst heeft dezelfde lijst en dus hetzelfde nodig. Daar stond een
+anker met `@click.prevent` erbij en een aanroep van
+`scrollNaar('#diensten')` -- mét hekje, terwijl die functie
+`getElementById` doet. Dus vond het scrollen niets, én mocht de browser de
+link niet volgen: **die links deden helemaal niets, ook niet op de
+voorpagina.**
+
+Dat is een jaar lang niet opgevallen omdat een link in een voettekst er
+hetzelfde uitziet of hij werkt of niet. Het kwam boven toen bleek dat er op
+een subpagina nog een `#diensten` in de opmaak stond nadat de kop al was
+omgezet.
+
+Daarom staat "wat is een item en waar wijst het heen" nu in
+[`sectielink`](../../resources/js/lib/sectielink.ts) en niet in de kop:
+twee keer dezelfde logica is twee keer een kans hierop. Wat er bij een klik
+verder gebeurt -- het uitklapmenu sluiten, het adres bijwerken -- blijft per
+plek verschillen en staat dus bij de aanroeper.
+
+Wat de pagina's zelf nog wél hebben is een kruimelpad boven
+([`SiteKruimels`](../../resources/js/components/site/SiteKruimels.vue)) en
+één knop onder ([`SiteTerug`](../../resources/js/components/site/SiteTerug.vue)).
+Die dubbelen niet met de kop: het kruimelpad zegt waar je **bent**, het menu
+waar je **heen** kunt, en de knop onderaan is het einde van de pagina. De
+verdediging voor die tweede link op de privacyverklaring -- "onderaan een
+lange pagina is een link bovenaan geen link" -- klopte trouwens niet:
+`.brand-sitekop` is `position: sticky`, dus de navigatie is daar ook.
+
 ## De achtergrond wisselt af op plek, niet op naam
 
 `Welcome.vue` geeft elke sectie een `tone` op basis van zijn index: even is
@@ -286,7 +358,32 @@ onderdeel waarvoor dat nog geldt.
 > laatste is het eerste geval waarin een onderdeel zijn inhoud buiten de
 > landingspagina kan zetten.
 
-Er zijn vier voorbeelden om uit te kiezen als je de volgende bouwt. De
+Er zijn zes voorbeelden om uit te kiezen als je de volgende bouwt.
+
+[Over mij](modules/over-mij.md) is het voorbeeld voor een onderdeel dat
+**één onderwerp over twee plekken verdeelt**: een kort stuk op de
+voorpagina en een uitgebreidere pagina erachter die de eigenaar aan en uit
+kan zetten. Bijna alle keuzes daar gaan over hoe je dat overzichtelijk
+houdt -- een overzicht met een schakelaar tussen de twee versies, een
+bewerkvenster en dus een eigen eindpunt per versie, en een grens op het
+korte stuk zodat die tweede pagina ergens voor is. Kijk daar als je nog zo'n
+onderdeel bouwt, en lees in het bijzonder waarom die eindpunten gesplitst
+zijn: met één verzoek voor allebei wist het ene venster stil de helft van
+het andere.
+
+Daarmee is `/over-mij` ook het tweede adres buiten de landingspagina, en
+anders dan bij contact bestaat het **onder twee voorwaarden**: aangezet én
+gevuld. Een schakelaar alleen levert daar geen pagina op.
+
+En de [FAQ](modules/faq.md) is de kortste van allemaal: één lijst, geen
+groepen, geen bijlagen. Wil je zien wat het mínimum is dat een module nodig heeft om
+in dit project mee te doen, begin daar. De enige keuze die hem bijzonder
+maakt zit niet in de opzet maar in het bladeren: álle items gaan naar de
+pagina en alleen de huidige bladzijde is zichtbaar. De rest krijgt `hidden`
+in plaats van weggelaten te worden, want wat niet in de DOM staat ziet een
+zoekmachine niet.
+
+De
 [ervaring](modules/ervaring.md) is het voorbeeld voor een module met een
 lijst en een detailpagina; de [kop](modules/kop.md) voor een onderdeel dat
 alleen uit wat vaste tekst bestaat; de [diensten](modules/diensten.md)

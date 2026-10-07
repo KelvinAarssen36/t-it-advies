@@ -6,6 +6,8 @@ import {
     Asterisk,
     Award,
     ChartNoAxesColumn,
+    CircleQuestionMark,
+    UserRound,
     CheckCheck,
     Clock,
     Eye,
@@ -68,6 +70,8 @@ import website from '@/routes/website';
 import certificatenRoutes from '@/routes/website/certificaten';
 import contactRoutes from '@/routes/website/contact';
 import dienstenRoutes from '@/routes/website/diensten';
+import faqRoutes from '@/routes/website/faq';
+import overMijRoutes from '@/routes/website/over-mij';
 import statistiekenRoutes from '@/routes/website/statistieken';
 import kop from '@/routes/website/kop';
 import ervaring from '@/routes/website/ervaring';
@@ -1123,6 +1127,110 @@ defineOptions({
                                     <Link :href="statistiekenRoutes.index()">
                                         <ChartNoAxesColumn class="size-4" />
                                         {{ $t('Open Statistieken') }}
+                                    </Link>
+                                </Button>
+                            </template>
+                        </UitlegKaart>
+
+                        <UitlegKaart :titel="$t('Over mij')" :icoon="UserRound">
+                            <p>
+                                {{
+                                    $t(
+                                        'Een kort stuk over jezelf op je voorpagina, met je foto ernaast. Dat stuk is met opzet begrensd: het is een kennismaking en niet je hele verhaal, en een lange lap tekst midden op je voorpagina duwt de rest naar beneden.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Wil je meer vertellen, zet dan de aparte pagina aan. Bovenaan het scherm staat een schakelaar: "Op je website" of "Op je aparte pagina". Je ziet per keuze wat er nu staat, en met Bewerken pas je die versie aan in een eigen venster. Zo zie je altijd waar iets terechtkomt en typ je nooit per ongeluk in het verkeerde stuk.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Staat de pagina uit, dan kun je hem alsnog invullen en bewaren -- hij komt pas op je website zodra je het schuifje aanzet.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'In het venster van je aparte pagina bewerk je één taal tegelijk: bovenaan kies je Nederlands of English. Anders zou je zes velden onder elkaar krijgen, waarvan twee verhalen van duizenden tekens, en dan weet je na drie regels niet meer welke kolom welke is.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Die pagina bestaat pas als er ook een verhaal in staat. Zet je alleen het schuifje om, dan komt er geen knop op je voorpagina -- een knop naar een pagina met alleen een kop is erger dan geen knop.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Standaard staat er het portret uit je kop: je foto in het oog-embleem. Die zie je meteen op het scherm staan, met eronder welke foto het is, dus je kijkt nooit naar een leeg vak. Wil je een andere foto, zet die er dan zelf in; het bijsnijden werkt net als bij een logo. Haal je hem weer weg, dan komt het portret terug -- je kunt dus niet zonder foto komen te zitten.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Je hebt één foto, en die staat op je voorpagina én op je aparte pagina. Daarom hoort hij bij geen van de twee en heeft hij een eigen knop: "Foto aanpassen" staat bovenaan bij allebei, en opent zijn eigen venster. Twee plekken om dezelfde foto te kiezen zou betekenen dat de laatste die je opslaat de andere stil overschrijft.',
+                                    )
+                                }}
+                            </p>
+
+                            <template #voorbeeld>
+                                <Button variant="outline" size="sm" as-child>
+                                    <Link :href="overMijRoutes.index()">
+                                        <UserRound class="size-4" />
+                                        {{ $t('Open Over mij') }}
+                                    </Link>
+                                </Button>
+                            </template>
+                        </UitlegKaart>
+
+                        <UitlegKaart
+                            :titel="$t('Vragen')"
+                            :icoon="CircleQuestionMark"
+                        >
+                            <p>
+                                {{
+                                    $t(
+                                        'De vragen die je vaker krijgt, met je antwoord eronder. Op je website staat de vraag als één regel; een bezoeker klikt hem open en het antwoord schuift eronder uit. Er staat er altijd maar één open, dus de pagina blijft overzichtelijk.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Schrijf een vraag zoals een bezoeker hem zou stellen, niet zoals jij hem zou samenvatten: "Wat kost een migratie?" werkt beter dan "Tarieven". Dat is namelijk ook wat iemand bij Google intypt.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Er staan er zes per bladzijde met knopjes eronder, zodat het blok even hoog blijft hoeveel vragen je ook toevoegt. Zet met Volgorde bovenaan wat je het vaakst krijgt gevraagd -- dat is de bladzijde die de meeste mensen zien. Alle vragen staan wel in je pagina, ook die van bladzijde twee, zodat Google ze allemaal kan vinden.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Zet in de zin onder de kop wat iemand moet doen als zijn vraag er niet bij staat. Zonder die zin is een vragenlijst een doodlopende weg voor precies de bezoeker met de vraag die jij nog niet had bedacht -- en dat is vaak degene die je wilt spreken.',
+                                    )
+                                }}
+                            </p>
+
+                            <template #voorbeeld>
+                                <Button variant="outline" size="sm" as-child>
+                                    <Link :href="faqRoutes.index()">
+                                        <CircleQuestionMark class="size-4" />
+                                        {{ $t('Open Vragen') }}
                                     </Link>
                                 </Button>
                             </template>

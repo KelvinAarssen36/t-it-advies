@@ -15,9 +15,29 @@ return [
     |
     */
 
+    /*
+    | **Hier stond `true` vast, en dat was misleidend.** Er wordt namelijk
+    | nergens server-side gerenderd: `npm run build` bouwt de SSR-bundel
+    | niet -- dat doet alleen `npm run build:ssr` -- en de deploy start er
+    | geen proces voor. Inertia valt dan stil terug op opbouwen in de
+    | browser, dus de site werkt; maar elke paginaweergave doet eerst een
+    | verbindingspoging naar de poort hieronder die mislukt, en dat kost bij
+    | elk bezoek tijd voor niets.
+    |
+    | Nagemeten dat SSR het zelf wél doet: met `build:ssr` en
+    | `php artisan inertia:start-ssr` komt de volledige pagina uit de
+    | server. Het is dus geen kapotte instelling maar een onafgemaakte.
+    |
+    | **De waarde blijft `true` zolang er niet over besloten is.** Dit is
+    | een keuze tussen hosting waar een proces mag draaien en accepteren
+    | dat de site in de browser wordt opgebouwd, en die keuze hoort niet in
+    | een configuratiebestand te worden gemaakt. Wat er nu wél is, is de
+    | schakelaar: `SSR_ENABLED=false` in `.env` zet hem uit zonder aan de
+    | code te komen. Zie docs/openstaand.md.
+    */
     'ssr' => [
-        'enabled' => true,
-        'url' => 'http://127.0.0.1:13714',
+        'enabled' => (bool) env('SSR_ENABLED', true),
+        'url' => env('SSR_URL', 'http://127.0.0.1:13714'),
         // 'bundle' => base_path('bootstrap/ssr/ssr.mjs'),
 
     ],
