@@ -16,7 +16,7 @@
  * Zie SiteIntro.vue en HeroSection.vue.
  */
 
-import { prefersReducedMotion } from '@/lib/motion';
+import { opEenTelefoon, prefersReducedMotion } from '@/lib/motion';
 
 /** Hoe lang de intro in beeld is, in seconden. */
 export const INTRO_DUUR = 0.8;
@@ -24,6 +24,19 @@ export const INTRO_DUUR = 0.8;
 const SLEUTEL = 'brand-intro-gezien';
 
 let besluit: boolean | undefined;
+
+/** Vanaf welk laadmoment we de intro overslaan, in milliseconden. */
+const GEDULD_BREED = 2000;
+
+/**
+ * Op een telefoon leggen we de lat lager.
+ *
+ * Daar telt elke tiende seconde zwaarder: het scherm is kleiner, dus wat
+ * nog moet opkomen is meteen de hele pagina, en je staat vaker op een
+ * trage verbinding. Wat op een laptop een entree is, voelt daar als een
+ * pagina die niet laadt.
+ */
+const GEDULD_SMAL = 1100;
 
 /**
  * Of de pagina snel genoeg binnenkwam om er nog iets voor te zetten.
@@ -47,7 +60,10 @@ function snelGenoeg(): boolean {
         return true;
     }
 
-    return navigatie.domContentLoadedEventEnd < 2000;
+    return (
+        navigatie.domContentLoadedEventEnd <
+        (opEenTelefoon() ? GEDULD_SMAL : GEDULD_BREED)
+    );
 }
 
 /**

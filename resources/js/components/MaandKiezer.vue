@@ -37,6 +37,15 @@ const props = withDefaults(
         jaren: Optie[];
         placeholder?: string;
         ariaLabel?: string;
+        /**
+         * Het id van de knop die de kalender opent.
+         *
+         * Net als bij `BrandSelect`: dit component tekent zelf geen
+         * element, dus een `id` van buitenaf valt nergens op neer en een
+         * `<label for>` ernaast wijst naar niets. De browser meldt dat als
+         * *Incorrect use of `<label for=FORM_ELEMENT>`*.
+         */
+        id?: string;
         disabled?: boolean;
         /** Mag het veld leeggemaakt worden? Standaard niet. */
         wisbaar?: boolean;
@@ -102,6 +111,7 @@ const isGekozen = (maand: string): boolean =>
 <template>
     <PopoverRoot v-model:open="open">
         <PopoverTrigger
+            :id="props.id"
             :disabled="disabled"
             :aria-label="ariaLabel"
             class="group inline-flex brand-control w-full items-center justify-between gap-2"

@@ -8,10 +8,37 @@ alsnog naar Pest, doe dat dan in één keer voor de hele suite en werk dit
 document bij.
 
 ```bash
-php artisan test                      # alles
+php artisan test --parallel           # alles, op alle kernen
 php artisan test --filter=Sensitive   # één groep
 composer ci:check                     # lint + phpstan + vue-tsc + tests
 ```
+
+### Waarom `--parallel`
+
+De suite is 1036 tests en geen enkele daarvan is op zichzelf traag -- de tien
+traagste samen zijn nog geen vijf procent van de tijd. Het is duizend keer
+ongeveer tachtig milliseconden: de database opzetten en het framework
+opstarten, per test. Daar valt niets aan te snoeien zonder tests weg te
+gooien, dus de enige hefboom is ze naast elkaar draaien. Gemeten op deze
+machine: **91 seconden achter elkaar, 14 seconden naast elkaar.**
+
+Dat kan hier zonder voorbereiding omdat de database SQLite in het geheugen is:
+elke werker krijgt vanzelf zijn eigen database en ze zien elkaar niet.
+`composer test` draait daarom standaard parallel.
+
+**Waar je dan wel op moet letten.** Twee tests die hetzelfde bestand op schijf
+gebruiken, of die op een vaste volgorde leunen, vallen nu willekeurig om in
+plaats van nooit. Gebruik `Storage::fake()` in `setUp()` zoals de rest van de
+suite, en laat geen test afhangen van wat een andere achterliet. Zie je een
+test die alleen parallel faalt, draai hem dan los met `--filter` -- slaagt hij
+dan wel, dan is dát het probleem en niet de test zelf.
+
+### Tijdens het bouwen hoef je niet alles te draaien
+
+Draai de groep waar je in zit (`--filter=Project` is negen seconden), met
+`pint --parallel` en `phpstan analyse` erbij -- samen veertien seconden. De
+volledige ronde hoort aan het eind van een onderdeel, en `composer ci:check`
+vóór een push.
 
 De tests draaien op SQLite in het geheugen (zie `phpunit.xml`), niet op MySQL.
 Dat is snel en vereist geen opgeruimde database. Gebruik je iets dat
@@ -72,6 +99,12 @@ renderen. Draai `npm run build` als je `Vite manifest not found` ziet.
 | [StatisticGroupTest](../../tests/Feature/Website/StatisticGroupTest.php)                        | Dat de indeling in groepen in beide talen dezelfde is, ook als één item zijn Engelse groepsnaam mist.                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | [StatisticPublishingTest](../../tests/Feature/Website/StatisticPublishingTest.php)              | Online en offline, dat het blok verdwijnt zodra alles offline staat, en alles wat het indelingsvenster stuurt: de volgorde, verhuizen naar een andere groep, hernoemen, en dat een groep één Engels kopje overhoudt.                                                                                                                                                                                                                                                                                                           |
 | [OverMijTest](../../tests/Feature/Website/OverMijTest.php)                                      | Het onderdeel Over mij: rechten per route, beide talen zonder terugval, de grens op de samenvatting, dat de aparte pagina twee voorwaarden heeft (aangezet \x{00e9}n een verhaal), de punten met hun maximum en volgorde, de vier gevallen rond de foto -- waaronder dat een gewone opslag hem laat staan -- dat het bewaren van het ene venster de velden van het andere met rust laat, en dat alleen het foto-eindpunt de foto aanraakt -- er is er één, hij staat op allebei de versies en heeft daarom zijn eigen venster. |
+| [ProjectCrudTest](../../tests/Feature/Website/ProjectCrudTest.php)                              | De projecten: rechten per route, de slug (ook bij een titel zonder letters, bij een botsing en na een titelwijziging), het eigen type en het wissen daarvan, de periode met "loopt nog" en de omgekeerde volgorde, de lengtegrenzen, beide talen en het logboek.                                                                                                                                                                                                                                                               |
+| [ProjectPublishingTest](../../tests/Feature/Website/ProjectPublishingTest.php)                  | Dat het blok verdwijnt én terugkomt, hoogstens drie kaarten naast het uitgelichte, de volgorde, online/offline, de terugval per veld, en de teller op het indelingsscherm.                                                                                                                                                                                                                                                                                                                                                     |
+| [ProjectUitgelichtTest](../../tests/Feature/Website/ProjectUitgelichtTest.php)                  | De uitgelichte projecten: er mogen er meerdere zijn, de voorpagina kiest de bovenste uit de volgorde, het overzicht splitst de slideshow van de lijst, uitzetten, de volgorde blijft, een offline uitgelicht project blijft van de site, een project zonder sterretje valt nooit in, en verwijderen laat de rest met rust.                                                                                                                                                                                                     |
+| [ProjectImageTest](../../tests/Feature/Website/ProjectImageTest.php)                            | De zes vaste uploadgevallen plus de ondergrens van 240 beeldpunten, en dat een project zonder beeld gewoon blijft werken.                                                                                                                                                                                                                                                                                                                                                                                                      |
+| [ProjectWeergaveTest](../../tests/Feature/Website/ProjectWeergaveTest.php)                      | De weergave van de projectenpagina: de terugval op een database waarin nog nooit is geseed, omzetten en terugzetten, dat de publieke pagina meteen volgt, een verzonnen en een lege waarde, de rechten, en dat de wijziging in het activiteitenlogboek komt.                                                                                                                                                                                                                                                                   |
+| [ProjectDetailTest](../../tests/Feature/Website/ProjectDetailTest.php)                          | Het overzicht en de detailpagina, de twee grendels (offline project en uitgezet onderdeel), een onbekend adres, de weg terug (`?van=start`, geen waarde en een verzonnen waarde) en dat allebei de pagina's hun bezoek tellen.                                                                                                                                                                                                                                                                                                 |
 | [FaqCrudTest](../../tests/Feature/Website/FaqCrudTest.php)                                      | De veelgestelde vragen: rechten per route, beide talen, de twee lengtegrenzen (een vraag op één regel, een antwoord van hoogstens een paar alinea's), dat de witregels in een antwoord blijven staan, en dat de grens van het antwoord uit één bron komt.                                                                                                                                                                                                                                                                      |
 | [FaqPublishingTest](../../tests/Feature/Website/FaqPublishingTest.php)                          | Online en offline, de volgorde, dat het blok verdwijnt en terugkomt, de terugval per veld, en vooral dat álle vragen de pagina bereiken -- ook die buiten de eerste bladzijde, anders ziet een zoekmachine ze niet.                                                                                                                                                                                                                                                                                                            |
 | [ContactSubjectCrudTest](../../tests/Feature/Website/ContactSubjectCrudTest.php)                | De onderwerpen van het contactformulier: de dertien vaste gevallen, en dat een verwijderd onderwerp zijn aanvragen leesbaar laat -- die bewaren de onderwerptekst zelf.                                                                                                                                                                                                                                                                                                                                                        |

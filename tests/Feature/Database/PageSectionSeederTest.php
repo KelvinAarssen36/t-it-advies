@@ -87,6 +87,7 @@ class PageSectionSeederTest extends TestCase
         $eigen = [
             PageSectionKey::Contact,
             PageSectionKey::Diensten,
+            PageSectionKey::Projecten,
             PageSectionKey::Ervaring,
             PageSectionKey::Werkwijze,
             PageSectionKey::Certificaten,

@@ -361,6 +361,18 @@ let stopVolgen: (() => void) | undefined;
 
 const hervatVolgen = (): void => {
     stopVolgen?.();
+
+    /*
+     * Eerst leeg, en dat is niet overbodig.
+     *
+     * Op een subpagina bestaat geen enkel onderdeel, dus `volgSecties`
+     * maakt nul triggers en meldt nooit iets. Zonder deze regel blijft de
+     * markering staan onder het onderdeel waar je stond vóórdat je
+     * wegklikte -- een streep onder "Projecten" terwijl je op de
+     * privacyverklaring staat.
+     */
+    actief.value = null;
+
     stopVolgen = volgSecties(
         items.value.map((item) => item.key),
         (sleutel) => (actief.value = sleutel),
@@ -388,10 +400,25 @@ watch(items, () => void nextTick(hervatVolgen), { deep: true });
  */
 let kijker: ResizeObserver | undefined;
 
+/*
+ * Na elke paginawissel opnieuw volgen.
+ *
+ * Deze kop blijft staan terwijl `main` wordt vervangen, dus de triggers
+ * van daarvoor wijzen naar elementen die er niet meer zijn. Ze vuren dan
+ * nooit meer en de markering blijft staan waar hij stond -- precies wat er
+ * misging na een bezoek aan een projectpagina. `PublicLayout` roept dit op
+ * het moment dat de nieuwe pagina echt in de DOM staat.
+ */
+const opPaginaWissel = (): void => {
+    hervatVolgen();
+    void nextTick(meetStreep);
+};
+
 onMounted(() => {
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('keydown', opToets);
+    window.addEventListener('brand:pagina-gewisseld', opPaginaWissel);
 
     if (balk.value !== null && typeof ResizeObserver !== 'undefined') {
         kijker = new ResizeObserver(() => meetStreep());
@@ -422,6 +449,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
     window.removeEventListener('scroll', onScroll);
     window.removeEventListener('keydown', opToets);
+    window.removeEventListener('brand:pagina-gewisseld', opPaginaWissel);
 
     kijker?.disconnect();
     stopVolgen?.();
@@ -587,13 +615,34 @@ onBeforeUnmount(() => {
                 -->
                 <Button
                     v-if="heeftContact"
-                    as="a"
-                    href="#contact"
+                    as-child
                     variant="brand"
                     class="brand-glans-laat"
-                    @click="gaNaar('contact', $event)"
                 >
-                    {{ $t('Neem contact op') }}
+                    <!--
+                        Dezelfde behandeling als de menu-items: op de
+                        voorpagina een anker, daarbuiten een link naar de
+                        voorpagina mét het anker erachter.
+
+                        **Hier stond het anker er vast ingetikt.** Op een
+                        subpagina bestaat `#contact` niet, dus `gaNaar`
+                        stapte eruit zonder de klik tegen te houden en de
+                        browser had niets om heen te gaan -- de knop deed
+                        helemaal niets. De menu-items waren hier al op
+                        overgezet; deze knop was overgeslagen.
+
+                        `SiteNavigatieTest` bewaakt dat het zo blijft, en
+                        toetst daarvoor op dit bestand: deze tests
+                        renderen geen Vue, dus in de opgeleverde HTML is
+                        er niets te zien.
+                    -->
+                    <component
+                        :is="menuTag"
+                        :href="anker('contact')"
+                        @click="gaNaar('contact', $event)"
+                    >
+                        {{ $t('Neem contact op') }}
+                    </component>
                 </Button>
             </div>
 

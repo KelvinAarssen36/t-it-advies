@@ -206,6 +206,37 @@ niet weet:
     bijvoorbeeld met een mediaquery of een `[data-...]`-selector naast de
     klasse zelf. Zie de voorbeelden in `app.css`.
 
+- **Een nieuwe `brand-*`-naam moet je eerst toetsen tegen `app.css`.** Alle
+  klassen staan in één bestand zonder naamruimte, dus een tweede definitie
+  van dezelfde naam overschrijft stil de eerste -- de laatste in het bestand
+  wint, ook al staat hij in een heel ander onderdeel.
+
+    Dat is gebeurd bij de module Projecten: `.brand-uitgelicht` was het
+    merkje in de onderwerpentabel van Contact, en het uitgelichte project
+    pakte diezelfde naam voor een rasterblok met rand en vulling. In het
+    portaal werd het merkje daardoor een vak. Geen foutmelding, geen test die
+    omvalt -- alleen een scherm dat er anders uitziet dan het deed.
+
+    Zoek de naam dus op vóórdat je hem gebruikt, en kijk of elke treffer bij
+    jouw eigen blok hoort -- een mediaquery of een `prefers-reduced-motion`
+    van dezelfde klasse is prima, een regel in een ander onderdeel niet:
+
+    ```bash
+    grep -n '^\s*\.brand-uitgelicht\s*[,{]' resources/css/app.css
+    ```
+
+    En als je klaar bent met een onderdeel, laat dit je alle namen zien die je
+    hebt toegevoegd en die al bestonden. Komt er iets uit, dan is het mis:
+
+    ```bash
+    git show HEAD:resources/css/app.css | grep -o '\.brand-[a-z0-9-]*' | sort -u > /tmp/oud
+    git diff -U0 resources/css/app.css | grep '^+' | grep -o '\.brand-[a-z0-9-]*' | sort -u > /tmp/nieuw
+    comm -12 /tmp/nieuw /tmp/oud
+    ```
+
+    Geef de nieuwe dan het onderdeel als voorvoegsel
+    (`.brand-projectuitgelicht`). De oudste gebruiker houdt de korte naam.
+
 - **Listeners worden automatisch ontdekt.** Laravel registreert elke klasse in
   `app/Listeners` met een methode die met `handle` begint. Meld je die
   daarnaast ook aan in een service provider, dan draait hij twee keer. Daarom

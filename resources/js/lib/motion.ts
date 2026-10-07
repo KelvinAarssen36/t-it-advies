@@ -46,6 +46,30 @@ export function heeftMuis(): boolean {
     return window.matchMedia('(pointer: fine)').matches;
 }
 
+/**
+ * De tabletgrens uit de huisstijl; alles eronder noemen we een telefoon.
+ *
+ * Hetzelfde getal als `@media (min-width: 48rem)` in app.css. Het staat
+ * hier zodat de animaties en de opmaak niet uit elkaar kunnen lopen.
+ */
+const SMAL = '(max-width: 47.9375rem)';
+
+/**
+ * Staan we op een smal scherm?
+ *
+ * Gebruikt om animaties die op een groot scherm prettig zijn, op een
+ * telefoon korter te maken. Daar telt elke tiende seconde zwaarder: het
+ * scherm is kleiner, dus een blok dat nog moet opkomen is meteen de hele
+ * pagina, en de verbinding is doorgaans trager -- de animatie begint dus
+ * al later dan op een laptop.
+ *
+ * Bij twijfel (geen venster, zoals bij server-side rendering) nemen we
+ * aan van niet: de lange variant is de bestaande.
+ */
+export function opEenTelefoon(): boolean {
+    return typeof window !== 'undefined' && window.matchMedia(SMAL).matches;
+}
+
 export function prefersReducedMotion(): boolean {
     if (typeof window === 'undefined' || !window.matchMedia) {
         return false;

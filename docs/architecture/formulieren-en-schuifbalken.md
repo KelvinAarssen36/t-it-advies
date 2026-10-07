@@ -150,6 +150,24 @@ weten.
 `aria-label` mee. Een keuzeveld waarvan een schermlezer alleen de gekozen
 waarde voorleest, zegt niets over waar die waarde over gaat.
 
+**Staat er wél een zichtbaar label naast, geef dan `id` mee en koppel het
+met `for`.** Dat `id` is een eigen prop en geen los attribuut, en daar is
+een reden voor: `BrandSelect` en `MaandKiezer` tekenen zelf geen element --
+hun wortel (`SelectRoot`, `PopoverRoot`) is enkel een houder. Een attribuut
+dat je van buitenaf meegeeft valt dus nergens op neer, en de `<label for>`
+ernaast wijst naar niets. De browser meldt dat als _Incorrect use of
+`<label for=FORM_ELEMENT>`_, en een schermlezer leest het label niet voor.
+Met de prop komt het `id` op de knop die het paneel opent, en een knop mag
+een label hebben.
+
+```vue
+<Label for="project-soort" verplicht>Soort</Label>
+<BrandSelect id="project-soort" v-model="soort" :options="soorten" />
+```
+
+Geef niet allebei: een `aria-label` wint het van het zichtbare label, en dan
+hoort een schermlezer iets anders dan wat er staat.
+
 ### Zoeken in een lange lijst
 
 Vanaf ongeveer twaalf regels zet `BrandSelect` zelf een zoekveldje boven de

@@ -10,6 +10,7 @@ use App\Models\Certificate;
 use App\Models\Education;
 use App\Models\Experience;
 use App\Models\FaqItem;
+use App\Models\Project;
 use App\Models\Service;
 use App\Models\Statistic;
 use App\Models\User;
@@ -170,6 +171,16 @@ class AppServiceProvider extends ServiceProvider
          * zonder vragen is een kop met niets eronder, en dat hoort van
          * de site af tot de eigenaar zijn eerste vraag heeft geschreven.
          */
+        /*
+         * De projecten tellen wat er online staat. Een etalage zonder
+         * iets erin is een kop met niets eronder, en die hoort van de
+         * site af tot de eigenaar zijn eerste project heeft ingevoerd.
+         */
+        $this->app->make(SectionContent::class)->telt(
+            PageSectionKey::Projecten,
+            fn () => Project::query()->online()->count(),
+        );
+
         $this->app->make(SectionContent::class)->telt(
             PageSectionKey::Faq,
             fn () => FaqItem::query()->online()->count(),

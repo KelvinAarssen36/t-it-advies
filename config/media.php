@@ -115,4 +115,36 @@ return [
 
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Het beeld bij een project
+    |--------------------------------------------------------------------------
+    |
+    | Dezelfde getallen als bij het portret, maar een eigen blok. Dat is
+    | geen dubbelwerk: het zijn twee verschillende soorten beeld, en zou
+    | de eigenaar ooit willen dat zijn portret scherper mag zijn, dan
+    | hoort dat niet stil zijn projectlogo's mee te veranderen.
+    |
+    | De kortste zijde ligt op 240 en niet op 48: dit beeld draagt het
+    | uitgelichte blok en staat daar groot op het scherm. Een logo van 48
+    | pixels is daar een vlek.
+    |
+    | **Let op bij de browsercontrole.** `resources/js/lib/beeldmerk.ts`
+    | kent alleen de logogrenzen, dus een beeld van 100 pixels wordt daar
+    | goedgekeurd en hier geweigerd -- met een duidelijke melding, maar wel
+    | pas na het versturen. Dat geldt vandaag net zo voor het portret bij
+    | "Over mij"; zie docs/architecture/modules/projecten.md.
+    |
+    */
+
+    'project' => [
+
+        'max_kb' => (int) env('MEDIA_PROJECT_MAX_KB', 1536),
+
+        'min_zijde' => (int) env('MEDIA_PROJECT_MIN_ZIJDE', 240),
+
+        'max_zijde' => (int) env('MEDIA_PROJECT_MAX_ZIJDE', 3000),
+
+    ],
+
 ];

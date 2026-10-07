@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Enums\MailStatus;
+use App\Enums\ProjectType;
 use App\Mail\ContactBevestigingMail;
 use App\Mail\ContactMessageMail;
 use App\Mail\SecurityAlertMail;
@@ -12,6 +13,7 @@ use App\Models\ContactSubject;
 use App\Models\ContactSubmission;
 use App\Models\FaqItem;
 use App\Models\MailLog;
+use App\Models\Project;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use RuntimeException;
@@ -92,6 +94,7 @@ class VoorbeeldDataSeeder extends Seeder
         $this->mailoverzicht();
         $this->vragen();
         $this->overMij();
+        $this->projecten();
     }
 
     /**
@@ -106,6 +109,75 @@ class VoorbeeldDataSeeder extends Seeder
      * kennen, en het medaillon is bovendien de stand waarin de eigenaar
      * begint.
      */
+    /**
+     * Drie projecten, met één uitgelicht.
+     *
+     * **Drie en niet één**, want het blok op de voorpagina laat juist de
+     * verhouding zien: één groot en de rest als kaarten. Met één project
+     * zie je dat niet.
+     *
+     * Het middelste heeft een eigen soort, zodat de uitweg "Anders" ook
+     * echt een keer op het scherm staat.
+     */
+    private function projecten(): void
+    {
+        $rijen = [
+            [
+                'type' => ProjectType::Migratie,
+                'title_nl' => 'Migratie naar Exchange Online',
+                'title_en' => 'Migration to Exchange Online',
+                'organisation' => 'Zorgkoepel Midden',
+                'role_nl' => 'Technisch projectleider',
+                'role_en' => 'Technical project lead',
+                'started_on' => '2023-03-01',
+                'ended_on' => '2023-11-01',
+                'summary_nl' => 'Driehonderd postbussen over, zonder dat iemand een mail miste.',
+                'summary_en' => 'Three hundred mailboxes moved without anyone missing an email.',
+                'featured' => true,
+            ],
+            [
+                'type' => ProjectType::Anders,
+                'type_label_nl' => 'Haalbaarheidsonderzoek',
+                'type_label_en' => 'Feasibility study',
+                'title_nl' => 'Onderzoek naar een eigen datacentrum',
+                'title_en' => null,
+                'organisation' => 'Van Dalen Techniek',
+                'role_nl' => 'Adviseur',
+                'role_en' => null,
+                'started_on' => '2024-01-01',
+                'ended_on' => '2024-04-01',
+                'summary_nl' => 'Uitgezocht of eigen hardware goedkoper zou zijn. Dat was het niet.',
+                'summary_en' => null,
+                'featured' => false,
+            ],
+            [
+                'type' => ProjectType::Interim,
+                'title_nl' => 'Interim ICT-coördinator',
+                'title_en' => 'Interim IT coordinator',
+                'organisation' => 'Gemeente Noorderveld',
+                'role_nl' => 'ICT-coördinator',
+                'role_en' => 'IT coordinator',
+                'started_on' => '2025-02-01',
+                'ended_on' => null,
+                'summary_nl' => 'De afdeling draaiende houden terwijl er een vaste coördinator wordt gezocht.',
+                'summary_en' => 'Keeping the department running while a permanent coordinator is found.',
+                'featured' => false,
+            ],
+        ];
+
+        foreach ($rijen as $plek => $rij) {
+            Project::query()->updateOrCreate(
+                ['title_nl' => $rij['title_nl']],
+                [
+                    ...$rij,
+                    'slug' => Project::vrijeSlug($rij['title_nl']),
+                    'position' => $plek + 1,
+                    'published' => true,
+                ],
+            );
+        }
+    }
+
     private function overMij(): void
     {
         AboutSetting::query()->updateOrCreate(

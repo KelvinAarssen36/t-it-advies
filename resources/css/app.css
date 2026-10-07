@@ -10625,17 +10625,944 @@ button:hover > .brand-verlaat,
 
     /* --- De veelgestelde vragen --------------------------------------- */
 
-    /*
-      Het blok met de vragen.
+    /* --- De projecten -------------------------------------------------- */
 
-      **Elke regel is dichtgeklapt even hoog, en dat is het hele ontwerp.**
-      Een vragenlijst waarin de regels verschillende hoogtes hebben leest
-      als losse kaartjes in plaats van als een lijst die je afscant, en
-      dan moet je elke vraag lezen om te zien waar de volgende begint.
+    /*
+      Het raster met projectkaarten.
+
+      `minmax(0, 1fr)` en niet `1fr`: de ondergrens van een gewone `1fr` is
+      de breedte van het langste woord, en dan puilt een kaart met een lange
+      organisatienaam buiten een smal scherm. Dezelfde valkuil als bij de
+      tijdlijn; zie docs/architecture/modules/ervaring.md.
     */
-    .brand-faq-lijst {
-        margin-top: 2rem;
+    .brand-projectraster {
+        display: grid;
+        gap: 1.25rem;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    @media (min-width: 40rem) {
+        .brand-projectraster {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (min-width: 64rem) {
+        .brand-projectraster {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    /*
+      Het label met het soort werk: "Interim-opdracht", "Migratie".
+
+      Klein en rustig. Het is een etiket dat je scant, geen kop -- een
+      badge die om aandacht vraagt concurreert met de titel eronder.
+    */
+    .brand-projectbadge {
+        display: inline-block;
+        border-radius: 9999px;
+        border: 1px solid color-mix(in srgb, var(--brand-cyan) 30%, transparent);
+        background-color: color-mix(
+            in srgb,
+            var(--brand-cyan) 10%,
+            transparent
+        );
+        padding: 0.15rem 0.6rem;
+        font-size: 0.6875rem;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--brand-cyan);
+    }
+
+    /*
+      Eén projectkaart.
+
+      De hele kaart is de link; `brand-projectkaart-link` vult hem helemaal.
+      Een kaart met alleen een klikbaar zinnetje onderaan is op een telefoon
+      een doelwit dat je mist.
+    */
+    .brand-projectkaart {
+        display: flex;
+        border-radius: 1rem;
+        border: 1px solid var(--brand-border-dark);
+        background-color: color-mix(
+            in srgb,
+            var(--brand-navy-raised) 45%,
+            transparent
+        );
+        transition:
+            border-color 200ms ease,
+            translate 200ms ease;
+    }
+
+    .brand-projectkaart:hover {
+        border-color: color-mix(in srgb, var(--brand-cyan) 40%, transparent);
+        translate: 0 -2px;
+    }
+
+    .brand-projectkaart-link {
+        display: flex;
+        min-width: 0;
+        flex: 1;
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1.25rem;
+    }
+
+    /*
+      Het beeld, of de letter.
+
+      Vierkant en niet breed: `Logo::bewaar()` tekent altijd in een
+      vierkant, dus een beeld van 16:9 bestaat in dit project niet. Een
+      vierkant van vier rem leest als een merkteken bij de titel.
+    */
+    .brand-projectkaart-beeld {
+        display: flex;
+        height: 3.5rem;
+        width: 3.5rem;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        border-radius: 0.75rem;
+        border: 1px solid var(--brand-border-dark);
+        background-color: color-mix(
+            in srgb,
+            var(--brand-navy-deep) 80%,
+            transparent
+        );
+    }
+
+    .brand-projectkaart-beeld img {
+        height: 100%;
+        width: 100%;
+        object-fit: cover;
+    }
+
+    .brand-projectkaart-letter {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--brand-cyan);
+    }
+
+    .brand-projectkaart-tekst {
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .brand-projectkaart-titel {
+        font-size: 1.0625rem;
+        font-weight: 600;
+        text-wrap: pretty;
+        color: #ffffff;
+    }
+
+    /*
+      De organisatie en de rol, met een puntje ertussen.
+
+      Het puntje staat in de CSS en niet in de tekst: zou het meelopen in
+      de inhoud, dan blijft er eentje staan zodra een van de twee wegvalt.
+      Dezelfde afspraak als bij de metaregel van een ervaring.
+    */
+    .brand-projectkaart-meta,
+    .brand-projectpagina-meta,
+    .brand-projectpagina-periode,
+    .brand-projectuitgelicht-meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.35rem 0.5rem;
+        font-size: 0.8125rem;
+        color: var(--muted-foreground);
+    }
+
+    .brand-projectkaart-meta > * + *::before,
+    .brand-projectpagina-meta > * + *::before,
+    .brand-projectpagina-periode > * + *::before,
+    .brand-projectuitgelicht-meta > * + *::before {
+        content: '·';
+        margin-right: 0.5rem;
+        color: var(--brand-border-dark-strong);
+    }
+
+    .brand-projectkaart-periode {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.35rem 0.5rem;
+        font-size: 0.8125rem;
+        font-variant-numeric: tabular-nums;
+        color: var(--brand-silver);
+    }
+
+    .brand-projectkaart-periode > * + *::before {
+        content: '·';
+        margin-right: 0.5rem;
+        color: var(--brand-border-dark-strong);
+    }
+
+    .brand-projectkaart-zin {
+        font-size: 0.875rem;
+        line-height: 1.6;
+        text-wrap: pretty;
+        color: var(--muted-foreground);
+    }
+
+    .brand-projectkaart-meer {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin-top: auto;
+        padding-top: 0.25rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--brand-cyan);
+    }
+
+    .brand-projectkaart-meer svg {
+        transition: translate 200ms ease;
+    }
+
+    .brand-projectkaart:hover .brand-projectkaart-meer svg {
+        translate: 3px 0;
+    }
+
+    /*
+      Het uitgelichte project.
+
+      Het beeld staat náást de tekst vanaf de tabletgrens en erboven op een
+      telefoon. Naast elkaar op een smal scherm zou allebei te smal maken.
+
+      Staat er geen beeld, dan vervalt de kolom en loopt de tekst door --
+      geen plaatsvervangend vlak van driehonderd pixels, want dat is op
+      deze maat geen accent meer maar een gat. De kleine kaarten doen dat
+      wél, daar is de letter klein genoeg.
+    */
+    .brand-projectuitgelicht {
+        display: grid;
+        gap: 1.75rem;
+        grid-template-columns: minmax(0, 1fr);
+        border-radius: 1.25rem;
+        border: 1px solid var(--brand-border-dark);
+        background-color: color-mix(
+            in srgb,
+            var(--brand-navy-raised) 55%,
+            transparent
+        );
+        padding: 1.5rem;
+    }
+
+    @media (min-width: 48rem) {
+        /*
+          **Het beeld volgt de tekst, niet andersom.**
+
+          Met `align-items: center` bepaalde het vierkante beeld de hoogte
+          van het blok: achttien rem, of de tekst nu kort of lang was. In
+          een slideshow naast een dia zónder beeld gaf dat een gat van een
+          paar honderd beeldpunten, en dat is met geen enkele animatie
+          mooi te maken.
+
+          Nu rekt het beeld uit tot de hoogte die de tekst nodig heeft
+          (`stretch` plus `object-fit: cover`), met een ondergrens zodat
+          het bij een kort project geen streepje wordt. Daardoor zijn alle
+          dia's vanzelf ongeveer even hoog en blijft er bijna niets te
+          vullen over.
+        */
+        .brand-projectuitgelicht {
+            grid-template-columns: 18rem minmax(0, 1fr);
+            align-items: stretch;
+            padding: 2rem;
+        }
+
+        .brand-projectuitgelicht[data-zonder-beeld] {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+
+    .brand-projectuitgelicht-beeld {
+        overflow: hidden;
+        border-radius: 1rem;
+        border: 1px solid var(--brand-border-dark);
+    }
+
+    @media (min-width: 48rem) {
+        /*
+          Een ondergrens, zodat het beeld bij een kort project geen
+          liggend streepje wordt. Boven die grens groeit hij gewoon mee
+          met de tekst ernaast.
+        */
+        .brand-projectuitgelicht-beeld {
+            min-height: 13rem;
+        }
+    }
+
+    /*
+      Op een telefoon staat het beeld bóven de tekst en is het dus
+      volledige breedte. Met een vierkante verhouding wordt dat op een
+      scherm van 370 beeldpunten een afbeelding van 370 hoog: die duwt het
+      hele verhaal onder de vouw, en in de slideshow maakte hij het
+      hoogteverschil met een dia zonder beeld meer dan twee keer zo groot.
+
+      Vandaar de begrenzing. `object-fit: cover` snijdt bij, dus het beeld
+      blijft gevuld; vanaf de tabletgrens staat hij in een kolom van 18rem
+      en is het vierkant juist wél goed.
+    */
+    .brand-projectuitgelicht-beeld img {
+        display: block;
+        width: 100%;
+        height: auto;
+        max-height: 11rem;
+        aspect-ratio: 1;
+        object-fit: cover;
+    }
+
+    @media (min-width: 48rem) {
+        /*
+          Vult de kolom, hoe hoog die ook uitvalt. `aspect-ratio: auto`
+          haalt het vierkant eraf -- dat was juist wat de hoogte
+          vastzette.
+        */
+        .brand-projectuitgelicht-beeld img {
+            height: 100%;
+            max-height: none;
+            aspect-ratio: auto;
+        }
+    }
+
+    /*
+      De tekst staat midden in zijn kolom. Dat telt pas zodra het blok
+      hoger is dan de tekst zelf -- bij een kort project naast een beeld
+      dat op zijn ondergrens staat, of in een slideshow waar een andere
+      dia de hoogte bepaalt.
+    */
+    .brand-projectuitgelicht-tekst {
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+        gap: 0.875rem;
+    }
+
+    .brand-projectuitgelicht-titel {
+        font-size: 1.5rem;
+        font-weight: 600;
+        text-wrap: balance;
+        color: #ffffff;
+    }
+
+    @media (min-width: 48rem) {
+        .brand-projectuitgelicht-titel {
+            font-size: 1.875rem;
+        }
+    }
+
+    .brand-projectuitgelicht-zin {
+        max-width: 60ch;
+        line-height: 1.7;
+        text-wrap: pretty;
+        color: var(--muted-foreground);
+    }
+
+    /* --- De pagina's: het overzicht en één project --------------------- */
+
+    .brand-projectpagina-opschrift {
+        font-size: 0.875rem;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--brand-cyan);
+    }
+
+    .brand-projectpagina-titel {
+        margin-top: 0.5rem;
+        font-size: 1.875rem;
+        font-weight: 600;
+        letter-spacing: -0.015em;
+        text-wrap: balance;
+        color: #ffffff;
+    }
+
+    @media (min-width: 40rem) {
+        .brand-projectpagina-titel {
+            font-size: 2.25rem;
+        }
+    }
+
+    .brand-projectpagina-inleiding {
+        margin-top: 0.75rem;
+        max-width: 60ch;
+        font-size: 1.0625rem;
+        line-height: 1.6;
+        text-wrap: pretty;
+        color: var(--muted-foreground);
+    }
+
+    /* De kop van één project: het beeld naast de gegevens. */
+    .brand-projectpagina-kop {
+        display: grid;
+        gap: 1.75rem;
+        grid-template-columns: minmax(0, 1fr);
+        align-items: start;
+    }
+
+    @media (min-width: 48rem) {
+        .brand-projectpagina-kop {
+            grid-template-columns: 14rem minmax(0, 1fr);
+        }
+
+        /*
+          Zonder beeld vervalt de kolom.
+
+          Zonder deze regel is de tekst het eerste rasteritem en belandt hij
+          in de kolom van 14rem: dan breekt de titel om de twee woorden en
+          staat de halve pagina leeg. Dezelfde afspraak als bij
+          `.brand-projectuitgelicht`.
+        */
+        .brand-projectpagina-kop[data-zonder-beeld] {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+
+    .brand-projectpagina-beeld {
+        overflow: hidden;
+        border-radius: 1rem;
+        border: 1px solid var(--brand-border-dark);
+    }
+
+    .brand-projectpagina-beeld img {
+        display: block;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1;
+        object-fit: cover;
+    }
+
+    .brand-projectpagina-meta {
+        margin-top: 0.75rem;
+    }
+
+    .brand-projectpagina-periode {
+        margin-top: 0.35rem;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .brand-projectpagina-blad {
+        display: flex;
+        flex-direction: column;
+        gap: 2.5rem;
+        margin-top: 3rem;
+    }
+
+    .brand-projectpagina-kopje {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #ffffff;
+    }
+
+    /*
+      De lange teksten. `pre-line` maakt van een witregel van de eigenaar
+      een alinea -- dezelfde afspraak als bij een dienst en bij een antwoord
+      in de vragenlijst, dus geen opmaakbalkje en niets dat scheef staat.
+
+      Op `--foreground` en niet gedempt: dit is tekst waar je voor gaat
+      zitten, net als het verhaal op /over-mij.
+    */
+    .brand-projectpagina-tekst {
+        margin-top: 0.75rem;
+        max-width: 68ch;
+        line-height: 1.8;
+        text-wrap: pretty;
+        white-space: pre-line;
+        color: var(--foreground);
+    }
+
+    /* De regel in de beheertabel: beeld plus titel. */
+    .brand-projectregel {
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+    }
+
+    .brand-projectbeeld {
+        display: flex;
+        height: 2.25rem;
+        width: 2.25rem;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        border-radius: 0.5rem;
+        border: 1px solid var(--border);
+        background-color: var(--muted);
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--muted-foreground);
+    }
+
+    .brand-projectbeeld img {
+        height: 100%;
+        width: 100%;
+        object-fit: cover;
+    }
+
+    /* --- /projecten: de slideshow bovenaan ---------------------------- */
+
+    /*
+      De slideshow met de uitgelichte projecten.
+
+      `user-select: none` omdat je hem met je vinger of je muis meesleept:
+      zonder die regel selecteer je de tekst van de dia in plaats van hem
+      te verschuiven, en dan blijft er een blauwe vlek achter.
+    */
+    .brand-projectdia {
+        position: relative;
+        user-select: none;
+    }
+
+    /*
+      **Het venster kapt af, het spoor schuift.** Alle dia's staan naast
+      elkaar op volle breedte in een rij; het spoor verschuift met
+      `translate` en het venster laat er een van zien. Dat is een
+      eigenschap die beweegt, dus de browser kan het op de kaart doen --
+      en de dia's die je niet ziet staan wel in de HTML, dus een
+      zoekmachine en een schermlezer komen er allemaal langs.
+
+      `touch-action: pan-y` laat verticaal scrollen met een vinger door,
+      terwijl de horizontale veeg naar het component gaat. Zonder die
+      regel kiest de browser zelf en kan de pagina blokkeren zodra je net
+      iets te schuin veegt.
+
+      De grijphand zegt dat je hem mag pakken. Dat is het enige dat
+      verraadt dat slepen werkt; een pijl alleen suggereert klikken.
+    */
+    .brand-projectdia-venster {
+        overflow: hidden;
+        border-radius: 1.25rem;
+        touch-action: pan-y;
+        cursor: grab;
+    }
+
+    .brand-projectdia-venster[data-sleept] {
+        cursor: grabbing;
+    }
+
+    /*
+      De overgang.
+
+      Zeshonderd milliseconden en een curve die laat uitlopen: hij vertrekt
+      vlot en komt zacht tot stilstand. Korter voelt schokkerig op een
+      blok van deze maat, langer gaat vervelen zodra je twee keer achter
+      elkaar doorklikt.
+
+      `data-stil` staat erop tijdens het slepen en bij
+      `prefers-reduced-motion`. Tijdens het slepen mag er geen overgang
+      zijn: dan loopt het spoor achter je vinger aan in plaats van eronder.
+    */
+    .brand-projectdia-spoor {
+        display: flex;
+        transition: translate 600ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .brand-projectdia-spoor[data-stil] {
+        transition: none;
+    }
+
+    /*
+      Elke dia even breed als het venster, en even hoog als de hoogste --
+      dat laatste doet flexbox vanzelf. Daarmee staat de bediening eronder
+      stil, en dat is meer waard dan een venster dat per dia van maat
+      verandert: `height` animeren dwingt de browser om elke frame de hele
+      pagina eronder door te rekenen, en dat hakkelt.
+
+      Wat overblijft aan ruimte verdelen we gelijk over boven en onder, in
+      plaats van alles onderaan te laten staan. Zie
+      `.brand-projectdia-blad > *` hieronder.
+
+      **Wat niet in beeld staat dimt en krimpt.** Zonder dat verschil ziet
+      een dia die halverwege het beeld uit loopt eruit als dezelfde dia die
+      scheef staat; met diepte lees je het als iets dat vertrekt. Het is
+      bewust klein gehouden -- vier procent en wat helderheid -- want het
+      hoort op te vallen tijdens de beweging en niet als effect.
+
+      `transform-origin` op de bovenkant: krimpt hij vanuit het midden, dan
+      komt er tijdens de beweging een streepje lucht boven de dia dat er
+      daarna weer uit gaat.
+    */
+    .brand-projectdia-blad {
+        display: flex;
+        width: 100%;
+        flex: 0 0 100%;
+        transform-origin: center top;
+        opacity: 0.3;
+        scale: 0.96;
+        transition:
+            opacity 500ms cubic-bezier(0.16, 1, 0.3, 1),
+            scale 600ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .brand-projectdia-blad[data-aan] {
+        opacity: 1;
+        scale: 1;
+    }
+
+    /*
+      De kaart vult de dia en zet zijn inhoud in het midden.
+
+      Zonder `align-content` staat alles bovenin en valt alle overgebleven
+      ruimte onder de knop -- precies het gat dat een dia zonder afbeelding
+      liet zien naast een dia mét.
+    */
+    .brand-projectdia-blad > * {
+        width: 100%;
+        align-content: center;
+    }
+
+    /*
+      De bediening staat eronder en niet over het beeld heen.
+
+      Pijlen op de dia dekken juist het beeld af, en op een telefoon staan
+      ze dan ook nog boven de tekst. Hieronder is er ruimte, en het is
+      bovendien de plek waar een duim zit.
+    */
+    .brand-projectdia-bediening {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 1.25rem;
+    }
+
+    .brand-projectdia-pijl {
+        display: inline-flex;
+        height: 2.5rem;
+        width: 2.5rem;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        border: 1px solid var(--brand-border-dark);
+        background-color: color-mix(
+            in srgb,
+            var(--brand-navy-raised) 55%,
+            transparent
+        );
+        color: var(--brand-silver);
+        transition:
+            border-color 250ms ease,
+            color 250ms ease,
+            background-color 250ms ease,
+            scale 250ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .brand-projectdia-pijl:hover {
+        border-color: color-mix(in srgb, var(--brand-cyan) 45%, transparent);
+        background-color: color-mix(
+            in srgb,
+            var(--brand-cyan) 10%,
+            transparent
+        );
+        color: var(--brand-cyan);
+        scale: 1.06;
+    }
+
+    /* Ingedrukt even terug: dat bevestigt de klik zonder geluid. */
+    .brand-projectdia-pijl:active {
+        scale: 0.96;
+    }
+
+    .brand-projectdia-bolletjes {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    /*
+      De bolletjes zijn klein om te zien en groot om te raken.
+
+      Het puntje is zes beeldpunten, het aanraakvlak eromheen is twintig.
+      Een doelwit van zes bij zes is op een telefoon niet te raken, maar
+      een bolletje van twintig is geen bolletje meer -- vandaar de vulling
+      eromheen in plaats van een groter bolletje.
+    */
+    .brand-projectdia-bolletje {
+        position: relative;
+        display: flex;
+        height: 1.25rem;
+        align-items: center;
+        justify-content: center;
+        width: 1.25rem;
+        border-radius: 999px;
+        transition: width 400ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .brand-projectdia-bolletje::after {
+        content: '';
+        height: 0.375rem;
+        width: 0.375rem;
+        border-radius: 999px;
+        background-color: var(--brand-border-dark-strong);
+        transition:
+            background-color 250ms ease,
+            width 400ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .brand-projectdia-bolletje:hover::after {
+        background-color: var(--brand-silver);
+    }
+
+    /*
+      Het huidige bolletje wordt een baantje.
+
+      Niet alleen een andere kleur: wie kleur slecht onderscheidt ziet aan
+      de vorm nog steeds welke dia er staat. En het baantje heeft een
+      tweede taak -- er loopt een vulling doorheen die laat zien hoeveel
+      tijd deze dia nog heeft, zodat het doorschuiven niet uit het niets
+      komt.
+    */
+    .brand-projectdia-bolletje[data-aan] {
+        width: 2.25rem;
+    }
+
+    .brand-projectdia-bolletje[data-aan]::after {
+        width: 1.5rem;
+        background-color: color-mix(
+            in srgb,
+            var(--brand-cyan) 25%,
+            transparent
+        );
+    }
+
+    .brand-projectdia-voortgang {
+        position: absolute;
+        left: 0.375rem;
+        height: 0.375rem;
+        width: 1.5rem;
+        transform-origin: left center;
+        border-radius: 999px;
+        background-color: var(--brand-cyan);
+        scale: 0 1;
+        animation: brand-dia-voortgang var(--dia-wachttijd, 7000ms) linear
+            forwards;
+    }
+
+    /*
+      Staat stil zodra de bezoeker kijkt: muis erop, focus erin, slepen, of
+      het tabblad naar de achtergrond. De klok staat dan ook stil, dus de
+      ring zou anders liegen over wat er gaat gebeuren.
+    */
+    .brand-projectdia-voortgang[data-stil] {
+        animation-play-state: paused;
+    }
+
+    @keyframes brand-dia-voortgang {
+        from {
+            scale: 0 1;
+        }
+
+        to {
+            scale: 1 1;
+        }
+    }
+
+    /* --- /projecten: de lijst ----------------------------------------- */
+
+    /*
+      De projecten onder elkaar.
+
+      **Alle regels zijn gelijk**, en dat is een correctie op twee eerdere
+      versies: een lichte regel tussen de kaarten, en daarna een brede
+      kaart afgewisseld met smalle. Allebei riepen ze de vraag op waarom
+      die ene anders was -- en het antwoord was "omdat hij toevallig op
+      plek een van de ronde staat". Een lijst waarin alles gelijk is, lees
+      je sneller dan een ritme dat je moet doorzien.
+
+      Een hairline tussen de regels en geen losse kaarten met tussenruimte:
+      dat scheelt hoogte, en de lijst heeft geen grens.
+    */
+    .brand-projectlijst {
+        display: flex;
+        flex-direction: column;
         border-top: 1px solid var(--brand-border-dark);
+    }
+
+    .brand-projectbreed {
+        border-bottom: 1px solid var(--brand-border-dark);
+    }
+
+    .brand-projectbreed-link {
+        display: grid;
+        align-items: center;
+        gap: 1rem;
+        grid-template-columns: auto minmax(0, 1fr);
+        padding: 1.125rem 0.25rem;
+        /*
+          `translate` en geen `padding`.
+
+          Het effect is hetzelfde -- de regel schuift bij het aanwijzen een
+          klein stukje naar binnen -- maar `padding` animeren dwingt de
+          browser om bij elke frame de pagina opnieuw door te rekenen, en
+          bij een lijst zonder grens is dat merkbaar. `translate` gaat
+          langs de layout heen.
+        */
+        transition: translate 250ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @media (min-width: 48rem) {
+        .brand-projectbreed-link {
+            gap: 1.25rem;
+            /* De derde kolom is het pijltje; zie hieronder. */
+            grid-template-columns: auto minmax(0, 1fr) auto;
+            padding: 1.25rem 0.5rem;
+        }
+
+        /*
+          Bij het aanwijzen schuift de hele regel een klein stukje naar
+          binnen. Subtieler dan een achtergrond die aanspringt, en het
+          wijst de goede kant op: naar het project toe.
+        */
+        .brand-projectbreed-link:hover {
+            translate: 0.5rem 0;
+        }
+    }
+
+    .brand-projectbreed-beeld {
+        display: flex;
+        height: 3.25rem;
+        width: 3.25rem;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        border-radius: 0.75rem;
+        border: 1px solid var(--brand-border-dark);
+        background-color: color-mix(
+            in srgb,
+            var(--brand-navy-deep) 80%,
+            transparent
+        );
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--brand-cyan);
+    }
+
+    @media (min-width: 48rem) {
+        .brand-projectbreed-beeld {
+            height: 4rem;
+            width: 4rem;
+        }
+    }
+
+    .brand-projectbreed-beeld img {
+        display: block;
+        height: 100%;
+        width: 100%;
+        object-fit: cover;
+    }
+
+    .brand-projectbreed-tekst {
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.3rem;
+    }
+
+    /* Het soort en de periode op een regel: samen het wat en het wanneer. */
+    .brand-projectbreed-kop {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .brand-projectbreed-wanneer {
+        font-size: 0.75rem;
+        font-variant-numeric: tabular-nums;
+        color: var(--brand-silver);
+    }
+
+    .brand-projectbreed-titel {
+        font-size: 1.0625rem;
+        font-weight: 600;
+        text-wrap: balance;
+        color: #ffffff;
+        transition: color 200ms ease;
+    }
+
+    @media (min-width: 48rem) {
+        .brand-projectbreed-titel {
+            font-size: 1.25rem;
+        }
+    }
+
+    .brand-projectbreed-link:hover .brand-projectbreed-titel {
+        color: var(--brand-cyan);
+    }
+
+    .brand-projectbreed-meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.25rem 0.5rem;
+        font-size: 0.8125rem;
+        color: var(--muted-foreground);
+    }
+
+    .brand-projectbreed-meta > * + *::before {
+        content: '·';
+        margin-right: 0.5rem;
+        color: var(--brand-border-dark-strong);
+    }
+
+    /*
+      Hoogstens twee regels samenvatting.
+
+      De lijst heeft geen grens, dus elke regel die hoger is dan nodig
+      maakt de pagina meteen een stuk langer. Wie meer wil weten klikt --
+      daar is de projectpagina voor.
+    */
+    .brand-projectbreed-zin {
+        display: -webkit-box;
+        overflow: hidden;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        max-width: 72ch;
+        font-size: 0.875rem;
+        line-height: 1.6;
+        text-wrap: pretty;
+        color: var(--muted-foreground);
+    }
+
+    /*
+      Het pijltje rechts, op een eigen kolom.
+
+      Zo staat de rechterkant van de lijst recht, hoe lang een titel ook
+      is. Op een telefoon valt hij weg: daar is de ruimte te kostbaar en
+      is de hele regel al duidelijk aantikbaar.
+    */
+    .brand-projectbreed-pijl {
+        display: none;
+        flex-shrink: 0;
+        color: var(--brand-border-dark-strong);
+        transition:
+            color 200ms ease,
+            translate 200ms ease;
+    }
+
+    @media (min-width: 48rem) {
+        .brand-projectbreed-pijl {
+            display: block;
+        }
+    }
+
+    .brand-projectbreed-link:hover .brand-projectbreed-pijl {
+        color: var(--brand-cyan);
+        translate: 3px 0;
     }
 
     .brand-faq-item {
@@ -10993,6 +11920,77 @@ button:hover > .brand-verlaat,
     */
     .brand-contactwissel-leave-active {
         transition: none;
+    }
+
+    /*
+      Een projectkaart licht nog wel op bij het aanwijzen -- dat is een
+      kleurwissel en geen beweging -- maar hij schuift niet meer omhoog en
+      het pijltje blijft staan.
+    */
+    .brand-projectkaart {
+        transition: border-color 200ms ease;
+    }
+
+    .brand-projectkaart:hover {
+        translate: none;
+    }
+
+    .brand-projectkaart-meer svg,
+    .brand-projectkaart:hover .brand-projectkaart-meer svg {
+        transition: none;
+        translate: none;
+    }
+
+    /*
+      De slideshow verspringt in plaats van te schuiven, en het
+      doorschuiven staat helemaal uit -- dat laatste regelt het component
+      zelf, want een tijdklok zet je niet met CSS stil. Wat blijft is een
+      stapel waar je met de pijlen doorheen klikt.
+
+      De dia's dimmen en krimpen ook niet: zonder beweging zie je toch
+      alleen degene die in beeld staat, en dan zou een gedimde buur alleen
+      maar vreemd opduiken tijdens het verspringen.
+    */
+    .brand-projectdia-spoor {
+        transition: none;
+    }
+
+    .brand-projectdia-blad,
+    .brand-projectdia-blad[data-aan] {
+        opacity: 1;
+        scale: none;
+        transition: none;
+    }
+
+    .brand-projectdia-bolletje,
+    .brand-projectdia-bolletje::after {
+        transition: background-color 250ms ease;
+    }
+
+    .brand-projectdia-pijl {
+        transition: color 250ms ease;
+    }
+
+    .brand-projectdia-pijl:hover,
+    .brand-projectdia-pijl:active {
+        scale: none;
+    }
+
+    /*
+      Een regel in de lijst licht nog wel op bij het aanwijzen -- dat is
+      een kleurwissel -- maar hij schuift niet naar binnen en het pijltje
+      blijft staan.
+    */
+    .brand-projectbreed-link,
+    .brand-projectbreed-link:hover {
+        transition: none;
+        translate: none;
+    }
+
+    .brand-projectbreed-pijl,
+    .brand-projectbreed-link:hover .brand-projectbreed-pijl {
+        transition: color 200ms ease;
+        translate: none;
     }
 
     .brand-contactwissel-leave-to {

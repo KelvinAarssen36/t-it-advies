@@ -86,6 +86,26 @@ const donker = computed(
             <span class="brand-schets-knop mt-auto w-1/2 bg-brand-cyan/60" />
         </template>
 
+        <!--
+            De projecten: één groot vlak met een regel ernaast, en daaronder
+            drie kleine kaarten. Dat is precies hoe het blok eruitziet -- het
+            uitgelichte project en de rij eronder.
+        -->
+        <template v-else-if="sectie === 'projecten'">
+            <div class="flex w-full gap-1">
+                <span class="brand-schets-blok h-6 w-6 shrink-0" />
+                <div class="flex min-w-0 flex-1 flex-col gap-1 pt-0.5">
+                    <span class="brand-schets-balk w-1/2 bg-brand-cyan/60" />
+                    <span class="brand-schets-balk w-4/5 bg-white/40" />
+                </div>
+            </div>
+            <div class="mt-auto flex w-full gap-1">
+                <span class="brand-schets-blok h-3 flex-1" />
+                <span class="brand-schets-blok h-3 flex-1" />
+                <span class="brand-schets-blok h-3 flex-1" />
+            </div>
+        </template>
+
         <!-- De voettekst: een accentlijn en een regel eronder. -->
         <template v-else>
             <span class="brand-schets-balk h-px w-full bg-brand-cyan/60" />

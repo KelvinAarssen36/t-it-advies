@@ -129,7 +129,26 @@ const voorBinnenkomst = (): void => {
         scrollNaar('top', { direct: true });
     }
 
-    requestAnimationFrame(() => requestAnimationFrame(() => scanReveals()));
+    requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+            scanReveals();
+
+            /*
+             * En zeggen dat de pagina is gewisseld.
+             *
+             * **De kop blijft staan bij een navigatie** -- alleen `main`
+             * wordt vervangen -- dus zijn scroll-triggers wijzen daarna
+             * naar onderdelen die uit de DOM zijn gehaald. Ze vuren dan
+             * nooit meer, en de markering onder het menu blijft staan waar
+             * hij stond toen je wegging. Zie `SiteHeader`.
+             *
+             * Een gebeurtenis op `window` en geen gedeelde toestand: de
+             * kop en deze layout weten verder niets van elkaar, en dat
+             * hoort zo te blijven.
+             */
+            window.dispatchEvent(new CustomEvent('brand:pagina-gewisseld'));
+        }),
+    );
 };
 
 /**

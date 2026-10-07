@@ -46,6 +46,17 @@ const props = withDefaults(
         /** Wat een schermlezer voorleest als er geen zichtbaar label is. */
         ariaLabel?: string;
         /**
+         * Het id van de knop die de lijst opent.
+         *
+         * Nodig omdat dit component zelf geen element tekent: `SelectRoot`
+         * is enkel een houder. Een `id` die je van buitenaf meegeeft valt
+         * dus nergens op neer, en een `<label for>` ernaast wijst naar
+         * niets -- de browser meldt dat als *Incorrect use of
+         * `<label for=FORM_ELEMENT>`*. Hier komt hij op de knop terecht, en
+         * een knop is een element dat een label mág hebben.
+         */
+        id?: string;
+        /**
          * Een zoekveldje boven de lijst.
          *
          * Vanaf een stuk of twaalf regels gaat dat vanzelf aan: scrollen
@@ -164,6 +175,7 @@ const opToets = (gebeurtenis: KeyboardEvent): void => {
 <template>
     <SelectRoot v-model="intern" :disabled="disabled">
         <SelectTrigger
+            :id="props.id"
             :aria-label="ariaLabel"
             :class="
                 cn(

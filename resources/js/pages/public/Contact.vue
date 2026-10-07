@@ -71,7 +71,7 @@ const linkedin = computed(
         -->
         <SiteKruimels :titel="'Contact'" />
 
-        <header class="mt-8 max-w-2xl space-y-3" data-reveal>
+        <header class="mt-8 max-w-2xl space-y-3 opacity-0" data-reveal>
             <p v-if="props.kop.opschrift" class="brand-contactpagina-opschrift">
                 {{ props.kop.opschrift }}
             </p>
@@ -94,7 +94,7 @@ const linkedin = computed(
         <div
             class="mt-10 grid gap-8 lg:mt-12 lg:grid-cols-[1fr_20rem] lg:gap-12"
         >
-            <div class="brand-contactpagina-formulier" data-reveal>
+            <div class="brand-contactpagina-formulier opacity-0" data-reveal>
                 <ContactFormulier
                     :velden="props.velden"
                     :onderwerpen="props.onderwerpen"
@@ -104,7 +104,7 @@ const linkedin = computed(
                 />
             </div>
 
-            <aside class="brand-contactkaart" data-reveal>
+            <aside class="brand-contactkaart opacity-0" data-reveal>
                 <!--
                     Dezelfde foto als het medaillon in de kop van de site,
                     in dezelfde maten. Eén beeld voor beide plekken: dat

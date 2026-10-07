@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { INTRO_DUUR, introSpeeltAf } from '@/lib/intro';
 import {
     gsap,
+    opEenTelefoon,
     parallax,
     prefersReducedMotion,
     tekenRing,
@@ -151,7 +152,26 @@ onMounted(() => {
      * dan is dit hoogstens een korte vertraging en geen tekst die nooit
      * komt.
      */
-    const wachten = introSpeeltAf() ? INTRO_DUUR - 0.25 : 0;
+    /*
+     * Op een telefoon begint de hero eerder en loopt hij sneller.
+     *
+     * Niet overslaan -- de entree hoort er te zijn -- maar wel op tijd.
+     * Op een breed scherm wacht de hero tot de introlaag vrijwel weg is
+     * en komt hij in 1,2 seconde op; samen met het laden van de pagina is
+     * dat op een telefoon al gauw bijna twee seconden waarin er niets
+     * staat, en dan lijkt de site leeg in plaats van statig.
+     *
+     * Smal begint hij halverwege het wegvloeien van de introlaag en loopt
+     * de hele tijdlijn anderhalf keer zo snel. Je ziet hem nog steeds
+     * opkomen; hij is alleen eerder klaar.
+     */
+    const smal = opEenTelefoon();
+    const volledigWachten = INTRO_DUUR - 0.25;
+    const wachten = introSpeeltAf()
+        ? smal
+            ? volledigWachten / 2
+            : volledigWachten
+        : 0;
 
     intro = gsap
         .timeline({ delay: wachten, defaults: { ease: 'power3.out' } })
@@ -168,6 +188,10 @@ onMounted(() => {
             0.15,
         );
 
+    if (smal) {
+        intro.timeScale(1.5);
+    }
+
     /*
      * De kop wordt letter voor letter ingetikt, en de ring om het
      * portret tekent zich ondertussen. Allebei los van de tijdlijn
@@ -179,7 +203,12 @@ onMounted(() => {
      * een knipperende kop krijgt.
      */
     if (kop.value !== null) {
-        stopTypen = typMachine(kop.value, { wachten: wachten + 0.12 });
+        stopTypen = typMachine(kop.value, {
+            wachten: wachten + 0.12,
+            // Even snel tikken als de rest op een telefoon gaat; anders
+            // staat de kop nog te verschijnen als alles eromheen al staat.
+            perTeken: smal ? 0.055 : 0.09,
+        });
     }
 
     if (ring.value !== null) {

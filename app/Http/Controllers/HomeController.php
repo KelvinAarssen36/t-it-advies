@@ -10,6 +10,7 @@ use App\Models\ContactSetting;
 use App\Models\Education;
 use App\Models\Experience;
 use App\Models\FaqItem;
+use App\Models\Project;
 use App\Models\SectionHeading;
 use App\Models\Service;
 use App\Models\Statistic;
@@ -75,6 +76,40 @@ class HomeController extends Controller
         $statistieken = in_array(PageSectionKey::Statistieken->value, $secties, true)
             ? Statistic::query()->online()->opVolgorde()->get()
             : new Collection;
+
+        /*
+         * De etalage. Twee stukken uit dezelfde lijst: het uitgelichte
+         * project en de eerstvolgende paar daarna.
+         *
+         * **Hoogstens vier kaarten op de voorpagina, en de rest achter
+         * een knop.** Een etalage die met elk project langer wordt maakt
+         * de voorpagina op den duur onleesbaar; `/projecten` heeft geen
+         * grens en toont ze allemaal.
+         */
+        $aan = in_array(PageSectionKey::Projecten->value, $secties, true);
+
+        /*
+         * De uitgelichte projecten. Staat er meer dan een ster, dan draait
+         * het blok hierboven als slideshow -- precies zoals op
+         * `/projecten`, zodat de twee plekken hetzelfde doen.
+         */
+        $uitgelicht = $aan ? Project::uitgelichte() : new Collection;
+
+        $projecten = $aan
+            ? Project::query()
+                ->online()
+                ->where('featured', false)
+                ->opVolgorde()
+                ->limit(Project::OP_DE_VOORPAGINA)
+                ->get()
+            : new Collection;
+
+        /*
+         * Of er nog meer zijn dan wat hier staat. Als getal en niet als
+         * lijst: de knop "Bekijk alle projecten" hoeft alleen te weten
+         * dát er meer is.
+         */
+        $projectenTotaal = $aan ? Project::query()->online()->count() : 0;
 
         $vragen = in_array(PageSectionKey::Faq->value, $secties, true)
             ? FaqItem::query()->online()->opVolgorde()->get()
@@ -228,6 +263,26 @@ class HomeController extends Controller
              *
              * Zie docs/architecture/modules/faq.md.
              */
+            /*
+             * De projecten, al opgemaakt in de taal van de bezoeker. Zie
+             * docs/architecture/modules/projecten.md.
+             */
+            // Een lijst en geen enkel project: staat er meer dan een
+            // ster, dan draait het blok als slideshow.
+            'featuredProjects' => $uitgelicht
+                ->map(fn (Project $project) => $project->voorDeKaart())
+                ->all(),
+
+            'projects' => $projecten
+                ->map(fn (Project $project) => $project->voorDeKaart())
+                ->all(),
+
+            'projectsTotal' => $projectenTotaal,
+
+            'projectHeading' => in_array(PageSectionKey::Projecten->value, $secties, true)
+                ? SectionHeading::voor(PageSectionKey::Projecten)->voorDeSite()
+                : null,
+
             'faq' => $vragen
                 ->map(fn (FaqItem $vraag) => $vraag->voorDeSite())
                 ->all(),

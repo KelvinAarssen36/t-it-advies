@@ -7,6 +7,7 @@ use App\Models\ContactSubject;
 use App\Models\ContactSubmission;
 use App\Models\FaqItem;
 use App\Models\MailLog;
+use App\Models\Project;
 use Database\Seeders\VoorbeeldDataSeeder;
 use Illuminate\Console\Command;
 use RuntimeException;
@@ -78,6 +79,10 @@ class ZaaienVoorbeeldData extends Command
         $this->components->twoColumnDetail(
             'Punten bij Over mij',
             (string) AboutPoint::query()->count(),
+        );
+        $this->components->twoColumnDetail(
+            'Projecten',
+            (string) Project::query()->count(),
         );
 
         $this->newLine();

@@ -1118,6 +1118,31 @@ tekst op doorzichtigheid nul staan. Onzichtbare inhoud is een ergere fout
 dan een gemiste animatie, dus beide kanten stellen de vraag los van elkaar
 en krijgen gegarandeerd hetzelfde antwoord.
 
+#### Op een telefoon gaat dezelfde entree sneller
+
+Niet korter in stappen maar korter in tijd: je ziet hetzelfde gebeuren, het
+is alleen eerder klaar. Drie plekken, en samen schelen ze ongeveer een halve
+seconde tot de tekst er staat.
+
+|                       | Breed            | Smal (`< 48rem`)  |
+| --------------------- | ---------------- | ----------------- |
+| Intro overslaan vanaf | 2000 ms laadtijd | 1100 ms laadtijd  |
+| Hero begint na        | 0,55 s           | 0,275 s           |
+| Tijdlijn van de hero  | 1×               | 1,5×              |
+| Tikken van de kop     | 0,09 s per teken | 0,055 s per teken |
+
+**Waarom dit alleen smal geldt.** Daar telt elke tiende seconde zwaarder:
+het scherm is kleiner, dus wat nog moet opkomen is meteen de hele pagina
+en er staat niets anders om naar te kijken. En je staat er vaker op een
+trage verbinding, dus de animatie begint sowieso al later dan op een
+laptop. Op een breed scherm is de lange versie juist prettig, en die blijft
+dus precies zoals hij was.
+
+De grens is `47.9375rem` in
+[`motion.ts`](../../resources/js/lib/motion.ts) (`opEenTelefoon`) --
+hetzelfde getal als `@media (min-width: 48rem)` in `app.css`, zodat de
+animaties en de opmaak niet uit elkaar kunnen lopen.
+
 ### Twee soorten reveals
 
 `[data-reveal]` schuift een heel blok omhoog. `[data-split]` tilt tekst

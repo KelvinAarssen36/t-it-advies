@@ -191,6 +191,20 @@ class SectionHeading extends Model
              * doodlopende weg voor precies de bezoeker met de vraag die
              * jij nog niet had bedacht.
              */
+            /*
+             * De kop boven de etalage. "Waar ik aan heb gewerkt" en niet
+             * "Mijn projecten": het eerste zegt iets over het werk, het
+             * tweede alleen dat er een lijst volgt.
+             */
+            PageSectionKey::Projecten => [
+                'eyebrow_nl' => 'Projecten',
+                'eyebrow_en' => 'Projects',
+                'title_nl' => 'Waar ik aan heb gewerkt',
+                'title_en' => 'What I have worked on',
+                'intro_nl' => 'Een greep uit de opdrachten, migraties en trajecten waar ik bij betrokken was.',
+                'intro_en' => 'A selection of the assignments, migrations and projects I was involved in.',
+            ],
+
             PageSectionKey::Faq => [
                 'eyebrow_nl' => 'Veelgestelde vragen',
                 'eyebrow_en' => 'Frequently asked questions',

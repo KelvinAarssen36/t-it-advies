@@ -9,6 +9,8 @@ use App\Http\Controllers\Portal\SiteEntryController;
 use App\Http\Controllers\PrivacyController;
 use App\Http\Controllers\PublicAboutController;
 use App\Http\Controllers\PublicContactController;
+use App\Http\Controllers\PublicProjectController;
+use App\Http\Controllers\PublicProjectsController;
 use App\Http\Controllers\Security\ConfirmTwoFactorController;
 use App\Http\Controllers\Security\PortalEntryController;
 use App\Http\Controllers\Security\TwoFactorSetupController;
@@ -76,6 +78,28 @@ Route::get('contact', PublicContactController::class)
 Route::get('over-mij', PublicAboutController::class)
     ->middleware(TelBezoek::class)
     ->name('over-mij');
+
+/*
+ * De etalage: alle projecten, en elk project op zijn eigen adres.
+ *
+ * **De eerste publieke route met een parameter in dit project**, en de
+ * eerste slug. Dat is een bewuste afwijking van de vlakke adressen
+ * hierboven: een project is het soort ding dat je iemand toestuurt, en
+ * een venster zonder adres kan dat niet. Zie PublicProjectController.
+ *
+ * Het overzicht staat vóór het losse project. Allebei beginnen ze met
+ * `projecten`, en de eerste die past wint -- andersom zou `/projecten`
+ * als een slug worden gelezen.
+ *
+ * Allebei mét `TelBezoek`: het zijn echte pagina's van de website.
+ */
+Route::get('projecten', PublicProjectsController::class)
+    ->middleware(TelBezoek::class)
+    ->name('projecten');
+
+Route::get('projecten/{project:slug}', PublicProjectController::class)
+    ->middleware(TelBezoek::class)
+    ->name('project');
 
 /*
  * Van taal wisselen. Open voor iedereen, want de publieke site moet ook

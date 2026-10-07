@@ -8,6 +8,7 @@ use App\Models\AboutPoint;
 use App\Models\AboutSetting;
 use App\Models\ContactSetting;
 use App\Models\PageSection;
+use App\Models\Project;
 use Database\Seeders\ContactSeeder;
 use Database\Seeders\PageSectionSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -61,6 +62,12 @@ class SiteNavigatieTest extends TestCase
         AboutPoint::factory()->create();
     }
 
+    /** De projectenpagina bestaat pas met een online project erop. */
+    private function projectenGevuld(): void
+    {
+        Project::factory()->create();
+    }
+
     /** En de aparte contactpagina pas als de eigenaar daarvoor kiest. */
     private function contactpaginaAan(): void
     {
@@ -103,12 +110,14 @@ class SiteNavigatieTest extends TestCase
     {
         $this->overMijKlaar();
         $this->contactpaginaAan();
+        $this->projectenGevuld();
 
         $voorpagina = $this->menuVan(route('home'));
 
         $this->assertSame($voorpagina, $this->menuVan(route('privacy')));
         $this->assertSame($voorpagina, $this->menuVan(route('over-mij')));
         $this->assertSame($voorpagina, $this->menuVan(route('contact')));
+        $this->assertSame($voorpagina, $this->menuVan(route('projecten')));
     }
 
     /**
@@ -185,6 +194,44 @@ class SiteNavigatieTest extends TestCase
                 ->component('public/Privacy')
                 ->has('navigation')
                 ->etc()
+        );
+    }
+
+    /* --- De knop "Neem contact op" ------------------------------------- */
+
+    /**
+     * De knop in de kop gaat via `useSectieLink`, net als de menu-items.
+     *
+     * **Dit was kapot, en het is een nare soort kapot: er gebeurde
+     * niets.** De knop had een vast `href="#contact"`. Op een subpagina
+     * bestaat dat anker niet, dus de klikafhandelaar stapte eruit zonder
+     * de klik tegen te houden en de browser had niets om heen te gaan. De
+     * menu-items waren hier al op overgezet; alleen deze knop was
+     * overgeslagen -- en dat valt niet op in een test die het menu telt.
+     *
+     * **Op de bron getoetst en niet op de opgeleverde HTML**, want die
+     * bevat de Vue-componenten niet: deze tests renderen geen SSR.
+     * Dezelfde aanpak als `AppSidebarTest` en `DocumentationTest`, die om
+     * dezelfde reden in het bestand kijken. Het bewijst niet dat de knop
+     * wérkt -- daar is een browsertest voor nodig, en die bestaat hier
+     * niet -- maar wel dat niemand hem terugzet op een vast anker.
+     */
+    public function test_the_contact_button_uses_the_shared_section_link(): void
+    {
+        $kop = (string) file_get_contents(
+            resource_path('js/components/site/SiteHeader.vue'),
+        );
+
+        $this->assertStringContainsString(
+            "anker('contact')",
+            $kop,
+            'De contactknop gaat niet via useSectieLink en werkt dan niet buiten de voorpagina.',
+        );
+
+        $this->assertStringNotContainsString(
+            'href="#contact"',
+            $kop,
+            'De contactknop staat weer op een vast anker; op een subpagina doet hij dan niets.',
         );
     }
 }

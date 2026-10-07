@@ -47,6 +47,7 @@ class SectionHeadingSeeder extends Seeder
     private const MET_KOP = [
         PageSectionKey::Hero,
         PageSectionKey::Diensten,
+        PageSectionKey::Projecten,
         PageSectionKey::Ervaring,
         PageSectionKey::Certificaten,
         PageSectionKey::Statistieken,

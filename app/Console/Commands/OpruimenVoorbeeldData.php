@@ -8,6 +8,7 @@ use App\Models\ContactSubject;
 use App\Models\ContactSubmission;
 use App\Models\FaqItem;
 use App\Models\MailLog;
+use App\Models\Project;
 use Illuminate\Console\Command;
 
 /**
@@ -76,6 +77,19 @@ class OpruimenVoorbeeldData extends Command
      *
      * @var array<int, string>
      */
+    /**
+     * De projecten van de voorbeelddata, op hun Nederlandse titel.
+     *
+     * Net als de onderwerpen en de vragen: er is geen e-mailadres om op
+     * te gaan, dus het commando waarschuwt dat een eigen project met
+     * dezelfde titel meegaat.
+     */
+    private const PROJECTEN = [
+        'Migratie naar Exchange Online',
+        'Onderzoek naar een eigen datacentrum',
+        'Interim ICT-coördinator',
+    ];
+
     private const PUNTEN = [
         'Geen afhankelijkheid van één leverancier',
         'Documentatie waarmee een ander het overneemt',
@@ -124,7 +138,11 @@ class OpruimenVoorbeeldData extends Command
             ->whereIn('text_nl', self::PUNTEN)
             ->count();
 
-        if ($aanvragen + $mail + $onderwerpen + $vragen + $overMij + $puntenAantal === 0) {
+        $projecten = Project::query()
+            ->whereIn('title_nl', self::PROJECTEN)
+            ->count();
+
+        if ($aanvragen + $mail + $onderwerpen + $vragen + $overMij + $puntenAantal + $projecten === 0) {
             $this->components->info('Er staat geen voorbeelddata in de database.');
 
             return self::SUCCESS;
@@ -136,13 +154,14 @@ class OpruimenVoorbeeldData extends Command
         $this->components->twoColumnDetail('Vragen', (string) $vragen);
         $this->components->twoColumnDetail('Over mij', (string) $overMij);
         $this->components->twoColumnDetail('Punten bij Over mij', (string) $puntenAantal);
+        $this->components->twoColumnDetail('Projecten', (string) $projecten);
 
         /*
          * De onderwerpen gaan op naam en niet op adres, dus hier kan de
          * klant zijn eigen werk tussen zitten. Dat zeggen we met zoveel
          * woorden in plaats van het stil weg te halen.
          */
-        if ($onderwerpen + $vragen + $overMij + $puntenAantal > 0) {
+        if ($onderwerpen + $vragen + $overMij + $puntenAantal + $projecten > 0) {
             $this->components->warn(
                 'De onderwerpen en de vragen worden op tekst gevonden. Heb je er '
                     .'zelf een met dezelfde tekst gemaakt, dan gaat die mee.'
@@ -181,6 +200,10 @@ class OpruimenVoorbeeldData extends Command
 
         AboutPoint::query()
             ->whereIn('text_nl', self::PUNTEN)
+            ->delete();
+
+        Project::query()
+            ->whereIn('title_nl', self::PROJECTEN)
             ->delete();
 
         AboutSetting::query()

@@ -25,6 +25,7 @@ export type SectieSleutel =
     | 'over-mij'
     | 'diensten'
     | 'werkwijze'
+    | 'projecten'
     | 'ervaring'
     | 'certificaten'
     | 'statistieken'

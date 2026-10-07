@@ -6,6 +6,7 @@ import {
     ChartNoAxesColumn,
     CircleQuestionMark,
     Eye,
+    FolderKanban,
     Globe,
     Heading,
     History,
@@ -48,6 +49,7 @@ import site from '@/routes/site';
 import certificaten from '@/routes/website/certificaten';
 import contact from '@/routes/website/contact';
 import diensten from '@/routes/website/diensten';
+import projecten from '@/routes/website/projecten';
 import ervaring from '@/routes/website/ervaring';
 import faq from '@/routes/website/faq';
 import statistieken from '@/routes/website/statistieken';
@@ -144,6 +146,11 @@ const websiteItems = computed<NavItem[]>(() => [
         title: t('Diensten'),
         href: diensten.index(),
         icon: Lightbulb,
+    },
+    {
+        title: t('Projecten'),
+        href: projecten.index(),
+        icon: FolderKanban,
     },
     {
         title: t('Ervaring'),

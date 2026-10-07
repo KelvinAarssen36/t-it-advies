@@ -7,6 +7,7 @@ use App\Http\Controllers\Website\ExperienceController;
 use App\Http\Controllers\Website\FaqController;
 use App\Http\Controllers\Website\HeroController;
 use App\Http\Controllers\Website\LayoutController;
+use App\Http\Controllers\Website\ProjectController;
 use App\Http\Controllers\Website\ServiceController;
 use App\Http\Controllers\Website\StatisticController;
 use App\Http\Controllers\Website\TranslateController;
@@ -209,6 +210,30 @@ Route::middleware(['auth', 'verified', 'two-factor.required', 'can:manage portal
          * verzoek voor de kop bij `update()` terecht en faalt het op een
          * ontbrekende vraag.
          */
+        /*
+         * De projecten. Dezelfde opzet als de certificaten, met één
+         * route erbij: `uitlichten`. Die staat náást `online` en niet
+         * in het formulier, om dezelfde reden -- één waarde omzetten
+         * hoort niet het hele formulier langs de validatie te sturen.
+         *
+         * `kop`, `volgorde`, `weergave` en `uitlichten` staan vóór
+         * `{project}`: allemaal een PUT of PATCH op dezelfde plek, en de
+         * eerste die past wint.
+         */
+        Route::prefix('projecten')->name('projecten.')->group(function () {
+            Route::get('/', [ProjectController::class, 'index'])->name('index');
+            Route::post('/', [ProjectController::class, 'store'])->name('store');
+
+            Route::put('kop', [ProjectController::class, 'kop'])->name('kop');
+            Route::put('volgorde', [ProjectController::class, 'volgorde'])->name('volgorde');
+            Route::put('weergave', [ProjectController::class, 'weergave'])->name('weergave');
+
+            Route::put('{project}', [ProjectController::class, 'update'])->name('update');
+            Route::patch('{project}/online', [ProjectController::class, 'online'])->name('online');
+            Route::patch('{project}/uitlichten', [ProjectController::class, 'uitlichten'])->name('uitlichten');
+            Route::delete('{project}', [ProjectController::class, 'destroy'])->name('destroy');
+        });
+
         Route::prefix('faq')->name('faq.')->group(function () {
             Route::get('/', [FaqController::class, 'index'])->name('index');
             Route::post('/', [FaqController::class, 'store'])->name('store');

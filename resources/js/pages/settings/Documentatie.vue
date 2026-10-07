@@ -12,6 +12,7 @@ import {
     Clock,
     Eye,
     Fingerprint,
+    FolderKanban,
     Globe,
     Hash,
     // Onze eigen Heading.vue heet ook zo; vandaar de andere naam hier.
@@ -72,6 +73,7 @@ import contactRoutes from '@/routes/website/contact';
 import dienstenRoutes from '@/routes/website/diensten';
 import faqRoutes from '@/routes/website/faq';
 import overMijRoutes from '@/routes/website/over-mij';
+import projectenRoutes from '@/routes/website/projecten';
 import statistiekenRoutes from '@/routes/website/statistieken';
 import kop from '@/routes/website/kop';
 import ervaring from '@/routes/website/ervaring';
@@ -962,6 +964,77 @@ defineOptions({
                                     <Link :href="dienstenRoutes.index()">
                                         <Lightbulb class="size-4" />
                                         {{ $t('Open de diensten') }}
+                                    </Link>
+                                </Button>
+                            </template>
+                        </UitlegKaart>
+
+                        <UitlegKaart
+                            :titel="$t('Projecten')"
+                            :icoon="FolderKanban"
+                        >
+                            <p>
+                                {{
+                                    $t(
+                                        'Je etalage: wat je hebt gedaan. Niet elk item hoeft een klassiek project te zijn -- je kiest er zelf een soort bij, zoals Interim-opdracht, Migratie of Audit. Staat jouw woord er niet bij, kies dan "Anders" en typ het zelf.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Met het sterretje licht je projecten uit, en dat mogen er zoveel zijn als je wilt. Op je voorpagina staat het bovenste uitgelichte project groot, met daarnaast de eerstvolgende drie uit je lijst en een knop naar al je projecten. Op je projectenpagina draaien alle uitgelichte projecten samen als een slideshow over de volle breedte.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Je mag ook niets uitlichten -- druk dan nog een keer op het sterretje. Dan verdwijnt het grote blok van je voorpagina en begint je projectenpagina gewoon met de lijst. Welk uitgelicht project groot op je voorpagina staat, bepaal je met de volgorde: sleep het naar boven.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Zet je een uitgelicht project offline, dan verdwijnt het van je website en komt er géén project zónder sterretje voor in de plaats; dat zou iets kiezen wat jij niet hebt gekozen. Heb je er meer uitgelicht, dan schuift het volgende uitgelichte project wel door.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Elk project krijgt ook zijn eigen pagina, met een eigen adres dat je kunt delen. Dat adres wordt gemaakt van de titel die je bij het aanmaken invult en blijft daarna staan, ook als je de titel later wijzigt -- zo blijft een link die je iemand hebt gestuurd werken.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'De knop onderaan zo-n projectpagina brengt je terug naar de plek waar je vandaan kwam: naar je voorpagina als je daar hebt geklikt, en anders naar het overzicht met al je projecten.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Een afbeelding is niet verplicht. Zet je er geen in, dan komt er een vlak met de eerste letter van de organisatie; het project staat er dan gewoon netjes bij.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Onder Weergave kies je hoe de pagina met al je projecten eruitziet: onder elkaar als lijst, of naast elkaar als kaarten. De lijst leest het makkelijkst en blijft compact, ook als je er twintig hebt; kaarten zijn luchtiger en komen beter tot hun recht zodra je projecten een afbeelding hebben. Je kunt het altijd omzetten -- het blok op je voorpagina verandert er niet door.',
+                                    )
+                                }}
+                            </p>
+
+                            <template #voorbeeld>
+                                <Button variant="outline" size="sm" as-child>
+                                    <Link :href="projectenRoutes.index()">
+                                        <FolderKanban class="size-4" />
+                                        {{ $t('Open Projecten') }}
                                     </Link>
                                 </Button>
                             </template>

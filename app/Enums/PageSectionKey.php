@@ -32,6 +32,7 @@ enum PageSectionKey: string
     case OverMij = 'over-mij';
     case Diensten = 'diensten';
     case Werkwijze = 'werkwijze';
+    case Projecten = 'projecten';
     case Ervaring = 'ervaring';
     case Certificaten = 'certificaten';
     case Statistieken = 'statistieken';
@@ -52,6 +53,7 @@ enum PageSectionKey: string
             self::OverMij => __('Over mij'),
             self::Diensten => __('Diensten'),
             self::Werkwijze => __('Werkwijze'),
+            self::Projecten => __('Projecten'),
             self::Ervaring => __('Ervaring'),
             self::Certificaten => __('Certificaten'),
             self::Statistieken => __('Statistieken'),
@@ -70,6 +72,7 @@ enum PageSectionKey: string
             self::OverMij => __('Een kort stuk over jezelf, met een foto. Eventueel met een knop naar een uitgebreidere pagina.'),
             self::Diensten => __('De diensten die je aanbiedt, elk met een korte toelichting en de expertise die eronder valt.'),
             self::Werkwijze => __('De stappen van kennismaken tot overdragen.'),
+            self::Projecten => __('Je etalage: wat je hebt gedaan, met één project uitgelicht.'),
             self::Ervaring => __('De tijdlijn met functies en organisaties, van nu naar vroeger.'),
             self::Certificaten => __('De certificaten die je hebt gehaald, en eventueel je opleiding.'),
             self::Statistieken => __('Je vaardigheden en kengetallen, als balken, ringen en tellers.'),
@@ -150,12 +153,21 @@ enum PageSectionKey: string
 
             self::Diensten => 2,
             self::Werkwijze => 3,
-            self::Ervaring => 4,
+
+            /*
+             * De etalage vlak na de werkwijze: eerst wát hij doet en
+             * hóe, dan het bewijs dat hij het heeft gedaan. Vóór de
+             * tijdlijn, want een bezoeker die een project herkent is
+             * daarna pas nieuwsgierig naar waar hij in dienst was.
+             */
+            self::Projecten => 4,
+
+            self::Ervaring => 5,
 
             // Direct ná de tijdlijn: die vertelt wat hij heeft gedaan,
             // dit is het bewijs erbij. Uit elkaar trekken maakt van twee
             // halve verhalen twee losse blokken.
-            self::Certificaten => 5,
+            self::Certificaten => 6,
 
             /*
              * En daarna de cijfers. De rij leest zo als één verhaal:
@@ -166,7 +178,7 @@ enum PageSectionKey: string
              * contact was. Dat is het niet meer sinds de vragen bestaan;
              * zie hieronder.
              */
-            self::Statistieken => 6,
+            self::Statistieken => 7,
 
             /*
              * En dan de vragen, vlak vóór het contactformulier. Dat is
@@ -174,13 +186,13 @@ enum PageSectionKey: string
              * weg, en de knop om te mailen hoort meteen daarna te komen.
              * Erboven zou hij de twijfel wegnemen die nog niet bestond.
              */
-            self::Faq => 7,
+            self::Faq => 8,
 
-            self::Contact => 8,
+            self::Contact => 9,
 
             // Ná het contactformulier: "en volg me verder op LinkedIn"
             // is een afsluiter en geen uitnodiging om te mailen.
-            self::Linkedin => 9,
+            self::Linkedin => 10,
 
             self::Footer => 1000,
         };
@@ -200,6 +212,7 @@ enum PageSectionKey: string
             self::Hero => 'website.kop.index',
             self::OverMij => 'website.over-mij.index',
             self::Diensten => 'website.diensten.index',
+            self::Projecten => 'website.projecten.index',
             self::Ervaring => 'website.ervaring.index',
             self::Certificaten => 'website.certificaten.index',
             self::Statistieken => 'website.statistieken.index',

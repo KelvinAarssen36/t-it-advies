@@ -358,7 +358,16 @@ onderdeel waarvoor dat nog geldt.
 > laatste is het eerste geval waarin een onderdeel zijn inhoud buiten de
 > landingspagina kan zetten.
 
-Er zijn zes voorbeelden om uit te kiezen als je de volgende bouwt.
+Er zijn zeven voorbeelden om uit te kiezen als je de volgende bouwt.
+
+[Projecten](modules/projecten.md) is het voorbeeld voor een module met een
+**eigen adres per item**. Hij staat op positie 4, tussen de werkwijze en de
+tijdlijn, en hij laat twee dingen zien die nergens anders staan: hoe je
+"hoogstens één uitgelicht" afdwingt zonder dat de database dat kan
+uitdrukken, en hoe een slug eruitziet in een project waar er verder geen
+een is. Let bij het lezen vooral op de waarschuwing over `standaardPositie()`
+hieronder -- die module is de eerste die er middenin is geschoven, en dat
+betekende álle onderdelen erna omnummeren.
 
 [Over mij](modules/over-mij.md) is het voorbeeld voor een onderdeel dat
 **één onderwerp over twee plekken verdeelt**: een kort stuk op de

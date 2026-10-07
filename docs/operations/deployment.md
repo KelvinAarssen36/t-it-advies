@@ -45,9 +45,17 @@ hij er gelijk aan zijn, dan is een bestand op de grens al te groot voor PHP
 terwijl onze eigen regel hem nog goedkeurt -- precies het geval waarin de
 klant een fout krijgt die nergens beschreven staat.
 
-Ruimer hoeft ook niet. Wat er bewaard wordt is een vierkantje van 256 bij
-256, in de praktijk tien tot dertig kilobyte, en de browser verkleint een
-te groot beeld al vóór het versturen (zie
+**Drie blokken, en ze delen die grens.** `media.logo` is voor de logo's van
+ervaringen en certificaten (256 bij 256), `media.portret` voor de foto bij
+"Over mij" en `media.project` voor het beeld bij een project (allebei 640
+bij 640). De bestandsgrens is bij alle drie dezelfde anderhalve megabyte om
+de reden hierboven; wat verschilt is de kortste zijde die nog wordt
+geaccepteerd -- 48 voor een logo in een belletje, 240 voor een beeld dat een
+half scherm vult.
+
+Ruimer hoeft ook niet. Wat er bewaard wordt is een vierkantje van 256 of 640
+beeldpunten, in de praktijk tien tot honderd kilobyte, en de browser
+verkleint een te groot beeld al vóór het versturen (zie
 [formulieren](../architecture/formulieren-en-schuifbalken.md#een-bestand-kiezen)).
 Wat er binnenkomt is normaal gesproken een paar honderd kilobyte.
 Anderhalve megabyte is het vangnet, niet de gewone gang van zaken.

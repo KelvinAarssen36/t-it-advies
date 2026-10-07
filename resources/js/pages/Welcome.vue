@@ -9,6 +9,7 @@ import FaqSection from '@/components/site/sections/FaqSection.vue';
 import HeroSection from '@/components/site/sections/HeroSection.vue';
 import LinkedinSection from '@/components/site/sections/LinkedinSection.vue';
 import OverMijSection from '@/components/site/sections/OverMijSection.vue';
+import ProjectenSection from '@/components/site/sections/ProjectenSection.vue';
 import StatistiekenSection from '@/components/site/sections/StatistiekenSection.vue';
 import WerkwijzeSection from '@/components/site/sections/WerkwijzeSection.vue';
 import { scrollNaar } from '@/lib/motion';
@@ -51,6 +52,7 @@ const componenten: Record<SectieSleutel, Component> = {
     'over-mij': OverMijSection,
     diensten: DienstenSection,
     werkwijze: WerkwijzeSection,
+    projecten: ProjectenSection,
     ervaring: ErvaringSection,
     certificaten: CertificatenSection,
     statistieken: StatistiekenSection,
