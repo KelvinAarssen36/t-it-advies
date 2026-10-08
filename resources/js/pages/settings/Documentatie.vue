@@ -29,6 +29,7 @@ import {
     Pencil,
     Scale,
     Plus,
+    Route,
     Search,
     Share2,
     ShieldAlert,
@@ -74,6 +75,7 @@ import dienstenRoutes from '@/routes/website/diensten';
 import faqRoutes from '@/routes/website/faq';
 import overMijRoutes from '@/routes/website/over-mij';
 import projectenRoutes from '@/routes/website/projecten';
+import werkwijzeRoutes from '@/routes/website/werkwijze';
 import statistiekenRoutes from '@/routes/website/statistieken';
 import kop from '@/routes/website/kop';
 import ervaring from '@/routes/website/ervaring';
@@ -964,6 +966,53 @@ defineOptions({
                                     <Link :href="dienstenRoutes.index()">
                                         <Lightbulb class="size-4" />
                                         {{ $t('Open de diensten') }}
+                                    </Link>
+                                </Button>
+                            </template>
+                        </UitlegKaart>
+
+                        <UitlegKaart :titel="$t('Werkwijze')" :icoon="Route">
+                            <p>
+                                {{
+                                    $t(
+                                        'De stappen die iemand doorloopt als hij met je in zee gaat. Op je website staan ze genummerd naast elkaar, met een lijn die zich tekent terwijl de bezoeker scrolt en elke stap oplicht als hij aan de beurt is.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'De nummers vul je nergens in: die volgen uit de volgorde. Sleep je een stap naar voren, dan wordt dat 01 en schuift de rest op. Zet je een stap offline, dan schuiven de nummers ook op -- een bezoeker ziet nooit 01, 02, 04.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Per stap kun je er nog twee dingen bij zetten: hoe lang hij duurt en wat hij oplevert. Allebei mogen ze leeg blijven. Juist die twee zijn wat een bezoeker wil weten voordat hij belt, dus het loont om ze in te vullen.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Vul je bij minstens één stap ook het uitgebreide verhaal in, dan krijgt je werkwijze een eigen pagina met een knop ernaartoe. Laat je dat overal leeg, dan blijft het bij de korte kaarten -- en dat is geen gebrek, dat is een keuze.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Je kunt er zes maken, en dat is bewust. Een werkwijze is een verhaal dat iemand moet kunnen onthouden; voorbij een stuk of zes wordt het een projectplan. Heb je er meer nodig, dan zitten er bijna altijd twee tussen die eigenlijk één stap zijn.',
+                                    )
+                                }}
+                            </p>
+
+                            <template #voorbeeld>
+                                <Button variant="outline" size="sm" as-child>
+                                    <Link :href="werkwijzeRoutes.index()">
+                                        <Route class="size-4" />
+                                        {{ $t('Open de werkwijze') }}
                                     </Link>
                                 </Button>
                             </template>

@@ -8,6 +8,7 @@ use App\Models\ContactSubmission;
 use App\Models\FaqItem;
 use App\Models\MailLog;
 use App\Models\Project;
+use App\Models\WorkStep;
 use Database\Seeders\VoorbeeldDataSeeder;
 use Illuminate\Console\Command;
 use RuntimeException;
@@ -83,6 +84,10 @@ class ZaaienVoorbeeldData extends Command
         $this->components->twoColumnDetail(
             'Projecten',
             (string) Project::query()->count(),
+        );
+        $this->components->twoColumnDetail(
+            'Werkwijze',
+            (string) WorkStep::query()->count(),
         );
 
         $this->newLine();

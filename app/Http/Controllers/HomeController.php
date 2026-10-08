@@ -14,6 +14,7 @@ use App\Models\Project;
 use App\Models\SectionHeading;
 use App\Models\Service;
 use App\Models\Statistic;
+use App\Models\WorkStep;
 use App\Support\Contact\Contactformulier;
 use App\Support\Loopbaan;
 use App\Support\Page\Navigatie;
@@ -71,6 +72,10 @@ class HomeController extends Controller
 
         $opleidingen = $heeftCertificaten
             ? Education::query()->online()->opPeriode()->get()
+            : new Collection;
+
+        $stappen = in_array(PageSectionKey::Werkwijze->value, $secties, true)
+            ? WorkStep::query()->online()->opVolgorde()->get()
             : new Collection;
 
         $statistieken = in_array(PageSectionKey::Statistieken->value, $secties, true)
@@ -175,6 +180,27 @@ class HomeController extends Controller
             'serviceHeading' => in_array(PageSectionKey::Diensten->value, $secties, true)
                 ? SectionHeading::voor(PageSectionKey::Diensten)->voorDeSite()
                 : null,
+
+            /*
+             * De werkwijze. Stond tot voor kort in het Vue-bestand zelf;
+             * nu komt hij hiervandaan, inclusief de kop erboven.
+             */
+            'workSteps' => $stappen
+                ->map(fn (WorkStep $stap) => $stap->voorDeSite())
+                ->all(),
+
+            'workHeading' => in_array(PageSectionKey::Werkwijze->value, $secties, true)
+                ? SectionHeading::voor(PageSectionKey::Werkwijze)->voorDeSite()
+                : null,
+
+            /*
+             * Of de pagina /werkwijze bestaat. Als getal noch als lijst
+             * maar als ja-of-nee: de knop ernaartoe hoeft alleen te weten
+             * dát er meer te lezen valt. De regel staat in
+             * PublicWerkwijzeController, zodat de knop en de pagina niet
+             * uit elkaar kunnen lopen.
+             */
+            'workPage' => PublicWerkwijzeController::ietsTeLezen($stappen->all()),
 
             'experiences' => $loopbaan
                 ->map(fn (Experience $ervaring) => $this->ervaring($ervaring))

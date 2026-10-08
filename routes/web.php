@@ -11,6 +11,7 @@ use App\Http\Controllers\PublicAboutController;
 use App\Http\Controllers\PublicContactController;
 use App\Http\Controllers\PublicProjectController;
 use App\Http\Controllers\PublicProjectsController;
+use App\Http\Controllers\PublicWerkwijzeController;
 use App\Http\Controllers\Security\ConfirmTwoFactorController;
 use App\Http\Controllers\Security\PortalEntryController;
 use App\Http\Controllers\Security\TwoFactorSetupController;
@@ -100,6 +101,17 @@ Route::get('projecten', PublicProjectsController::class)
 Route::get('projecten/{project:slug}', PublicProjectController::class)
     ->middleware(TelBezoek::class)
     ->name('project');
+
+/*
+ * De werkwijze, uitgeschreven.
+ *
+ * Bestaat alleen als er ook echt meer te lezen is dan op de voorpagina
+ * staat; zie PublicWerkwijzeController. De knop ernaartoe verschijnt om
+ * dezelfde reden pas als die pagina bestaat.
+ */
+Route::get('werkwijze', PublicWerkwijzeController::class)
+    ->middleware(TelBezoek::class)
+    ->name('werkwijze');
 
 /*
  * Van taal wisselen. Open voor iedereen, want de publieke site moet ook

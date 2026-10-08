@@ -9,6 +9,7 @@ use App\Models\ContactSubmission;
 use App\Models\FaqItem;
 use App\Models\MailLog;
 use App\Models\Project;
+use App\Models\WorkStep;
 use Illuminate\Console\Command;
 
 /**
@@ -90,6 +91,21 @@ class OpruimenVoorbeeldData extends Command
         'Interim ICT-coördinator',
     ];
 
+    /**
+     * De stappen van de werkwijze, op hun Nederlandse titel.
+     *
+     * Zelfde verhaal als bij de projecten: er is geen adres om op te
+     * gaan, dus het commando waarschuwt dat een eigen stap met dezelfde
+     * titel meegaat. "Kennismaken" is precies het soort woord dat de
+     * eigenaar zelf ook zou kiezen.
+     */
+    private const STAPPEN = [
+        'Kennismaken',
+        'Voorstel',
+        'Bouwen',
+        'Overdragen',
+    ];
+
     private const PUNTEN = [
         'Geen afhankelijkheid van één leverancier',
         'Documentatie waarmee een ander het overneemt',
@@ -136,6 +152,10 @@ class OpruimenVoorbeeldData extends Command
 
         $puntenAantal = AboutPoint::query()
             ->whereIn('text_nl', self::PUNTEN)
+            ->count();
+
+        $stappen = WorkStep::query()
+            ->whereIn('title_nl', self::STAPPEN)
             ->count();
 
         $projecten = Project::query()
@@ -200,6 +220,10 @@ class OpruimenVoorbeeldData extends Command
 
         AboutPoint::query()
             ->whereIn('text_nl', self::PUNTEN)
+            ->delete();
+
+        WorkStep::query()
+            ->whereIn('title_nl', self::STAPPEN)
             ->delete();
 
         Project::query()

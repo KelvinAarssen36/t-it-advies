@@ -212,6 +212,7 @@ enum PageSectionKey: string
             self::Hero => 'website.kop.index',
             self::OverMij => 'website.over-mij.index',
             self::Diensten => 'website.diensten.index',
+            self::Werkwijze => 'website.werkwijze.index',
             self::Projecten => 'website.projecten.index',
             self::Ervaring => 'website.ervaring.index',
             self::Certificaten => 'website.certificaten.index',

@@ -135,6 +135,21 @@ class SectionHeading extends Model
             ],
 
             /*
+             * Woord voor woord de tekst die hiervoor in
+             * WerkwijzeSection.vue stond. Dat is met opzet: de verhuizing
+             * van het Vue-bestand naar de database hoort niets aan de
+             * website te veranderen zolang de eigenaar niets aanpast.
+             */
+            PageSectionKey::Werkwijze => [
+                'eyebrow_nl' => 'Werkwijze',
+                'eyebrow_en' => 'How it works',
+                'title_nl' => 'Hoe het gaat',
+                'title_en' => 'How it goes',
+                'intro_nl' => 'Geen verrassingen achteraf. Je weet van tevoren wat er gebeurt en wat het kost.',
+                'intro_en' => 'No surprises afterwards. You know in advance what happens and what it costs.',
+            ],
+
+            /*
              * De tijdlijn heeft geen opschrift. Zijn oude tabel had de
              * kolom niet, en die van nu wel -- maar het scherm laat hem
              * niet zien en er staat er dus geen. Dit samenvoegen is een

@@ -3222,20 +3222,340 @@ button:hover > .brand-verlaat,
         }
     }
 
+    /*
+      De lijn langs de stappen.
+
+      **Over de hele omlijsting en niet een strook bovenin.** Hij werd
+      vroeger alleen op breed scherm getoond, als balk van 3.75rem boven
+      een rij van vier -- want het pad lag vast in de code en kon niets
+      anders. Nu wordt het getekend door de nummers heen, dus hij loopt
+      net zo goed van boven naar beneden als een telefoon de stappen
+      onder elkaar zet. Vandaar `inset: 0`.
+
+      Hij ligt eronder (`z-index: 0` tegenover de stappen op 1): de lijn
+      raakt de nummers en hoort er niet overheen te lopen.
+
+      `[data-leeg]` zet het component bij minder dan twee stappen; één
+      punt is geen lijn.
+    */
     .brand-werkwijze-lijn {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        overflow: visible;
+        pointer-events: none;
+    }
+
+    .brand-werkwijze-lijn[data-leeg] {
         display: none;
     }
 
+    /*
+      Het raster past zich aan het aantal stappen aan; `--stappen` komt
+      van het component. Onder de tabletgrens staan ze altijd onder
+      elkaar -- vier kolommen op een telefoon is vier keer niets.
+    */
+    .brand-werkwijze-raster {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        gap: 2rem;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    /*
+      **De standaardvorm is een kolom.** Stappen onder elkaar, met het
+      nummer in een eigen kantlijn en de lijn er verticaal doorheen --
+      precies zoals op /werkwijze. Dat is de vorm die altijd klopt: bij
+      drie stappen, bij acht, en op elk scherm.
+
+      De tekstbreedte is begrensd: een regel die over een breed scherm
+      doorloopt is niet te lezen, en de kaart hoeft hier niet breder te
+      zijn dan zijn eigen zin.
+    */
+    .brand-werkwijze-raster {
+        max-width: 48rem;
+        /*
+          Krapper dan de rij. Een kolom van acht stappen is de som van
+          alle acht, dus elke regel die je hier bespaart telt acht keer --
+          en elke telefoon krijgt deze vorm.
+        */
+        gap: 1.5rem;
+    }
+
+    .brand-werkwijze-titel {
+        margin-top: 0.25rem;
+        font-size: 1rem;
+        font-weight: 500;
+        text-wrap: balance;
+        color: #ffffff;
+    }
+
+    .brand-werkwijze-tekst {
+        margin-top: 0.125rem;
+        font-size: 0.875rem;
+        line-height: 1.55;
+        text-wrap: pretty;
+        color: var(--muted-foreground);
+    }
+
+    .brand-werkwijze-stap {
+        position: relative;
+        padding-left: 2.5rem;
+    }
+
+    .brand-werkwijze-stap > .brand-werkwijze-nummer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        display: inline-flex;
+        height: 1.75rem;
+        width: 1.75rem;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        border: 1px solid var(--brand-border-dark);
+        background-color: var(--brand-navy-deep);
+    }
+
+    /*
+      **De rij, en alleen als alles erop past.** Het component zet
+      `data-rij` bij hoogstens vier stappen; daarboven blijft de kolom
+      staan. Een raster van twee rijen bestaat hier niet, en dat is geen
+      beperking maar het gevolg van de lijn: die zou van het einde van de
+      ene rij naar het begin van de volgende dwars door de tekst ertussen
+      moeten.
+    */
     @media (min-width: 64rem) {
-        .brand-werkwijze-lijn {
-            display: block;
-            position: absolute;
-            top: 0;
-            right: 0;
-            left: 0;
-            height: 3.75rem;
-            overflow: visible;
+        /*
+          Op een rij is er ruimte, en daar mag het dus royaler. De hoogte
+          van het blok is hier de hoogste kaart en niet de som; een regel
+          extra kost niets.
+        */
+        .brand-werkwijze-raster[data-rij] .brand-werkwijze-titel {
+            margin-top: 0.5rem;
+            font-size: 1.125rem;
         }
+
+        .brand-werkwijze-raster[data-rij] .brand-werkwijze-tekst {
+            margin-top: 0.25rem;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        .brand-werkwijze-raster[data-rij] .brand-werkwijze-resultaat {
+            margin-top: 0.625rem;
+        }
+
+        .brand-werkwijze-raster[data-rij] {
+            max-width: none;
+            gap: 2rem;
+            grid-template-columns: repeat(var(--stappen, 4), minmax(0, 1fr));
+            /*
+              De ruimte waar de lijn doorheen loopt. Hij hangt 42 pixels
+              boven de nummers (`BOVEN` in motion.ts) en golft daar nog
+              tien omheen, dus hieronder blijft er net te weinig over.
+            */
+            padding-top: 5rem;
+        }
+
+        /* Op een rij staat het nummer gewoon in de tekst. */
+        .brand-werkwijze-raster[data-rij] .brand-werkwijze-stap {
+            padding-left: 0;
+        }
+
+        .brand-werkwijze-raster[data-rij]
+            .brand-werkwijze-stap
+            > .brand-werkwijze-nummer {
+            position: static;
+            display: inline-block;
+            height: auto;
+            width: auto;
+            border: 0;
+            background-color: transparent;
+        }
+    }
+
+    /*
+      De duur, naast het nummer. Klein en in cijferbreedte, zodat "1-2
+      weken" en "3 weken" onder elkaar niet gaan dansen.
+    */
+    .brand-werkwijze-duur {
+        margin-left: 0.5rem;
+        font-size: 0.75rem;
+        font-variant-numeric: tabular-nums;
+        color: var(--brand-silver);
+    }
+
+    /*
+      Wat je na deze stap in handen hebt.
+
+      Met een streepje ervoor uit de CSS en niet uit de tekst: zo hoeft de
+      eigenaar er niet aan te denken, en staat er nooit een streepje
+      zonder zin erachter.
+    */
+    .brand-werkwijze-resultaat {
+        margin-top: 0.5rem;
+        padding-left: 0.875rem;
+        position: relative;
+        font-size: 0.875rem;
+        line-height: 1.6;
+        text-wrap: pretty;
+        color: var(--brand-silver);
+    }
+
+    .brand-werkwijze-resultaat::before {
+        content: '';
+        position: absolute;
+        /*
+          Halverwege de eerste regel: `line-height` is 1.6, dus het midden
+          ligt op 0.8em. Stond hij op 0.6em, en dan leest het streepje als
+          een minteken dat net te hoog hangt.
+        */
+        top: 0.8em;
+        left: 0;
+        height: 1px;
+        width: 0.5rem;
+        background-color: var(--brand-cyan);
+    }
+
+    /* --- /werkwijze: de stappen uitgeschreven -------------------------- */
+
+    /*
+      De stappen onder elkaar, met de lijn ernaast.
+
+      De inspringing links is de ruimte waar die lijn doorheen loopt: het
+      nummer staat er bovenop en de tekst ernaast. Op een telefoon blijft
+      diezelfde opzet staan -- hij is smal genoeg om te werken en het
+      alternatief zou de lijn weer wegnemen, precies wat deze verbouwing
+      juist oploste.
+    */
+    .brand-werkwijzepagina {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 3rem;
+    }
+
+    .brand-werkwijzepagina-stap {
+        padding-left: 2.25rem;
+    }
+
+    @media (min-width: 48rem) {
+        .brand-werkwijzepagina-stap {
+            padding-left: 3rem;
+        }
+    }
+
+    /*
+      Het nummer hangt in de kantlijn, bovenop de lijn.
+
+      Met een eigen achtergrond: de lijn loopt eronderdoor, en zonder dat
+      vlakje zou hij dwars door het cijfer heen lopen.
+    */
+    .brand-werkwijzepagina-kop {
+        position: relative;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.625rem;
+    }
+
+    .brand-werkwijzepagina-kop .brand-werkwijze-nummer {
+        position: absolute;
+        left: -2.25rem;
+        display: inline-flex;
+        height: 1.75rem;
+        width: 1.75rem;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        border: 1px solid var(--brand-border-dark);
+        background-color: var(--brand-navy-deep);
+    }
+
+    @media (min-width: 48rem) {
+        .brand-werkwijzepagina-kop .brand-werkwijze-nummer {
+            left: -3rem;
+        }
+    }
+
+    /* Hoeveelste van hoeveel; klein, want het is een hulpmiddel. */
+    .brand-werkwijzepagina-teller {
+        font-size: 0.75rem;
+        color: var(--brand-border-dark-strong);
+    }
+
+    .brand-werkwijzepagina-titel {
+        margin-top: 0.5rem;
+        font-size: 1.375rem;
+        font-weight: 600;
+        text-wrap: balance;
+        color: #ffffff;
+    }
+
+    @media (min-width: 48rem) {
+        .brand-werkwijzepagina-titel {
+            font-size: 1.625rem;
+        }
+    }
+
+    .brand-werkwijzepagina-kort {
+        margin-top: 0.5rem;
+        max-width: 60ch;
+        font-size: 1.0625rem;
+        line-height: 1.6;
+        text-wrap: pretty;
+        color: var(--brand-silver);
+    }
+
+    /*
+      Het verhaal. `gap` tussen de alinea's en geen `pre-line`: hier zijn
+      het echte alinea's, door het component gesplitst op een witregel.
+    */
+    .brand-werkwijzepagina-tekst {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-top: 1rem;
+        max-width: 68ch;
+        line-height: 1.8;
+        text-wrap: pretty;
+        color: var(--foreground);
+    }
+
+    /*
+      Wat de stap oplevert, als afgezet vlak.
+
+      Zwaarder dan het streepje op de kaart van de voorpagina, en met
+      reden: hier is het de afsluiting van een stuk tekst, en daar hoort
+      het op te vallen in plaats van mee te lopen.
+    */
+    .brand-werkwijzepagina-resultaat {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        margin-top: 1.25rem;
+        border-left: 2px solid var(--brand-cyan);
+        border-radius: 0 0.5rem 0.5rem 0;
+        background-color: color-mix(
+            in srgb,
+            var(--brand-navy-raised) 45%,
+            transparent
+        );
+        padding: 0.875rem 1rem;
+        max-width: 60ch;
+        text-wrap: pretty;
+        color: var(--brand-silver);
+    }
+
+    .brand-werkwijzepagina-resultaat-kop {
+        font-size: 0.6875rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--brand-cyan);
     }
 
     /* Het lichtpuntje dat over de lijn reist. */
@@ -5611,6 +5931,26 @@ button:hover > .brand-verlaat,
         border-radius: 9999px;
         border: 1px solid var(--border);
         background-color: var(--muted);
+        color: var(--muted-foreground);
+    }
+
+    /*
+      Het nummer van een stap in de beheertabel.
+
+      Zoals de bezoeker het ziet, dus in dezelfde cijferbreedte als op de
+      website. Een offline stap krijgt er geen -- die staat niet op de
+      site en bezet dus geen nummer; zie `pages/website/Werkwijze.vue`.
+    */
+    .brand-stapnummer {
+        display: inline-flex;
+        min-width: 1.75rem;
+        justify-content: center;
+        border-radius: 0.375rem;
+        border: 1px solid var(--border);
+        background-color: var(--muted);
+        padding: 0.0625rem 0.3125rem;
+        font-size: 0.75rem;
+        font-variant-numeric: tabular-nums;
         color: var(--muted-foreground);
     }
 

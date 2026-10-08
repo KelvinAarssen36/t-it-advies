@@ -1016,22 +1016,46 @@ export function kantelKaarten(
 }
 
 /**
- * Laat een SVG-pad zichzelf tekenen terwijl je scrolt, met een lichtpuntje
- * dat eroverheen reist.
+ * Een vloeiende lijn door een rij punten, met een lichtpuntje dat erlangs
+ * reist terwijl je scrolt.
  *
- * Dit is de rijkere broer van `drawTimeline`. Die schaalt een rechte balk;
- * hier tekent een echt pad zich uit, dus mag het bochten hebben. Het
- * lichtpuntje volgt datzelfde pad, wat het verschil maakt tussen "er
- * verschijnt een lijn" en "er gaat iets langs".
+ * Gebruikt door de werkwijze: de lijn loopt langs de nummers van de
+ * stappen en elke stap licht op zodra het punt hem passeert. Dat maakt van
+ * losse blokjes één doorlopende beweging -- en dat is precies wat
+ * "werkwijze" hoort over te brengen: het is een volgorde, geen opsomming.
  *
- * Drie dingen die hier bewust zo zijn:
+ * **Het pad wordt getekend, niet meegegeven.** Dat was eerst andersom: een
+ * vaste `d` met een handgetekende golf, in een viewBox van 1000 bij 60. Dat
+ * werkt zolang er precies vier stappen zijn die op één rij staan. Bij drie
+ * loopt de lijn langs een leeg vak, en op een telefoon -- waar ze onder
+ * elkaar staan -- kon hij helemaal niet bestaan.
  *
- * - **De stappen worden gemeten, niet geteld.** Waar stap drie oplicht
- *   hangt af van waar hij staat, niet van "de derde van de vier". Zou je
- *   delen door het aantal, dan klopt het alleen bij gelijke afstanden --
- *   en bij een laatste stap met een langere tekst klopt het al niet meer.
- * - **Er wordt in de x-richting gemeten.** Dit pad loopt horizontaal boven
- *   een rij; voor een verticale variant is dit de regel die je omzet.
+ * Nu volgt de lijn de punten waar ze ook staan: één rij naast elkaar, of
+ * één kolom onder elkaar. Dat laatste is nieuw; daar was voorheen geen
+ * lijn.
+ *
+ * **Staan de punten in een raster van meerdere rijen, dan is er geen
+ * lijn.** Dat is een grens en geen tekortkoming: een lijn die van het einde
+ * van de ene rij naar het begin van de volgende moet, snijdt onderweg dwars
+ * door de tekst van de kaarten ertussen. Er is geen route die dat niet doet.
+ * Dan is geen lijn eerlijker dan een lijn die door een alinea loopt.
+ *
+ * Vier dingen die bewust zo zijn:
+ *
+ * - **Gemeten met `offsetLeft` en niet met `getBoundingClientRect`.** De
+ *   stappen komen op met een verschuiving, en een rect geeft de verschóven
+ *   plek terug. Dan tekent de lijn langs waar de kaarten even stonden.
+ *   `offsetLeft` is layout en kent die verschuiving niet.
+ * - **De lijn hangt aan de nummers, maar loopt er niet doorheen.** Bij een
+ *   rij naast elkaar gaat hij een stukje omhoog, zodat hij boven de
+ *   nummers langs loopt in plaats van er dwars doorheen -- met het cijfer
+ *   en de duur doorgestreept als gevolg. Bij een kolom onder elkaar blijft
+ *   hij op de nummers staan: die liggen dan in een eigen kantlijn met een
+ *   rondje eromheen, en dan is de lijn er juist de draad doorheen.
+ * - **De tussenpunten worden afwisselend opzij geduwd.** Een lijn langs
+ *   punten die op één hoogte staan is kaarsrecht, en dat was juist de
+ *   charme niet. Deze golf ontstaat vanzelf in de goede richting: op een
+ *   rij golft hij op en neer, in een kolom naar links en rechts.
  * - **JavaScript zet alleen een attribuut op de stap.** De kleur en de
  *   gloed staan in CSS, zodat de huisstijl op één plek blijft.
  *
@@ -1041,31 +1065,302 @@ export function kantelKaarten(
  * Geeft een opruimfunctie terug; roep die aan in onBeforeUnmount.
  */
 export function tekenPad(
+    svg: SVGSVGElement,
     pad: SVGPathElement,
     punt: SVGElement | null,
     stappen: HTMLElement[],
 ): () => void {
+    if (stappen.length < 2) {
+        // Eén punt is geen lijn. De SVG blijft leeg in plaats van dat er
+        // een streepje van nul lengte staat te wachten op een animatie.
+        svg.setAttribute('data-leeg', '');
+
+        return () => {};
+    }
+
+    svg.removeAttribute('data-leeg');
+
+    /**
+     * Het vak waar de SVG en de stappen samen in liggen.
+     *
+     * **Niet `svg.offsetParent`**, en dat is geen smaak: een SVG-element
+     * heeft die eigenschap helemaal niet -- `offsetParent` zit op
+     * `HTMLElement`. De ouder is hier het vak met `position: relative`,
+     * en dat is precies het punt waar alle metingen vanaf tellen.
+     */
+    const omlijsting = svg.parentElement;
+
+    if (omlijsting === null) {
+        return () => {};
+    }
+
+    /** Hoe ver de tussenpunten opzij gaan, in beeldpunten. */
+    const GOLF = 10;
+
+    /**
+     * Hoe ver de hele lijn boven een rij nummers blijft.
+     *
+     * Alleen bij een rij naast elkaar; zie het blok bovenaan. Ruim genoeg
+     * om het cijfer én de duur ernaast vrij te houden, en met lucht
+     * eromheen -- strak boven de tekst leest hij als een doorhaling die
+     * net mist. Het raster houdt er bovenaan ruimte voor vrij; zie
+     * `.brand-werkwijze-raster` in app.css.
+     */
+    const BOVEN = 42;
+
+    /** Een uitloop korter dan dit is geen uitloop maar een hobbel. */
+    const MINIMALE_UITLOOP = 12;
+
+    /** Waar elke stap op het pad zit, als deel van de lengte. */
+    let posities: number[] = [];
+
+    /**
+     * Het aanhechtpunt van een stap: het nummer, of anders de stap zelf.
+     *
+     * Beide gemeten ten opzichte van de omlijsting waar ook de SVG in
+     * ligt. Dat werkt omdat die omlijsting `position: relative` heeft en
+     * er niets tussen zit dat zelf gepositioneerd is.
+     */
+    const puntVan = (stap: HTMLElement): { x: number; y: number } => {
+        const doel =
+            stap.querySelector<HTMLElement>('[data-stap-punt]') ?? stap;
+
+        let x = doel.offsetWidth / 2;
+        let y = doel.offsetHeight / 2;
+
+        let loper: HTMLElement | null = doel;
+
+        while (loper !== null && loper !== omlijsting) {
+            x += loper.offsetLeft;
+            y += loper.offsetTop;
+            loper = loper.offsetParent as HTMLElement | null;
+        }
+
+        return { x, y };
+    };
+
+    /**
+     * Een vloeiend pad door de punten heen.
+     *
+     * Catmull-Rom omgezet naar kubieke bézierbochten: dat loopt gegarandeerd
+     * dóór elk punt in plaats van er met een boog omheen, en dat is precies
+     * wat je hier wil -- de lijn hoort de nummers te raken.
+     */
+    const padUit = (punten: Array<{ x: number; y: number }>): string => {
+        const eerste = punten[0];
+
+        if (eerste === undefined) {
+            return '';
+        }
+
+        let d = `M ${eerste.x.toFixed(1)} ${eerste.y.toFixed(1)}`;
+
+        for (let i = 0; i < punten.length - 1; i++) {
+            const p0 = punten[i - 1] ?? punten[i];
+            const p1 = punten[i];
+            const p2 = punten[i + 1];
+            const p3 = punten[i + 2] ?? punten[i + 1];
+
+            if (
+                p0 === undefined ||
+                p1 === undefined ||
+                p2 === undefined ||
+                p3 === undefined
+            ) {
+                continue;
+            }
+
+            // Een zesde van de afstand tot de buren: ruim genoeg voor een
+            // zachte bocht, krap genoeg om niet door te schieten.
+            const c1x = p1.x + (p2.x - p0.x) / 6;
+            const c1y = p1.y + (p2.y - p0.y) / 6;
+            const c2x = p2.x - (p3.x - p1.x) / 6;
+            const c2y = p2.y - (p3.y - p1.y) / 6;
+
+            d +=
+                ` C ${c1x.toFixed(1)} ${c1y.toFixed(1)},` +
+                ` ${c2x.toFixed(1)} ${c2y.toFixed(1)},` +
+                ` ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+        }
+
+        return d;
+    };
+
+    const meet = (): void => {
+        const breedte = omlijsting.clientWidth;
+        const hoogte = omlijsting.clientHeight;
+
+        if (breedte === 0 || hoogte === 0) {
+            return;
+        }
+
+        svg.setAttribute('viewBox', `0 0 ${breedte} ${hoogte}`);
+
+        const rauw = stappen.map(puntVan);
+
+        /*
+         * De tussenpunten afwisselend opzij, loodrecht op de richting van
+         * de hele lijn. Het eerste en het laatste punt blijven staan: de
+         * lijn hoort bij het eerste nummer te beginnen en bij het laatste
+         * te eindigen, niet er een stukje naast.
+         */
+        const start = rauw[0];
+        const slot = rauw[rauw.length - 1];
+
+        const dx = (slot?.x ?? 0) - (start?.x ?? 0);
+        const dy = (slot?.y ?? 0) - (start?.y ?? 0);
+        const lengte = Math.hypot(dx, dy) || 1;
+
+        /*
+         * Staan de punten op één rij, in één kolom, of geen van beide?
+         *
+         * Gemeten met een marge, want een kaart met een langere titel
+         * duwt zijn nummer niet op de pixel gelijk met de buren.
+         */
+        const xen = rauw.map((p) => p.x);
+        const yen = rauw.map((p) => p.y);
+        const MARGE = 8;
+
+        const eenRij = Math.max(...yen) - Math.min(...yen) <= MARGE;
+        const eenKolom = Math.max(...xen) - Math.min(...xen) <= MARGE;
+
+        /*
+         * Geen van beide: een raster van meerdere rijen. Dan is er geen
+         * route die niet dwars door de tekst van een kaart loopt, dus
+         * tekenen we niets -- en zetten we de stappen op "bereikt", want
+         * anders blijven hun nummers gedempt wachten op een lijn die
+         * nooit komt.
+         */
+        if (!eenRij && !eenKolom) {
+            svg.setAttribute('data-leeg', '');
+            pad.setAttribute('d', '');
+            stappen.forEach((stap) => stap.setAttribute('data-bereikt', ''));
+            posities = [];
+
+            return;
+        }
+
+        svg.removeAttribute('data-leeg');
+
+        /*
+         * Op een rij gaat de hele lijn een stukje omhoog, zodat hij niet
+         * door de cijfers heen loopt. In een kolom blijft hij er precies
+         * op staan: daar liggen de nummers in een eigen kantlijn met een
+         * rondje eromheen, en dan is de lijn de draad erdoorheen.
+         */
+        const omhoog = eenKolom ? 0 : BOVEN;
+
+        const punten = rauw.map((p, index) => {
+            const basis = { x: p.x, y: p.y - omhoog };
+
+            if (index === 0 || index === rauw.length - 1) {
+                return basis;
+            }
+
+            // De loodrechte van de richting, op lengte 1 gebracht.
+            const nx = -dy / lengte;
+            const ny = dx / lengte;
+            const kant = index % 2 === 0 ? 1 : -1;
+
+            return {
+                x: basis.x + nx * GOLF * kant,
+                y: basis.y + ny * GOLF * kant,
+            };
+        });
+
+        /*
+         * De punten waar het pad langs loopt: de stappen, plus bij een rij
+         * een aanloop links en een uitloop rechts tot aan de rand.
+         *
+         * **Dat is geen opsmuk.** De nummers staan links in hun kolom, dus
+         * het laatste nummer zit op driekwart van de breedte. Een lijn die
+         * daar ophoudt leest als een streepje dat toevallig tussen vier
+         * punten past, met een kwart leegte ernaast. Van rand tot rand
+         * leest hij als een verloop dat doorgaat -- precies wat het oude,
+         * vaste pad deed.
+         *
+         * De uitlopers staan bewust níet in `punten`: daar wordt opgezocht
+         * waar elke stap op het pad zit, en een punt dat geen stap is hoort
+         * daar niet bij. Ze liggen op dezelfde hoogte als hun buur, zodat
+         * de lijn vlak het beeld in en uit gaat; zou de uitloop meekantelen
+         * met de laatste bocht, dan schiet hij omhoog het beeld uit.
+         */
+        const eerste = punten[0];
+        const laatste = punten[punten.length - 1];
+
+        const padPunten = [...punten];
+
+        if (!eenKolom && eerste !== undefined && laatste !== undefined) {
+            if (eerste.x > MINIMALE_UITLOOP) {
+                padPunten.unshift({ x: 0, y: eerste.y });
+            }
+
+            if (breedte - laatste.x > MINIMALE_UITLOOP) {
+                padPunten.push({ x: breedte, y: laatste.y });
+            }
+        }
+
+        pad.setAttribute('d', padUit(padPunten));
+
+        /*
+         * Waar elke stap op het pad zit. Niet uitgerekend maar opgezocht:
+         * het pad golft, dus de helft van de lengte ligt niet bij de
+         * helft van de stappen. Tweehonderd monsters is ruim genoeg voor
+         * een lijn van een paar honderd beeldpunten.
+         */
+        const padLengte = pad.getTotalLength();
+
+        if (padLengte === 0) {
+            return;
+        }
+
+        const MONSTERS = 200;
+        const monsters: Array<{ x: number; y: number; deel: number }> = [];
+
+        for (let i = 0; i <= MONSTERS; i++) {
+            const deel = i / MONSTERS;
+            const plek = pad.getPointAtLength(padLengte * deel);
+
+            monsters.push({ x: plek.x, y: plek.y, deel });
+        }
+
+        /*
+         * Zoeken op de verschóven punten en niet op de rauwe.
+         *
+         * Het pad loopt langs de verschoven punten; het rauwe punt ligt er
+         * een stukje onder. Zou je dáárop zoeken, dan is het dichtstbije
+         * monster bij elke stap ongeveer even ver weg en klopt de volgorde
+         * niet meer -- en dan licht stap drie op terwijl het puntje nog bij
+         * stap twee is.
+         */
+        posities = punten.map((doel) => {
+            let beste = 0;
+            let kortste = Infinity;
+
+            monsters.forEach((monster) => {
+                const afstand = Math.hypot(
+                    monster.x - doel.x,
+                    monster.y - doel.y,
+                );
+
+                if (afstand < kortste) {
+                    kortste = afstand;
+                    beste = monster.deel;
+                }
+            });
+
+            return beste;
+        });
+    };
+
     if (prefersReducedMotion()) {
+        meet();
         gsap.set(pad, { drawSVG: '100%' });
         gsap.set(punt, { opacity: 0 });
         stappen.forEach((stap) => stap.setAttribute('data-bereikt', ''));
 
         return () => {};
     }
-
-    // Waar elke stap staat, als deel van de breedte van het pad.
-    let posities: number[] = [];
-
-    const meet = (): void => {
-        const vlak = pad.getBoundingClientRect();
-        const breedte = vlak.width || 1;
-
-        posities = stappen.map((stap) => {
-            const eigen = stap.getBoundingClientRect();
-
-            return (eigen.left + eigen.width / 2 - vlak.left) / breedte;
-        });
-    };
 
     const markeer = (voortgang: number): void => {
         stappen.forEach((stap, index) => {
@@ -1082,21 +1377,11 @@ export function tekenPad(
     meet();
 
     /*
-     * Het lichtpuntje wordt met `getPointAtLength` neergezet en niet
-     * met MotionPath.
-     *
-     * Die plugin meet in schermpixels en zet daarna een verschuiving in
-     * de coördinaten van de SVG. Dat klopt zolang die twee dezelfde
-     * verhouding hebben -- en dat is hier juist niet zo: het pad staat
-     * op `preserveAspectRatio="none"` zodat de lijn met de breedte
-     * meerekt, dus horizontaal wordt hij heel anders geschaald dan
-     * verticaal. Het puntje liep daardoor scheef van de lijn af, en hoe
-     * erger naarmate het scherm breder was.
-     *
-     * `getPointAtLength` geeft een punt in de coördinaten van het pad
-     * zelf. Zet je dat op `cx` en `cy` van een cirkel in diezelfde SVG,
-     * dan ondergaat hij exact dezelfde rek als de lijn -- hoe scheef die
-     * ook is.
+     * Het lichtpuntje wordt met `getPointAtLength` neergezet en niet met
+     * MotionPath. Die plugin meet in schermpixels en zet daarna een
+     * verschuiving in de coördinaten van de SVG; `getPointAtLength` geeft
+     * meteen een punt in de coördinaten van het pad zelf, en die zijn hier
+     * gelijk aan beeldpunten.
      */
     const zetPunt = (voortgang: number): void => {
         if (punt === null) {
@@ -1119,7 +1404,7 @@ export function tekenPad(
 
     const tijdlijn = gsap.timeline({
         scrollTrigger: {
-            trigger: pad,
+            trigger: svg,
             start: 'top 78%',
             end: 'bottom 55%',
             scrub: 0.4,
@@ -1133,7 +1418,25 @@ export function tekenPad(
 
     tijdlijn.to(pad, { drawSVG: '100%', ease: 'none' }, 0);
 
+    /*
+     * Opnieuw meten zodra het blok van maat verandert. Een luisteraar op
+     * het venster is niet genoeg: de stappen verspringen ook als het
+     * lettertype binnenkomt of als een samenvatting over een regel meer
+     * gaat lopen.
+     */
+    let kijker: ResizeObserver | undefined;
+
+    if (typeof ResizeObserver !== 'undefined') {
+        kijker = new ResizeObserver(() => {
+            meet();
+            zetPunt(tijdlijn.scrollTrigger?.progress ?? 0);
+        });
+
+        kijker.observe(omlijsting);
+    }
+
     return () => {
+        kijker?.disconnect();
         tijdlijn.scrollTrigger?.kill();
         tijdlijn.kill();
     };

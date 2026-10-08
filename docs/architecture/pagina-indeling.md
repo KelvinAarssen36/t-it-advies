@@ -346,10 +346,11 @@ korte pauze van 200 ms, precies zolang als de sluitanimatie duurt.
 
 ## Wat dit nog niet doet
 
-**De inhoud van de werkwijze is nog niet beheerbaar.** Die teksten staan
-nog in hun Vue-component; daar staat op het scherm nog "Nog niet te
-beheren". Dat is sinds de module [contact](modules/contact.md) het enige
-onderdeel waarvoor dat nog geldt.
+**Elk onderdeel met inhoud is nu beheerbaar.** De werkwijze was de laatste
+die zijn teksten nog in een Vue-component had staan; sinds de module
+[werkwijze](modules/werkwijze.md) komt ook die uit de database. Wat
+overblijft zonder beheerscherm zijn de twee onderdelen die geen inhoud
+hébben: de [LinkedIn-knop](modules/linkedin.md) en de voettekst.
 
 > **Contact is het onderdeel dat het patroon het verst oprekt.** Hij heeft
 > geen teller in `SectionContent` -- met opzet, want het formulier staat er

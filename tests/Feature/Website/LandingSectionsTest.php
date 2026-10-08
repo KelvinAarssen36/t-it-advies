@@ -5,6 +5,7 @@ namespace Tests\Feature\Website;
 use App\Enums\PageSectionKey;
 use App\Models\PageSection;
 use App\Models\Service;
+use App\Models\WorkStep;
 use App\Support\Page\SectionContent;
 use Database\Seeders\PageSectionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -30,13 +31,18 @@ class LandingSectionsTest extends TestCase
         parent::setUp();
 
         /*
-         * Eén dienst, zodat dat onderdeel niet als leeg van de pagina
-         * valt. Deze tests gaan over de vólgorde van de onderdelen, en
-         * daarvoor moeten ze er wel staan -- dat een leeg onderdeel
-         * verdwijnt wordt hieronder apart getoetst en in
-         * ServicePublishingTest.
+         * Eén dienst en één stap, zodat die onderdelen niet als leeg van
+         * de pagina vallen. Deze tests gaan over de vólgorde van de
+         * onderdelen, en daarvoor moeten ze er wel staan -- dat een leeg
+         * onderdeel verdwijnt wordt hieronder apart getoetst en in
+         * ServicePublishingTest en WorkStepPublishingTest.
+         *
+         * De stap kwam erbij toen de werkwijze een echte module werd.
+         * Daarvoor stonden die vier stappen in het Vue-bestand en was het
+         * onderdeel per definitie gevuld.
          */
         Service::factory()->create();
+        WorkStep::factory()->create();
     }
 
     /**

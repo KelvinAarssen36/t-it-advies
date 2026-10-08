@@ -11,6 +11,7 @@ use App\Http\Controllers\Website\ProjectController;
 use App\Http\Controllers\Website\ServiceController;
 use App\Http\Controllers\Website\StatisticController;
 use App\Http\Controllers\Website\TranslateController;
+use App\Http\Controllers\Website\WorkStepController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -232,6 +233,25 @@ Route::middleware(['auth', 'verified', 'two-factor.required', 'can:manage portal
             Route::patch('{project}/online', [ProjectController::class, 'online'])->name('online');
             Route::patch('{project}/uitlichten', [ProjectController::class, 'uitlichten'])->name('uitlichten');
             Route::delete('{project}', [ProjectController::class, 'destroy'])->name('destroy');
+        });
+
+        /*
+         * De werkwijze. Dezelfde opzet als de diensten, zonder het
+         * schuifje voor uitlichten en zonder beeld.
+         *
+         * `kop` en `volgorde` staan vóór `{workStep}`: allemaal een PUT
+         * op dezelfde plek, en de eerste die past wint.
+         */
+        Route::prefix('werkwijze')->name('werkwijze.')->group(function () {
+            Route::get('/', [WorkStepController::class, 'index'])->name('index');
+            Route::post('/', [WorkStepController::class, 'store'])->name('store');
+
+            Route::put('kop', [WorkStepController::class, 'kop'])->name('kop');
+            Route::put('volgorde', [WorkStepController::class, 'volgorde'])->name('volgorde');
+
+            Route::put('{workStep}', [WorkStepController::class, 'update'])->name('update');
+            Route::patch('{workStep}/online', [WorkStepController::class, 'online'])->name('online');
+            Route::delete('{workStep}', [WorkStepController::class, 'destroy'])->name('destroy');
         });
 
         Route::prefix('faq')->name('faq.')->group(function () {

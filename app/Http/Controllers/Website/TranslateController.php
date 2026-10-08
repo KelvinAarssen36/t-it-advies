@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Website;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Website\FaqItemRequest;
+use App\Http\Requests\Website\WorkStepRequest;
 use App\Models\AboutSetting;
 use App\Models\Service;
 use App\Support\Toast;
@@ -115,10 +116,23 @@ class TranslateController extends Controller
              */
             'niveau_nl' => ['nullable', 'string', 'max:60'],
 
-            // De toelichting bij een certificaat. Apart van
-            // `description_nl`, want die hoort bij een ervaring en het
-            // scherm moet weten waar het antwoord heen moet.
-            'body_nl' => ['nullable', 'string', 'max:2000'],
+            /*
+             * De toelichting bij een certificaat. Apart van
+             * `description_nl`, want die hoort bij een ervaring en het
+             * scherm moet weten waar het antwoord heen moet.
+             *
+             * **De ruimste van zijn gebruikers**, net als `summary_nl` en
+             * `label_nl` hierboven: dit veld doet sinds de werkwijze ook
+             * het uitgebreide verhaal van een stap, en dat mag vier
+             * duizend tekens. Stond hier nog tweeduizend, dan faalt de
+             * hele vertaling op een lang verhaal -- en dan komt er ook
+             * geen titel terug.
+             *
+             * Dat het hier ruimer is dan een certificaat toestaat is geen
+             * gat: dit eindpunt slaat niets op. De grens per module staat
+             * in het formulier dat wél opslaat.
+             */
+            'body_nl' => ['nullable', 'string', 'max:'.WorkStepRequest::VERHAAL_MAX],
 
             /*
              * De drie velden van een statistiek: de naam, het regeltje
@@ -156,6 +170,24 @@ class TranslateController extends Controller
 
             'question_nl' => ['nullable', 'string', 'max:160'],
             'answer_nl' => ['nullable', 'string', 'max:'.FaqItemRequest::ANTWOORD_MAX],
+
+            /*
+             * De twee eigen velden van een stap in de werkwijze: hoe lang
+             * hij duurt en wat hij oplevert.
+             *
+             * **Ze hebben een eigen naam nodig.** Een duur is geen label
+             * en een resultaat is geen samenvatting; het venster stuurt ze
+             * samen met de titel en de teksten, en dan moet het antwoord
+             * ze uit elkaar kunnen houden.
+             *
+             * Dat ze hier ontbraken was een stille fout: `validate()`
+             * gooit weg wat niet in deze lijst staat, dus de vertaalknop
+             * vulde de titel, de korte tekst en het verhaal wél en deze
+             * twee niet -- zonder enige melding. Zie
+             * WorkStepTranslationTest.
+             */
+            'duration_nl' => ['nullable', 'string', 'max:40'],
+            'result_nl' => ['nullable', 'string', 'max:'.WorkStepRequest::RESULTAAT_MAX],
         ]);
 
         /** @var array<int, string|null> $punten */

@@ -14,6 +14,7 @@ use App\Models\Project;
 use App\Models\Service;
 use App\Models\Statistic;
 use App\Models\User;
+use App\Models\WorkStep;
 use App\Support\Page\SectionContent;
 use App\Support\Security\SecurityLogger;
 use App\Support\Translation\GeenVertaler;
@@ -139,6 +140,17 @@ class AppServiceProvider extends ServiceProvider
         $this->app->make(SectionContent::class)->telt(
             PageSectionKey::Ervaring,
             fn () => Experience::query()->online()->count(),
+        );
+
+        /*
+         * En voor de werkwijze. Die had lang geen teller, en dat kon ook
+         * niet: de stappen stonden in het Vue-bestand, dus het onderdeel
+         * was per definitie gevuld. Nu ze van de klant zijn kan hij ze
+         * allemaal offline zetten, en dan hoort het blok van de site.
+         */
+        $this->app->make(SectionContent::class)->telt(
+            PageSectionKey::Werkwijze,
+            fn () => WorkStep::query()->online()->count(),
         );
 
         // Zelfde verhaal voor de diensten: staat alles offline, dan is

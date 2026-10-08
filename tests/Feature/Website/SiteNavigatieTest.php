@@ -9,6 +9,7 @@ use App\Models\AboutSetting;
 use App\Models\ContactSetting;
 use App\Models\PageSection;
 use App\Models\Project;
+use App\Models\WorkStep;
 use Database\Seeders\ContactSeeder;
 use Database\Seeders\PageSectionSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -68,6 +69,17 @@ class SiteNavigatieTest extends TestCase
         Project::factory()->create();
     }
 
+    /**
+     * Een stap met een verhaal, zodat /werkwijze bestaat.
+     *
+     * Zonder verhaal weigert die pagina zichzelf -- zie
+     * PublicWerkwijzeController -- en dan valt er geen menu te vergelijken.
+     */
+    private function werkwijzeGevuld(): void
+    {
+        WorkStep::factory()->uitgebreid()->create();
+    }
+
     /** En de aparte contactpagina pas als de eigenaar daarvoor kiest. */
     private function contactpaginaAan(): void
     {
@@ -111,6 +123,7 @@ class SiteNavigatieTest extends TestCase
         $this->overMijKlaar();
         $this->contactpaginaAan();
         $this->projectenGevuld();
+        $this->werkwijzeGevuld();
 
         $voorpagina = $this->menuVan(route('home'));
 
@@ -118,6 +131,7 @@ class SiteNavigatieTest extends TestCase
         $this->assertSame($voorpagina, $this->menuVan(route('over-mij')));
         $this->assertSame($voorpagina, $this->menuVan(route('contact')));
         $this->assertSame($voorpagina, $this->menuVan(route('projecten')));
+        $this->assertSame($voorpagina, $this->menuVan(route('werkwijze')));
     }
 
     /**

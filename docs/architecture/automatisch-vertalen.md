@@ -62,8 +62,10 @@ die er acht tegelijk overschrijft is te grof.
 | `title_nl`       | 120    | De koppen boven een blok, de titel van een dienst, de naam van een certificaat en die van een opleiding                                    |
 | `intro_nl`       | 300    | De zin onder een kop                                                                                                                       |
 | `eyebrow_nl`     | 60     | Het opschrift boven een kop                                                                                                                |
-| `summary_nl`     | 300    | De korte tekst op een dienstkaart                                                                                                          |
-| `body_nl`        | 2000   | De toelichting bij een certificaat                                                                                                         |
+| `summary_nl`     | 400    | De korte tekst op een dienstkaart, de samenvatting bij Over mij, en de zin onder een stap in de werkwijze                                  |
+| `body_nl`        | 4000   | De toelichting bij een certificaat, en het uitgebreide verhaal van een stap in de werkwijze                                                |
+| `duration_nl`    | 40     | Hoe lang een stap in de werkwijze duurt                                                                                                    |
+| `result_nl`      | 160    | Wat een stap in de werkwijze oplevert                                                                                                      |
 | `niveau_nl`      | 60     | Het niveau van een opleiding                                                                                                               |
 | `label_nl`       | 60     | De naam van een statistiek                                                                                                                 |
 | `notitie_nl`     | 120    | Het regeltje onder een statistiek                                                                                                          |
@@ -74,6 +76,23 @@ die er acht tegelijk overschrijft is te grof.
 Ze zijn allemaal `nullable`, dus elk scherm stuurt alleen wat het heeft.
 Komt er een module bij met een nieuw soort tekst, dan komt daar een veld
 bij -- géén tweede route.
+
+> **Vergeet dat veld niet, want het faalt stil.** `validate()` gooit weg
+> wat niet in deze lijst staat. Stuurt een venster een veld dat hier
+> ontbreekt, dan komt er geen foutmelding: de andere velden worden netjes
+> vertaald en dat ene blijft leeg. Je merkt het pas als je toevallig naar
+> het Engels kijkt.
+>
+> Dat is precies wat er bij de werkwijze gebeurde met `duration_nl` en
+> `result_nl`. `WorkStepTranslationTest` loopt daarom de hele lijst af die
+> het venster meestuurt en eist dat elk veld ook terugkomt -- een vorm die
+> het kopiëren waard is voor een volgende module.
+>
+> **En let op de lengte.** `body_nl` stond op 2000 toen de werkwijze er
+> 4000 in ging stoppen. Dan valt niet dat ene veld weg maar de hele
+> aanroep, dus komt er ook geen titel terug. Dit eindpunt slaat niets op,
+> dus de ruimste gebruiker bepaalt de grens; de echte grens staat in het
+> formulier dat wél opslaat.
 
 > **De regel voor een volgende module:** één route, meerdere velden. Een
 > tweede route ernaast zou dezelfde begrenzing, dezelfde foutafhandeling

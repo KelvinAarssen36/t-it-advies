@@ -14,6 +14,7 @@ use App\Models\ContactSubmission;
 use App\Models\FaqItem;
 use App\Models\MailLog;
 use App\Models\Project;
+use App\Models\WorkStep;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use RuntimeException;
@@ -95,6 +96,7 @@ class VoorbeeldDataSeeder extends Seeder
         $this->vragen();
         $this->overMij();
         $this->projecten();
+        $this->werkwijze();
     }
 
     /**
@@ -119,6 +121,77 @@ class VoorbeeldDataSeeder extends Seeder
      * Het middelste heeft een eigen soort, zodat de uitweg "Anders" ook
      * echt een keer op het scherm staat.
      */
+    /**
+     * De vier stappen die hiervoor in WerkwijzeSection.vue stonden.
+     *
+     * **Woord voor woord dezelfde teksten**, en dat is het hele punt: de
+     * verhuizing van het Vue-bestand naar de database hoort niets aan de
+     * website te veranderen. Wat erbij komt is de duur en het resultaat --
+     * velden die er eerst niet waren -- en bij de eerste twee stappen een
+     * uitgebreid verhaal, zodat de pagina /werkwijze ook echt bestaat in
+     * de voorbeelddata.
+     */
+    private function werkwijze(): void
+    {
+        $rijen = [
+            [
+                'title_nl' => 'Kennismaken',
+                'title_en' => 'Getting to know each other',
+                'summary_nl' => 'Wat speelt er, wat is er al, en waar loopt het vast.',
+                'summary_en' => 'What is going on, what is already there, and where it gets stuck.',
+                'duration_nl' => 'Een gesprek',
+                'duration_en' => 'One conversation',
+                'result_nl' => 'Een eerlijk beeld van wat er nodig is.',
+                'result_en' => 'An honest picture of what is needed.',
+                'body_nl' => "We beginnen met kijken en luisteren, niet met oplossingen. Wat draait er nu, wie werkt ermee, en waar gaat het elke week mis?\n\nSoms blijkt daar al dat je geen nieuw systeem nodig hebt maar een andere afspraak. Dat zeg ik dan ook.",
+                'body_en' => "We start by looking and listening, not with solutions. What is running today, who works with it, and where does it go wrong every week?\n\nSometimes that already shows you do not need a new system but a different agreement. In that case I will say so.",
+            ],
+            [
+                'title_nl' => 'Voorstel',
+                'title_en' => 'Proposal',
+                'summary_nl' => 'Een plan met een prijs, en wat er buiten valt.',
+                'summary_en' => 'A plan with a price, and what falls outside it.',
+                'duration_nl' => '1-2 weken',
+                'duration_en' => '1-2 weeks',
+                'result_nl' => 'Een plan met een prijs die niet achteraf verandert.',
+                'result_en' => 'A plan with a price that does not change afterwards.',
+                'body_nl' => "Je krijgt op papier wat er gaat gebeuren, wat het kost en hoe lang het duurt. En net zo belangrijk: wat er níet bij zit.\n\nDat laatste is waar de meeste verrassingen vandaan komen, dus daar ben ik liever te uitgebreid dan te kort.",
+                'body_en' => "You get on paper what will happen, what it costs and how long it takes. And just as important: what is not included.\n\nThat last part is where most surprises come from, so I would rather be too thorough there than too brief.",
+            ],
+            [
+                'title_nl' => 'Bouwen',
+                'title_en' => 'Building',
+                'summary_nl' => 'In korte stappen, zodat je onderweg kunt bijsturen.',
+                'summary_en' => 'In short steps, so you can adjust along the way.',
+                'duration_nl' => 'Per twee weken',
+                'duration_en' => 'Every two weeks',
+                'result_nl' => 'Elke twee weken iets dat je kunt bekijken.',
+                'result_en' => 'Something you can look at every two weeks.',
+                'body_nl' => null,
+                'body_en' => null,
+            ],
+            [
+                'title_nl' => 'Overdragen',
+                'title_en' => 'Handing over',
+                'summary_nl' => 'Werkende software plus de documentatie om er zelf mee verder te kunnen.',
+                'summary_en' => 'Working software plus the documentation to carry on by yourself.',
+                'duration_nl' => 'Een dagdeel',
+                'duration_en' => 'Half a day',
+                'result_nl' => 'Alles in jouw handen, niet in de mijne.',
+                'result_en' => 'Everything in your hands, not in mine.',
+                'body_nl' => null,
+                'body_en' => null,
+            ],
+        ];
+
+        foreach ($rijen as $plek => $rij) {
+            WorkStep::query()->updateOrCreate(
+                ['title_nl' => $rij['title_nl']],
+                [...$rij, 'position' => $plek + 1, 'published' => true],
+            );
+        }
+    }
+
     private function projecten(): void
     {
         $rijen = [

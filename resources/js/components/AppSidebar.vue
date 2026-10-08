@@ -17,6 +17,7 @@ import {
     Mail,
     MessageSquare,
     Milestone,
+    Route,
     Scale,
     ShieldAlert,
     UserRound,
@@ -50,6 +51,7 @@ import certificaten from '@/routes/website/certificaten';
 import contact from '@/routes/website/contact';
 import diensten from '@/routes/website/diensten';
 import projecten from '@/routes/website/projecten';
+import werkwijze from '@/routes/website/werkwijze';
 import ervaring from '@/routes/website/ervaring';
 import faq from '@/routes/website/faq';
 import statistieken from '@/routes/website/statistieken';
@@ -146,6 +148,11 @@ const websiteItems = computed<NavItem[]>(() => [
         title: t('Diensten'),
         href: diensten.index(),
         icon: Lightbulb,
+    },
+    {
+        title: t('Werkwijze'),
+        href: werkwijze.index(),
+        icon: Route,
     },
     {
         title: t('Projecten'),
