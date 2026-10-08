@@ -12,6 +12,8 @@ type Stats = {
     security_events_total: number;
     mails_sent: number;
     mail_problems: number;
+    /** Null als er nog nooit een back-up is gemaakt. */
+    backup_dagen: number | null;
 };
 
 type Failure = {
@@ -100,6 +102,40 @@ defineOptions({
                         "
                     >
                         {{ stats.mail_problems }}
+                    </p>
+                </CardContent>
+            </Card>
+
+            <!--
+                De leeftijd van de nieuwste back-up. Hij staat hier omdat
+                niemand het back-upscherm opent om te ontdekken dat hij
+                iets had moeten doen.
+            -->
+            <Card>
+                <CardHeader class="pb-2">
+                    <CardTitle
+                        class="text-sm font-medium text-muted-foreground"
+                    >
+                        {{ $t('Laatste back-up') }}
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p
+                        class="text-3xl font-semibold tabular-nums"
+                        :class="
+                            stats.backup_dagen === null ||
+                            stats.backup_dagen >= 60
+                                ? 'text-warning'
+                                : ''
+                        "
+                    >
+                        {{
+                            stats.backup_dagen === null
+                                ? $t('geen')
+                                : $t(':aantal d', {
+                                      aantal: stats.backup_dagen,
+                                  })
+                        }}
                     </p>
                 </CardContent>
             </Card>

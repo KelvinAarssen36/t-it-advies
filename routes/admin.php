@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\ActivityController;
+use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Admin\ContactSubmissionController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\LegalController;
@@ -35,6 +36,50 @@ Route::middleware(['auth', 'verified', 'two-factor.required'])
         Route::get('/', [DashboardController::class, 'index'])
             ->middleware('can:manage portal')
             ->name('dashboard');
+
+        /*
+         * Back-ups van de website-inhoud.
+         *
+         * **Geen `2fa.confirm` op het terugzetten en het verwijderen**,
+         * hoewel het allebei gevoelige acties zijn. Die middleware kan een
+         * POST niet onthouden en gooit het verzoek weg; de code zit
+         * daarom in het verzoek zelf, gecontroleerd door dezelfde klasse
+         * die het codescherm gebruikt. Zie BackupController en
+         * App\Support\Security\Authenticator.
+         */
+        Route::prefix('back-ups')->name('backups.')->middleware('can:manage portal')->group(function () {
+            Route::get('/', [BackupController::class, 'index'])->name('index');
+
+            Route::post('/', [BackupController::class, 'store'])
+                ->middleware('throttle:backups')
+                ->name('store');
+
+            Route::post('opruimen', [BackupController::class, 'opruimen'])
+                ->middleware('throttle:sensitive-action')
+                ->name('opruimen');
+
+            Route::post('uploaden', [BackupController::class, 'upload'])
+                ->middleware('throttle:backups')
+                ->name('upload');
+
+            Route::get('{backup}/downloaden', [BackupController::class, 'download'])
+                ->name('download');
+
+            Route::post('{backup}/controleren', [BackupController::class, 'controleer'])
+                ->middleware('throttle:backups')
+                ->name('controleer');
+
+            Route::put('{backup}/vastzetten', [BackupController::class, 'vastzetten'])
+                ->name('vastzetten');
+
+            Route::post('{backup}/terugzetten', [BackupController::class, 'restore'])
+                ->middleware('throttle:sensitive-action')
+                ->name('terugzetten');
+
+            Route::delete('{backup}', [BackupController::class, 'destroy'])
+                ->middleware('throttle:sensitive-action')
+                ->name('destroy');
+        });
 
         /*
          * De bezoekcijfers van de website. Het enige scherm hier dat over

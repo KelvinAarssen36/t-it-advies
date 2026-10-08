@@ -3,6 +3,7 @@ import { Form, Head } from '@inertiajs/vue3';
 import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
+import PasskeyExtraStap from '@/components/PasskeyExtraStap.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -15,6 +16,7 @@ import ManageTwoFactor from '@/components/ManageTwoFactor.vue';
 // oxfmt-ignore
 type Props = {
     passwordRules: string;
+    passkeyStep: boolean;
 } & ManagePasskeysProps &
     ManageTwoFactorProps;
 
@@ -128,5 +130,16 @@ defineOptions({
     <ManagePasskeys
         :canManagePasskeys="canManagePasskeys"
         :passkeys="passkeys"
+    />
+
+    <!--
+        Onder de passkeys en niet onder de tweestapsverificatie: deze
+        keuze gaat over wat er ná een passkey gebeurt, dus hij hoort te
+        staan waar de eigenaar net zijn passkeys heeft zien staan.
+    -->
+    <PasskeyExtraStap
+        v-if="props.canManagePasskeys && props.twoFactorEnabled"
+        :aan="props.passkeyStep"
+        :heeft-passkeys="(props.passkeys?.length ?? 0) > 0"
     />
 </template>

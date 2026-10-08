@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\Settings\DashboardSettingsController;
+use App\Http\Controllers\Settings\EmailChangeController;
 use App\Http\Controllers\Settings\MailStijlController;
 use App\Http\Controllers\Settings\MailVoorbeeldController;
+use App\Http\Controllers\Settings\PasskeyStepController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SafetyController;
 use App\Http\Controllers\Settings\SecurityController;
@@ -20,6 +22,58 @@ Route::middleware(['auth', 'two-factor.required'])->group(function () {
 
     Route::get('settings/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('settings/profile', [ProfileController::class, 'update'])->name('profile.update');
+
+    /*
+     * Het inlogadres wijzigen staat los van het profiel, met drie sloten:
+     * een verse authenticator-code (`2fa.confirm`), het huidige wachtwoord
+     * (in EmailChangeRequest) en een bevestiging vanuit het nieuwe postvak.
+     *
+     * De begrenzing is krap met opzet. Elke aanvraag stuurt twee mails, en
+     * een knop die per ongeluk in een lus komt, maakt van het oude postvak
+     * een spamdoel -- precies het postvak dat je wil kunnen vertrouwen.
+     */
+    /*
+     * De deur naar het venster, en meteen het eerste slot. Deze route doet
+     * zelf niets -- hij stuurt meteen terug naar het profiel -- maar hij
+     * staat achter `2fa.confirm`. Daardoor wordt de authenticator gevraagd
+     * *voordat* de eigenaar iets intypt.
+     *
+     * Dat is niet alleen vriendelijker. Zonder deze stap vraagt de
+     * middleware de code pas bij het versturen; de eigenaar komt dan na het
+     * invoeren van zijn code terug op een leeg scherm en moet het hele
+     * formulier opnieuw invullen. Precies het moment waarop iemand denkt
+     * dat er iets stuk is.
+     */
+    Route::get('settings/inlogadres', [EmailChangeController::class, 'create'])
+        ->middleware('2fa.confirm')
+        ->name('inlogadres.create');
+
+    Route::post('settings/inlogadres', [EmailChangeController::class, 'store'])
+        ->middleware(['2fa.confirm', 'throttle:inlogadres'])
+        ->name('inlogadres.store');
+});
+
+/*
+ * De twee links uit de mails. **Zonder inloggen**, en dat is met opzet.
+ *
+ * `bevestigen` komt in het nieuwe postvak terecht en bewijst daarmee wat
+ * hij moet bewijzen: dat dat postvak bestaat. Wie de aanvrager is, is al
+ * bewezen met wachtwoord én code.
+ *
+ * `terugdraaien` is het vangnet voor precies de situatie waarin je niet
+ * meer binnenkomt. Een herstellink achter een inlogscherm is geen
+ * herstellink.
+ *
+ * Allebei met een eenmalig token dat gehasht in de database staat; zie
+ * App\Models\EmailChange. De begrenzing voorkomt dat iemand tokens staat
+ * te raden.
+ */
+Route::middleware('throttle:inlogadres-link')->group(function () {
+    Route::get('inlogadres/bevestigen/{token}', [EmailChangeController::class, 'confirm'])
+        ->name('inlogadres.bevestigen');
+
+    Route::get('inlogadres/terugdraaien/{token}', [EmailChangeController::class, 'revert'])
+        ->name('inlogadres.terugdraaien');
 });
 
 /*
@@ -38,6 +92,23 @@ Route::middleware(['auth', 'verified', 'two-factor.required'])->group(function (
     Route::put('settings/password', [SecurityController::class, 'update'])
         ->middleware('throttle:6,1')
         ->name('user-password.update');
+
+    /*
+     * De extra stap na een passkey, aan en uit.
+     *
+     * **Niet achter `2fa.confirm`**, hoewel het wel degelijk een gevoelige
+     * actie is. Die middleware kan een PUT niet onthouden: hij stuurt je
+     * naar het codescherm en gooit het verzoek weg, zodat het schuifje
+     * terugspringt en je het nog een keer moet omzetten.
+     *
+     * De code zit daarom in het verzoek zelf, gecontroleerd door dezelfde
+     * klasse die dat codescherm gebruikt. Dezelfde begrenzer ook, want het
+     * is dezelfde soort poging. Zie PasskeyStepController en
+     * App\Support\Security\Authenticator.
+     */
+    Route::put('settings/security/passkey-stap', [PasskeyStepController::class, 'update'])
+        ->middleware('throttle:sensitive-action')
+        ->name('security.passkey-stap');
 
     /*
      * Weergave. Sinds de mailstijl een instelling is kan dit geen

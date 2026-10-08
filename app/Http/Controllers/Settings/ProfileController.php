@@ -4,8 +4,9 @@ namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
+use App\Models\EmailChange;
+use App\Models\User;
 use App\Support\Toast;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -25,24 +26,52 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): Response
     {
+        /** @var User $gebruiker */
+        $gebruiker = $request->user();
+
         return Inertia::render('settings/Profile', [
-            'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
+            /*
+             * Een vaste `true`. Hier stond een instanceof-controle uit de
+             * starter kit, maar ons User-model implementeert dat contract
+             * gewoon, dus die controle was altijd waar. De prop zelf blijft:
+             * het scherm leest hem.
+             */
+            'mustVerifyEmail' => true,
             'status' => $request->session()->get('status'),
+
+            /*
+             * Een aanvraag die nog op bevestiging wacht. Zonder dit zou
+             * het scherm doen alsof er niets loopt, terwijl er een
+             * bevestigingslink in een ander postvak ligt.
+             */
+            /*
+             * Komt de eigenaar net langs `inlogadres.create` -- en dus
+             * langs zijn authenticator -- dan gaat het venster meteen
+             * open. Zie EmailChangeController::create().
+             */
+            'openInlogadresVenster' => $request->session()->get('inlogadresVenster') === true,
+
+            'openstaandeWijziging' => EmailChange::query()
+                ->where('user_id', $gebruiker->id)
+                ->openstaand()
+                ->latest('id')
+                ->first()
+                ?->voorHetScherm(),
         ]);
     }
 
     /**
-     * Update the user's profile information.
+     * De naam bijwerken.
+     *
+     * **Het e-mailadres loopt hier niet meer langs.** Dat heeft een eigen
+     * stroom met drie sloten ervoor en een weg terug erna; zie
+     * EmailChangeController. Hier stond het gewoon tussen de velden, en
+     * dan is het inlogadres van het portaal één toetsaanslag van een adres
+     * dat niet bestaat.
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
-
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
-        }
-
-        $request->user()->save();
+        $request->user()->fill($request->validated())->save();
 
         Toast::bijgewerkt(__('Je profiel is bijgewerkt.'));
 

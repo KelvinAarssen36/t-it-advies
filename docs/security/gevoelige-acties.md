@@ -62,20 +62,55 @@ elke gevoelige actie achter een formulier stuk.
 
 ## Waar het nu op zit
 
-| Route                          | Actie                    |
-| ------------------------------ | ------------------------ |
-| `PUT admin/users/{user}/roles` | Rollen van een gebruiker |
-| `DELETE admin/users/{user}`    | Een account verwijderen  |
+| Route                                 | Actie                                 |
+| ------------------------------------- | ------------------------------------- |
+| `PUT admin/users/{user}/roles`        | Rollen van een gebruiker              |
+| `DELETE admin/users/{user}`           | Een account verwijderen               |
+| `DELETE admin/aanvragen/{submission}` | Een aanvraag van een bezoeker wissen  |
+| `GET settings/inlogadres`             | Het venster voor een ander inlogadres |
+| `POST settings/inlogadres`            | Dat inlogadres aanvragen              |
 
-Allebei met `can:manage portal` ernaast. Zie
+De eerste drie hebben `can:manage portal` ernaast. Zie
 [rollen en rechten](rollen-en-rechten.md) voor de twee vangnetten die daar
 nog bovenop zitten.
 
-Wat er bewust **niet** achter zit: je eigen account verwijderen via
-[instellingen](../../app/Http/Controllers/Settings/ProfileController.php).
-Dat vraagt om je wachtwoord, niet om een authenticator-code. Zou het wel een
-verse code vragen, dan kan een gebruiker zonder 2FA zijn eigen account nooit
-meer opzeggen -- en dat is zijn recht, geen beheerdershandeling.
+**De GET op `settings/inlogadres` valt op**, want die bewaart niets. Hij
+staat er juist omdat de code dan wordt gevraagd vóórdat de eigenaar zijn
+formulier invult; zie hieronder.
+
+Wat er bewust **niet** achter zit: je eigen account verwijderen. Die route
+bestaat niet -- dit portaal heeft één account, en wie dat weghaalt sluit
+zichzelf buiten. Zie `routes/settings.php`.
+
+## De middleware werkt niet overal
+
+`2fa.confirm` kan een POST of PUT **niet onthouden**. Hij bewaart alleen de
+pagina waar je vandaan kwam, stuurt je naar het codescherm, en je verzoek
+is weg. Voor een knop die meteen iets doet -- een rij verwijderen -- is dat
+te verdedigen: je komt terug op dezelfde pagina en drukt nog een keer. Voor
+een handeling die je eerst invult is het dat niet.
+
+Twee gevallen in dit project, allebei op hun eigen manier opgelost:
+
+- **Het inlogadres wijzigen** zet de middleware op een GET die het venster
+  opent. De code wordt dan gevraagd vóórdat de eigenaar iets intypt. Zie
+  [het inlogadres wijzigen](inlogadres-wijzigen.md).
+- **De extra stap na een passkey** is een schuifje; daar valt niets te
+  openen. Het codeveld staat in het venster zelf en de code gaat mee in het
+  verzoek, gecontroleerd door `App\Support\Security\Authenticator` --
+  dezelfde klasse die het codescherm hierboven gebruikt. Zie
+  [de extra stap na een passkey](extra-stap-na-een-passkey.md).
+
+Die klasse bestaat juist zodat die tweede manier de regels van de eerste
+niet overschrijft. Verandert er iets aan wat een geldige code is, dan
+verandert het op één plek.
+
+> **Dit ging eerst mis**, en het is het soort fout dat je alleen in de
+> browser ziet. Het schuifje zat achter `2fa.confirm`: je zette het om, je
+> vulde je code in, je kwam terug -- en het stond weer zoals het stond,
+> want de PUT was onderweg weggegooid. Je moest het dus twee keer omzetten,
+> en alleen als je bevestiging al verlopen was. In de tests zag dat eruit
+> als gewenst gedrag.
 
 ## Instellingen
 

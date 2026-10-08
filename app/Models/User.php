@@ -79,8 +79,29 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'two_factor_secret',
             'two_factor_recovery_codes',
             'two_factor_confirmed_at',
+            'passkey_requires_two_factor',
             'email_verified_at',
         ];
+    }
+
+    /**
+     * Of er na een passkey ook nog een authenticator-code moet komen.
+     *
+     * Twee voorwaarden, en de tweede is het punt: de eigenaar moet het
+     * hebben aangezet **en** er moet een bevestigde authenticator zijn.
+     * Zonder die tweede zou de schakelaar een code beloven die er niet is,
+     * en wordt hij bij het inloggen stilletjes overgeslagen.
+     *
+     * Een eigen methode en geen `->passkey_requires_two_factor` op de
+     * aanroepplek, zodat die tweede voorwaarde niet op twee plekken kan
+     * gaan verschillen.
+     *
+     * Zie docs/security/extra-stap-na-een-passkey.md.
+     */
+    public function vraagtExtraCodeNaEenPasskey(): bool
+    {
+        return $this->passkey_requires_two_factor === true
+            && $this->two_factor_confirmed_at !== null;
     }
 
     /**
@@ -94,6 +115,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
+            'passkey_requires_two_factor' => 'boolean',
             'dashboard_timezone' => DashboardTimezone::class,
         ];
     }

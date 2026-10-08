@@ -4,14 +4,12 @@ namespace App\Http\Controllers\Security;
 
 use App\Enums\SecurityEventType;
 use App\Http\Controllers\Controller;
+use App\Support\Security\Authenticator;
 use App\Support\Security\SecurityLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
-use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
-use Laravel\Fortify\Fortify;
 
 /**
  * Vraagt een verse authenticator-code voor een gevoelige actie.
@@ -38,7 +36,17 @@ class ConfirmTwoFactorController extends Controller
         ]);
     }
 
-    public function store(Request $request, TwoFactorAuthenticationProvider $provider): RedirectResponse
+    /**
+     * De ingevoerde code controleren.
+     *
+     * Het controleren zelf staat in App\Support\Security\Authenticator,
+     * want dit is niet de enige plek waar om een verse code wordt
+     * gevraagd. Een handeling die je eerst invult -- de schakelaar voor de
+     * extra stap na een passkey bijvoorbeeld -- kan dit scherm niet
+     * gebruiken: de middleware zou het ingevulde formulier weggooien. Die
+     * zet het codeveld in zijn eigen venster, en gebruikt dezelfde klasse.
+     */
+    public function store(Request $request, Authenticator $authenticator): RedirectResponse
     {
         $user = $request->user();
 
@@ -48,39 +56,7 @@ class ConfirmTwoFactorController extends Controller
             'code' => ['required', 'string'],
         ]);
 
-        $code = trim($validated['code']);
-
-        // Een recovery code van Fortify ziet eruit als "abcdefghij-klmnopqrst".
-        // Die weigeren we hier bewust, en we zeggen ook waarom.
-        if (! preg_match('/^\d{6}$/', $code)) {
-            $this->logger->failure(SecurityEventType::SensitiveActionRecoveryCodeRefused, $user, [
-                'reason' => 'not-a-totp-code',
-            ]);
-
-            throw ValidationException::withMessages([
-                'code' => __('Vul de zescijferige code uit je authenticator in. Recovery codes gelden hier niet.'),
-            ]);
-        }
-
-        $secret = $user->two_factor_secret;
-
-        // Dezelfde encrypter als Fortify gebruikt bij het opslaan. Gebruik
-        // hier geen Crypt-facade rechtstreeks: Fortify kan zijn encrypter
-        // vervangen (bijvoorbeeld voor sleutelrotatie) en dan loopt dit uiteen.
-        if (! is_string($secret) || ! $provider->verify(Fortify::currentEncrypter()->decrypt($secret), $code)) {
-            $this->logger->failure(SecurityEventType::SensitiveActionFailed, $user);
-
-            throw ValidationException::withMessages([
-                'code' => __('Deze code klopt niet.'),
-            ]);
-        }
-
-        $request->session()->put(
-            (string) config('security.sensitive_actions.session_key'),
-            time(),
-        );
-
-        $this->logger->success(SecurityEventType::SensitiveActionConfirmed, $user);
+        $authenticator->bevestig($user, (string) $validated['code']);
 
         return redirect()->intended(route('dashboard'));
     }

@@ -3,7 +3,9 @@ import { Head, Link } from '@inertiajs/vue3';
 import {
     Activity,
     ArrowUpRight,
+    Archive,
     Asterisk,
+    AtSign,
     Award,
     ChartNoAxesColumn,
     CircleQuestionMark,
@@ -33,6 +35,7 @@ import {
     Search,
     Share2,
     ShieldAlert,
+    ShieldPlus,
     ShieldCheck,
     Sparkles,
     SunMoon,
@@ -50,6 +53,7 @@ import {
 } from '@/lib/handleiding';
 import Heading from '@/components/Heading.vue';
 import SegmentToggle from '@/components/SegmentToggle.vue';
+import adminBackups from '@/routes/admin/backups';
 import UitlegKaart from '@/components/settings/UitlegKaart.vue';
 import VerlaatPortaal from '@/components/VerlaatPortaal.vue';
 import { Button } from '@/components/ui/button';
@@ -703,7 +707,7 @@ defineOptions({
                             <p>
                                 {{
                                     $t(
-                                        'Onder Instellingen → Profiel staan je naam en je e-mailadres. Dat adres is waarmee je inlogt; verander je het, dan log je voortaan met het nieuwe adres in. Het heeft niets te maken met het adres dat op je website staat -- dat beheer je los.',
+                                        'Onder Instellingen → Profiel staan je naam en je inlogadres. Je naam pas je daar gewoon aan. Je inlogadres wijzigen gaat in stappen, want daar kun je jezelf mee buitensluiten; dat staat hieronder apart uitgelegd. Het heeft niets te maken met het adres dat op je website staat -- dat beheer je los.',
                                     )
                                 }}
                             </p>
@@ -756,6 +760,56 @@ defineOptions({
                         </UitlegKaart>
 
                         <UitlegKaart
+                            :titel="$t('Je inlogadres wijzigen')"
+                            :icoon="AtSign"
+                        >
+                            <p>
+                                {{
+                                    $t(
+                                        'Je inlogadres is het e-mailadres waarmee je dit portaal binnenkomt. Er is maar één account, dus als dat adres naar een postbus wijst waar je niet bij kunt, kom je er zelf ook niet meer in. Daarom kun je het niet zomaar overtypen.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Onder Instellingen → Profiel staat je adres met een knop Wijzigen ernaast. Druk je daarop, dan vraagt het portaal eerst een code uit je authenticator. Daarna vul je het nieuwe adres in én je huidige wachtwoord.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Er verandert op dat moment nog niets. Je nieuwe postbus krijgt een mail met een knop; pas als je daarop drukt, wordt het je inlogadres. Tot die tijd log je gewoon in met je oude adres. Typ je je dus per ongeluk mis, dan gebeurt er simpelweg niets en kun je het opnieuw proberen.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Je oude postbus krijgt óók een mail, met een knop "Nee, draai dit terug". Bewaar die mail. Hij werkt twee weken en zet je oude adres terug -- ook als de wijziging al is doorgevoerd. Dat is je weg terug als er iets misgaat of als iemand anders dit heeft aangevraagd.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Zie je op je profiel staan dat er een wijziging wacht, dan ligt die bevestigingsmail nog ongeopend in je nieuwe postbus. Hij is een uur geldig; daarna vraag je hem gewoon opnieuw aan.',
+                                    )
+                                }}
+                            </p>
+
+                            <template #voorbeeld>
+                                <Button variant="outline" size="sm" as-child>
+                                    <Link :href="editProfile()">
+                                        <AtSign class="size-4" />
+                                        {{ $t('Naar Profiel') }}
+                                    </Link>
+                                </Button>
+                            </template>
+                        </UitlegKaart>
+
+                        <UitlegKaart
                             :titel="$t('Inloggen met je vingerafdruk')"
                             :icoon="Fingerprint"
                         >
@@ -785,6 +839,56 @@ defineOptions({
                                 <Button variant="outline" size="sm" as-child>
                                     <Link :href="editSecurity()">
                                         <Fingerprint class="size-4" />
+                                        {{ $t('Naar Beveiliging') }}
+                                    </Link>
+                                </Button>
+                            </template>
+                        </UitlegKaart>
+
+                        <UitlegKaart
+                            :titel="$t('Extra streng bij een passkey')"
+                            :icoon="ShieldPlus"
+                        >
+                            <p>
+                                {{
+                                    $t(
+                                        'Met een passkey ben je in een handeling binnen: je vinger of je gezicht, en klaar. Bij inloggen met je wachtwoord komt daarna altijd nog de code uit je authenticator; bij een passkey niet.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Dat is veilig genoeg voor de meeste mensen, maar niet voor iedereen. Laat je je laptop weleens ontgrendeld staan, dan is er met een passkey niets meer tussen een voorbijganger en je portaal. Daarom kun je er zelf een code achteraan zetten.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Onder Instellingen → Beveiliging staat onder je passkeys de schakelaar "Ook je authenticator na een passkey". Zet je hem aan, dan vraagt het portaal na elke passkey-login alsnog je zescijferige code. Hij staat standaard uit; het is jouw keuze.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Voor het omzetten vraagt het portaal eerst een code uit je authenticator -- ook als je hem uitzet. Juist dan: uitzetten haalt een slot weg, en dat moet niet kunnen door even achter je scherm te gaan zitten.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Ben je je telefoon kwijt terwijl de schakelaar aanstaat? Dan kom je er nog steeds in met een van je recovery codes. Je sluit jezelf er dus niet mee buiten.',
+                                    )
+                                }}
+                            </p>
+
+                            <template #voorbeeld>
+                                <Button variant="outline" size="sm" as-child>
+                                    <Link :href="editSecurity()">
+                                        <ShieldPlus class="size-4" />
                                         {{ $t('Naar Beveiliging') }}
                                     </Link>
                                 </Button>
@@ -1855,6 +1959,63 @@ defineOptions({
                                     <Link :href="adminActivity.index()">
                                         <Activity class="size-4" />
                                         {{ $t('Open Activiteit') }}
+                                    </Link>
+                                </Button>
+                            </template>
+                        </UitlegKaart>
+
+                        <UitlegKaart
+                            :titel="$t('Back-ups van je website')"
+                            :icoon="Archive"
+                        >
+                            <p>
+                                {{
+                                    $t(
+                                        'Onder Beheer → Back-ups leg je vast hoe je website er op dit moment voor staat. Al je teksten, je indeling en je afbeeldingen gaan mee. Wil je later terug naar hoe het was, dan zet je die back-up terug.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Wat er niet in gaat: je eigen account met je wachtwoord en je passkeys, en de berichten die bezoekers je hebben gestuurd. Die blijven altijd staan zoals ze nu zijn, ook als je iets terugzet. Je kunt jezelf er dus niet mee buitensluiten en je raakt geen berichten kwijt.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Zodra een back-up klaar is, leest het portaal hem meteen terug om te controleren of hij echt werkt. Met de knop Controleren doe je dat later nog eens: hij probeert de back-up dan echt terug te zetten en draait dat direct terug, zodat je weet dat het lukt zonder dat er iets verandert.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Download je back-up en bewaar hem ergens anders -- op je eigen computer of in je cloud. Zolang hij alleen op de server staat, ben je hem samen met je website kwijt als daar iets mee gebeurt. Het portaal herinnert je daaraan tot je het hebt gedaan.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Er blijven er vijf bewaard; komt er een nieuwe bij, dan verdwijnt de oudste. Wil je er een voor altijd houden, klik dan op het speldje. Vastgezette back-ups tellen niet mee en worden nooit opgeruimd.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Terugzetten vraagt om de naam van de back-up én een code uit je authenticator. Je ziet vooraf precies wat er verandert, bijvoorbeeld dat je van veertien naar elf projecten gaat. En vlak voordat er iets gebeurt maakt het portaal zelf nog een kopie van hoe het nu is -- ook een verkeerde terugzetting kun je dus ongedaan maken.',
+                                    )
+                                }}
+                            </p>
+
+                            <template #voorbeeld>
+                                <Button variant="outline" size="sm" as-child>
+                                    <Link :href="adminBackups.index()">
+                                        <Archive class="size-4" />
+                                        {{ $t('Naar Back-ups') }}
                                     </Link>
                                 </Button>
                             </template>

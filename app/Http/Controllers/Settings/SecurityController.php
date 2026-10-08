@@ -40,6 +40,15 @@ class SecurityController extends Controller
                     ->all()
                 : [],
             'passwordRules' => Password::defaults()->toPasswordRulesString(),
+
+            /*
+             * De extra stap na een passkey. De ruwe kolom en niet
+             * `vraagtExtraCodeNaEenPasskey()`: het schuifje moet laten
+             * zien wat de eigenaar heeft gekozen, ook als 2FA er even
+             * niet is. Anders springt het uit zichzelf terug en lijkt
+             * het stuk.
+             */
+            'passkeyStep' => (bool) $request->user()->passkey_requires_two_factor,
         ];
 
         if (Features::canManageTwoFactorAuthentication()) {

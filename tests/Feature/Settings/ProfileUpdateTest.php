@@ -31,36 +31,45 @@ class ProfileUpdateTest extends TestCase
             ->actingAs($user)
             ->patch(route('profile.update'), [
                 'name' => 'Test User',
-                'email' => 'test@example.com',
             ]);
 
         $response
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('profile.edit'));
+
+        $this->assertSame('Test User', $user->refresh()->name);
+    }
+
+    /**
+     * Het profielformulier raakt het inlogadres niet meer aan.
+     *
+     * Het stond hier gewoon tussen de velden: opslaan met een typefout en
+     * het enige account van het portaal wees naar een postvak dat niet
+     * bestaat. Nu loopt dat langs EmailChangeController, met een
+     * authenticator, een wachtwoord, een bevestiging en een weg terug.
+     *
+     * Deze test is er vooral tegen onszelf: `email` terugzetten in
+     * ProfileUpdateRequest is één regel, en dan is het hele vangnet weg
+     * zonder dat er iets kapot lijkt.
+     *
+     * Zie docs/security/inlogadres-wijzigen.md.
+     */
+    public function test_the_profile_form_cannot_change_the_login_address()
+    {
+        $user = User::factory()->create(['email' => 'eigenaar@voorbeeld.nl']);
+
+        $this->actingAs($user)
+            ->patch(route('profile.update'), [
+                'name' => 'Test User',
+                'email' => 'gekaapt@voorbeeld.nl',
+            ])
             ->assertSessionHasNoErrors()
             ->assertRedirect(route('profile.edit'));
 
         $user->refresh();
 
-        $this->assertSame('Test User', $user->name);
-        $this->assertSame('test@example.com', $user->email);
-        $this->assertNull($user->email_verified_at);
-    }
-
-    public function test_email_verification_status_is_unchanged_when_the_email_address_is_unchanged()
-    {
-        $user = User::factory()->create();
-
-        $response = $this
-            ->actingAs($user)
-            ->patch(route('profile.update'), [
-                'name' => 'Test User',
-                'email' => $user->email,
-            ]);
-
-        $response
-            ->assertSessionHasNoErrors()
-            ->assertRedirect(route('profile.edit'));
-
-        $this->assertNotNull($user->refresh()->email_verified_at);
+        $this->assertSame('eigenaar@voorbeeld.nl', $user->email);
+        $this->assertNotNull($user->email_verified_at);
     }
 
     /**

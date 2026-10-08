@@ -24,6 +24,10 @@ import type { TwoFactorConfigContent } from '@/types';
  * er is.
  */
 
+const props = withDefaults(defineProps<{ viaPasskey?: boolean }>(), {
+    viaPasskey: false,
+});
+
 const showRecoveryInput = ref(false);
 const code = ref('');
 
@@ -80,6 +84,22 @@ const onPasted = (plakcode: string) => {
     <Head :title="$t('Tweestapsverificatie')" />
 
     <div class="space-y-6">
+        <!--
+            Komt hij hier na een passkey, dan hoort er te staan waarom. Hij
+            dacht klaar te zijn; een codeveld zonder uitleg leest als een
+            mislukte passkey. Zie docs/security/extra-stap-na-een-passkey.md.
+        -->
+        <p
+            v-if="props.viaPasskey"
+            class="rounded-lg border border-border bg-muted/40 p-4 text-sm text-pretty text-muted-foreground"
+        >
+            {{
+                $t(
+                    'Je passkey is goedgekeurd. Je hebt zelf ingesteld dat daar ook nog je authenticator-code bij hoort; dat zet je uit onder Instellingen → Beveiliging.',
+                )
+            }}
+        </p>
+
         <Form
             v-if="!showRecoveryInput"
             v-bind="store.form()"

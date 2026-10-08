@@ -18,6 +18,33 @@ enum SecurityEventType: string
     case PasswordUpdated = 'auth.password_updated';
     case EmailVerified = 'auth.email_verified';
 
+    /*
+     * Het inlogadres wijzigen, in drie stappen. Alle drie apart, want bij
+     * een vraag achteraf wil je weten wáár het misging: is de aanvraag
+     * gedaan, is hij bevestigd, en is hij teruggedraaid.
+     */
+    case EmailChangeRequested = 'auth.email_change_requested';
+    case EmailChangeConfirmed = 'auth.email_change_confirmed';
+    case EmailChangeReverted = 'auth.email_change_reverted';
+
+    /*
+     * De extra stap na een passkey. `Changed` is de schakelaar zelf --
+     * vooral het uitzetten wil je kunnen terugvinden -- en `Challenged`
+     * is elke keer dat de stap daadwerkelijk werd gevraagd.
+     */
+    case PasskeyStepChanged = 'auth.passkey_step_changed';
+    case PasskeyStepChallenged = 'auth.passkey_step_challenged';
+
+    /*
+     * De back-ups van de website-inhoud. Alle vier apart, want bij een
+     * vraag achteraf wil je kunnen zien wannéér er is teruggezet en
+     * waarheen -- dat is de ingrijpendste handeling van het portaal.
+     */
+    case BackupGemaakt = 'backup.gemaakt';
+    case BackupGecontroleerd = 'backup.gecontroleerd';
+    case BackupTeruggezet = 'backup.teruggezet';
+    case BackupVerwijderd = 'backup.verwijderd';
+
     case TwoFactorEnabled = '2fa.enabled';
     case TwoFactorConfirmed = '2fa.confirmed';
     case TwoFactorDisabled = '2fa.disabled';
@@ -71,6 +98,15 @@ enum SecurityEventType: string
             self::PasswordReset => 'Wachtwoord hersteld',
             self::PasswordUpdated => 'Wachtwoord gewijzigd',
             self::EmailVerified => 'E-mailadres geverifieerd',
+            self::EmailChangeRequested => 'Ander inlogadres aangevraagd',
+            self::EmailChangeConfirmed => 'Inlogadres gewijzigd',
+            self::EmailChangeReverted => 'Inlogadres teruggedraaid',
+            self::PasskeyStepChanged => 'Extra stap na passkey gewijzigd',
+            self::PasskeyStepChallenged => 'Extra stap na passkey gevraagd',
+            self::BackupGemaakt => 'Back-up gemaakt',
+            self::BackupGecontroleerd => 'Back-up gecontroleerd',
+            self::BackupTeruggezet => 'Back-up teruggezet',
+            self::BackupVerwijderd => 'Back-up verwijderd',
             self::TwoFactorEnabled => '2FA ingeschakeld',
             self::TwoFactorConfirmed => '2FA bevestigd',
             self::TwoFactorDisabled => '2FA uitgeschakeld',

@@ -71,17 +71,25 @@ in wil zitten als je iets wil _bekijken_.
 > blijft het leeg. Er was niets stuk -- de mail stond in het logbestand.
 > Zie je een mail niet aankomen, controleer dan **eerst** deze instelling.
 
-**En zet er een worker naast.** Alles behalve de verificatiemail gaat via
-de queue, dus zonder `php artisan queue:work` blijft een bericht in de
-tabel `jobs` staan en lijkt het weer alsof er niets gebeurt. Een worker van
-een ánder project helpt niet: die leest de database van dat project. Zie
+**En zet er een worker naast.** Het meeste gaat via de queue, dus zonder
+`php artisan queue:work` blijft een bericht in de tabel `jobs` staan en
+lijkt het weer alsof er niets gebeurt. Een worker van een ánder project
+helpt niet: die leest de database van dat project. Zie
 [Queue draaiend houden](#queue-draaiend-houden).
 
-| Wat je stuurt           | Via de queue? |
-| ----------------------- | ------------- |
-| De verificatiemail      | nee, meteen   |
-| Het contactformulier    | ja            |
-| Een beveiligingsmelding | ja            |
+| Wat je stuurt                    | Via de queue? |
+| -------------------------------- | ------------- |
+| De verificatiemail               | nee, meteen   |
+| De drie mails van het inlogadres | nee, meteen   |
+| Het contactformulier             | ja            |
+| Een beveiligingsmelding          | ja            |
+
+**Waarom het inlogadres niet wacht.** `InlogadresBevestigenMail`,
+`InlogadresAangevraagdMail` en `InlogadresGewijzigdMail` gaan direct de
+deur uit. De eigenaar staat op dat moment naar zijn scherm te kijken en
+wacht op die bevestiging; een mail die pas komt als de wachtrij eraan toe
+is, is daar het verschil tussen "het werkt" en "het werkt niet". Zie
+[het inlogadres wijzigen](../security/inlogadres-wijzigen.md).
 
 #### De schuifbalken in MailHog zijn niet van ons
 

@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Actions\Fortify\ResetUserPassword;
+use App\Http\Responses\PasskeyLoginResponse;
 use Closure;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\JsonResponse;
@@ -17,6 +18,7 @@ use Laravel\Fortify\Contracts\LogoutResponse;
 use Laravel\Fortify\Contracts\TwoFactorLoginResponse;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
+use Laravel\Passkeys\Contracts\PasskeyLoginResponse as PasskeyLoginResponseContract;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -25,7 +27,18 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        /*
+         * Wat er gebeurt na een geslaagde passkey.
+         *
+         * Het pakket bindt hier zijn eigen klasse in zijn service
+         * provider; die van ons wordt daarna geregistreerd en wint
+         * daarmee. Zie App\Http\Responses\PasskeyLoginResponse voor wat
+         * de onze anders doet, en waarom.
+         */
+        $this->app->singleton(
+            PasskeyLoginResponseContract::class,
+            PasskeyLoginResponse::class,
+        );
     }
 
     /**
@@ -87,7 +100,16 @@ class FortifyServiceProvider extends ServiceProvider
              * om een verse code uit de authenticator. Zie
              * docs/security/gevoelige-acties.md.
              */
-            $request->session()->put('auth.password_confirmed_at', time());
+            /*
+             * Behalve na een passkey. Die stroom komt hier ook langs -- met
+             * de extra stap aan eindigt hij in de challenge van Fortify --
+             * en dan is er geen wachtwoord getypt. Zou de bevestiging dan
+             * toch gezet worden, dan gaf de strengere instelling juist het
+             * zwakkere resultaat. Zie App\Http\Responses\PasskeyLoginResponse.
+             */
+            if ($request->session()->pull('login.via_passkey', false) !== true) {
+                $request->session()->put('auth.password_confirmed_at', time());
+            }
 
             return $request->wantsJson()
                 ? new JsonResponse('', 204)
@@ -173,7 +195,19 @@ class FortifyServiceProvider extends ServiceProvider
             'status' => $request->session()->get('status'),
         ]));
 
-        Fortify::twoFactorChallengeView(fn () => Inertia::render('auth/TwoFactorChallenge'));
+        /*
+         * `viaPasskey` zegt of de eigenaar hier komt na een geslaagde
+         * passkey in plaats van na een wachtwoord. Zonder dat staat hij
+         * voor een codeveld terwijl hij net dacht klaar te zijn -- en dan
+         * lijkt zijn passkey mislukt.
+         *
+         * `get` en niet `pull`: ververst hij de pagina of vult hij een
+         * verkeerde code in, dan hoort de uitleg er nog steeds te staan.
+         * Fortify ruimt `login.*` zelf op zodra de code klopt.
+         */
+        Fortify::twoFactorChallengeView(fn (Request $request) => Inertia::render('auth/TwoFactorChallenge', [
+            'viaPasskey' => $request->session()->get('login.via_passkey') === true,
+        ]));
 
         Fortify::confirmPasswordView(fn () => Inertia::render('auth/ConfirmPassword'));
     }
@@ -191,6 +225,37 @@ class FortifyServiceProvider extends ServiceProvider
             $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());
 
             return Limit::perMinute(5)->by($throttleKey);
+        });
+
+        /*
+         * Een adreswijziging aanvragen. Krap: elke poging stuurt twee
+         * mails, waaronder een naar het oude postvak. Dat postvak moet je
+         * kunnen vertrouwen, dus het hoort geen spamdoel te worden.
+         */
+        /*
+         * Back-ups maken, controleren en uploaden. Krap, want elk van de
+         * drie leest de hele inhoud van de website en schrijft of
+         * verifieert een bestand. Een knop die in een lus komt, vult de
+         * schijf.
+         */
+        RateLimiter::for('backups', function (Request $request) {
+            return Limit::perMinute(6)->by(
+                ($request->user()?->getAuthIdentifier() ?? $request->ip()).'|backups',
+            );
+        });
+
+        RateLimiter::for('inlogadres', function (Request $request) {
+            return Limit::perHour(3)->by(
+                ($request->user()?->getAuthIdentifier() ?? $request->ip()).'|inlogadres',
+            );
+        });
+
+        /*
+         * En de twee links uit die mails. Ruimer -- iemand klikt een link
+         * weleens twee keer -- maar niet zo ruim dat je tokens kunt raden.
+         */
+        RateLimiter::for('inlogadres-link', function (Request $request) {
+            return Limit::perMinute(10)->by($request->ip() ?? 'onbekend');
         });
 
         RateLimiter::for('passkeys', function (Request $request) {

@@ -2,6 +2,7 @@
 import { Link, usePage } from '@inertiajs/vue3';
 import {
     Activity,
+    Archive,
     Award,
     ChartNoAxesColumn,
     CircleQuestionMark,
@@ -44,6 +45,7 @@ import adminLegal from '@/routes/admin/legal';
 import adminAanvragen from '@/routes/admin/submissions';
 import adminMail from '@/routes/admin/mail';
 import adminSecurity from '@/routes/admin/security';
+import adminBackups from '@/routes/admin/backups';
 import adminUsers from '@/routes/admin/users';
 import adminVisitors from '@/routes/admin/visitors';
 import site from '@/routes/site';
@@ -267,6 +269,17 @@ const beheerItems = computed<NavItem[]>(() =>
                   title: t('Gebruikers'),
                   href: adminUsers.index(),
                   icon: Users,
+              },
+              /*
+               * Back-ups staan tussen de logboeken en Juridisch in. Het
+               * is het enige scherm in deze groep waar je iets dóét in
+               * plaats van naleest, maar het hoort hier wel: het gaat
+               * over het portaal zelf en niet over de website.
+               */
+              {
+                  title: t('Back-ups'),
+                  href: adminBackups.index(),
+                  icon: Archive,
               },
               /*
                * Juridisch staat onderaan, en dat is geen degradatie: je

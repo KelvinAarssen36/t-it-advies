@@ -2,17 +2,23 @@
 
 namespace Tests\Feature\Mail;
 
+use App\Concerns\VolgtDeMailstijl;
 use App\Enums\MailStijl;
 use App\Mail\ContactBevestigingMail;
 use App\Mail\ContactMessageMail;
 use App\Mail\CrashAlertMail;
+use App\Mail\InlogadresAangevraagdMail;
+use App\Mail\InlogadresBevestigenMail;
+use App\Mail\InlogadresGewijzigdMail;
 use App\Mail\SecurityAlertMail;
+use App\Models\EmailChange;
 use App\Models\SiteSetting;
 use App\Models\User;
 use App\Support\Security\Anomaly;
 use Database\Seeders\ContactSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Mail\Mailable;
 use Illuminate\Support\Facades\File;
 use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
@@ -116,11 +122,16 @@ class MailstijlTest extends TestCase
     /* --- Wat de mails ermee doen ------------------------------------------ */
 
     /**
-     * Alle vier de mails volgen de gekozen stijl.
+     * Elke mail volgt de gekozen stijl.
      *
-     * Eén test voor alle vier, want de vraag is niet of één mailable het
-     * goed doet maar of er geen enkele buiten valt. Komt er een vijfde bij
-     * zonder de trait, dan valt deze test om.
+     * Eén test voor allemaal, want de vraag is niet of één mailable het
+     * goed doet maar of er geen enkele buiten valt.
+     *
+     * De lijst hieronder is met de hand bijgehouden, want elke mailable
+     * heeft zijn eigen constructor. Dat de lijst compleet blíjft bewaakt
+     * `test_no_mailable_forgets_the_trait`; zonder die tweede test zou een
+     * nieuwe mail er gewoon buiten vallen en zou deze test daar niets van
+     * merken.
      */
     public function test_every_mail_follows_the_chosen_style(): void
     {
@@ -148,6 +159,24 @@ class MailstijlTest extends TestCase
                 )],
                 since: now()->subHour(),
             ),
+            InlogadresBevestigenMail::class => new InlogadresBevestigenMail(
+                naam: 'Jan de Vries',
+                oudAdres: 'oud@voorbeeld.test',
+                nieuwAdres: 'nieuw@voorbeeld.test',
+                link: 'https://voorbeeld.test/inlogadres/bevestigen/abc',
+                geldigeMinuten: EmailChange::BEVESTIGEN_GELDIG,
+            ),
+            InlogadresAangevraagdMail::class => new InlogadresAangevraagdMail(
+                naam: 'Jan de Vries',
+                nieuwAdres: 'nieuw@voorbeeld.test',
+                afbreekLink: 'https://voorbeeld.test/inlogadres/terugdraaien/abc',
+            ),
+            InlogadresGewijzigdMail::class => new InlogadresGewijzigdMail(
+                naam: 'Jan de Vries',
+                oudAdres: 'oud@voorbeeld.test',
+                nieuwAdres: 'nieuw@voorbeeld.test',
+                geldigeDagen: EmailChange::HERSTELLEN_GELDIG,
+            ),
         ];
 
         foreach (MailStijl::cases() as $stijl) {
@@ -161,6 +190,45 @@ class MailstijlTest extends TestCase
                 );
             }
         }
+    }
+
+    /**
+     * Geen enkele mailable vergeet de trait.
+     *
+     * Dit is de bewaker van de test hierboven. Die werkt met een lijst die
+     * je met de hand bijhoudt -- onvermijdelijk, want elke mailable heeft
+     * zijn eigen constructor -- en een lijst die je bijhoudt vergeet je.
+     *
+     * Deze kijkt in plaats daarvan naar de map zelf. Komt er een mail bij
+     * zonder `VolgtDeMailstijl`, dan valt hij terug op het standaardthema
+     * van Laravel: hij komt gewoon aan, alleen in een andere stijl dan de
+     * rest. Dat zie je pas als de klant het je vertelt.
+     */
+    public function test_no_mailable_forgets_the_trait(): void
+    {
+        $zonder = [];
+
+        foreach (File::files(app_path('Mail')) as $bestand) {
+            $klasse = 'App\\Mail\\'.$bestand->getFilenameWithoutExtension();
+
+            if (! class_exists($klasse) || ! is_subclass_of($klasse, Mailable::class)) {
+                continue;
+            }
+
+            // `class_uses_recursive` en niet `class_uses`: de trait mag ook
+            // via een tussenliggende basisklasse binnenkomen.
+            if (! in_array(VolgtDeMailstijl::class, class_uses_recursive($klasse), true)) {
+                $zonder[] = $klasse;
+            }
+        }
+
+        $this->assertSame(
+            [],
+            $zonder,
+            'Deze mails gebruiken de trait VolgtDeMailstijl niet, en volgen '
+                .'dus niet de stijl die de eigenaar heeft gekozen: '
+                .implode(', ', $zonder),
+        );
     }
 
     /**
