@@ -110,9 +110,20 @@ de vier `match`-blokken aanvullen: `label()`, `omschrijving()`,
 PHP dwingt dat af: een vergeten arm is een fout bij het draaien, geen stille
 lege waarde.
 
+> **Zet je het onderdeel tussen bestaande in, schuif dan de rest op.**
+> `standaardPositie()` geeft vaste getallen, dus een nieuw onderdeel op
+> plek 1 betekent dat alles daaronder één hoger moet. Dat gebeurde bij
+> [Kerngegevens](modules/kerngegevens.md), dat direct onder de kop hoort.
+
 **2. De rij in de database.** Draai `php artisan db:seed --class=PageSectionSeeder`.
 Die vult aan wat ontbreekt en laat staan wat de klant al heeft ingesteld.
 Bij een deploy gebeurt dat vanzelf mee met `DatabaseSeeder`.
+
+> **Let op wat de klant te zien krijgt.** Die nieuwe standaardplek geldt
+> alleen op een verse database. Op een installatie waar de indeling al een
+> keer is opgeslagen komt het onderdeel **achteraan** te staan -- anders
+> zou het botsen met een plek die al bezet is. Zie `plekVoor()` in de
+> seeder. Zeg er dus bij dat hij het zelf naar boven moet slepen.
 
 **3. Het Vue-component.** Een bestand in
 [`components/site/sections/`](../../resources/js/components/site/sections/),

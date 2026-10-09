@@ -220,6 +220,15 @@ class SectionHeading extends Model
                 'intro_en' => 'A selection of the assignments, migrations and projects I was involved in.',
             ],
 
+            PageSectionKey::Kerngegevens => [
+                'eyebrow_nl' => 'Kerngegevens',
+                'eyebrow_en' => 'Key facts',
+                'title_nl' => 'Waar je aan toe bent',
+                'title_en' => 'Where you stand',
+                'intro_nl' => 'De praktische kant, zonder dat je ernaar hoeft te vragen.',
+                'intro_en' => 'The practical side, without having to ask.',
+            ],
+
             PageSectionKey::Faq => [
                 'eyebrow_nl' => 'Veelgestelde vragen',
                 'eyebrow_en' => 'Frequently asked questions',

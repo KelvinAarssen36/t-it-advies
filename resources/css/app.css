@@ -585,6 +585,28 @@
 }
 
 /*
+  Dezelfde schuifbalk, maar aan de linkerkant.
+
+  **Dit kan in CSS alleen via de leesrichting.** Er is geen eigenschap om
+  een schuifbalk van kant te laten wisselen; browsers zetten hem aan de
+  kant waar de tekst eindigt. `direction: rtl` op het schuifvlak zet hem
+  dus links -- en de inhoud eronder moet daarna terug naar `ltr`, anders
+  staat alles rechts uitgelijnd en springen de pictogrammen naar de andere
+  kant van hun tekst.
+
+  Alleen op de zijbalk van het portaal. Daar is het menu lang genoeg om te
+  scrollen, en rechts zou de balk tussen het menu en de inhoud in liggen
+  -- precies op de scheiding tussen die twee. Zie AppSidebar.vue.
+*/
+@utility brand-scrollbar-links {
+    direction: rtl;
+}
+
+.brand-scrollbar-links > * {
+    direction: ltr;
+}
+
+/*
   Volledig verbergen. Alleen gebruiken waar iets ánders al verraadt dat er
   meer is -- een rij die zichtbaar doorloopt tot buiten de rand. Een
   verborgen schuifbalk zonder zo'n aanwijzing is inhoud die niemand vindt.
@@ -11903,6 +11925,278 @@ button:hover > .brand-verlaat,
     .brand-projectbreed-link:hover .brand-projectbreed-pijl {
         color: var(--brand-cyan);
         translate: 3px 0;
+    }
+
+    /*
+      De feitenstrook met de kerngegevens.
+
+      **Eén omlijnd blok met scheidingslijntjes, en geen losse tegels.**
+      Tegels staan al bij de statistieken en kaarten bij de diensten; een
+      strook leest als één mededeling in plaats van als acht losse. Dat is
+      ook wat deze gegevens zijn: samen vormen ze het antwoord op "kan ik
+      met deze man in zee".
+
+      Zie docs/architecture/modules/kerngegevens.md.
+    */
+    .brand-kerngegevens-strook {
+        /*
+          Hoeveel vakken er hoogstens naast elkaar staan. Het vak rekent
+          zijn breedte hieruit, dus dit is de enige knop die per
+          schermbreedte omgaat.
+        */
+        --kolommen: 1;
+
+        /*
+          **Flex en geen grid, en dat is de hele reden dat dit werkt.**
+
+          Een raster met vier vaste kolommen houdt bij zeven vakken een
+          lege plek over, en door die plek schijnt de achtergrond van de
+          strook -- een grijs blok in de hoek waar niets staat. Dat
+          gebeurt bij elk aantal dat geen veelvoud is van het aantal
+          kolommen, dus bij vijf, zes en zeven van de acht die er kunnen
+          zijn.
+
+          Flex met `flex-grow` kent dat gat niet: wat er op de laatste rij
+          overblijft verdeelt de breedte onder elkaar. Zeven vakken worden
+          vier plus drie, en die drie zijn samen even breed als de vier
+          erboven.
+        */
+        display: flex;
+        flex-wrap: wrap;
+        margin: 0;
+        border: 1px solid var(--brand-border-dark);
+        border-radius: 1rem;
+        overflow: hidden;
+
+        /* Voor de baan hieronder; `isolate` houdt hem binnen de strook. */
+        position: relative;
+        isolation: isolate;
+
+        /*
+          De lijntjes zijn de achtergrond die door de naden tussen de
+          vakken schijnt. Met een rand per vak krijg je op elke naad twee
+          lijnen op elkaar, en die zijn zichtbaar dikker dan de buitenrand.
+        */
+        gap: 1px;
+        background-color: var(--brand-border-dark);
+    }
+
+    .brand-kerngegevens-vak {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+
+        /*
+          De basis is een kolombreedte min de naden ertussen, en er gaat
+          een naad extra af als speling: valt de berekening ook maar een
+          fractie te breed uit, dan klapt het laatste vak naar de
+          volgende rij en staat er ineens een rij van drie waar vier
+          hoort. Die speling groeit er door `flex-grow` meteen weer bij.
+        */
+        flex-grow: 1;
+        flex-shrink: 1;
+        flex-basis: calc((100% - var(--kolommen) * 1px) / var(--kolommen));
+
+        /* Zonder dit duwt een lang woord het vak breder dan zijn kolom. */
+        min-width: 0;
+
+        padding: 1rem 1.125rem;
+        background-color: var(--background);
+
+        /*
+          Boven de baan. Zonder `position` schildert de browser de
+          achtergrond van een vak vóór een gepositioneerd ::before, en dan
+          loopt de veeg over de tekst heen in plaats van erachter.
+        */
+        position: relative;
+        z-index: 1;
+
+        transition: background-color 220ms ease;
+    }
+
+    /*
+      **De rustanimatie: stroom door het bord.**
+
+      Achter de vakken ligt een smalle cyaan baan die er elke negen
+      seconden één keer overheen trekt. De vakken zijn ondoorzichtig, dus
+      je ziet hem alleen in de naden van 1px ertussen: de
+      scheidingslijntjes lichten één voor één op, als stroom die door het
+      bord loopt. De naden zijn precies wat deze strook van elke andere
+      vorm op de site onderscheidt, en dit is het enige effect dat ze
+      gebruikt.
+
+      **Waarom er niet af en toe een letter omklapt**, wat voor een
+      vertrekbord voor de hand had gelegen: tekst die uit zichzelf
+      verspringt trekt het oog weg van de regel die je net aan het lezen
+      bent, en een bezoeker leest dat als een storing en niet als een
+      bord. Beweging in rust mag opvallen zodra je ernaar kijkt, niet
+      terwijl je iets anders leest.
+
+      **Geen `brand-glans`.** Die staat buiten `@layer components` en hoort
+      bij het formaat van de actieknop; bij de veelgestelde vragen is één
+      keer gebleken wat er gebeurt als je hem op iets breders plakt. De
+      uitleg bij die klasse zegt met zoveel woorden: schrijf er een eigen.
+      Dit is die eigen.
+
+      Alleen `translate`, dus compositor-only en geen enkele
+      herberekening van de opmaak per frame.
+    */
+    .brand-kerngegevens-strook::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background-image: linear-gradient(
+            100deg,
+            transparent 44%,
+            color-mix(in srgb, var(--brand-cyan) 80%, transparent) 50%,
+            transparent 56%
+        );
+        translate: -100% 0;
+        animation: brand-kerngegevens-stroom 9s linear infinite;
+    }
+
+    /*
+      Oversteken in iets minder dan de helft van de tijd, en dan wachten.
+      Zonder die pauze is het geen bord dat af en toe overklikt maar een
+      lampje dat staat te knipperen.
+    */
+    @keyframes brand-kerngegevens-stroom {
+        0% {
+            translate: -100% 0;
+        }
+
+        45%,
+        100% {
+            translate: 100% 0;
+        }
+    }
+
+    /*
+      **Hover: het vak reageert, maar nodigt niet uit tot klikken.**
+
+      Geen lift zoals bij de project- en dienstkaarten. Die kaarten staan
+      los; dit vak zit vast in een strook, en til je er één op dan trek je
+      de naad met zijn buren open en zie je de achtergrond staan waar het
+      scheidingslijntje hoort. Een lift belooft bovendien dat er iets te
+      klikken valt, en hier valt niets te klikken.
+
+      Wat er wel gebeurt is de huisstijl van elke andere hover op de site:
+      er komt cyaan bij. Het pictogram licht op, het label komt uit zijn
+      gedempte grijs en het vak krijgt een zweem kleur.
+    */
+    .brand-kerngegevens-vak:hover {
+        background-color: color-mix(
+            in srgb,
+            var(--brand-cyan) 7%,
+            var(--background)
+        );
+    }
+
+    .brand-kerngegevens-vak:hover .brand-kerngegevens-label {
+        color: color-mix(in srgb, var(--brand-cyan) 75%, var(--foreground));
+    }
+
+    .brand-kerngegevens-vak:hover .brand-kerngegevens-icoon {
+        scale: 1.15;
+        filter: drop-shadow(
+            0 0 7px color-mix(in srgb, var(--brand-cyan) 60%, transparent)
+        );
+    }
+
+    /*
+      Bewegingsgevoelig: de baan blijft weg en het pictogram groeit niet
+      mee. De kleur bij hover blijft; dat is geen beweging.
+    */
+    @media (prefers-reduced-motion: reduce) {
+        .brand-kerngegevens-strook::before {
+            animation: none;
+            opacity: 0;
+        }
+
+        .brand-kerngegevens-vak:hover .brand-kerngegevens-icoon {
+            scale: 1;
+        }
+    }
+
+    @media (min-width: 40rem) {
+        .brand-kerngegevens-strook {
+            --kolommen: 2;
+        }
+
+        .brand-kerngegevens-vak {
+            padding: 1.25rem 1.5rem;
+        }
+    }
+
+    @media (min-width: 64rem) {
+        /*
+          Vier naast elkaar, behalve bij vijf of zes: dan drie, want drie
+          plus twee en drie plus drie staan rustiger dan vier plus een en
+          vier plus twee. Het getal komt uit KerngegevensSection.vue,
+          want alleen daar is bekend hoeveel er zijn.
+        */
+        .brand-kerngegevens-strook {
+            --kolommen: var(--kolommen-breed, 4);
+        }
+    }
+
+    /*
+      Het label klein en gedempt bóven de waarde. Precies andersom dan bij
+      een statistiek, waar het cijfer groot staat en het label het
+      bijschrift is: hier ís de waarde het antwoord, en zegt het label
+      alleen waar je kijkt.
+    */
+    .brand-kerngegevens-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted-foreground);
+        transition: color 220ms ease;
+    }
+
+    .brand-kerngegevens-icoon {
+        width: 1rem;
+        height: 1rem;
+        flex-shrink: 0;
+        color: var(--brand-cyan);
+        transition:
+            scale 220ms ease,
+            filter 220ms ease;
+    }
+
+    /*
+      Op een telefoon een maat kleiner. Op volle grootte breekt een waarde
+      als "Op locatie, op afstand of allebei" daar over drie regels, en
+      dan is het vak hoger dan breed.
+    */
+    .brand-kerngegevens-waarde {
+        margin: 0;
+        font-size: 1.125rem;
+        font-weight: 600;
+        line-height: 1.25;
+        text-wrap: pretty;
+        color: var(--foreground);
+    }
+
+    @media (min-width: 40rem) {
+        .brand-kerngegevens-waarde {
+            font-size: 1.25rem;
+        }
+    }
+
+    .brand-kerngegevens-notitie {
+        display: block;
+        margin-top: 0.35rem;
+        font-size: 0.875rem;
+        font-weight: 400;
+        line-height: 1.4;
+        color: var(--muted-foreground);
     }
 
     .brand-faq-item {

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Website\AboutController;
 use App\Http\Controllers\Website\CertificateController;
 use App\Http\Controllers\Website\ContactModuleController;
+use App\Http\Controllers\Website\CoreFactController;
 use App\Http\Controllers\Website\ExperienceController;
 use App\Http\Controllers\Website\FaqController;
 use App\Http\Controllers\Website\HeroController;
@@ -252,6 +253,23 @@ Route::middleware(['auth', 'verified', 'two-factor.required', 'can:manage portal
             Route::put('{workStep}', [WorkStepController::class, 'update'])->name('update');
             Route::patch('{workStep}/online', [WorkStepController::class, 'online'])->name('online');
             Route::delete('{workStep}', [WorkStepController::class, 'destroy'])->name('destroy');
+        });
+
+        /*
+         * De kerngegevens. `kop` en `volgorde` staan ook hier vóór
+         * `{coreFact}`, want het zijn allemaal een PUT op hetzelfde
+         * patroon en de eerste die past wint.
+         */
+        Route::prefix('kerngegevens')->name('kerngegevens.')->group(function () {
+            Route::get('/', [CoreFactController::class, 'index'])->name('index');
+            Route::post('/', [CoreFactController::class, 'store'])->name('store');
+
+            Route::put('kop', [CoreFactController::class, 'kop'])->name('kop');
+            Route::put('volgorde', [CoreFactController::class, 'volgorde'])->name('volgorde');
+
+            Route::put('{coreFact}', [CoreFactController::class, 'update'])->name('update');
+            Route::patch('{coreFact}/online', [CoreFactController::class, 'online'])->name('online');
+            Route::delete('{coreFact}', [CoreFactController::class, 'destroy'])->name('destroy');
         });
 
         Route::prefix('faq')->name('faq.')->group(function () {

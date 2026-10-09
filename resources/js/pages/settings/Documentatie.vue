@@ -9,6 +9,7 @@ import {
     Award,
     ChartNoAxesColumn,
     CircleQuestionMark,
+    ClipboardList,
     UserRound,
     CheckCheck,
     Clock,
@@ -54,6 +55,7 @@ import {
 import Heading from '@/components/Heading.vue';
 import SegmentToggle from '@/components/SegmentToggle.vue';
 import adminBackups from '@/routes/admin/backups';
+import kerngegevens from '@/routes/website/kerngegevens';
 import UitlegKaart from '@/components/settings/UitlegKaart.vue';
 import VerlaatPortaal from '@/components/VerlaatPortaal.vue';
 import { Button } from '@/components/ui/button';
@@ -1030,6 +1032,70 @@ defineOptions({
                                     <Link :href="kop.index()">
                                         <KopIcoon class="size-4" />
                                         {{ $t('Open de kop') }}
+                                    </Link>
+                                </Button>
+                            </template>
+                        </UitlegKaart>
+
+                        <UitlegKaart
+                            :titel="$t('Kerngegevens')"
+                            :icoon="ClipboardList"
+                        >
+                            <p>
+                                {{
+                                    $t(
+                                        'Een strook met de praktische feiten over zakendoen met jou: wanneer je kunt, waar je werkt, hoe snel je reageert. Het is het antwoord op de vragen die iemand stelt vlak voordat hij belt -- nu staat het er, en hoeft hij ze niet te stellen.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Per kerngegeven kies je een soort -- beschikbaarheid, werkgebied, reactietijd en zo verder -- en dat soort stelt meteen het label voor. Daarna vul je de waarde in: één regel, want dat is wat een feit is. Een toelichting eronder mag, maar hoeft niet.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Er passen er acht. Dat is geen technische grens maar een leesbare: een strook met vijftien regels is een tabel geworden en die slaat iedereen over. Heb je er acht, dan verdwijnt de knop om er een bij te maken.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Je hoeft niet op een rond aantal uit te komen. De strook deelt zichzelf in naar hoeveel je er hebt: bij zeven worden het vier en drie, en die drie vullen samen de hele breedte. Er blijft dus nooit een leeg vak over. Op een telefoon staan ze allemaal onder elkaar.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Dit is iets anders dan Statistieken. Daar staat een getal met een balk of ring eromheen; hier staat een antwoord in woorden. "In overleg" of "vanaf januari" past nergens in een percentage, en een balk eromheen zou doen alsof.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Op je website zetten de waarden zich letter voor letter vast zodra de strook in beeld komt, als een vertrekbord op een station. Een langere waarde doet hetzelfde, maar dan per woord. Heb je in je systeeminstellingen minder beweging aangezet, dan staat alles meteen stil op zijn plek.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Daarna blijft de strook leven: om de paar seconden trekt er een lichtje langs de scheidingslijntjes, alsof er stroom door het bord loopt. En ga je met je muis over een vak, dan licht het pictogram op en kleurt het vak mee. Er valt niets te klikken -- het laat alleen zien dat je er bent.',
+                                    )
+                                }}
+                            </p>
+
+                            <template #voorbeeld>
+                                <Button variant="outline" size="sm" as-child>
+                                    <Link :href="kerngegevens.index()">
+                                        <ClipboardList class="size-4" />
+                                        {{ $t('Naar Kerngegevens') }}
                                     </Link>
                                 </Button>
                             </template>

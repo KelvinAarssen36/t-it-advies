@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\CoreFactIcon;
 use App\Enums\MailStatus;
 use App\Enums\ProjectType;
 use App\Mail\ContactBevestigingMail;
@@ -11,6 +12,7 @@ use App\Models\AboutPoint;
 use App\Models\AboutSetting;
 use App\Models\ContactSubject;
 use App\Models\ContactSubmission;
+use App\Models\CoreFact;
 use App\Models\FaqItem;
 use App\Models\MailLog;
 use App\Models\Project;
@@ -97,6 +99,7 @@ class VoorbeeldDataSeeder extends Seeder
         $this->overMij();
         $this->projecten();
         $this->werkwijze();
+        $this->kerngegevens();
     }
 
     /**
@@ -131,6 +134,114 @@ class VoorbeeldDataSeeder extends Seeder
      * uitgebreid verhaal, zodat de pagina /werkwijze ook echt bestaat in
      * de voorbeelddata.
      */
+
+    /**
+     * Acht kerngegevens, één per soort.
+     *
+     * **De lengtes lopen met opzet uiteen.** De strook moet er goed uitzien
+     * met "Binnen één werkdag" naast "Op locatie, op afstand of een
+     * combinatie", en het rolbord zet alleen de korte waarden letter voor
+     * letter -- boven de 24 tekens komt de waarde als geheel omhoog. Met
+     * acht gelijke waarden zou je geen van beide zien.
+     *
+     * Eén staat offline, zodat je in het beheerscherm ziet wat dat doet.
+     */
+    private function kerngegevens(): void
+    {
+        $rijen = [
+            [
+                'icon' => CoreFactIcon::Availability,
+                'label_nl' => 'Beschikbaar',
+                'label_en' => 'Available',
+                'value_nl' => 'Vanaf januari',
+                'value_en' => 'From January',
+                'note_nl' => 'Twee tot drie dagen per week.',
+                'note_en' => 'Two to three days a week.',
+            ],
+            [
+                'icon' => CoreFactIcon::Area,
+                'label_nl' => 'Werkgebied',
+                'label_en' => 'Area',
+                'value_nl' => 'Noord-Brabant',
+                'value_en' => 'Noord-Brabant',
+                'note_nl' => 'Daarbuiten in overleg.',
+                'note_en' => 'Beyond that in consultation.',
+            ],
+            [
+                'icon' => CoreFactIcon::Workstyle,
+                'label_nl' => 'Werkvorm',
+                'label_en' => 'How I work',
+                // Boven de 24 tekens: deze komt als geheel omhoog in
+                // plaats van letter voor letter.
+                'value_nl' => 'Op locatie, op afstand of allebei',
+                'value_en' => 'On site, remote or both',
+                'note_nl' => null,
+                'note_en' => null,
+            ],
+            [
+                'icon' => CoreFactIcon::Response,
+                'label_nl' => 'Reactietijd',
+                'label_en' => 'Response time',
+                'value_nl' => 'Eén werkdag',
+                'value_en' => 'One working day',
+                'note_nl' => 'Ook op een bericht buiten kantooruren.',
+                'note_en' => 'Including messages outside office hours.',
+            ],
+            [
+                'icon' => CoreFactIcon::Languages,
+                'label_nl' => 'Talen',
+                'label_en' => 'Languages',
+                'value_nl' => 'NL / EN',
+                'value_en' => null,
+                'note_nl' => null,
+                'note_en' => null,
+            ],
+            [
+                'icon' => CoreFactIcon::Cooperation,
+                'label_nl' => 'Samenwerking',
+                'label_en' => 'Engagement',
+                'value_nl' => 'Interim of per project',
+                'value_en' => 'Interim or per project',
+                'note_nl' => 'Los advies kan ook.',
+                'note_en' => 'One-off advice is possible too.',
+            ],
+            [
+                // Geen Engelse waarde: een nummer is in beide talen
+                // hetzelfde, en de terugval hoort dat op te vangen.
+                'icon' => CoreFactIcon::Company,
+                'label_nl' => 'KvK',
+                'label_en' => 'Chamber of Commerce',
+                'value_nl' => '12 34 56 78',
+                'value_en' => null,
+                'note_nl' => null,
+                'note_en' => null,
+            ],
+            [
+                // Deze staat offline, zodat het schuifje op het
+                // beheerscherm meteen iets te laten zien heeft.
+                'icon' => CoreFactIcon::Terms,
+                'label_nl' => 'Voorwaarden',
+                'label_en' => 'Terms',
+                'value_nl' => 'Eigen voorwaarden',
+                'value_en' => 'My own terms',
+                'note_nl' => 'Beroepsaansprakelijkheid verzekerd.',
+                'note_en' => 'Professional liability insured.',
+                'published' => false,
+            ],
+        ];
+
+        foreach ($rijen as $plek => $rij) {
+            CoreFact::query()->firstOrCreate(
+                ['label_nl' => $rij['label_nl']],
+                [
+                    ...$rij,
+                    'published' => $rij['published'] ?? true,
+                    'position' => $plek + 1,
+                ],
+            );
+        }
+    }
+
     private function werkwijze(): void
     {
         $rijen = [

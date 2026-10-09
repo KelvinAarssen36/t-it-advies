@@ -7,6 +7,7 @@ use App\Enums\PageSectionKey;
 use App\Models\AboutSetting;
 use App\Models\Certificate;
 use App\Models\ContactSetting;
+use App\Models\CoreFact;
 use App\Models\Education;
 use App\Models\Experience;
 use App\Models\FaqItem;
@@ -118,6 +119,10 @@ class HomeController extends Controller
 
         $vragen = in_array(PageSectionKey::Faq->value, $secties, true)
             ? FaqItem::query()->online()->opVolgorde()->get()
+            : new Collection;
+
+        $kerngegevens = in_array(PageSectionKey::Kerngegevens->value, $secties, true)
+            ? CoreFact::query()->online()->opVolgorde()->get()
             : new Collection;
 
         /*
@@ -307,6 +312,14 @@ class HomeController extends Controller
 
             'projectHeading' => in_array(PageSectionKey::Projecten->value, $secties, true)
                 ? SectionHeading::voor(PageSectionKey::Projecten)->voorDeSite()
+                : null,
+
+            'coreFacts' => $kerngegevens
+                ->map(fn (CoreFact $gegeven) => $gegeven->voorDeSite())
+                ->all(),
+
+            'coreFactsHeading' => in_array(PageSectionKey::Kerngegevens->value, $secties, true)
+                ? SectionHeading::voor(PageSectionKey::Kerngegevens)->voorDeSite()
                 : null,
 
             'faq' => $vragen

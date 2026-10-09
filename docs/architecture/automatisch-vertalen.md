@@ -67,8 +67,9 @@ die er acht tegelijk overschrijft is te grof.
 | `duration_nl`    | 40     | Hoe lang een stap in de werkwijze duurt                                                                                                    |
 | `result_nl`      | 160    | Wat een stap in de werkwijze oplevert                                                                                                      |
 | `niveau_nl`      | 60     | Het niveau van een opleiding                                                                                                               |
-| `label_nl`       | 60     | De naam van een statistiek                                                                                                                 |
-| `notitie_nl`     | 120    | Het regeltje onder een statistiek                                                                                                          |
+| `label_nl`       | 60     | De naam van een statistiek, en het label van een kerngegeven                                                                               |
+| `notitie_nl`     | 120    | Het regeltje onder een statistiek, en de toelichting bij een kerngegeven                                                                   |
+| `waarde_nl`      | 80     | De waarde van een kerngegeven -- "Vanaf januari"                                                                                           |
 | `groep_nl`       | 60     | De groep waarin een statistiek valt. Gaat mee met de grote knop in het bewerkvenster, en los met het kleine knopje in het indelingsvenster |
 | `woord_nl`       | 40     | Het woord onder één cijfer                                                                                                                 |
 | `punt_nl`        | 60     | Eén expertisepunt                                                                                                                          |
@@ -87,6 +88,10 @@ bij -- géén tweede route.
 > `result_nl`. `WorkStepTranslationTest` loopt daarom de hele lijst af die
 > het venster meestuurt en eist dat elk veld ook terugkomt -- een vorm die
 > het kopiëren waard is voor een volgende module.
+>
+> Dat is ook gedaan: `CoreFactTranslationTest` doet hetzelfde voor de
+> kerngegevens, en was de reden dat `waarde_nl` meteen in de lijst
+> hierboven belandde in plaats van er een keer uit te blijken.
 >
 > **En let op de lengte.** `body_nl` stond op 2000 toen de werkwijze er
 > 4000 in ging stoppen. Dan valt niet dat ene veld weg maar de hele

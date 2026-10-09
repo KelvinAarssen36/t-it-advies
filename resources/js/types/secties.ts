@@ -22,6 +22,7 @@ export type SectieProps = {
  * rij die de klant kan verslepen.
  */
 export type SectieSleutel =
+    | 'kerngegevens'
     | 'over-mij'
     | 'diensten'
     | 'werkwijze'

@@ -7,6 +7,7 @@ import DienstenSection from '@/components/site/sections/DienstenSection.vue';
 import ErvaringSection from '@/components/site/sections/ErvaringSection.vue';
 import FaqSection from '@/components/site/sections/FaqSection.vue';
 import HeroSection from '@/components/site/sections/HeroSection.vue';
+import KerngegevensSection from '@/components/site/sections/KerngegevensSection.vue';
 import LinkedinSection from '@/components/site/sections/LinkedinSection.vue';
 import OverMijSection from '@/components/site/sections/OverMijSection.vue';
 import ProjectenSection from '@/components/site/sections/ProjectenSection.vue';
@@ -49,6 +50,7 @@ const props = defineProps<{
  * loopt hier stuk in plaats van op de website.
  */
 const componenten: Record<SectieSleutel, Component> = {
+    kerngegevens: KerngegevensSection,
     'over-mij': OverMijSection,
     diensten: DienstenSection,
     werkwijze: WerkwijzeSection,

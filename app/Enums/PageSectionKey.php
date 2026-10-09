@@ -29,6 +29,7 @@ namespace App\Enums;
 enum PageSectionKey: string
 {
     case Hero = 'hero';
+    case Kerngegevens = 'kerngegevens';
     case OverMij = 'over-mij';
     case Diensten = 'diensten';
     case Werkwijze = 'werkwijze';
@@ -50,6 +51,7 @@ enum PageSectionKey: string
     {
         return match ($this) {
             self::Hero => __('Kop'),
+            self::Kerngegevens => __('Kerngegevens'),
             self::OverMij => __('Over mij'),
             self::Diensten => __('Diensten'),
             self::Werkwijze => __('Werkwijze'),
@@ -69,6 +71,7 @@ enum PageSectionKey: string
     {
         return match ($this) {
             self::Hero => __('Het eerste dat een bezoeker ziet: de titel, de ondertitel en de twee knoppen.'),
+            self::Kerngegevens => __('De harde feiten: je beschikbaarheid, je werkgebied, hoe snel je reageert. Een strook onder je kop.'),
             self::OverMij => __('Een kort stuk over jezelf, met een foto. Eventueel met een knop naar een uitgebreidere pagina.'),
             self::Diensten => __('De diensten die je aanbiedt, elk met een korte toelichting en de expertise die eronder valt.'),
             self::Werkwijze => __('De stappen van kennismaken tot overdragen.'),
@@ -144,15 +147,27 @@ enum PageSectionKey: string
             self::Hero => 0,
 
             /*
-             * Vlak na de kop: "wie ben ik" komt voor "wat doe ik". Een
+             * Tegen de kop aan. Een feitenstrook is geen verhaal maar een
+             * aanvulling op de koptekst: de bezoeker heeft net gelezen
+             * wie hij is en krijgt meteen de praktische kant -- ben je
+             * beschikbaar, waar werk je, hoe snel reageer je.
+             *
+             * Daarom vóór "Over mij" en niet erna: dit is het antwoord
+             * op "kan ik met deze man in zee", en dat is de vraag die
+             * iemand nog eerder stelt dan "wie is hij".
+             */
+            self::Kerngegevens => 1,
+
+            /*
+             * Daarna pas: "wie ben ik" komt voor "wat doe ik". Een
              * bezoeker die net heeft gelezen wát je aanbiedt weet nog
              * niet van wie hij het koopt, en bij een eenmanszaak is dat
              * precies de vraag die eerst komt.
              */
-            self::OverMij => 1,
+            self::OverMij => 2,
 
-            self::Diensten => 2,
-            self::Werkwijze => 3,
+            self::Diensten => 3,
+            self::Werkwijze => 4,
 
             /*
              * De etalage vlak na de werkwijze: eerst wát hij doet en
@@ -160,14 +175,14 @@ enum PageSectionKey: string
              * tijdlijn, want een bezoeker die een project herkent is
              * daarna pas nieuwsgierig naar waar hij in dienst was.
              */
-            self::Projecten => 4,
+            self::Projecten => 5,
 
-            self::Ervaring => 5,
+            self::Ervaring => 6,
 
             // Direct ná de tijdlijn: die vertelt wat hij heeft gedaan,
             // dit is het bewijs erbij. Uit elkaar trekken maakt van twee
             // halve verhalen twee losse blokken.
-            self::Certificaten => 6,
+            self::Certificaten => 7,
 
             /*
              * En daarna de cijfers. De rij leest zo als één verhaal:
@@ -178,7 +193,7 @@ enum PageSectionKey: string
              * contact was. Dat is het niet meer sinds de vragen bestaan;
              * zie hieronder.
              */
-            self::Statistieken => 7,
+            self::Statistieken => 8,
 
             /*
              * En dan de vragen, vlak vóór het contactformulier. Dat is
@@ -186,13 +201,13 @@ enum PageSectionKey: string
              * weg, en de knop om te mailen hoort meteen daarna te komen.
              * Erboven zou hij de twijfel wegnemen die nog niet bestond.
              */
-            self::Faq => 8,
+            self::Faq => 9,
 
-            self::Contact => 9,
+            self::Contact => 10,
 
             // Ná het contactformulier: "en volg me verder op LinkedIn"
             // is een afsluiter en geen uitnodiging om te mailen.
-            self::Linkedin => 10,
+            self::Linkedin => 11,
 
             self::Footer => 1000,
         };
@@ -210,6 +225,7 @@ enum PageSectionKey: string
     {
         return match ($this) {
             self::Hero => 'website.kop.index',
+            self::Kerngegevens => 'website.kerngegevens.index',
             self::OverMij => 'website.over-mij.index',
             self::Diensten => 'website.diensten.index',
             self::Werkwijze => 'website.werkwijze.index',

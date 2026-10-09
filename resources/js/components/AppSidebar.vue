@@ -5,6 +5,7 @@ import {
     Archive,
     Award,
     ChartNoAxesColumn,
+    ClipboardList,
     CircleQuestionMark,
     Eye,
     FolderKanban,
@@ -56,6 +57,7 @@ import projecten from '@/routes/website/projecten';
 import werkwijze from '@/routes/website/werkwijze';
 import ervaring from '@/routes/website/ervaring';
 import faq from '@/routes/website/faq';
+import kerngegevens from '@/routes/website/kerngegevens';
 import statistieken from '@/routes/website/statistieken';
 import kop from '@/routes/website/kop';
 import overMij from '@/routes/website/over-mij';
@@ -140,6 +142,15 @@ const websiteItems = computed<NavItem[]>(() => [
         title: t('Kop'),
         href: kop.index(),
         icon: Heading,
+    },
+    /*
+     * Kerngegevens staat tussen de kop en "Over mij", net als op de
+     * website zelf: het is de strook die direct onder je koptekst komt.
+     */
+    {
+        title: t('Kerngegevens'),
+        href: kerngegevens.index(),
+        icon: ClipboardList,
     },
     {
         title: t('Over mij'),
@@ -312,7 +323,16 @@ const beheerItems = computed<NavItem[]>(() =>
             </SidebarMenu>
         </SidebarHeader>
 
-        <SidebarContent>
+        <!--
+            De scrollbalk staat links en niet rechts.
+
+            Het menu is lang genoeg om te scrollen, en rechts zou de balk
+            tegen de rand van het portaal aan liggen -- precies tussen het
+            menu en de inhoud in, waar hij de scheiding tussen die twee
+            vertroebelt. Links ligt hij tegen de buitenrand van het scherm
+            en hoort hij zichtbaar bij de zijbalk.
+        -->
+        <SidebarContent class="brand-scrollbar-links">
             <NavMain :items="startItems" />
 
             <NavMain :label="$t('Website')" :items="websiteItems" />

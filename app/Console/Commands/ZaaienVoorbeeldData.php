@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\AboutPoint;
 use App\Models\ContactSubject;
 use App\Models\ContactSubmission;
+use App\Models\CoreFact;
 use App\Models\FaqItem;
 use App\Models\MailLog;
 use App\Models\Project;
@@ -88,6 +89,10 @@ class ZaaienVoorbeeldData extends Command
         $this->components->twoColumnDetail(
             'Werkwijze',
             (string) WorkStep::query()->count(),
+        );
+        $this->components->twoColumnDetail(
+            'Kerngegevens',
+            (string) CoreFact::query()->count(),
         );
 
         $this->newLine();

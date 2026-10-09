@@ -62,6 +62,7 @@ class Inhoudsregister
         'educations',
         'statistics',
         'faq_items',
+        'core_facts',
 
         'about_settings',
         'about_points',

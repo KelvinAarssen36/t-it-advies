@@ -7,6 +7,7 @@ use App\Enums\SecurityEventType;
 use App\Listeners\RecordSecurityEvents;
 use App\Models\AboutSetting;
 use App\Models\Certificate;
+use App\Models\CoreFact;
 use App\Models\Education;
 use App\Models\Experience;
 use App\Models\FaqItem;
@@ -191,6 +192,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->make(SectionContent::class)->telt(
             PageSectionKey::Projecten,
             fn () => Project::query()->online()->count(),
+        );
+
+        $this->app->make(SectionContent::class)->telt(
+            PageSectionKey::Kerngegevens,
+            fn () => CoreFact::query()->online()->count(),
         );
 
         $this->app->make(SectionContent::class)->telt(

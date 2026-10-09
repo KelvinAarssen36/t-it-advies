@@ -94,6 +94,7 @@ class PageSectionSeederTest extends TestCase
             PageSectionKey::Statistieken,
             PageSectionKey::Faq,
             PageSectionKey::OverMij,
+            PageSectionKey::Kerngegevens,
             PageSectionKey::Linkedin,
         ];
 

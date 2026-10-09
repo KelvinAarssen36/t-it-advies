@@ -2401,4 +2401,170 @@ export function vulStatistieken(
     };
 }
 
+/**
+ * Laat een waarde zich vastzetten als een rolbord.
+ *
+ * Het beeld is een vertrekbord op een station: de letters vallen niet van
+ * links naar rechts op hun plek maar door elkaar, met een kleine
+ * terugstuit. Dat laatste is wat het "klik" geeft -- zonder die overshoot
+ * is het gewoon tekst die omhoogschuift.
+ *
+ * **Waarom dit naast `splitReveal` staat en er niet in zit.** Die werkt op
+ * regels en is bedoeld voor koppen: een zin die zich zet. Dit werkt op
+ * letters en is bedoeld voor losse waarden van een paar woorden. Eén
+ * functie met een schakelaar ertussen zou twee verschillende effecten in
+ * elkaar schuiven die niets delen behalve SplitText.
+ *
+ * Vijf dingen die hier bewust zo zijn:
+ *
+ * - **`mask: 'chars'` doet het maskeren, niet wij.** SplitText zet zelf
+ *   een omhulsel met `overflow: hidden` om elke letter. Zelf iets
+ *   eromheen bouwen werkt ook, tot de tekst anders afbreekt.
+ * - **De tekst wordt nooit vervangen.** Er rolt geen willekeurige reeks
+ *   tekens doorheen zoals bij een echt rolbord; alleen de échte letters
+ *   bewegen. Een animatie die de inhoud tijdelijk vervalst is een
+ *   animatie die een schermlezer voorliegt.
+ * - **SplitText zet zelf een `aria-label`** met de hele tekst erin. Een
+ *   schermlezer leest daardoor "Vanaf januari" en niet "V, a, n, a, f".
+ *   Haal dat er niet af.
+ * - **Alleen `translate` en `opacity`.** Compositor-only; alles wat
+ *   `height` of `padding` aanraakt kost een layout per frame, en dat is
+ *   precies waar de slideshow ooit op vastliep.
+ * - **Boven `MAX_LETTERS` gaat het per woord in plaats van per letter.**
+ *   Tachtig losse letters is geen bord meer maar ruis, en het zijn
+ *   tachtig elementen om te animeren. Het blijft wel hetzelfde bord met
+ *   dezelfde terugstuit, alleen grover: een lange waarde valt zo niet uit
+ *   de toon naast een korte, en dat zou een platte schuif eronder wel
+ *   doen.
+ * - **De beweging begint iets ná de strook.** Het vak eronder komt op met
+ *   de gewone `revealOnScroll`; zonder die vertraging zetten de letters
+ *   zich vast in een vak dat nog doorzichtig is.
+ *
+ * Geeft een opruimfunctie terug; roep die aan in onBeforeUnmount.
+ */
+export function rolbord(selector: string, scope?: Element | null): () => void {
+    /** Boven dit aantal letters gaat het per woord in plaats van per letter. */
+    const MAX_LETTERS = 24;
+
+    /**
+     * Wachten tot het vak eronder er is. `revealOnScroll` laat de strook
+     * vanaf dezelfde regel in 0,8 seconde opkomen; na 0,3 seconde staat
+     * hij ver genoeg om de letters erin te laten landen.
+     */
+    const VERTRAGING = 0.3;
+
+    /* Dezelfde zeef als bij `revealOnScroll`, en om dezelfde reden. */
+    const targets = gsap.utils
+        .toArray<HTMLElement>(selector, scope ?? undefined)
+        .filter((target) => target.dataset.gezien === undefined);
+
+    if (targets.length === 0) {
+        return () => {};
+    }
+
+    if (prefersReducedMotion()) {
+        gsap.set(targets, { opacity: 1, y: 0 });
+
+        targets.forEach((target) => {
+            target.dataset.gezien = '';
+        });
+
+        return () => {};
+    }
+
+    const splits: SplitText[] = [];
+
+    targets.forEach((target) => {
+        gsap.set(target, { opacity: 1 });
+
+        /*
+         * Hier meteen en niet na de beweging, net als bij `splitReveal`:
+         * vanaf deze regel staat de waarde op doorzichtigheid 1 en is hij
+         * dus leesbaar. Zou het merkje pas aan het eind komen, dan
+         * hersplitst een herscan iets wat je al leest.
+         */
+        target.dataset.gezien = '';
+
+        const tekst = (target.textContent ?? '').trim();
+
+        /*
+         * Dezelfde regel als `revealOnScroll` (85%) en niet eerder. Op 90%
+         * ging de waarde rollen vóórdat de strook zelf was opgekomen, en
+         * dan speelt het effect zich af in een vak dat je nog niet ziet.
+         */
+        const start = alInBeeld(target, 0.85)
+            ? {}
+            : {
+                  scrollTrigger: {
+                      trigger: target,
+                      start: 'top 85%',
+                      once: true,
+                  },
+              };
+
+        /*
+         * Te lang voor losse letters: dan hetzelfde bord, maar per woord.
+         * "Op locatie, op afstand of allebei" hoort naast "Vanaf januari"
+         * te staan alsof ze samen op één bord zitten, en dat doen ze
+         * alleen als ze dezelfde beweging maken.
+         */
+        if (tekst.length > MAX_LETTERS) {
+            splits.push(
+                SplitText.create(target, {
+                    type: 'words',
+                    mask: 'words',
+                    autoSplit: true,
+                    onSplit: (self) =>
+                        gsap.from(self.words, {
+                            yPercent: 110,
+                            duration: 0.55,
+
+                            /*
+                             * Korter gespreid dan bij de letters: het zijn
+                             * er een stuk of zes, en met dezelfde spreiding
+                             * hangt het laatste woord onnodig lang.
+                             */
+                            stagger: { amount: 0.3, from: 'random' },
+
+                            ease: 'back.out(2)',
+                            delay: VERTRAGING,
+                            ...start,
+                        }),
+                }),
+            );
+
+            return;
+        }
+
+        splits.push(
+            SplitText.create(target, {
+                type: 'chars',
+                mask: 'chars',
+                autoSplit: true,
+                onSplit: (self) =>
+                    gsap.from(self.chars, {
+                        yPercent: 110,
+                        duration: 0.55,
+
+                        /*
+                         * De willekeur ís het effect. `amount` en niet
+                         * `each`: zo duurt het geheel even lang of er nu
+                         * zeven of twintig letters staan, en blijft de
+                         * strook als één beweging lezen.
+                         */
+                        stagger: { amount: 0.5, from: 'random' },
+
+                        // De terugstuit die het "klik" geeft.
+                        ease: 'back.out(2)',
+
+                        delay: VERTRAGING,
+                        ...start,
+                    }),
+            }),
+        );
+    });
+
+    return () => splits.forEach((split) => split.revert());
+}
+
 export { gsap, ScrollTrigger };

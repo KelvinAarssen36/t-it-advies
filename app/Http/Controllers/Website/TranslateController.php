@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Website;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Website\CoreFactRequest;
 use App\Http\Requests\Website\FaqItemRequest;
 use App\Http\Requests\Website\WorkStepRequest;
 use App\Models\AboutSetting;
@@ -148,6 +149,18 @@ class TranslateController extends Controller
              */
             'label_nl' => ['nullable', 'string', 'max:80'],
             'notitie_nl' => ['nullable', 'string', 'max:120'],
+
+            /*
+             * De waarde van een kerngegeven: "Vanaf januari, 2 tot 3
+             * dagen per week". Apart van `intro_nl` en `label_nl`, want
+             * het scherm moet weten waar het antwoord heen moet.
+             *
+             * **Vergeet dit veld niet bij een nieuwe module.**
+             * `validate()` gooit weg wat hier niet staat, dus een
+             * vergeten veld wordt zonder enige melding niet vertaald.
+             * Dat ging bij de werkwijze mis; zie CoreFactTranslationTest.
+             */
+            'waarde_nl' => ['nullable', 'string', 'max:'.CoreFactRequest::WAARDE_MAX],
             'groep_nl' => ['nullable', 'string', 'max:60'],
 
             /*
