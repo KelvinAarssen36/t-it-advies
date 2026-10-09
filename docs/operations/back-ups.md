@@ -54,8 +54,8 @@ weggeschreven of uitgevoerd.
 
 Alles uit `Inhoudsregister::tabellen()`: de indeling, de koppen, de
 loopbaan, de diensten, de certificaten, de opleidingen, de statistieken, de
-kerngegevens, de vragen, Over mij, de projecten, de werkwijze en het
-contactformulier. Plus
+kerngegevens, de vragen, Over mij, de projecten, de werkwijze, het
+contactformulier en de voettekst. Plus
 de bestanden achter `logo_path`, `photo_path` en `image_path`.
 
 ### En wat er nooit in gaat

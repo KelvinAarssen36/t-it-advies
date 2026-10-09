@@ -93,15 +93,27 @@ enum PageSectionKey: string
      * "er is nog geen scherm voor", en het indelingsscherm zet er dan
      * "Nog niet te beheren" bij -- een belofte dat het er ooit komt.
      *
-     * Bij de kop en de voettekst staat de tekst in de code, en bij
-     * LinkedIn is er precies één ding -- de link -- die bewust vastligt.
-     * Daar valt niets te beheren, nu niet en later niet, en dan is
-     * "nog niet" een verkeerde mededeling.
+     * Bij LinkedIn is er precies één ding -- de link -- die bewust
+     * vastligt. Daar valt niets te beheren, nu niet en later niet, en dan
+     * is "nog niet" een verkeerde mededeling.
+     *
+     * **De voettekst stond hier ook, en staat er niet meer.** Daar hoorde
+     * bij: "bij de kop en de voettekst staat de tekst in de code". Dat was
+     * waar zolang er in de voet niets stond dat alleen de eigenaar kan
+     * weten. Sinds er een telefoonnummer, een werkgebied en een
+     * KvK-nummer in staan is het dat niet meer: dat zijn zijn gegevens,
+     * geen ontwerpkeuzes van ons. De indeling, de kleuren, het jaartal en
+     * de sitemap liggen nog steeds vast -- zie FooterController voor waar
+     * die grens nu loopt.
+     *
+     * De kop blijft hier weg om een andere reden dan je zou denken: die
+     * heeft wél een scherm (`website.kop.index`), dus `beheerRoute()`
+     * wijst ergens heen.
      */
     public function teBeheren(): bool
     {
         return match ($this) {
-            self::Linkedin, self::Footer => false,
+            self::Linkedin => false,
             default => true,
         };
     }
@@ -235,6 +247,7 @@ enum PageSectionKey: string
             self::Statistieken => 'website.statistieken.index',
             self::Faq => 'website.faq.index',
             self::Contact => 'website.contact.index',
+            self::Footer => 'website.footer.index',
             default => null,
         };
     }

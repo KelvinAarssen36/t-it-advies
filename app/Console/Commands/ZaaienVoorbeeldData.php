@@ -7,6 +7,7 @@ use App\Models\ContactSubject;
 use App\Models\ContactSubmission;
 use App\Models\CoreFact;
 use App\Models\FaqItem;
+use App\Models\FooterSetting;
 use App\Models\MailLog;
 use App\Models\Project;
 use App\Models\WorkStep;
@@ -93,6 +94,10 @@ class ZaaienVoorbeeldData extends Command
         $this->components->twoColumnDetail(
             'Kerngegevens',
             (string) CoreFact::query()->count(),
+        );
+        $this->components->twoColumnDetail(
+            'Voettekst',
+            FooterSetting::query()->exists() ? 'gevuld' : 'leeg',
         );
 
         $this->newLine();

@@ -63,18 +63,27 @@ class HandleInertiaRequests extends Middleware
             'locales' => (array) config('app.available_locales'),
 
             /*
-             * De naam van de eigenaar en zijn LinkedIn, uit de config.
+             * De naam van de eigenaar, zijn LinkedIn en zijn publieke
+             * adres, uit de config.
              *
-             * Gedeeld en niet per pagina meegegeven, want er komen meer
+             * Gedeeld en niet per pagina meegegeven, want er zijn meer
              * plekken die ernaar wijzen -- de voettekst hoort bij de
              * layout en niet bij één pagina. Eén bron betekent dat die
              * knoppen niet uiteen kunnen gaan lopen.
              *
-             * Het zijn twee regels uit een configbestand, dus het kost
-             * geen query en geen meetbare tijd.
+             * Het adres stond eerst alleen op de drie pagina's die het
+             * tonen. Sinds het ook in de voet staat is dat elke pagina,
+             * en dan is per-pagina doorgeven drie plekken om het te
+             * vergeten in plaats van een besparing.
+             *
+             * Het zijn drie regels uit een configbestand, dus het kost
+             * geen query en geen meetbare tijd. Wat de eigenaar zélf in
+             * de voet zet staat wél in de database en gaat daarom per
+             * pagina mee; zie App\Models\FooterSetting.
              */
             'eigenaar' => (string) config('security.portal_account.name'),
             'linkedin' => (string) config('site.linkedin'),
+            'email' => (string) config('site.email'),
             // De woordenlijst van de actieve taal. Zie translations().
             'translations' => fn () => $this->translations(),
             'flash' => [

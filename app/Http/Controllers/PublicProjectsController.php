@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\PageSectionKey;
+use App\Models\FooterSetting;
 use App\Models\PageSection;
 use App\Models\Project;
 use App\Models\ProjectSetting;
@@ -53,6 +54,9 @@ class PublicProjectsController extends Controller
 
         return Inertia::render('public/Projecten', [
             'navigation' => $navigatie->menu(),
+
+            // Zie de toelichting in HomeController.
+            'voet' => FooterSetting::huidige()->voorDeSite(),
 
             /*
              * Dezelfde kop als boven het blok op de voorpagina. Anders

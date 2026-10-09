@@ -360,8 +360,16 @@ korte pauze van 200 ms, precies zolang als de sluitanimatie duurt.
 **Elk onderdeel met inhoud is nu beheerbaar.** De werkwijze was de laatste
 die zijn teksten nog in een Vue-component had staan; sinds de module
 [werkwijze](modules/werkwijze.md) komt ook die uit de database. Wat
-overblijft zonder beheerscherm zijn de twee onderdelen die geen inhoud
-hébben: de [LinkedIn-knop](modules/linkedin.md) en de voettekst.
+overblijft zonder beheerscherm is nog één onderdeel: de
+[LinkedIn-knop](modules/linkedin.md), en die heeft geen inhoud -- er is
+één link en die ligt vast.
+
+> **De voettekst stond hier ook, en staat er niet meer.** Daar hoorde bij
+> dat hij geen inhoud hééft. Dat was waar zolang er niets in stond dat
+> alleen de eigenaar kan weten; sinds er een telefoonnummer, een
+> werkgebied en een KvK-nummer in staan is het dat niet meer. Zie
+> [voettekst](modules/voettekst.md), inclusief wat er in die voet nog
+> steeds vastligt en waarom.
 
 > **Contact is het onderdeel dat het patroon het verst oprekt.** Hij heeft
 > geen teller in `SectionContent` -- met opzet, want het formulier staat er

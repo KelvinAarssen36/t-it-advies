@@ -18,6 +18,7 @@ import {
     Lightbulb,
     Mail,
     MessageSquare,
+    PanelBottom,
     Milestone,
     Route,
     Scale,
@@ -57,6 +58,7 @@ import projecten from '@/routes/website/projecten';
 import werkwijze from '@/routes/website/werkwijze';
 import ervaring from '@/routes/website/ervaring';
 import faq from '@/routes/website/faq';
+import footer from '@/routes/website/footer';
 import kerngegevens from '@/routes/website/kerngegevens';
 import statistieken from '@/routes/website/statistieken';
 import kop from '@/routes/website/kop';
@@ -196,6 +198,16 @@ const websiteItems = computed<NavItem[]>(() => [
         title: t('Contact'),
         href: contact.index(),
         icon: MessageSquare,
+    },
+    /*
+     * De voettekst sluit de rij, net als op de site zelf. Hij stond hier
+     * lang niet, omdat er niets te beheren viel; sinds de eigenaar er zijn
+     * telefoonnummer en KvK in zet is dat niet meer zo.
+     */
+    {
+        title: t('Voettekst'),
+        href: footer.index(),
+        icon: PanelBottom,
     },
     {
         title: t('Bekijk de website'),

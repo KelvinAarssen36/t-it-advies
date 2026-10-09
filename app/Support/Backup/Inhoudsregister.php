@@ -75,6 +75,8 @@ class Inhoudsregister
         'contact_subjects',
         'contact_fields',
         'contact_settings',
+
+        'footer_settings',
     ];
 
     /**

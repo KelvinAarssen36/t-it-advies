@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FooterSetting;
 use App\Support\Page\Navigatie;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -41,6 +42,9 @@ class PrivacyController extends Controller
              * in één klik bij het onderdeel dat je wilde.
              */
             'navigation' => $navigatie->menu(),
+
+            // Zie de toelichting in HomeController.
+            'voet' => FooterSetting::huidige()->voorDeSite(),
 
             'email' => config('site.email'),
 

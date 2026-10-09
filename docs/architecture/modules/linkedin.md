@@ -52,7 +52,15 @@ blok is die belofte onwaar: er is één link en die ligt vast.
 Vandaar `PageSectionKey::teBeheren()`, naast het bestaande
 `beheerRoute()`. De eerste zegt of er iets te beheren _valt_, de tweede of
 er al een scherm _is_. Het indelingsscherm kent daarmee drie toestanden in
-plaats van twee, en de voettekst valt in dezelfde categorie.
+plaats van twee.
+
+> **De voettekst viel hier ook onder, en nu niet meer.** Toen dit werd
+> opgeschreven stond de tekst van die voet in de code en viel er dus
+> niets te beheren. Sinds er een telefoonnummer, een werkgebied en een
+> KvK-nummer in staan is dat veranderd; zie
+> [voettekst](voettekst.md). Dit blok is daarmee het enige onderdeel dat
+> `teBeheren()` op `false` heeft staan -- en dat blijft zo, want er is
+> één link en die ligt vast.
 
 ## De animatie zit op het merkteken en niet erachter
 

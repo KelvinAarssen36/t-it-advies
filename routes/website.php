@@ -6,6 +6,7 @@ use App\Http\Controllers\Website\ContactModuleController;
 use App\Http\Controllers\Website\CoreFactController;
 use App\Http\Controllers\Website\ExperienceController;
 use App\Http\Controllers\Website\FaqController;
+use App\Http\Controllers\Website\FooterController;
 use App\Http\Controllers\Website\HeroController;
 use App\Http\Controllers\Website\LayoutController;
 use App\Http\Controllers\Website\ProjectController;
@@ -346,5 +347,24 @@ Route::middleware(['auth', 'verified', 'two-factor.required', 'can:manage portal
             Route::patch('{experience}/online', [ExperienceController::class, 'online'])
                 ->name('online');
             Route::delete('{experience}', [ExperienceController::class, 'destroy'])->name('destroy');
+        });
+
+        /*
+         * De voet van de site.
+         *
+         * Drie PUT's op drie vaste paden en geen `{model}`: het is één rij
+         * en er valt niets te kiezen. De volgorde-val die bij de andere
+         * modules in commentaar staat speelt hier dus niet.
+         *
+         * Elk venster heeft zijn eigen eindpunt, en dat is geen smaak maar
+         * de les uit AboutController: één gedeelde `update()` wist stil de
+         * velden van het venster dat je níet open had staan.
+         */
+        Route::prefix('voettekst')->name('footer.')->group(function () {
+            Route::get('/', [FooterController::class, 'index'])->name('index');
+
+            Route::put('tekst', [FooterController::class, 'tekst'])->name('tekst');
+            Route::put('contact', [FooterController::class, 'contact'])->name('contact');
+            Route::put('bedrijf', [FooterController::class, 'bedrijf'])->name('bedrijf');
         });
     });

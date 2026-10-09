@@ -7,6 +7,7 @@ use App\Http\Requests\Website\CoreFactRequest;
 use App\Http\Requests\Website\FaqItemRequest;
 use App\Http\Requests\Website\WorkStepRequest;
 use App\Models\AboutSetting;
+use App\Models\FooterSetting;
 use App\Models\Service;
 use App\Support\Toast;
 use App\Support\Translation\VertaalFout;
@@ -201,6 +202,22 @@ class TranslateController extends Controller
              */
             'duration_nl' => ['nullable', 'string', 'max:40'],
             'result_nl' => ['nullable', 'string', 'max:'.WorkStepRequest::RESULTAAT_MAX],
+
+            /*
+             * De twee vertaalbare velden van de voet: de zin onder het
+             * merk en het werkgebied.
+             *
+             * Eigen namen, want ze staan in twee verschillende vensters
+             * en worden dus nooit samen gestuurd -- maar een hergebruikte
+             * naam zou betekenen dat het antwoord in het verkeerde venster
+             * kan landen zodra er ooit een derde bij komt.
+             *
+             * Het KvK- en btw-nummer staan hier bewust níet bij: een
+             * nummer is in elke taal hetzelfde, en dat venster heeft dan
+             * ook geen vertaalknop.
+             */
+            'tagline_nl' => ['nullable', 'string', 'max:'.FooterSetting::TAGLINE_MAX],
+            'region_nl' => ['nullable', 'string', 'max:'.FooterSetting::PLAATS_MAX],
         ]);
 
         /** @var array<int, string|null> $punten */

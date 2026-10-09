@@ -310,9 +310,14 @@ lijst staat.
 - **Geen eigen soort per veld** (datum, bedrag, keuzelijst). De waarde is
   vrije tekst, want "in overleg" en "2 tot 3 dagen" zijn geldige
   antwoorden en in geen enkel vast formaat te persen.
-- **Geen koppeling met de voettekst.** Het KvK-nummer hoort daar misschien
-  ook thuis, maar dat is een tweede plek met een eigen reden; die
-  vermengen maakt van deze module een instellingenscherm.
+- **Geen koppeling met de voettekst.** Het KvK-nummer staat daar
+  inmiddels ook -- zie [voettekst](voettekst.md) -- maar met een eigen
+  veld en niet met een verwijzing hierheen. De reden is gedrag en geen
+  netheid: een kerngegeven kan de eigenaar verwijderen, of hij kan deze
+  hele strook uitzetten, en dan zou zijn KvK stilletjes uit de voet
+  verdwijnen zonder dat hij daarom vroeg. De prijs is dat hij het nummer
+  twee keer kan typen als hij het op allebei wil; dat is één handeling,
+  één keer, voor een nummer dat nooit verandert.
 
 ## Zie ook
 

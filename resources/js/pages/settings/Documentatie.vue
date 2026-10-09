@@ -32,6 +32,7 @@ import {
     Pencil,
     Scale,
     Plus,
+    PanelBottom,
     Route,
     Search,
     Share2,
@@ -85,6 +86,7 @@ import werkwijzeRoutes from '@/routes/website/werkwijze';
 import statistiekenRoutes from '@/routes/website/statistieken';
 import kop from '@/routes/website/kop';
 import ervaring from '@/routes/website/ervaring';
+import voettekst from '@/routes/website/footer';
 
 /**
  * De handleiding bij het portaal.
@@ -1718,6 +1720,55 @@ defineOptions({
                                     )
                                 }}
                             </p>
+                        </UitlegKaart>
+
+                        <UitlegKaart
+                            :titel="$t('Voettekst')"
+                            :icoon="PanelBottom"
+                        >
+                            <p>
+                                {{
+                                    $t(
+                                        'De afsluiting onderaan elke pagina: je naam, een zin eronder, het rijtje met je onderdelen, je contactgegevens en de kleine lettertjes. Het meeste regelt zichzelf -- je vult alleen in wat alleen jij kunt weten.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Je kunt drie dingen aanpassen: de zin onder je naam, je contactgegevens (telefoon en werkgebied) en je bedrijfsgegevens (KvK en btw). Elk heeft zijn eigen knop, en elk mag leeg blijven. Wat je niet invult, staat er ook niet -- er blijft geen lege regel of los kopje achter.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Je e-mailadres staat er wel, maar je kunt het hier niet wijzigen. Dat zit vast aan waar je contactformulier heen mailt; kon je het hier omzetten, dan zouden je aanvragen stilletjes ergens anders terechtkomen. Wil je het echt veranderen, vraag dat dan aan je bouwer.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Het jaartal, het rijtje met je onderdelen, de privacylink en je LinkedIn regelen zichzelf. Het jaartal telt elk jaar vanzelf op, en haal je een onderdeel van je website af, dan verdwijnt de regel hier ook. Onderaan dat scherm staat precies welke dingen dat zijn.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Onder de streep staat ook wie je website heeft gebouwd. Dat is een vaste regel; die hoort erbij en kun je niet aanpassen.',
+                                    )
+                                }}
+                            </p>
+
+                            <template #voorbeeld>
+                                <Button variant="outline" size="sm" as-child>
+                                    <Link :href="voettekst.index()">
+                                        {{ $t('Naar je voettekst') }}
+                                    </Link>
+                                </Button>
+                            </template>
                         </UitlegKaart>
 
                         <UitlegKaart

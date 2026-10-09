@@ -2567,4 +2567,83 @@ export function rolbord(selector: string, scope?: Element | null): () => void {
     return () => splits.forEach((split) => split.revert());
 }
 
+/**
+ * Laat een lijn vanuit het midden naar buiten groeien.
+ *
+ * Bedoeld voor de accentlijn boven de voet: hij ligt er al, en zodra je de
+ * voet bereikt trekt hij zich open naar beide kanten. Dat leest als een
+ * afsluiting -- een streep die onder het verhaal wordt gezet -- en niet als
+ * nog een blok dat komt opzetten.
+ *
+ * Drie dingen die hier bewust zo zijn:
+ *
+ * - **`scaleX` en niets anders.** Compositor-only; `width` animeren kost
+ *   een layout per frame, en dit is een element dat over de volle breedte
+ *   van de pagina loopt.
+ * - **`transform-origin` staat in de CSS en niet hier.** Waar een lijn
+ *   vandaan groeit is opmaak, en dan hoort het bij de klasse die hem
+ *   tekent. Zie `.brand-footer-lijn` in app.css.
+ * - **Dezelfde zeef en dezelfde terugval als de andere helpers hier.** Wat
+ *   al is gezien blijft staan, bij `prefers-reduced-motion` staat de lijn
+ *   er meteen, en staat hij al in beeld dan speelt het zonder
+ *   scroll-trigger -- die komt anders nooit meer langs.
+ *
+ * Geeft een opruimfunctie terug; roep die aan in onBeforeUnmount.
+ */
+export function groeiLijn(
+    selector: string,
+    scope?: Element | null,
+): () => void {
+    const targets = gsap.utils
+        .toArray<HTMLElement>(selector, scope ?? undefined)
+        .filter((target) => target.dataset.gezien === undefined);
+
+    if (targets.length === 0) {
+        return () => {};
+    }
+
+    if (prefersReducedMotion()) {
+        gsap.set(targets, { scaleX: 1 });
+
+        targets.forEach((target) => {
+            target.dataset.gezien = '';
+        });
+
+        return () => {};
+    }
+
+    const tweens = targets.map((target) =>
+        gsap.fromTo(
+            target,
+            { scaleX: 0 },
+            {
+                scaleX: 1,
+                duration: 1.1,
+                ease: 'power3.out',
+
+                onComplete: () => {
+                    target.dataset.gezien = '';
+                },
+
+                ...(alInBeeld(target)
+                    ? {}
+                    : {
+                          scrollTrigger: {
+                              trigger: target,
+                              start: 'top 95%',
+                              once: true,
+                          },
+                      }),
+            },
+        ),
+    );
+
+    return () => {
+        tweens.forEach((tween) => {
+            tween.scrollTrigger?.kill();
+            tween.kill();
+        });
+    };
+}
+
 export { gsap, ScrollTrigger };

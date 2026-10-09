@@ -8,6 +8,7 @@ use App\Models\ContactSubject;
 use App\Models\ContactSubmission;
 use App\Models\CoreFact;
 use App\Models\FaqItem;
+use App\Models\FooterSetting;
 use App\Models\MailLog;
 use App\Models\Project;
 use App\Models\WorkStep;
@@ -124,6 +125,9 @@ class OpruimenVoorbeeldData extends Command
         'Voorwaarden',
     ];
 
+    /** De zin waaraan de voet uit de voorbeelddata te herkennen is. */
+    private const VOET_ZIN = 'IT-advies en realisatie. Van advies tot bouw en beheer.';
+
     private const PUNTEN = [
         'Geen afhankelijkheid van één leverancier',
         'Documentatie waarmee een ander het overneemt',
@@ -184,7 +188,17 @@ class OpruimenVoorbeeldData extends Command
             ->whereIn('label_nl', self::KERNGEGEVENS)
             ->count();
 
-        if ($aanvragen + $mail + $onderwerpen + $vragen + $overMij + $puntenAantal + $projecten + $kerngegevens === 0) {
+        /*
+         * De voet is één rij en net zo min op tekst te herkennen als
+         * "Over mij", dus hij gaat op de zin die de seeder neerzet. Staat
+         * die er niet meer, dan heeft de eigenaar hem aangepast en blijft
+         * de rij staan -- inclusief zijn telefoonnummer.
+         */
+        $voet = FooterSetting::query()
+            ->where('tagline_nl', self::VOET_ZIN)
+            ->count();
+
+        if ($aanvragen + $mail + $onderwerpen + $vragen + $overMij + $puntenAantal + $projecten + $kerngegevens + $voet === 0) {
             $this->components->info('Er staat geen voorbeelddata in de database.');
 
             return self::SUCCESS;
@@ -198,13 +212,14 @@ class OpruimenVoorbeeldData extends Command
         $this->components->twoColumnDetail('Punten bij Over mij', (string) $puntenAantal);
         $this->components->twoColumnDetail('Projecten', (string) $projecten);
         $this->components->twoColumnDetail('Kerngegevens', (string) $kerngegevens);
+        $this->components->twoColumnDetail('Voettekst', (string) $voet);
 
         /*
          * De onderwerpen gaan op naam en niet op adres, dus hier kan de
          * klant zijn eigen werk tussen zitten. Dat zeggen we met zoveel
          * woorden in plaats van het stil weg te halen.
          */
-        if ($onderwerpen + $vragen + $overMij + $puntenAantal + $projecten + $kerngegevens > 0) {
+        if ($onderwerpen + $vragen + $overMij + $puntenAantal + $projecten + $kerngegevens + $voet > 0) {
             $this->components->warn(
                 'De onderwerpen en de vragen worden op tekst gevonden. Heb je er '
                     .'zelf een met dezelfde tekst gemaakt, dan gaat die mee.'
@@ -259,6 +274,10 @@ class OpruimenVoorbeeldData extends Command
 
         AboutSetting::query()
             ->where('summary_nl', 'like', 'Ik werk sinds 2008 in de IT%')
+            ->delete();
+
+        FooterSetting::query()
+            ->where('tagline_nl', self::VOET_ZIN)
             ->delete();
 
         $this->components->info('De voorbeelddata is weg.');

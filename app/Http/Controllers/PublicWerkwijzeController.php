@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\PageSectionKey;
+use App\Models\FooterSetting;
 use App\Models\PageSection;
 use App\Models\SectionHeading;
 use App\Models\WorkStep;
@@ -43,6 +44,9 @@ class PublicWerkwijzeController extends Controller
 
         return Inertia::render('public/Werkwijze', [
             'navigation' => $navigatie->menu(),
+
+            // Zie de toelichting in HomeController.
+            'voet' => FooterSetting::huidige()->voorDeSite(),
 
             // Dezelfde kop als boven het blok op de voorpagina: het is
             // hetzelfde onderdeel, alleen uitgeschreven.

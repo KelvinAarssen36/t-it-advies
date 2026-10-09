@@ -7,6 +7,7 @@ use App\Models\AboutSetting;
 use App\Models\ContactSubject;
 use App\Models\ContactSubmission;
 use App\Models\FaqItem;
+use App\Models\FooterSetting;
 use App\Models\MailLog;
 use Database\Seeders\ContactSeeder;
 use Database\Seeders\VoorbeeldDataSeeder;
@@ -218,6 +219,73 @@ class VoorbeeldDataTest extends TestCase
             1,
             AboutPoint::query()->whereNull('text_en')->count(),
             'Er hoort precies één punt zonder Engels te staan.',
+        );
+    }
+
+    /**
+     * De voet wordt gevuld, en met één rij.
+     *
+     * `firstOrNew` en geen `create`: draai je de seeder twee keer, dan
+     * hoort er niet een tweede rij naast te komen te staan.
+     */
+    public function test_the_seeder_fills_the_footer(): void
+    {
+        $this->seed(VoorbeeldDataSeeder::class);
+        $this->seed(VoorbeeldDataSeeder::class);
+
+        $voet = FooterSetting::query()->sole();
+
+        $this->assertNotNull($voet->phone);
+        $this->assertNotNull($voet->region_nl);
+        $this->assertNotNull($voet->vat);
+
+        /*
+         * Het verzonnen KvK-nummer hoort door zijn eigen validatie te
+         * komen: acht cijfers. Zou de seeder er zeven neerzetten, dan
+         * staat er voorbeelddata die het beheerscherm zelf zou weigeren.
+         */
+        $this->assertSame(
+            FooterSetting::KVK_CIJFERS,
+            mb_strlen((string) preg_replace('/\D/', '', (string) $voet->kvk)),
+            'Het verzonnen KvK-nummer heeft niet het aantal cijfers dat de validatie eist.',
+        );
+    }
+
+    /**
+     * En de voet gaat ook weer weg.
+     *
+     * Het opruimen gaat op de zin die de seeder neerzet, net als bij
+     * "Over mij": er is geen adres om op te herkennen.
+     */
+    public function test_cleaning_up_removes_the_footer(): void
+    {
+        $this->seed(VoorbeeldDataSeeder::class);
+
+        $this->artisan('voorbeeld:opruimen --force')->assertSuccessful();
+
+        $this->assertSame(0, FooterSetting::query()->count());
+    }
+
+    /**
+     * Maar niet als de eigenaar hem heeft aangepast.
+     *
+     * Dan is de rij van hém, en zou het opruimen zijn telefoonnummer
+     * meenemen. Dezelfde voorzichtigheid als bij een eigen punt onder
+     * "Over mij".
+     */
+    public function test_cleaning_up_leaves_an_edited_footer_alone(): void
+    {
+        $this->seed(VoorbeeldDataSeeder::class);
+
+        $voet = FooterSetting::query()->sole();
+        $voet->update(['tagline_nl' => 'Mijn eigen zin eronder.']);
+
+        $this->artisan('voorbeeld:opruimen --force')->assertSuccessful();
+
+        $this->assertModelExists($voet);
+        $this->assertSame(
+            'Mijn eigen zin eronder.',
+            FooterSetting::query()->sole()->tagline_nl,
         );
     }
 

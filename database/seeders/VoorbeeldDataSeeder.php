@@ -14,6 +14,7 @@ use App\Models\ContactSubject;
 use App\Models\ContactSubmission;
 use App\Models\CoreFact;
 use App\Models\FaqItem;
+use App\Models\FooterSetting;
 use App\Models\MailLog;
 use App\Models\Project;
 use App\Models\WorkStep;
@@ -100,6 +101,7 @@ class VoorbeeldDataSeeder extends Seeder
         $this->projecten();
         $this->werkwijze();
         $this->kerngegevens();
+        $this->voettekst();
     }
 
     /**
@@ -146,6 +148,34 @@ class VoorbeeldDataSeeder extends Seeder
      *
      * Eén staat offline, zodat je in het beheerscherm ziet wat dat doet.
      */
+    /**
+     * De voet van de site, gevuld.
+     *
+     * Eén rij, dus `firstOrNew` en geen `create`: draai je de seeder twee
+     * keer, dan hoort er niet een tweede naast te komen.
+     *
+     * **Het KvK-nummer is verzonnen en daarom staat het hier en niet in de
+     * standaardwaarden van het model.** Acht cijfers die nergens op slaan
+     * horen op een voorbeelddatabase thuis, niet op een verse installatie:
+     * daar zou de eigenaar ze pas opmerken als iemand ze natrekt.
+     */
+    private function voettekst(): void
+    {
+        $voet = FooterSetting::query()->firstOrNew();
+
+        $voet->fill([
+            'tagline_nl' => 'IT-advies en realisatie. Van advies tot bouw en beheer.',
+            'tagline_en' => 'IT consultancy and delivery. From advice to build and support.',
+            'phone' => '06 12 34 56 78',
+            'region_nl' => 'Noord-Brabant en omstreken',
+            'region_en' => 'Noord-Brabant and surroundings',
+            'kvk' => '12 34 56 78',
+            'vat' => 'NL001234567B01',
+        ]);
+
+        $voet->save();
+    }
+
     private function kerngegevens(): void
     {
         $rijen = [

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\ContactWeergave;
 use App\Enums\PageSectionKey;
 use App\Models\ContactSetting;
+use App\Models\FooterSetting;
 use App\Models\SectionHeading;
 use App\Support\Contact\Contactformulier;
 use App\Support\Page\Navigatie;
@@ -63,6 +64,9 @@ class PublicContactController extends Controller
              * in één klik bij het onderdeel dat je wilde.
              */
             'navigation' => $navigatie->menu(),
+
+            // Zie de toelichting in HomeController.
+            'voet' => FooterSetting::huidige()->voorDeSite(),
 
             'kop' => SectionHeading::voor(PageSectionKey::Contact)->voorDeSite(),
             'velden' => $formulier->voorDeSite(),

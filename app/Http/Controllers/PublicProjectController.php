@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FooterSetting;
 use App\Models\Project;
 use App\Support\Page\Navigatie;
 use Illuminate\Http\Request;
@@ -82,6 +83,9 @@ class PublicProjectController extends Controller
 
         return Inertia::render('public/ProjectDetail', [
             'navigation' => $navigatie->menu(),
+
+            // Zie de toelichting in HomeController.
+            'voet' => FooterSetting::huidige()->voorDeSite(),
             'project' => $project->voorDePagina(),
             'van' => in_array($van, self::HERKOMST, true) ? $van : null,
         ]);

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\PageSectionKey;
 use App\Models\AboutPoint;
 use App\Models\AboutSetting;
+use App\Models\FooterSetting;
 use App\Models\SectionHeading;
 use App\Support\Page\Navigatie;
 use Inertia\Inertia;
@@ -60,6 +61,9 @@ class PublicAboutController extends Controller
              * in één klik bij het onderdeel dat je wilde.
              */
             'navigation' => $navigatie->menu(),
+
+            // Zie de toelichting in HomeController.
+            'voet' => FooterSetting::huidige()->voorDeSite(),
 
             /*
              * De kop van de pagina komt uit de instellingen en niet uit

@@ -11,6 +11,7 @@ use App\Models\CoreFact;
 use App\Models\Education;
 use App\Models\Experience;
 use App\Models\FaqItem;
+use App\Models\FooterSetting;
 use App\Models\Project;
 use App\Models\SectionHeading;
 use App\Models\Service;
@@ -168,6 +169,19 @@ class HomeController extends Controller
              * frontend, want ze zijn vertaald. Zie PageSectionKey::label().
              */
             'navigation' => $navigatie->menu($secties),
+
+            /*
+             * De voet staat op élke publieke pagina en krijgt zijn
+             * gegevens dus ook hier mee, naast de navigatie erboven.
+             *
+             * Niet als gedeelde prop in HandleInertiaRequests: dan betaalt
+             * elk portaalverzoek voor een query die alleen de publieke
+             * site nodig heeft. Dezelfde afweging als bij `navigation`;
+             * zie App\Support\Page\Navigatie. FooterPublishingTest loopt
+             * alle zeven pagina's langs, zodat deze regel nergens kan
+             * ontbreken.
+             */
+            'voet' => FooterSetting::huidige()->voorDeSite(),
 
             /*
              * De diensten, in de taal van de bezoeker. Leeg als het

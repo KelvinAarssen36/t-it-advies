@@ -28,7 +28,7 @@ ophaalt.
 | ------------------------------------ | ------------------------------------------------------- |
 | `layouts/PublicLayout.vue`           | Kop, voet, smooth scrolling en de scroll-reveals.       |
 | `components/site/SiteHeader.vue`     | Navigatie. Krijgt pas een achtergrond zodra je scrollt. |
-| `components/site/SiteFooter.vue`     | Voet met accentlijn.                                    |
+| `components/site/SiteFooter.vue`     | Voet: drie kolommen, de balk eronder en de credit.      |
 | `components/site/SiteSection.vue`    | Eén breedte en één verticale ruimte voor alle secties.  |
 | `components/site/SectionHeading.vue` | Bovenschrift, titel en inleiding.                       |
 | `components/site/FeatureCard.vue`    | Kaart op donker, met glow op hover.                     |

@@ -86,6 +86,7 @@ staan de vijf stappen -- en daarna een bestaande module als voorbeeld.
 - [Het inlogadres wijzigen](security/inlogadres-wijzigen.md) -- drie sloten ervoor, een weg terug erna, en waarom het adres niet meer in het profielformulier staat.
 - [De extra stap na een passkey](security/extra-stap-na-een-passkey.md) -- de schakelaar waarmee de eigenaar na zijn passkey ook nog zijn authenticator-code vraagt.
 - [Module Kerngegevens](architecture/modules/kerngegevens.md) -- de feitenstrook met beschikbaarheid, werkgebied en reactietijd, en waarom dat geen statistiek is.
+- [Module Voettekst](architecture/modules/voettekst.md) -- de afsluiting van de site, wat de klant er wel en niet aan beheert, en waarom het KvK-nummer daar los staat van de kerngegevens.
 - [Back-ups](operations/back-ups.md) -- de inhoud van de website vastleggen en terugzetten, en waarom het account en de berichten van bezoekers er niet in zitten.
 - [Rollen en rechten](security/rollen-en-rechten.md) -- wie mag wat.
 - [Spam- en botbescherming](security/spam-en-botbescherming.md) -- Turnstile, honeypot, rate limiting.
