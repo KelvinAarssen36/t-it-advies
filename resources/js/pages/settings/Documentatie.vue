@@ -1896,7 +1896,7 @@ defineOptions({
                             <p>
                                 {{
                                     $t(
-                                        'Daaronder staat waar ze vandaan komen -- of je LinkedIn echt bezoek oplevert bijvoorbeeld -- met welk apparaat ze kijken, en in welke taal. Dat laatste zegt of het Engels de moeite waard is.',
+                                        'Daaronder staat waar ze vandaan komen -- of je LinkedIn echt bezoek oplevert bijvoorbeeld -- met welk apparaat ze kijken, in welke taal, en welke pagina ze opvragen. Die laatste twee zeggen of het Engels de moeite waard is en of je aparte pagina’s worden gevonden.',
                                     )
                                 }}
                             </p>

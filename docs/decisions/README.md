@@ -420,3 +420,31 @@ vervangen, de wrapper-structuur in
 en elk vastgezet element daarbuiten hangen. Doe dat dan in één keer en niet
 half -- half is precies de toestand waarin de kop soms wel en soms niet
 blijft staan.
+
+---
+
+## 018 -- SSR uit, en de linkvoorbeelden los daarvan oplossen
+
+**Keuze:** `SSR_ENABLED` standaard op `false`, in de config én in
+`.env.example`.
+
+**Waarom:** hij stond op `true` terwijl er nergens een SSR-server draait.
+Inertia probeerde dus bij elke paginaweergave `127.0.0.1:13714`, kreeg
+niets, en bouwde de pagina alsnog in de browser op. Dat is een mislukte
+verbindingspoging per bezoek voor precies nul opbrengst -- lokaal en op
+gedeelde hosting even zinloos.
+
+**Wat het kost:** niets dat vandaag werkte. Er wérd al niets server-side
+gerenderd; alleen het vlaggetje beweerde van wel.
+
+**Wat het niet oplost, en hoe dat dan wel:** een crawler zonder JavaScript
+en een linkvoorbeeld op WhatsApp of LinkedIn zien zonder SSR geen inhoud.
+Dat is echter geen SSR-probleem maar een metadata-probleem: die diensten
+lezen `og:title` en `og:description` uit de `<head>`, en die kan de server
+zelf zetten. Dat gebeurt nu in `app.blade.php`, uit de gegevens van de
+pagina, zonder draaiend proces -- dus ook op gedeelde hosting.
+
+**Terugdraaien:** `SSR_ENABLED=true` in `.env`, `npm run build:ssr` in de
+deploy en `php artisan inertia:start-ssr` als blijvend proces ernaast. Dat
+vraagt hosting waar dat mag; bij Strato gedeelde hosting is dat hetzelfde
+probleem als de wachtrij-worker.

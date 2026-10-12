@@ -19,6 +19,7 @@ use App\Models\Statistic;
 use App\Models\WorkStep;
 use App\Support\Contact\Contactformulier;
 use App\Support\Loopbaan;
+use App\Support\Page\Metagegevens;
 use App\Support\Page\Navigatie;
 use Illuminate\Database\Eloquent\Collection;
 use Inertia\Inertia;
@@ -139,6 +140,8 @@ class HomeController extends Controller
             ? AboutSetting::huidige()->voorDeSite()
             : null;
 
+        $hero = SectionHeading::voor(PageSectionKey::Hero)->voorDeSite();
+
         return Inertia::render('Welcome', [
             'sections' => $secties,
 
@@ -153,7 +156,20 @@ class HomeController extends Controller
              * Zie App\Models\SectionHeading voor welke tekst terugvalt op
              * het Nederlands en welke niet.
              */
-            'heroHeading' => SectionHeading::voor(PageSectionKey::Hero)->voorDeSite(),
+            'heroHeading' => $hero,
+
+            /*
+             * Wat een linkvoorbeeld op WhatsApp of LinkedIn laat zien.
+             *
+             * Uit dezelfde kop als het eerste dat de bezoeker leest: staat
+             * er in het voorbeeld iets anders dan op de pagina zelf, dan
+             * klopt het voorbeeld niet meer zodra de eigenaar zijn kop
+             * aanpast. Zie App\Support\Page\Metagegevens.
+             */
+            'meta' => Metagegevens::maak(
+                (string) $hero['titel'],
+                $hero['inleiding'],
+            ),
 
             /*
              * Dezelfde lijst, met de labels erbij, voor het menu in de kop.

@@ -73,11 +73,6 @@ const linkedin = computed(
     () => (page.props.linkedin as string | undefined) ?? '',
 );
 
-/** Staat er onder de streep iets zakelijks tussen de scheidingstekens? */
-const heeftNummers = computed(
-    () => voet.value.kvk !== null || voet.value.btw !== null,
-);
-
 const { opDeVoorpagina, anker, tag } = useSectieLink();
 
 /**

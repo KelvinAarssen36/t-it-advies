@@ -55,6 +55,12 @@ class FooterController extends Controller
              * als gegeven en niet als veld: het scherm toont het zodat de
              * eigenaar weet wat er staat, maar hij kan het hier niet
              * wijzigen. Zie FooterContactRequest voor waarom niet.
+             *
+             * Dat het óók in de gedeelde props staat is geen dubbeling om
+             * weg te halen: een Inertia-pagina noemt zijn eigen props, en
+             * dat leest beter dan een scherm dat stilzwijgend uit de
+             * gedeelde verzameling graait. De waarde komt uit dezelfde
+             * config, dus ze kunnen niet uiteen lopen.
              */
             'email' => (string) config('site.email'),
 
@@ -79,8 +85,9 @@ class FooterController extends Controller
     {
         return $this->bewaar(
             $request->gegevens(),
-            $request->automatischVertaald(),
             (string) __('De zin onder je logo is aangepast.'),
+            'tagline_translated_at',
+            $request->automatischVertaald(),
         );
     }
 
@@ -89,23 +96,24 @@ class FooterController extends Controller
     {
         return $this->bewaar(
             $request->gegevens(),
-            $request->automatischVertaald(),
             (string) __('Je contactgegevens in de voet zijn aangepast.'),
+            'region_translated_at',
+            $request->automatischVertaald(),
         );
     }
 
     /**
      * KvK en btw.
      *
-     * Het merkje "automatisch vertaald" blijft hier staan zoals het stond:
-     * er zit in dit venster niets te vertalen, dus deze opslag zegt niets
-     * over het Engels dat elders is ingevuld.
+     * Geen merkje: er valt in dit venster niets te vertalen, dus deze
+     * opslag zegt niets over het Engels dat elders staat. Daarom geeft hij
+     * geen kolomnaam mee en blijven allebei de merkjes staan zoals ze
+     * stonden.
      */
     public function bedrijf(FooterBedrijfRequest $request): RedirectResponse
     {
         return $this->bewaar(
             $request->gegevens(),
-            null,
             (string) __('Je bedrijfsgegevens in de voet zijn aangepast.'),
         );
     }
@@ -118,30 +126,51 @@ class FooterController extends Controller
      * eigen velden mee, en daar zit het hele verschil met de fout die bij
      * "Over mij" is rechtgezet.
      *
+     * **Elk venster raakt alleen zijn eigen merkje aan.** Daar zat de fout:
+     * er was één kolom voor twee teksten, dus het contactvenster wiste het
+     * merkje van de tagline. Zie de migratie die ze heeft gesplitst.
+     *
      * @param  array<string, mixed>  $gegevens
+     * @param  string|null  $merkKolom  welk merkje dit venster mag zetten
      * @param  bool|null  $automatischVertaald  `null` laat het merkje staan
      */
     private function bewaar(
         array $gegevens,
-        ?bool $automatischVertaald,
         string $melding,
+        ?string $merkKolom = null,
+        ?bool $automatischVertaald = null,
     ): RedirectResponse {
         $instelling = FooterSetting::query()->firstOrNew();
 
         $instelling->fill($gegevens);
 
-        if ($automatischVertaald !== null) {
+        if ($merkKolom !== null && $automatischVertaald !== null) {
             /*
              * Het merkje hangt aan de tekst en niet aan deze opslag: het
              * zegt dat het Engels dat er nú staat van de vertaaldienst komt
              * en nog door niemand is nagelezen.
              */
-            $instelling->machine_translated_at = $automatischVertaald
-                ? ($instelling->machine_translated_at ?? Carbon::now())
+            $instelling->{$merkKolom} = $automatischVertaald
+                ? ($instelling->{$merkKolom} ?? Carbon::now())
                 : null;
         }
 
-        $veranderd = ! $instelling->exists || $instelling->isDirty();
+        /*
+         * **Een lege eerste opslag is geen wijziging.** `firstOrNew` geeft
+         * een model dat nog niet bestaat, en dan is álles "nieuw" -- ook
+         * een formulier waarin niets is ingevuld. Zonder deze controle
+         * kreeg de eigenaar op een verse installatie een lege rij in de
+         * database en de melding dat er iets was aangepast.
+         */
+        $veranderd = $instelling->exists
+            ? $instelling->isDirty()
+            : collect($gegevens)->contains(fn (mixed $waarde) => filled($waarde));
+
+        if (! $veranderd && ! $instelling->exists) {
+            Toast::melding(__('Er was niets veranderd.'));
+
+            return back();
+        }
 
         $instelling->save();
 

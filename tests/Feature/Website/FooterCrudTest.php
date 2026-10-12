@@ -93,6 +93,8 @@ class FooterCrudTest extends TestCase
                 ->where('instelling.tagline_nl', 'IT-advies en realisatie.')
                 ->where('instelling.phone', '06 12 34 56 78')
                 ->where('instelling.kvk', '12 34 56 78')
+                ->where('instelling.tagline_automatisch_vertaald', false)
+                ->where('instelling.region_automatisch_vertaald', false)
                 ->where('opties.kvkCijfers', FooterSetting::KVK_CIJFERS)
                 ->where('opties.taglineMax', FooterSetting::TAGLINE_MAX)
                 // Het adres staat er ter informatie en is geen veld.
@@ -215,6 +217,96 @@ class FooterCrudTest extends TestCase
 
         $this->assertDatabaseCount('footer_settings', 1);
         $this->assertSame('Daarna', FooterSetting::huidige()->tagline_nl);
+    }
+
+    /**
+     * Het ene venster wist het merkje van het andere niet.
+     *
+     * **Dit was een echte fout.** Er was één `machine_translated_at` voor
+     * twee vertaalbare velden in twee verschillende vensters. Liet de
+     * eigenaar zijn tagline automatisch vertalen en typte hij daarna zijn
+     * werkgebied zelf, dan zette het contactvenster die kolom op `null` --
+     * en was het merkje bij de tagline weg terwijl die tekst nog steeds
+     * onnagekeken machinevertaling was.
+     *
+     * Een merkje dat de verkeerde kant op wijst is erger dan geen merkje.
+     */
+    public function test_one_dialog_does_not_clear_the_translation_mark_of_another(): void
+    {
+        $beheerder = $this->beheerder();
+
+        // De tagline komt van de vertaaldienst.
+        $this->actingAs($beheerder)->put(route('website.footer.tekst'), [
+            'tagline_nl' => 'IT-advies en realisatie.',
+            'tagline_en' => 'IT consultancy and delivery.',
+            'machine_translated' => true,
+        ]);
+
+        $this->assertNotNull(FooterSetting::huidige()->tagline_translated_at);
+
+        // En het werkgebied typt hij zelf, in het andere venster.
+        $this->actingAs($beheerder)->put(route('website.footer.contact'), [
+            'region_nl' => 'Noord-Brabant',
+            'region_en' => 'Noord-Brabant',
+            'machine_translated' => false,
+        ]);
+
+        $voet = FooterSetting::huidige();
+
+        $this->assertNotNull(
+            $voet->tagline_translated_at,
+            'Het merkje bij de tagline is gewist door het contactvenster.',
+        );
+
+        $this->assertNull($voet->region_translated_at);
+    }
+
+    /** En de bedrijfsgegevens raken geen van beide merkjes aan. */
+    public function test_the_company_dialog_leaves_both_marks_alone(): void
+    {
+        $beheerder = $this->beheerder();
+
+        $this->actingAs($beheerder)->put(route('website.footer.tekst'), [
+            'tagline_nl' => 'Een zin.',
+            'tagline_en' => 'A line.',
+            'machine_translated' => true,
+        ]);
+
+        $this->actingAs($beheerder)
+            ->put(route('website.footer.bedrijf'), ['kvk' => '12345678']);
+
+        $this->assertNotNull(
+            FooterSetting::huidige()->tagline_translated_at,
+            'Het venster met de bedrijfsgegevens heeft een merkje gewist.',
+        );
+    }
+
+    /**
+     * Een lege eerste opslag maakt geen rij en meldt geen wijziging.
+     *
+     * `firstOrNew` geeft een model dat nog niet bestaat, en dan is álles
+     * "nieuw" -- ook een formulier waarin niets is ingevuld. Zonder de
+     * controle in `bewaar()` kreeg de eigenaar op een verse installatie een
+     * lege rij en de melding dat er iets was aangepast.
+     */
+    public function test_saving_an_empty_form_on_a_fresh_install_changes_nothing(): void
+    {
+        $this->assertDatabaseCount('footer_settings', 0);
+
+        $this->actingAs($this->beheerder())
+            ->put(route('website.footer.tekst'), [
+                'tagline_nl' => '',
+                'tagline_en' => '',
+            ])
+            ->assertRedirect();
+
+        // Geen assertDatabaseCount met een melding: de derde parameter
+        // daarvan is de databaseverbinding en niet de tekst.
+        $this->assertSame(
+            0,
+            FooterSetting::query()->count(),
+            'Een lege opslag heeft toch een rij aangemaakt.',
+        );
     }
 
     /* --- Leegmaken ------------------------------------------------------ */

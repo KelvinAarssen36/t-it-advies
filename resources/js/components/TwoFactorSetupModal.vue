@@ -23,6 +23,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { useTwoFactorAuth } from '@/composables/useTwoFactorAuth';
 import { confirm } from '@/routes/two-factor';
 import type { TwoFactorConfigContent } from '@/types';
+import { t } from '@/lib/i18n';
 
 type Props = {
     requiresConfirmation: boolean;
@@ -44,30 +45,40 @@ const pinInputContainerRef = useTemplateRef('pinInputContainerRef');
 // waarom dat via een verborgen knop gaat.
 const autoSubmit = useTemplateRef<HTMLButtonElement>('autoSubmit');
 
+/*
+ * **Door `t()` en niet als kale tekst.** Deze drie teksten stonden hier
+ * hardgecodeerd in het Nederlands, en omdat ze in een computed staan en
+ * niet in het sjabloon vielen ze ook buiten de controle die Nederlandse
+ * zinnen opspoort. Een eigenaar met het portaal in het Engels kreeg dus
+ * een Nederlands venster bij het aanzetten van zijn tweestapsverificatie.
+ */
 const modalConfig = computed<TwoFactorConfigContent>(() => {
     if (props.twoFactorEnabled) {
         return {
-            title: 'Tweestapsverificatie staat aan',
-            description:
+            title: t('Tweestapsverificatie staat aan'),
+            description: t(
                 'Wil je een tweede apparaat toevoegen? Scan de QR-code of vul de sleutel handmatig in je authenticator-app in.',
-            buttonText: 'Sluiten',
+            ),
+            buttonText: t('Sluiten'),
         };
     }
 
     if (showVerificationStep.value) {
         return {
-            title: 'Controleer de code',
-            description:
+            title: t('Controleer de code'),
+            description: t(
                 'Vul de zescijferige code in die je authenticator-app nu toont.',
-            buttonText: 'Doorgaan',
+            ),
+            buttonText: t('Doorgaan'),
         };
     }
 
     return {
-        title: 'Tweestapsverificatie aanzetten',
-        description:
+        title: t('Tweestapsverificatie aanzetten'),
+        description: t(
             'Scan de QR-code met je authenticator-app, of vul de sleutel handmatig in.',
-        buttonText: 'Doorgaan',
+        ),
+        buttonText: t('Doorgaan'),
     };
 });
 

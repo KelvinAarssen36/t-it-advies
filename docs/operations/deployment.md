@@ -318,6 +318,10 @@ inloggen en zijn passkeys opnieuw aanmaken. Vervelend, niet fataal.
 
 ## Voor de eerste keer live
 
+> **Zoek je de lijst van wat jíj moet uitzoeken, aanvragen of beslissen?**
+> Die staat in [livegang](livegang.md). Hieronder staat de technische kant:
+> wat er moet gebeuren en in welke volgorde. De twee overlappen bewust niet.
+
 1. DNS: SPF, DKIM en DMARC. Zie
    [e-mailauthenticatie](../security/e-mailauthenticatie.md). Doe dit vóór de
    lancering; DNS heeft tijd nodig.
@@ -400,6 +404,26 @@ inloggen en zijn passkeys opnieuw aanmaken. Vervelend, niet fataal.
     waar ook de certificaatcontrole van Let's Encrypt doorheen gaat. Vangt
     hij alles af, dan vinden wachtwoordmanagers de beheerpagina niet.
     Controleer het met `curl -s https://<domein>/.well-known/passkey-endpoints`.
+
+19. **Loop de inhoud na met de eigenaar.** Een deel van de site is geseed
+    met tekst die er vooral staat zodat het blok niet leeg is -- een leeg
+    blok verdwijnt namelijk van de website. `ServiceSeeder` noemt het zelf
+    "een startpunt en geen definitieve tekst". Dat geldt voor de kop
+    bovenaan en voor de drie diensten.
+20. **De kerngegevens en de voettekst beginnen leeg**, en dat is bewust: een
+    verzonnen KvK-nummer op een echte site is een onwaarheid die niemand
+    opmerkt omdat het er officieel uitziet. Zolang de eigenaar ze niet
+    invult staat de feitenstrook er niet en bevat zijn voet geen telefoon,
+    plaats of KvK. Zie [kerngegevens](../architecture/modules/kerngegevens.md)
+    en [voettekst](../architecture/modules/voettekst.md).
+21. **Pas het adres in `public/robots.txt` aan als je voor `www` hebt
+    gekozen.** Die regel noemt de sitemap met een volledig adres -- de
+    standaard eist dat -- en dat adres staat er hardgecodeerd in. Waarom dat
+    geen route is geworden staat in [sitemap](../architecture/sitemap.md).
+22. **Maak meteen één back-up, download hem, en zet hem één keer terug.**
+    Niet over een maand: nu, zodra de inhoud erin staat. Zie
+    [back-ups](back-ups.md) -- dat document zegt zelf dat een back-up die
+    nooit is teruggezet geen back-up is.
 
 ### En daarna: maak één echte passkey aan
 

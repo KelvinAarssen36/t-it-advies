@@ -20,7 +20,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { bevestigAanmaken, bevestigBewerken } from '@/lib/bevestiging';
+import {
+    bevestigAanmaken,
+    bevestigBewerken,
+    bevestigVerwijderen,
+} from '@/lib/bevestiging';
 import { t } from '@/lib/i18n';
 import website from '@/routes/website';
 import projecten from '@/routes/website/projecten';
@@ -280,7 +284,40 @@ const kanVertalen = computed(
  * velden; de rol en het eigen soort zijn korte woorden die de eigenaar
  * sneller zelf typt dan nakijkt.
  */
-const vertaal = (): void => {
+const vertaal = async (): Promise<void> => {
+    /*
+     * **Eerst vragen.** Vijftien andere vensters doen dat al; deze knop
+     * verving meerdere velden tegelijk zonder iets te vragen, dus wie zijn
+     * Engels zelf had geschreven raakte het kwijt met één klik.
+     */
+    const erStaatAlEngels =
+        formulier.value.title_en.trim() !== '' ||
+        formulier.value.role_en.trim() !== '' ||
+        formulier.value.type_label_en.trim() !== '' ||
+        formulier.value.summary_en.trim() !== '' ||
+        formulier.value.body_en.trim() !== '' ||
+        formulier.value.result_en.trim() !== '';
+
+    if (!automatisch.value && erStaatAlEngels) {
+        open.value = false;
+        await adem();
+
+        const akkoord = await bevestigVerwijderen({
+            titel: t('Het Engels dat er staat overschrijven?'),
+            tekst: t(
+                'De vertaaldienst zet er zijn eigen tekst voor in de plaats. Wat je zelf hebt geschreven is dan weg.',
+            ),
+            knop: t('Ja, opnieuw vertalen'),
+        });
+
+        await adem();
+        openOpnieuw();
+
+        if (!akkoord) {
+            return;
+        }
+    }
+
     vertaalt.value = true;
     vertaalFout.value = null;
 
@@ -873,7 +910,7 @@ const samenvattingOver = computed(
                 <Button
                     v-else
                     type="button"
-                    variant="secondary"
+                    variant="ghost"
                     @click="open = false"
                 >
                     {{ $t('Annuleren') }}

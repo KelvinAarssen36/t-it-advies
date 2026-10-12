@@ -68,20 +68,52 @@
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
         {{--
-            Wat sociale media tonen bij een gedeelde link. De titel komt uit
-            <title>, die Inertia per pagina zet. Een omschrijving per pagina
-            hoort bij de SEO-ronde; dit is de bodem waar niets ontbreekt.
+            Wat sociale media en crawlers tonen bij een gedeelde link.
+
+            **Dit moet hier staan en niet in de Vue-component.** Inertia zet
+            de titel in de browser, ná het laden van het JavaScript.
+            WhatsApp, LinkedIn, Slack en de crawlers van AI-diensten voeren
+            dat niet uit: die halen de HTML op, lezen de <head> en gaan weer
+            weg. Stond het alleen in de component, dan zag elke gedeelde
+            link er hetzelfde uit -- de sitenaam en het standaardplaatje,
+            of je nu de voorpagina deelde of een project.
+
+            **En dit is niet hetzelfde als server-side rendering.** SSR
+            staat uit; zie beslissing 018. Een linkvoorbeeld heeft geen
+            gerenderde pagina nodig maar drie regels hier, en die kan de
+            server zelf zetten -- ook op gedeelde hosting.
+
+            De waarden komen uit de prop `meta`; zie
+            App\Support\Page\Metagegevens. Een pagina zonder die prop valt
+            terug op de sitenaam, zodat er nooit iets leegs staat.
         --}}
+        @php($meta = $page['props']['meta'] ?? [])
+        @php($metaTitel = $meta['titel'] ?? config('app.name'))
+
         <meta property="og:site_name" content="{{ config('app.name') }}">
         <meta property="og:type" content="website">
+        <meta property="og:title" content="{{ $metaTitel }}">
+        <meta property="og:url" content="{{ url()->current() }}">
         <meta property="og:image" content="{{ url('/images/og-afbeelding.jpg') }}">
         <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="{{ $metaTitel }}">
+
+        @if (filled($meta['omschrijving'] ?? null))
+            <meta name="description" content="{{ $meta['omschrijving'] }}">
+            <meta property="og:description" content="{{ $meta['omschrijving'] }}">
+            <meta name="twitter:description" content="{{ $meta['omschrijving'] }}">
+        @endif
 
         @fonts
 
         @vite(['resources/css/app.css', 'resources/js/app.ts', "resources/js/pages/{$page['component']}.vue"])
+        {{--
+            De titel, ook al vervangt Inertia hem zodra het JavaScript
+            draait. Een crawler leest alleen deze; stond hier de sitenaam,
+            dan heet elke pagina van deze site hetzelfde in de zoekresultaten.
+        --}}
         <x-inertia::head>
-            <title>{{ config('app.name', 'Laravel') }}</title>
+            <title>{{ $metaTitel }}</title>
         </x-inertia::head>
     </head>
     <body class="font-sans antialiased">

@@ -178,7 +178,6 @@ const wisselOnline = async (): Promise<void> => {
                     <a
                         v-if="props.item.website"
                         :href="props.item.website"
-                        target="_blank"
                         rel="noopener noreferrer"
                         class="inline-flex items-center gap-1 font-medium text-foreground underline-offset-4 hover:underline"
                     >

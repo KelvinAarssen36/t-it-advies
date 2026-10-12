@@ -230,7 +230,7 @@ const bevestig = (): void => {
                     <Button
                         v-if="!props.teveel"
                         type="button"
-                        variant="secondary"
+                        variant="ghost"
                         @click="open = false"
                     >
                         {{ $t('Annuleren') }}

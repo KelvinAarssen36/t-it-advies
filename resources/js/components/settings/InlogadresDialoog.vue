@@ -166,11 +166,7 @@ const aanvragen = (): void => {
                 </ol>
 
                 <DialogFooter>
-                    <Button
-                        type="button"
-                        variant="secondary"
-                        @click="open = false"
-                    >
+                    <Button type="button" variant="ghost" @click="open = false">
                         {{ $t('Annuleren') }}
                     </Button>
                     <Button type="submit" variant="bewerken" :disabled="bezig">

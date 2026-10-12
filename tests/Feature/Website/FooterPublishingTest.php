@@ -14,7 +14,7 @@ use Tests\TestCase;
  * Wat er van de voet op de site terechtkomt.
  *
  * De belangrijkste test staat onderaan:
- * `test_every_public_page_passes_the_footer`. De voetgegevens gaan per
+ * `test_every_public_controller_passes_the_footer`. De voetgegevens gaan per
  * controller mee en niet als gedeelde prop -- dat is dezelfde afweging als
  * bij `navigation`, zodat een portaalverzoek niet voor een query betaalt
  * die alleen de publieke site nodig heeft. De prijs daarvan is zeven

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { Building2, Globe, Lock, Pencil, Phone, Type } from '@lucide/vue';
+import { Building2, Globe, Lock, Phone, Type } from '@lucide/vue';
 import { ref } from 'vue';
 import VerlaatPortaal from '@/components/VerlaatPortaal.vue';
 import VoettekstBedrijfDialoog from '@/components/website/VoettekstBedrijfDialoog.vue';
@@ -132,7 +132,7 @@ const bedrijfVenster = ref(false);
             </div>
 
             <p
-                v-if="props.instelling.automatisch_vertaald"
+                v-if="props.instelling.tagline_automatisch_vertaald"
                 class="text-xs text-muted-foreground"
             >
                 {{
@@ -193,6 +193,11 @@ const bedrijfVenster = ref(false);
                     </span>
                 </p>
 
+                <!--
+                    In beide talen, net als de zin onder het logo. Eerst
+                    stond hier alleen het Nederlands, en dan zei dit scherm
+                    "Niet ingevuld" terwijl de Engelse site wél iets toonde.
+                -->
                 <p class="brand-voetwaarde">
                     <span class="brand-voetwaarde-etiket">
                         {{ $t('Plaats of werkgebied') }}
@@ -204,7 +209,34 @@ const bedrijfVenster = ref(false);
                         {{ $t('Niet ingevuld') }}
                     </span>
                 </p>
+
+                <p class="brand-voetwaarde">
+                    <span class="brand-voetwaarde-etiket">
+                        {{ $t('Plaats of werkgebied (Engels)') }}
+                    </span>
+                    <span v-if="props.instelling.region_en">
+                        {{ props.instelling.region_en }}
+                    </span>
+                    <span v-else class="brand-voetleeg">
+                        {{
+                            $t(
+                                'Niet ingevuld; het Nederlands komt er dan te staan',
+                            )
+                        }}
+                    </span>
+                </p>
             </div>
+
+            <p
+                v-if="props.instelling.region_automatisch_vertaald"
+                class="text-xs text-muted-foreground"
+            >
+                {{
+                    $t(
+                        'Het Engels komt van de vertaaldienst en is nog niet nagelezen.',
+                    )
+                }}
+            </p>
         </section>
 
         <!-- ===== Bedrijfsgegevens ===================================== -->

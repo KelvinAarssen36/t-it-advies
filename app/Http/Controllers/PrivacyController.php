@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\FooterSetting;
+use App\Support\Page\Metagegevens;
 use App\Support\Page\Navigatie;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -45,6 +46,16 @@ class PrivacyController extends Controller
 
             // Zie de toelichting in HomeController.
             'voet' => FooterSetting::huidige()->voorDeSite(),
+
+            /*
+             * Een vaste tekst en niet uit de database: deze pagina staat
+             * ook in de code. Zie Metagegevens voor waarom dit hier staat
+             * en niet in de browser.
+             */
+            'meta' => Metagegevens::maak(
+                (string) __('Privacyverklaring'),
+                (string) __('Wat deze website van je bijhoudt, waarom, en hoe lang het blijft staan.'),
+            ),
 
             'email' => config('site.email'),
 

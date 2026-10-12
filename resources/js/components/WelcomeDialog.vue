@@ -21,9 +21,15 @@ const open = ref(true);
 
 <template>
     <Dialog v-model:open="open">
+        <!--
+            `aria-labelledby` wijst naar de kop hieronder. Zonder dat kondigt
+            een schermlezer een venster zonder naam aan, en dan weet je wel
+            dát er iets opende maar niet wat.
+        -->
         <DialogContent
             class="welcome-dialog overflow-hidden border-border bg-card text-center sm:max-w-md"
             :show-close-button="false"
+            aria-labelledby="welkom-kop"
         >
             <div class="welcome-dialog-glow" aria-hidden="true" />
 
@@ -36,6 +42,7 @@ const open = ref(true);
                 </div>
 
                 <h2
+                    id="welkom-kop"
                     class="welcome-dialog-item text-2xl font-semibold text-balance text-foreground"
                     style="--welcome-delay: 90ms"
                 >

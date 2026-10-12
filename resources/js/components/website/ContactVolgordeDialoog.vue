@@ -168,7 +168,7 @@ const adem = (): Promise<void> =>
             </SortableList>
 
             <DialogFooter>
-                <Button type="button" variant="secondary" @click="open = false">
+                <Button type="button" variant="ghost" @click="open = false">
                     {{ $t('Annuleren') }}
                 </Button>
                 <Button

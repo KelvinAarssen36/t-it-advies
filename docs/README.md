@@ -61,6 +61,8 @@ Nieuw op dit project? Lees in deze volgorde:
 - [Mail en queues](architecture/mail-en-queues.md) -- verzending, provider, webhooks en het mailoverzicht.
 - [De handleiding voor de eigenaar](architecture/uitleg-voor-de-eigenaar.md) -- de uitlegpagina in het portaal, en de afspraak dat elk afgerond onderdeel daar een kaart krijgt.
 
+- [De sitemap](architecture/sitemap.md) -- waarom hij een route is en geen bestand, en hoe hij nooit naar een 404 kan wijzen.
+
 ## Modules
 
 De onderdelen waarmee de klant zijn website vult. Wil je er een bijbouwen,
@@ -77,6 +79,8 @@ staan de vijf stappen -- en daarna een bestaande module als voorbeeld.
 - [Over mij](architecture/modules/over-mij.md) -- een kort stuk over de eigenaar op de voorpagina, met een uitgebreidere pagina erachter die hij aan en uit kan zetten. De eerste module die één onderwerp over twee plekken verdeelt; bijna alle keuzes gaan over hoe je dat overzichtelijk houdt.
 - [FAQ](architecture/modules/faq.md) -- de veelgestelde vragen: een accordeon die per zes bladert met één antwoord open tegelijk. De eenvoudigste module van het project, met één keuze die eruit springt: álle vragen staan in de pagina, ook die buiten de eerste bladzijde, want anders ziet een zoekmachine ze niet.
 - [Contact](architecture/modules/contact.md) -- het contactformulier: beheerbare onderwerpen, instelbare velden, een bevestigingsmail in de taal van de bezoeker, en de postbus onder Beheer. De enige module die inhoud van een bezoeker bewaart, met alles wat dat voor de privacyverklaring betekent.
+- [Module Kerngegevens](architecture/modules/kerngegevens.md) -- de feitenstrook met beschikbaarheid, werkgebied en reactietijd, en waarom dat geen statistiek is.
+- [Module Voettekst](architecture/modules/voettekst.md) -- de afsluiting van de site, wat de klant er wel en niet aan beheert, en waarom het KvK-nummer daar los staat van de kerngegevens.
 - [LinkedIn](architecture/modules/linkedin.md) -- geen module maar een blok: één vaste link, wel te verslepen en uit te zetten.
 
 ## Beveiliging
@@ -85,9 +89,6 @@ staan de vijf stappen -- en daarna een bestaande module als voorbeeld.
 - [Gevoelige acties](security/gevoelige-acties.md) -- wanneer er opnieuw een authenticator-code nodig is.
 - [Het inlogadres wijzigen](security/inlogadres-wijzigen.md) -- drie sloten ervoor, een weg terug erna, en waarom het adres niet meer in het profielformulier staat.
 - [De extra stap na een passkey](security/extra-stap-na-een-passkey.md) -- de schakelaar waarmee de eigenaar na zijn passkey ook nog zijn authenticator-code vraagt.
-- [Module Kerngegevens](architecture/modules/kerngegevens.md) -- de feitenstrook met beschikbaarheid, werkgebied en reactietijd, en waarom dat geen statistiek is.
-- [Module Voettekst](architecture/modules/voettekst.md) -- de afsluiting van de site, wat de klant er wel en niet aan beheert, en waarom het KvK-nummer daar los staat van de kerngegevens.
-- [Back-ups](operations/back-ups.md) -- de inhoud van de website vastleggen en terugzetten, en waarom het account en de berichten van bezoekers er niet in zitten.
 - [Rollen en rechten](security/rollen-en-rechten.md) -- wie mag wat.
 - [Spam- en botbescherming](security/spam-en-botbescherming.md) -- Turnstile, honeypot, rate limiting.
 - [Activiteitenlogboek](security/activiteitenlogboek.md) -- wie heeft wat aan de website veranderd, en wat stond er eerst.
@@ -101,11 +102,14 @@ staan de vijf stappen -- en daarna een bestaande module als voorbeeld.
 
 - [Lokale setup](development/setup.md)
 - [Werkwijze en conventies](development/werkwijze.md)
+- [Valkuilen](development/valkuilen.md) -- fouten die we al een keer hebben gemaakt, met het gevolg erbij. Lees dit voordat je een module bouwt.
 - [Testen](development/testen.md)
 - [Documentatieregels](development/documentatieregels.md)
 
 ## Beheer
 
+- [Livegang](operations/livegang.md) -- de menselijke lijst: wat je moet uitzoeken bij je hosting, aanvragen bij anderen, beslissen, en pas op het echte domein kunt controleren.
+- [Back-ups](operations/back-ups.md) -- de inhoud van de website vastleggen en terugzetten, en waarom het account en de berichten van bezoekers er niet in zitten.
 - [Deployment](operations/deployment.md) -- hosting, queue workers, scheduler.
 - [Onderhoudstaken](operations/onderhoudstaken.md) -- wat er vanzelf draait: opruimen en alarmeren.
 - [Monitoring](operations/monitoring.md) -- Pulse, logs, waar je kijkt als er iets mis is.

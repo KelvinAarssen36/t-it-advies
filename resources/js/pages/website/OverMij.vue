@@ -542,7 +542,6 @@ const samenvattingLengte = computed(
                             <dd>
                                 <a
                                     :href="PAGINA_PAD"
-                                    target="_blank"
                                     rel="noopener"
                                     class="inline-flex items-center gap-1 underline-offset-4 hover:underline"
                                 >

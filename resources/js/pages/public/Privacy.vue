@@ -121,7 +121,7 @@ const props = defineProps<{
             <p>
                 {{
                     $t(
-                        'We houden bij hoeveel mensen deze website bekijken, waar ze vandaan komen en of ze een telefoon of een computer gebruiken. Dat doen we om te weten of de site zijn werk doet -- niet om jou te volgen.',
+                        'We houden bij hoeveel mensen deze website bekijken, welke pagina ze opvragen, waar ze vandaan komen en of ze een telefoon of een computer gebruiken. Dat doen we om te weten of de site zijn werk doet -- niet om jou te volgen.',
                     )
                 }}
             </p>

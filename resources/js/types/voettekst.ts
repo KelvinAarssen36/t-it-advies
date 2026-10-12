@@ -41,7 +41,14 @@ export type VoetInstelling = {
     region_en: string | null;
     kvk: string | null;
     vat: string | null;
-    automatisch_vertaald: boolean;
+
+    /*
+     * Eén merkje per vertaalbaar veld, en niet één voor allebei. Er stond
+     * hier eerst `automatisch_vertaald`, en dan wist het ene venster het
+     * merkje van het andere; zie de migratie die ze heeft gesplitst.
+     */
+    tagline_automatisch_vertaald: boolean;
+    region_automatisch_vertaald: boolean;
 };
 
 /** De grenzen waarmee de server rekent, zodat het scherm hetzelfde doet. */

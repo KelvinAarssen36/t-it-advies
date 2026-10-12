@@ -102,8 +102,8 @@ class CoreFactRequest extends FormRequest
              * 80 tekens bevatten") zegt niet waaróm. Hier is dat juist de
              * uitleg: de grens zit in de vorm van de strook.
              */
-            'label_nl.max' => __('Een label hoort op één regel te passen. Zet de uitleg in de waarde eronder.'),
-            'label_en.max' => __('Een label hoort op één regel te passen. Zet de uitleg in de waarde eronder.'),
+            'label_nl.max' => __('Een label is een paar woorden, geen zin. Zet de uitleg in de waarde eronder.'),
+            'label_en.max' => __('Een label is een paar woorden, geen zin. Zet de uitleg in de waarde eronder.'),
             'value_nl.max' => __('Dit is te lang voor een kerngegeven. Hou het bij één zin; is er meer uit te leggen, zet dat dan in de toelichting of maak er een vraag van.'),
             'value_en.max' => __('Dit is te lang voor een kerngegeven. Hou het bij één zin; is er meer uit te leggen, zet dat dan in de toelichting of maak er een vraag van.'),
         ];

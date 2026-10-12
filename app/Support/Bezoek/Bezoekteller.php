@@ -128,6 +128,7 @@ class Bezoekteller
 
         $this->telDimensie($dag, BezoekDimensie::Apparaat, $this->apparaat($request));
         $this->telDimensie($dag, BezoekDimensie::Taal, $this->taal());
+        $this->telDimensie($dag, BezoekDimensie::Pagina, $this->pagina($request));
         $this->telVerwijzer($dag, $this->verwijzer($request));
     }
 
@@ -394,6 +395,31 @@ class Bezoekteller
             ->where('day', $dag)
             ->where('kind', BezoekDimensie::Verwijzer->value)
             ->count();
+    }
+
+    /**
+     * Welke pagina er is bekeken.
+     *
+     * **De naam van de route en niet het adres**, en dat is een bewuste
+     * grens. Een adres bevat de slug van een project, dus met adressen
+     * erbij groeit deze tabel met elk project dat de eigenaar aanmaakt --
+     * en krijgt hij een lijst die elke dag langer wordt in plaats van een
+     * antwoord. Alle projectpagina's tellen daarom samen als `project`.
+     *
+     * Er zijn dus hoogstens zeven waarden, en dat is precies zo bedoeld:
+     * net als bij apparaat en taal is dit een uitsplitsing en geen
+     * logboek.
+     *
+     * **Welk project het meest wordt bekeken is een andere vraag.** Die
+     * hoort bij de module projecten en niet bij de bezoekcijfers; hier
+     * zou hij van deze uitsplitsing iets anders maken dan de drie
+     * ernaast.
+     */
+    private function pagina(Request $request): string
+    {
+        $naam = $request->route()?->getName();
+
+        return is_string($naam) && $naam !== '' ? $naam : self::OVERIG;
     }
 
     private function telDimensie(string $dag, BezoekDimensie $soort, string $naam): void

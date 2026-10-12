@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\FooterSetting;
 use App\Models\Project;
+use App\Support\Page\Metagegevens;
 use App\Support\Page\Navigatie;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -86,6 +87,17 @@ class PublicProjectController extends Controller
 
             // Zie de toelichting in HomeController.
             'voet' => FooterSetting::huidige()->voorDeSite(),
+
+            /*
+             * **Dit is het linkvoorbeeld dat er het meest toe doet.** Een
+             * project is precies wat de eigenaar in een mail of op
+             * LinkedIn deelt -- dat staat ook in de toelichting bovenaan
+             * dit bestand als reden dat deze pagina een eigen adres heeft.
+             */
+            'meta' => Metagegevens::maak(
+                (string) $project->titel(),
+                $project->samenvatting(),
+            ),
             'project' => $project->voorDePagina(),
             'van' => in_array($van, self::HERKOMST, true) ? $van : null,
         ]);

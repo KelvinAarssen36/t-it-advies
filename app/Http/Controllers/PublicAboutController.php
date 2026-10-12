@@ -7,6 +7,7 @@ use App\Models\AboutPoint;
 use App\Models\AboutSetting;
 use App\Models\FooterSetting;
 use App\Models\SectionHeading;
+use App\Support\Page\Metagegevens;
 use App\Support\Page\Navigatie;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -64,6 +65,15 @@ class PublicAboutController extends Controller
 
             // Zie de toelichting in HomeController.
             'voet' => FooterSetting::huidige()->voorDeSite(),
+
+            /*
+             * De titel en de inleiding van de pagina zelf. Schrijft de
+             * eigenaar die om, dan verandert het linkvoorbeeld mee.
+             */
+            'meta' => Metagegevens::maak(
+                $instelling->paginaTitel() ?? (string) __('Over mij'),
+                $instelling->paginaInleiding() ?? $instelling->samenvatting(),
+            ),
 
             /*
              * De kop van de pagina komt uit de instellingen en niet uit

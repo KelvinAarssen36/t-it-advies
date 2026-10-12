@@ -258,6 +258,25 @@ const automatisch = ref<Record<string, string> | null>(null);
  */
 const engelsBijOpenen = ref({ role: '', plaats: '', tekst: '' });
 
+/**
+ * Hoeveel tekens er nog in de beschrijving passen.
+ *
+ * **Dit venster had als enige van de vijfendertig geen enkele grens in
+ * beeld** -- geen `maxlength` en geen teller. De klant kon vijfduizend
+ * tekens typen terwijl de kaart op de voorpagina er drie regels van toont,
+ * en niets vertelde hem dat. Nu knipt het veld op de grens én staat erbij
+ * hoeveel er nog over is.
+ */
+const BESCHRIJVING_MAX = 5000;
+
+const overBeschrijvingNl = computed(
+    () => BESCHRIJVING_MAX - formulier.value.description_nl.length,
+);
+
+const overBeschrijvingEn = computed(
+    () => BESCHRIJVING_MAX - formulier.value.description_en.length,
+);
+
 const engelsOngewijzigd = computed(
     () =>
         formulier.value.role_en === engelsBijOpenen.value.role &&
@@ -689,6 +708,7 @@ const valtTeVertalen = computed(
                             <Input
                                 id="role_nl"
                                 v-model="formulier.role_nl"
+                                :maxlength="120"
                                 :placeholder="
                                     $t('Bijvoorbeeld: Systeembeheerder')
                                 "
@@ -704,6 +724,7 @@ const valtTeVertalen = computed(
                                 <Input
                                     id="organisation"
                                     v-model="formulier.organisation"
+                                    :maxlength="120"
                                 />
                                 <InputError :message="fouten.organisation" />
                                 <!--
@@ -720,6 +741,7 @@ const valtTeVertalen = computed(
                                 <Input
                                     id="organisation_url"
                                     v-model="formulier.organisation_url"
+                                    :maxlength="255"
                                     type="url"
                                     placeholder="https://"
                                 />
@@ -797,6 +819,7 @@ const valtTeVertalen = computed(
                                 <Input
                                     id="location_nl"
                                     v-model="formulier.location_nl"
+                                    :maxlength="120"
                                     :placeholder="$t('Bijvoorbeeld: Utrecht')"
                                 />
                                 <InputError :message="fouten.location_nl" />
@@ -872,12 +895,20 @@ const valtTeVertalen = computed(
                             <Textarea
                                 id="description_nl"
                                 v-model="formulier.description_nl"
+                                :maxlength="5000"
                                 :placeholder="
                                     $t(
                                         'Wat deed je daar? Laat leeg als het niet nodig is.',
                                     )
                                 "
                             />
+                            <p class="text-xs text-muted-foreground">
+                                {{
+                                    $t('Nog :aantal tekens', {
+                                        aantal: overBeschrijvingNl,
+                                    })
+                                }}
+                            </p>
                             <InputError :message="fouten.description_nl" />
                         </div>
                     </div>
@@ -946,6 +977,7 @@ const valtTeVertalen = computed(
                             <Input
                                 id="role_en"
                                 v-model="formulier.role_en"
+                                :maxlength="120"
                                 :disabled="vertaalt"
                             />
                             <InputError :message="fouten.role_en" />
@@ -968,6 +1000,7 @@ const valtTeVertalen = computed(
                             <Input
                                 id="location_en"
                                 v-model="formulier.location_en"
+                                :maxlength="120"
                                 :disabled="vertaalt"
                             />
                             <InputError :message="fouten.location_en" />
@@ -983,8 +1016,16 @@ const valtTeVertalen = computed(
                             <Textarea
                                 id="description_en"
                                 v-model="formulier.description_en"
+                                :maxlength="5000"
                                 :disabled="vertaalt"
                             />
+                            <p class="text-xs text-muted-foreground">
+                                {{
+                                    $t('Nog :aantal tekens', {
+                                        aantal: overBeschrijvingEn,
+                                    })
+                                }}
+                            </p>
                             <InputError :message="fouten.description_en" />
                         </div>
 

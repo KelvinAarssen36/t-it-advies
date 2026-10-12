@@ -8,6 +8,7 @@ use App\Models\ContactSetting;
 use App\Models\FooterSetting;
 use App\Models\SectionHeading;
 use App\Support\Contact\Contactformulier;
+use App\Support\Page\Metagegevens;
 use App\Support\Page\Navigatie;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -67,6 +68,11 @@ class PublicContactController extends Controller
 
             // Zie de toelichting in HomeController.
             'voet' => FooterSetting::huidige()->voorDeSite(),
+
+            'meta' => Metagegevens::maak(
+                (string) __('Contact'),
+                (string) __('Stuur een bericht; meestal is er binnen een werkdag antwoord.'),
+            ),
 
             'kop' => SectionHeading::voor(PageSectionKey::Contact)->voorDeSite(),
             'velden' => $formulier->voorDeSite(),

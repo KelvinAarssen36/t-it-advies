@@ -53,6 +53,10 @@ const props = defineProps<{
 
 const open = defineModel<boolean>('open', { required: true });
 
+const overLabelEn = computed(() => 60 - formulier.value.label_en.length);
+
+const overLabelNl = computed(() => 60 - formulier.value.label_nl.length);
+
 const bewerkt = computed(() => props.item !== null);
 
 const bezig = ref(false);
@@ -198,6 +202,16 @@ onMounted(() => {
         });
 
         automatisch.value = true;
+
+        /*
+         * De ijkwaarde opnieuw. Wat de dienst zojuist heeft
+         * voorgesteld is vanaf nu "Engels waar niemand aan heeft
+         * gezeten". Stond dit er niet, dan viel de vergelijking bij
+         * het opslaan altijd negatief uit en werd het merkje nooit
+         * gezet -- terwijl de documentatie zegt dat het juist dan
+         * hoort te staan. Zie docs/architecture/automatisch-vertalen.md.
+         */
+        engelsBijOpenen = engelsNu();
         vertaalFout.value = null;
     });
 });
@@ -366,7 +380,13 @@ const adem = (): Promise<void> =>
 
             <form class="grid gap-5" @submit.prevent="opslaan">
                 <div class="grid gap-2">
-                    <Label for="kerngegeven-soort" verplicht>
+                    <!--
+                        Geen sterretje bij een keuzelijst die al een
+                        waarde heeft: leeglaten kan niet, dus er valt
+                        niets op te letten. Zie het pictogram bij een
+                        ervaring, dat dit al goed deed.
+                    -->
+                    <Label for="kerngegeven-soort">
                         {{ $t('Soort') }}
                     </Label>
 
@@ -399,6 +419,9 @@ const adem = (): Promise<void> =>
                         maxlength="60"
                         :placeholder="$t('Beschikbaarheid')"
                     />
+                    <p class="text-xs text-muted-foreground">
+                        {{ $t('Nog :aantal tekens', { aantal: overLabelNl }) }}
+                    </p>
                     <InputError :message="fouten.label_nl" />
                 </div>
 
@@ -481,6 +504,13 @@ const adem = (): Promise<void> =>
                             v-model="formulier.label_en"
                             maxlength="60"
                         />
+                        <p class="text-xs text-muted-foreground">
+                            {{
+                                $t('Nog :aantal tekens', {
+                                    aantal: overLabelEn,
+                                })
+                            }}
+                        </p>
                         <InputError :message="fouten.label_en" />
                     </div>
 
@@ -528,11 +558,7 @@ const adem = (): Promise<void> =>
                 </div>
 
                 <DialogFooter>
-                    <Button
-                        type="button"
-                        variant="secondary"
-                        @click="open = false"
-                    >
+                    <Button type="button" variant="ghost" @click="open = false">
                         {{ $t('Annuleren') }}
                     </Button>
                     <Button

@@ -29,8 +29,20 @@ class FooterContactRequest extends FormRequest
      * Cijfers, spaties, een plusteken voor het landnummer, en streepjes of
      * haakjes voor wie zo schrijft. Letters niet: dan staat er een woord
      * achter een `tel:`-link en belt er niets.
+     *
+     * **Er moet minstens één cijfer in staan, en dat ontbrak hier.** De
+     * eerste versie was `[0-9+\-() ]+`, en die eist nergens een cijfer.
+     * Daardoor kwamen `"+"`, `"--"` en `"( ) -"` er gewoon doorheen, met
+     * twee uitkomsten die allebei fout zijn:
+     *
+     * - `"+"` werd letterlijk `<a href="tel:+">+</a>` op de site;
+     * - `"--"` liet `telefoonLink()` leeg achter, zodat de regel stil van
+     *   de site viel terwijl het beheerscherm hem als ingevuld toonde.
+     *
+     * De groepen eromheen laten alles toe wat daarvoor en daarna mag
+     * staan; de `[0-9]` in het midden is wat het een nummer maakt.
      */
-    public const TELEFOON_PATROON = '/^[0-9+\-() ]+$/';
+    public const TELEFOON_PATROON = '/^[0-9+\-() ]*[0-9][0-9+\-() ]*$/';
 
     public function authorize(): bool
     {
@@ -76,7 +88,7 @@ class FooterContactRequest extends FormRequest
     {
         return [
             'phone.regex' => __(
-                'Hier passen alleen cijfers, spaties en eventueel een plusteken of streepje.',
+                'Hier hoort een telefoonnummer te staan: minstens één cijfer, verder spaties, een plusteken of een streepje.',
             ),
         ];
     }

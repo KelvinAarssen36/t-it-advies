@@ -378,7 +378,7 @@ overblijft zonder beheerscherm is nog één onderdeel: de
 > laatste is het eerste geval waarin een onderdeel zijn inhoud buiten de
 > landingspagina kan zetten.
 
-Er zijn zeven voorbeelden om uit te kiezen als je de volgende bouwt.
+Er staan inmiddels genoeg voorbeelden om uit te kiezen als je de volgende bouwt.
 
 [Projecten](modules/projecten.md) is het voorbeeld voor een module met een
 **eigen adres per item**. Hij staat op positie 4, tussen de werkwijze en de

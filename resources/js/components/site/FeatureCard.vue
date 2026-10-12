@@ -62,7 +62,14 @@ const emit = defineEmits<{ openen: [] }>();
             {{ title }}
         </h3>
 
-        <div class="mt-2 text-muted-foreground">
+        <!--
+            Een eigen klasse, want dit was de enige publieke tekst zonder.
+            Daardoor was er ook geen plek om hem te klemmen, en kreeg een
+            korte dienst naast een lange het hele hoogteverschil als een
+            leeg vlak binnen een omrande kaart -- met niets erin, want
+            "Lees meer" verschijnt pas bij hover.
+        -->
+        <div class="brand-dienstkaart-zin">
             <slot />
         </div>
 

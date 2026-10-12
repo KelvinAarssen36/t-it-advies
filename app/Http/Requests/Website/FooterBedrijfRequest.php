@@ -54,6 +54,18 @@ class FooterBedrijfRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
+            /*
+             * **Eerst kijken of er wel tekst binnenkwam.** Laravel draait
+             * een `after`-haak ook als de regels ervóór al zijn gevallen.
+             * Stuurde iemand `kvk[]=1`, dan maakte `tekst()` daar een
+             * string van een array van -- een PHP-waarschuwing, en die
+             * wordt in dit project een 500. Nu valt het netjes terug op de
+             * gewone foutmelding.
+             */
+            if (! is_string($this->input('kvk')) && $this->input('kvk') !== null) {
+                return;
+            }
+
             $ruw = $this->tekst('kvk');
 
             if ($ruw === null) {

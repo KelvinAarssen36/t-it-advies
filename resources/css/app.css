@@ -665,6 +665,29 @@ html::-webkit-scrollbar-thumb:hover {
 
   De waarden zijn met opzet dezelfde als in `.dark` hierboven.
 */
+/*
+  Een lang woord breekt af in plaats van uit zijn vak te steken.
+
+  **Hier en niet op vijfentwintig losse klassen.** `overflow-wrap` erft, dus
+  één regel op de omhulling van de publieke site dekt elke tekst die de
+  klant erin zet. Dat scheelt een lijst die bij elke nieuwe module langer
+  wordt en waar er altijd eentje van vergeten wordt.
+
+  **`break-word` en niet `anywhere`.** Het verschil zit in wanneer de
+  browser mag breken: `anywhere` telt een afgebroken woord mee bij het
+  berekenen van de minimale breedte, `break-word` niet. Met `break-word`
+  verandert er dus niets aan normale tekst -- hij grijpt alleen in op het
+  moment dat een woord echt niet past, en dat is precies wat we willen.
+
+  Waarom dit nodig was: er stond nergens op de publieke site een
+  breekregel. Een geplakt adres of een samengesteld woord van veertig
+  tekens stak daardoor uit zijn kaart, en bij de kerngegevens werd het door
+  de `overflow: hidden` van de strook halverwege afgeknipt.
+*/
+.brand-dark-page {
+    overflow-wrap: break-word;
+}
+
 html:has(.brand-dark-page) {
     color-scheme: dark;
     --scrollbar-thumb: var(--brand-border-dark-strong);
@@ -3277,14 +3300,6 @@ button:hover > .brand-verlaat,
       van het component. Onder de tabletgrens staan ze altijd onder
       elkaar -- vier kolommen op een telefoon is vier keer niets.
     */
-    .brand-werkwijze-raster {
-        position: relative;
-        z-index: 1;
-        display: grid;
-        gap: 2rem;
-        grid-template-columns: minmax(0, 1fr);
-    }
-
     /*
       **De standaardvorm is een kolom.** Stappen onder elkaar, met het
       nummer in een eigen kantlijn en de lijn er verticaal doorheen --
@@ -3294,9 +3309,19 @@ button:hover > .brand-verlaat,
       De tekstbreedte is begrensd: een regel die over een breed scherm
       doorloopt is niet te lezen, en de kaart hoeft hier niet breder te
       zijn dan zijn eigen zin.
+
+      **Dit stond in twee aparte regels onder elkaar**, allebei
+      onvoorwaardelijk, en de tweede zette de `gap` van de eerste stil van
+      2rem naar 1.5rem. Wie alleen de eerste las dacht dus dat de ruimte
+      tussen de stappen 2rem was. Samengevoegd, met de werkende waarde.
     */
     .brand-werkwijze-raster {
+        position: relative;
+        z-index: 1;
+        display: grid;
         max-width: 48rem;
+        grid-template-columns: minmax(0, 1fr);
+
         /*
           Krapper dan de rij. Een kolom van acht stappen is de som van
           alle acht, dus elke regel die je hier bespaart telt acht keer --
@@ -6697,6 +6722,24 @@ button:hover > .brand-verlaat,
       scan je eerder dan dat je ze leest -- vandaar blokjes en geen
       opsomming met bolletjes.
     */
+    /*
+      Hoogstens vier regels samenvatting op een dienstkaart.
+
+      De grens in de validatie is 300 tekens en het bewerkvenster zegt
+      "houd het kort; drie regels is wat er past" -- maar in een kolom van
+      een derde zijn dat er eerder zeven. Vier regels laat genoeg zien om
+      te weten waar de dienst over gaat; de rest staat in het venster
+      erachter.
+    */
+    .brand-dienstkaart-zin {
+        display: -webkit-box;
+        overflow: hidden;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 4;
+        margin-top: 0.5rem;
+        color: var(--muted-foreground);
+    }
+
     .brand-dienstkaart-punten {
         display: flex;
         flex-wrap: wrap;
@@ -6774,9 +6817,17 @@ button:hover > .brand-verlaat,
         font-size: 0.8125rem;
         color: var(--brand-cyan);
         opacity: 0;
+
+        /*
+          `translate` en niet `transform`: dat zijn in CSS twee
+          verschillende eigenschappen, en wat hieronder beweegt is
+          `translate`. Met `transform` in deze lijst ging de overgang
+          nooit af en sprong "Lees meer" op zijn plek in plaats van
+          erheen te schuiven.
+        */
         transition:
             opacity 250ms ease,
-            transform 250ms ease;
+            translate 250ms ease;
         translate: -0.25rem 0;
     }
 
@@ -7094,10 +7145,31 @@ button:hover > .brand-verlaat,
 
     @media (min-width: 40rem) {
         .brand-opleiding {
-            grid-template-columns: 1fr auto;
+            /*
+              `minmax(0, …)` en niet `1fr`, en dat is hier geen smaak.
+
+              Een kale `1fr` is `minmax(auto, 1fr)`, en die ondergrens is de
+              breedte van het langste woord. Eén lang samengesteld woord in
+              een opleidingsnaam rekte deze kolom op, duwde de sectie
+              breder, en gaf de héle pagina een horizontale schuifbalk.
+
+              Dit was de enige grid op de publieke site die dat nog deed;
+              zie de toelichting bij `.brand-projectraster`, waar precies
+              deze valkuil al stond opgeschreven.
+            */
+            grid-template-columns: minmax(0, 1fr) auto;
             align-items: baseline;
             column-gap: 1.5rem;
         }
+    }
+
+    /*
+      En de kinderen krimpen mee. Zonder dit houdt het rastervak zich wel
+      aan zijn kolom, maar steekt de tekst erbinnen er alsnog uit.
+    */
+    .brand-opleiding-naam,
+    .brand-opleiding-instelling {
+        min-width: 0;
     }
 
     .brand-opleiding-naam {
@@ -7229,6 +7301,14 @@ button:hover > .brand-verlaat,
 
     /* De naam onder of naast een statistiek. */
     .brand-statistiek-naam {
+        /*
+          Hij staat in een flexregel naast de waarde, en die waarde heeft
+          `flex-shrink: 0`. Zonder dit duwt een lang label de regel voorbij
+          de sectiebreedte -- op een telefoon, waar alles onder elkaar
+          staat, het snelst.
+        */
+        min-width: 0;
+
         font-size: 0.8125rem;
         font-weight: 500;
         text-wrap: balance;
@@ -11249,7 +11329,24 @@ button:hover > .brand-verlaat,
         color: var(--brand-border-dark-strong);
     }
 
+    /*
+      Hoogstens drie regels samenvatting.
+
+      **Dit stond er niet, terwijl het bij de lijstweergave wél stond** --
+      zelfde veld, zelfde grens van 300 tekens, en op de kaart in een nóg
+      smallere kolom. Driehonderd tekens is daar ongeveer zes regels; staat
+      er een project met één regel naast, dan kreeg die kaart het hele
+      verschil als lege ruimte, want `.brand-projectkaart-meer` duwt zichzelf
+      met `margin-top: auto` naar onderen.
+
+      Drie en niet twee zoals in de lijst: de kolom is smaller, dus drie
+      regels is daar ongeveer evenveel tekst.
+    */
     .brand-projectkaart-zin {
+        display: -webkit-box;
+        overflow: hidden;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
         font-size: 0.875rem;
         line-height: 1.6;
         text-wrap: pretty;
@@ -12201,6 +12298,41 @@ button:hover > .brand-verlaat,
         }
     }
 
+    /*
+      Twee doorlopende animaties die hier nog niet stonden.
+
+      Van de vijftien animaties met `infinite` in dit bestand worden er
+      dertien uitgezet bij bewegingsgevoeligheid -- sommige doordat ze in
+      een `no-preference`-blok staan, zoals het ademende teken op een leeg
+      scherm. Deze twee vielen tussen wal en schip.
+
+      **De vertaalbalk krijgt geen `animation: none` maar een vaste
+      stand.** Hij is geen versiering: hij zegt dat er iets bezig is. Hem
+      stilzetten zou betekenen dat iemand met bewegingsgevoeligheid niet
+      meer ziet dát er wordt gewacht. Een volle balk op halve dekking
+      zegt hetzelfde zonder te bewegen.
+    */
+    @media (prefers-reduced-motion: reduce) {
+        /*
+          Het dienstpictogram groeide bij hover wél mee, terwijl dat van de
+          kerngegevens dat niet doet. Twee pictogrammen die bij dezelfde
+          instelling iets anders doen is geen keuze maar een vergetelheid.
+        */
+        .brand-dienstkaart:hover .brand-dienstkaart-icoon {
+            scale: 1;
+        }
+
+        .brand-privacy li::before {
+            animation: none;
+        }
+
+        .brand-vertaalt-balk::after {
+            animation: none;
+            width: 100%;
+            opacity: 0.6;
+        }
+    }
+
     @media (min-width: 40rem) {
         .brand-kerngegevens-strook {
             --kolommen: 2;
@@ -12568,6 +12700,15 @@ button:hover > .brand-verlaat,
 
     .brand-faq-vraag {
         flex: 1 1 auto;
+
+        /*
+          Zonder dit krimpt de vraag niet onder zijn langste woord, duwt hij
+          het pijltje ernaast naar rechts, en knipt de `overflow: hidden`
+          van de knop dat pijltje weg. Op een telefoon verdween daarmee de
+          enige aanwijzing dat je de vraag kunt openklappen.
+        */
+        min-width: 0;
+
         font-size: 1rem;
         font-weight: 500;
         line-height: 1.45;

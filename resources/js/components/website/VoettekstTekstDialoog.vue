@@ -71,7 +71,7 @@ const vulIn = (): void => {
     };
 
     engelsBijOpenen = formulier.value.tagline_en;
-    automatisch.value = props.instelling.automatisch_vertaald;
+    automatisch.value = props.instelling.tagline_automatisch_vertaald;
     vertaalFout.value = null;
     fouten.value = {};
 };
@@ -121,6 +121,16 @@ onMounted(() => {
         }
 
         automatisch.value = true;
+
+        /*
+         * De ijkwaarde opnieuw. Wat de dienst zojuist heeft
+         * voorgesteld is vanaf nu "Engels waar niemand aan heeft
+         * gezeten". Stond dit er niet, dan viel de vergelijking bij
+         * het opslaan altijd negatief uit en werd het merkje nooit
+         * gezet -- terwijl de documentatie zegt dat het juist dan
+         * hoort te staan. Zie docs/architecture/automatisch-vertalen.md.
+         */
+        engelsBijOpenen = formulier.value.tagline_en;
         vertaalFout.value = null;
     });
 });
@@ -315,11 +325,7 @@ const adem = (): Promise<void> =>
                 </div>
 
                 <DialogFooter>
-                    <Button
-                        type="button"
-                        variant="secondary"
-                        @click="open = false"
-                    >
+                    <Button type="button" variant="ghost" @click="open = false">
                         {{ $t('Annuleren') }}
                     </Button>
                     <Button type="submit" variant="bewerken" :disabled="bezig">

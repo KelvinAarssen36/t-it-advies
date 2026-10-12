@@ -8,6 +8,7 @@ use App\Models\PageSection;
 use App\Models\Project;
 use App\Models\ProjectSetting;
 use App\Models\SectionHeading;
+use App\Support\Page\Metagegevens;
 use App\Support\Page\Navigatie;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -52,18 +53,31 @@ class PublicProjectsController extends Controller
         $uitgelicht = $projecten->where('featured', true)->values();
         $overige = $projecten->where('featured', false)->values();
 
+        /*
+         * Eén keer ophalen: het scherm toont deze kop en het
+         * linkvoorbeeld in de <head> gebruikt dezelfde tekst. Twee
+         * aanroepen zouden twee antwoorden kunnen geven zodra er
+         * ooit iets van een taal of een terugval tussen komt.
+         */
+        $kop = SectionHeading::voor(PageSectionKey::Projecten)->voorDeSite();
+
         return Inertia::render('public/Projecten', [
             'navigation' => $navigatie->menu(),
 
             // Zie de toelichting in HomeController.
             'voet' => FooterSetting::huidige()->voorDeSite(),
 
+            'meta' => Metagegevens::maak(
+                (string) ($kop['titel'] ?? __('Projecten')),
+                $kop['inleiding'] ?? null,
+            ),
+
             /*
              * Dezelfde kop als boven het blok op de voorpagina. Anders
              * dan bij "Over mij" krijgt deze pagina geen eigen titel: het
              * is dezelfde etalage, alleen zonder de grens van vier.
              */
-            'kop' => SectionHeading::voor(PageSectionKey::Projecten)->voorDeSite(),
+            'kop' => $kop,
 
             // Afwisselend groot en klein, of allemaal even grote
             // kaarten. De eigenaar kiest; zie App\Enums\ProjectWeergave.

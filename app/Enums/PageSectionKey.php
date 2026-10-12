@@ -12,7 +12,7 @@ namespace App\Enums;
  * maar lege plekken opleveren. Een nieuw onderdeel is werk voor ons, de
  * volgorde en de inhoud zijn van hem.
  *
- * **Een onderdeel toevoegen** doe je in vijf stappen; ze staan uitgeschreven
+ * **Een onderdeel toevoegen** doe je in een vast rijtje stappen; ze staan uitgeschreven
  * in docs/architecture/pagina-indeling.md. Kort:
  *
  * 1. Een `case` hier, met een label, een omschrijving en een positie.

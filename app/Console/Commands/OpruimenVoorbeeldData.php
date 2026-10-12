@@ -128,12 +128,80 @@ class OpruimenVoorbeeldData extends Command
     /** De zin waaraan de voet uit de voorbeelddata te herkennen is. */
     private const VOET_ZIN = 'IT-advies en realisatie. Van advies tot bouw en beheer.';
 
+    /**
+     * Wat de seeder precies in de voet zet.
+     *
+     * **Per veld en niet als één rij**, want dat is het verschil met elke
+     * andere module hier. Bij een project of een kerngegeven is een rij één
+     * ding: hoort hij bij de voorbeelddata, dan mag hij in zijn geheel weg.
+     * De voet is één rij met zeven losse velden, en de eigenaar kan daar
+     * prima zijn eigen telefoonnummer in hebben gezet terwijl de geseede
+     * zin eronder nog staat. `delete()` nam dat mee.
+     *
+     * Een veld gaat dus alleen op `null` als er nog létterlijk staat wat de
+     * seeder erin zette. Zie database/seeders/VoorbeeldDataSeeder.php.
+     *
+     * @var array<string, string>
+     */
+    private const VOET_VELDEN = [
+        'tagline_nl' => self::VOET_ZIN,
+        'tagline_en' => 'IT consultancy and delivery. From advice to build and support.',
+        'phone' => '06 12 34 56 78',
+        'region_nl' => 'Noord-Brabant en omstreken',
+        'region_en' => 'Noord-Brabant and surroundings',
+        'kvk' => '12 34 56 78',
+        'vat' => 'NL001234567B01',
+    ];
+
     private const PUNTEN = [
         'Geen afhankelijkheid van één leverancier',
         'Documentatie waarmee een ander het overneemt',
         'Werkt met wat er al staat',
         'Bereikbaar zonder tussenpersoon',
     ];
+
+    /**
+     * De voet: alleen weghalen wat de seeder er zelf in zette.
+     *
+     * Blijft er daarna niets over, dan mag de rij weg -- dan is hij
+     * helemaal van ons geweest. Staat er nog iets van de eigenaar in, dan
+     * blijft de rij staan met alleen zíjn gegevens erin.
+     */
+    private function ruimVoetOp(): void
+    {
+        $voet = FooterSetting::query()
+            ->where('tagline_nl', self::VOET_ZIN)
+            ->first();
+
+        if ($voet === null) {
+            return;
+        }
+
+        foreach (self::VOET_VELDEN as $veld => $geseed) {
+            if ($voet->{$veld} === $geseed) {
+                $voet->{$veld} = null;
+            }
+        }
+
+        // De merkjes horen bij de teksten; blijft er een tekst staan, dan
+        // blijft zijn merkje ook staan.
+        if ($voet->tagline_nl === null && $voet->tagline_en === null) {
+            $voet->tagline_translated_at = null;
+        }
+
+        if ($voet->region_nl === null && $voet->region_en === null) {
+            $voet->region_translated_at = null;
+        }
+
+        $voet->save();
+
+        $leeg = collect(array_keys(self::VOET_VELDEN))
+            ->every(fn (string $veld) => blank($voet->{$veld}));
+
+        if ($leeg) {
+            $voet->delete();
+        }
+    }
 
     public function handle(): int
     {
@@ -198,7 +266,8 @@ class OpruimenVoorbeeldData extends Command
             ->where('tagline_nl', self::VOET_ZIN)
             ->count();
 
-        if ($aanvragen + $mail + $onderwerpen + $vragen + $overMij + $puntenAantal + $projecten + $kerngegevens + $voet === 0) {
+        if ($aanvragen + $mail + $onderwerpen + $vragen + $overMij + $puntenAantal
+            + $stappen + $projecten + $kerngegevens + $voet === 0) {
             $this->components->info('Er staat geen voorbeelddata in de database.');
 
             return self::SUCCESS;
@@ -210,6 +279,7 @@ class OpruimenVoorbeeldData extends Command
         $this->components->twoColumnDetail('Vragen', (string) $vragen);
         $this->components->twoColumnDetail('Over mij', (string) $overMij);
         $this->components->twoColumnDetail('Punten bij Over mij', (string) $puntenAantal);
+        $this->components->twoColumnDetail('Stappen', (string) $stappen);
         $this->components->twoColumnDetail('Projecten', (string) $projecten);
         $this->components->twoColumnDetail('Kerngegevens', (string) $kerngegevens);
         $this->components->twoColumnDetail('Voettekst', (string) $voet);
@@ -219,7 +289,8 @@ class OpruimenVoorbeeldData extends Command
          * klant zijn eigen werk tussen zitten. Dat zeggen we met zoveel
          * woorden in plaats van het stil weg te halen.
          */
-        if ($onderwerpen + $vragen + $overMij + $puntenAantal + $projecten + $kerngegevens + $voet > 0) {
+        if ($onderwerpen + $vragen + $overMij + $puntenAantal + $stappen
+            + $projecten + $kerngegevens + $voet > 0) {
             $this->components->warn(
                 'De onderwerpen en de vragen worden op tekst gevonden. Heb je er '
                     .'zelf een met dezelfde tekst gemaakt, dan gaat die mee.'
@@ -276,9 +347,7 @@ class OpruimenVoorbeeldData extends Command
             ->where('summary_nl', 'like', 'Ik werk sinds 2008 in de IT%')
             ->delete();
 
-        FooterSetting::query()
-            ->where('tagline_nl', self::VOET_ZIN)
-            ->delete();
+        $this->ruimVoetOp();
 
         $this->components->info('De voorbeelddata is weg.');
 

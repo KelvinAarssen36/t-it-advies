@@ -86,7 +86,11 @@ onMounted(async () => {
                     @click="toggleRecoveryCodesVisibility"
                 >
                     <component :is="isRecoveryCodesVisible ? EyeOff : Eye" />
-                    {{ isRecoveryCodesVisible ? 'Verberg' : 'Toon' }} codes
+                    {{
+                        isRecoveryCodesVisible
+                            ? $t('Verberg codes')
+                            : $t('Toon codes')
+                    }}
                 </Button>
 
                 <CopyButton

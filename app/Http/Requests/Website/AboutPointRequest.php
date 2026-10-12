@@ -52,10 +52,10 @@ class AboutPointRequest extends FormRequest
     {
         return [
             'text_nl.max' => __(
-                'Een punt hoort op één regel te passen. Is er meer over te zeggen, zet dat dan in je verhaal.',
+                'Een punt is een steekwoord van een paar woorden. Is er meer over te zeggen, zet dat dan in je verhaal.',
             ),
             'text_en.max' => __(
-                'Een punt hoort op één regel te passen. Is er meer over te zeggen, zet dat dan in je verhaal.',
+                'Een punt is een steekwoord van een paar woorden. Is er meer over te zeggen, zet dat dan in je verhaal.',
             ),
         ];
     }

@@ -16,9 +16,9 @@ use Illuminate\Support\Carbon;
  * eigenaar invult zijn de paar dingen die over zijn bedrijf gaan en die
  * niemand anders kan weten.
  *
- * **Leeg is weg.** Elk veld hier mag leeg blijven en verdwijnt dan van de
- * site. Daarom geeft `voorDeSite()` alleen terug wat gevuld is, en staat er
- * in de voet nergens een regel die op een waarde wacht.
+ * **Leeg is weg.** Elk veld hier mag leeg blijven, en wat leeg is krijgt
+ * `null` mee in plaats van een lege tekst. De voet beslist daarop of een
+ * regel er staat; zie SiteFooter.vue.
  *
  * **De terugval verschilt per veld**, net als bij de kerngegevens:
  *
@@ -33,12 +33,13 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property string|null $tagline_nl
  * @property string|null $tagline_en
+ * @property Carbon|null $tagline_translated_at
  * @property string|null $phone
  * @property string|null $region_nl
  * @property string|null $region_en
+ * @property Carbon|null $region_translated_at
  * @property string|null $kvk
  * @property string|null $vat
- * @property Carbon|null $machine_translated_at
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
@@ -50,7 +51,8 @@ use Illuminate\Support\Carbon;
     'region_en',
     'kvk',
     'vat',
-    'machine_translated_at',
+    'tagline_translated_at',
+    'region_translated_at',
 ])]
 class FooterSetting extends Model
 {
@@ -83,7 +85,8 @@ class FooterSetting extends Model
     protected function casts(): array
     {
         return [
-            'machine_translated_at' => 'datetime',
+            'tagline_translated_at' => 'datetime',
+            'region_translated_at' => 'datetime',
         ];
     }
 
@@ -158,10 +161,11 @@ class FooterSetting extends Model
     /**
      * De voet zoals de bezoeker hem krijgt.
      *
-     * **Wat leeg is, zit er niet in.** De browser hoeft dus nergens te
-     * controleren of een waarde bestaat: staat de sleutel er, dan is er iets
-     * te tonen. Dat scheelt een rij `v-if`-jes die allemaal hetzelfde
-     * zeggen.
+     * **Wat leeg is, is `null` en geen lege tekst.** Dat onderscheid doet
+     * ertoe: de voet beslist met `v-if` of een regel er staat, en een lege
+     * tekst is in JavaScript waar genoeg om een kopje boven niets te
+     * zetten. De sleutels zitten er altijd allemaal in, zodat het type in
+     * types/voettekst.ts één vorm beschrijft en niet twee.
      *
      * @return array{tagline: string|null, telefoon: array{tekst: string, link: string}|null, plaats: string|null, kvk: string|null, btw: string|null}
      */
@@ -198,7 +202,14 @@ class FooterSetting extends Model
             'region_en' => $this->region_en,
             'kvk' => $this->kvk,
             'vat' => $this->vat,
-            'automatisch_vertaald' => $this->machine_translated_at !== null,
+
+            /*
+             * Eén merkje per veld, en niet één voor allebei. Dat stond hier
+             * eerst wel, en dan wiste het ene venster het merkje van het
+             * andere; zie de migratie die de kolommen heeft gesplitst.
+             */
+            'tagline_automatisch_vertaald' => $this->tagline_translated_at !== null,
+            'region_automatisch_vertaald' => $this->region_translated_at !== null,
         ];
     }
 

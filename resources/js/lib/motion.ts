@@ -2415,7 +2415,7 @@ export function vulStatistieken(
  * functie met een schakelaar ertussen zou twee verschillende effecten in
  * elkaar schuiven die niets delen behalve SplitText.
  *
- * Vijf dingen die hier bewust zo zijn:
+ * Zes dingen die hier bewust zo zijn:
  *
  * - **`mask: 'chars'` doet het maskeren, niet wij.** SplitText zet zelf
  *   een omhulsel met `overflow: hidden` om elke letter. Zelf iets
@@ -2431,8 +2431,9 @@ export function vulStatistieken(
  *   `height` of `padding` aanraakt kost een layout per frame, en dat is
  *   precies waar de slideshow ooit op vastliep.
  * - **Boven `MAX_LETTERS` gaat het per woord in plaats van per letter.**
- *   Tachtig losse letters is geen bord meer maar ruis, en het zijn
- *   tachtig elementen om te animeren. Het blijft wel hetzelfde bord met
+ *   Een waarde van tachtig tekens zou tachtig losse letters opleveren:
+ *   geen bord meer maar ruis, en tachtig elementen om te animeren. De
+ *   grens ligt op `MAX_LETTERS` hieronder, niet op die tachtig. Het blijft wel hetzelfde bord met
  *   dezelfde terugstuit, alleen grover: een lange waarde valt zo niet uit
  *   de toon naast een korte, en dat zou een platte schuif eronder wel
  *   doen.
@@ -2625,7 +2626,13 @@ export function groeiLijn(
                     target.dataset.gezien = '';
                 },
 
-                ...(alInBeeld(target)
+                /*
+                 * Dezelfde grens als de trigger eronder, zoals het contract
+                 * bovenaan dit bestand eist. Hier stond de standaard van
+                 * 0.85 tegenover een trigger op 95%, en dat was de enige
+                 * plek waar die twee uit elkaar liepen.
+                 */
+                ...(alInBeeld(target, 0.95)
                     ? {}
                     : {
                           scrollTrigger: {

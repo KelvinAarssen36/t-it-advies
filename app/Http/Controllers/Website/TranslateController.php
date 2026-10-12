@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Website;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Website\CoreFactRequest;
 use App\Http\Requests\Website\FaqItemRequest;
+use App\Http\Requests\Website\ProjectRequest;
 use App\Http\Requests\Website\WorkStepRequest;
 use App\Models\AboutSetting;
 use App\Models\FooterSetting;
@@ -60,10 +61,18 @@ class TranslateController extends Controller
             'location_nl' => ['nullable', 'string', 'max:120'],
             'description_nl' => ['nullable', 'string', 'max:5000'],
 
-            // De kop boven de tijdlijn én de kop van de landingspagina.
-            // Allebei een titel met een zin eronder, dus allebei dezelfde
-            // twee velden.
-            'title_nl' => ['nullable', 'string', 'max:120'],
+            /*
+             * De kop boven de tijdlijn, de kop van de landingspagina, én
+             * het onderwerp van de bevestigingsmail.
+             *
+             * **Honderdzestig en niet honderdtwintig.** Dat onderwerp mag
+             * 160 tekens (ContactInstellingRequest), en ContactMailDialoog
+             * stuurt het als `title_nl`. Stond hier 120, dan viel het hele
+             * vertaalverzoek om zodra de eigenaar een langer onderwerp had
+             * -- en dan kwam ook de tekst van de mail niet terug. Dezelfde
+             * regel als bij `summary_nl`: de ruimste van zijn gebruikers.
+             */
+            'title_nl' => ['nullable', 'string', 'max:160'],
             'intro_nl' => ['nullable', 'string', 'max:300'],
 
             // De koppen boven een blok hebben een opschrift; de kop van
@@ -87,9 +96,20 @@ class TranslateController extends Controller
              */
             'summary_nl' => ['nullable', 'string', 'max:'.AboutSetting::SAMENVATTING_MAX],
 
-            // Eén expertisepunt onder een dienst, voor het knopje naast
-            // dat ene veld. Het venster onthoudt zelf welk punt het was.
-            'punt_nl' => ['nullable', 'string', 'max:60'],
+            /*
+             * Eén kort label, voor het knopje naast dat ene veld. Het
+             * venster onthoudt zelf om welk punt het ging.
+             *
+             * **Tachtig en niet zestig.** Dit veld doet zowel een
+             * expertisepunt onder een dienst (60) als een punt bij "Over
+             * mij" (80, zie AboutPointRequest). De ruimste van de twee,
+             * anders faalt de knop bij "Over mij" stil op elk punt dat
+             * langer is dan een dienstpunt mag zijn.
+             *
+             * De lijst `punten_nl` hieronder blijft wél op 60: die wordt
+             * alleen door DienstDialoog gestuurd.
+             */
+            'punt_nl' => ['nullable', 'string', 'max:80'],
 
             /*
              * En dezelfde punten als lijst, voor de grote knop.
@@ -201,7 +221,15 @@ class TranslateController extends Controller
              * WorkStepTranslationTest.
              */
             'duration_nl' => ['nullable', 'string', 'max:40'],
-            'result_nl' => ['nullable', 'string', 'max:'.WorkStepRequest::RESULTAAT_MAX],
+            /*
+             * **De ruimste van zijn twee gebruikers**, en dat was hij niet.
+             * Hij stond op RESULTAAT_MAX (160), de maat van een stap in de
+             * werkwijze -- maar ProjectDialoog stuurt hetzelfde veld, en
+             * daar mag het 4000. Een project met een resultaat van drie
+             * zinnen liet dus het hele vertaalverzoek omvallen, inclusief
+             * de titel en de teksten die er wél in pasten.
+             */
+            'result_nl' => ['nullable', 'string', 'max:'.ProjectRequest::TEKST_MAX],
 
             /*
              * De twee vertaalbare velden van de voet: de zin onder het

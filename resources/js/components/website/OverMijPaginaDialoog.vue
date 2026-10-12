@@ -17,7 +17,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { bevestigBewerken } from '@/lib/bevestiging';
+import { bevestigBewerken, bevestigVerwijderen } from '@/lib/bevestiging';
 import { t } from '@/lib/i18n';
 import website from '@/routes/website';
 import overMij from '@/routes/website/over-mij';
@@ -240,6 +240,16 @@ onMounted(() => {
         zet('story_en');
 
         automatisch.value = true;
+
+        /*
+         * De ijkwaarde opnieuw. Wat de dienst zojuist heeft
+         * voorgesteld is vanaf nu "Engels waar niemand aan heeft
+         * gezeten". Stond dit er niet, dan viel de vergelijking bij
+         * het opslaan altijd negatief uit en werd het merkje nooit
+         * gezet -- terwijl de documentatie zegt dat het juist dan
+         * hoort te staan. Zie docs/architecture/automatisch-vertalen.md.
+         */
+        engelsBijOpenen = engelsNu();
         vertaalFout.value = null;
 
         /* De vertaling landt in het Engels, dus daar hoort hij ook te staan. */
@@ -254,7 +264,37 @@ const erIsNederlands = computed(() => formulier.value.story_nl.trim() !== '');
 
 const kanVertalen = computed(() => props.kanVertalen && erIsNederlands.value);
 
-const vertaal = (): void => {
+const vertaal = async (): Promise<void> => {
+    /*
+     * **Eerst vragen.** Vijftien andere vensters doen dat al; deze knop
+     * verving meerdere velden tegelijk zonder iets te vragen, dus wie zijn
+     * Engels zelf had geschreven raakte het kwijt met één klik.
+     */
+    const erStaatAlEngels =
+        formulier.value.page_title_en.trim() !== '' ||
+        formulier.value.page_intro_en.trim() !== '' ||
+        formulier.value.story_en.trim() !== '';
+
+    if (!automatisch.value && erStaatAlEngels) {
+        open.value = false;
+        await adem();
+
+        const akkoord = await bevestigVerwijderen({
+            titel: t('Het Engels dat er staat overschrijven?'),
+            tekst: t(
+                'De vertaaldienst zet er zijn eigen tekst voor in de plaats. Wat je zelf hebt geschreven is dan weg.',
+            ),
+            knop: t('Ja, opnieuw vertalen'),
+        });
+
+        await adem();
+        openOpnieuw();
+
+        if (!akkoord) {
+            return;
+        }
+    }
+
     vertaalt.value = true;
     vertaalFout.value = null;
 
@@ -492,7 +532,7 @@ const adem = (): Promise<void> =>
             </p>
 
             <DialogFooter>
-                <Button type="button" variant="secondary" @click="open = false">
+                <Button type="button" variant="ghost" @click="open = false">
                     {{ $t('Annuleren') }}
                 </Button>
                 <Button

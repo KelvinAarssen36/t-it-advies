@@ -7,6 +7,7 @@ use App\Models\FooterSetting;
 use App\Models\PageSection;
 use App\Models\SectionHeading;
 use App\Models\WorkStep;
+use App\Support\Page\Metagegevens;
 use App\Support\Page\Navigatie;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -42,15 +43,28 @@ class PublicWerkwijzeController extends Controller
         abort_if($stappen->isEmpty(), 404);
         abort_unless(self::ietsTeLezen($stappen->all()), 404);
 
+        /*
+         * Eén keer ophalen: het scherm toont deze kop en het
+         * linkvoorbeeld in de <head> gebruikt dezelfde tekst. Twee
+         * aanroepen zouden twee antwoorden kunnen geven zodra er
+         * ooit iets van een taal of een terugval tussen komt.
+         */
+        $kop = SectionHeading::voor(PageSectionKey::Werkwijze)->voorDeSite();
+
         return Inertia::render('public/Werkwijze', [
             'navigation' => $navigatie->menu(),
 
             // Zie de toelichting in HomeController.
             'voet' => FooterSetting::huidige()->voorDeSite(),
 
+            'meta' => Metagegevens::maak(
+                (string) ($kop['titel'] ?? __('Werkwijze')),
+                $kop['inleiding'] ?? null,
+            ),
+
             // Dezelfde kop als boven het blok op de voorpagina: het is
             // hetzelfde onderdeel, alleen uitgeschreven.
-            'kop' => SectionHeading::voor(PageSectionKey::Werkwijze)->voorDeSite(),
+            'kop' => $kop,
 
             'stappen' => $stappen
                 ->map(fn (WorkStep $stap) => $stap->voorDeSite())

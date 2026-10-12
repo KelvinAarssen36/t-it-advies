@@ -117,6 +117,7 @@ class Verschilrapport
             'educations' => __('Opleidingen'),
             'statistics' => __('Statistieken'),
             'faq_items' => __('Veelgestelde vragen'),
+            'core_facts' => __('Kerngegevens'),
             'about_settings' => __('Over mij'),
             'about_points' => __('Punten bij Over mij'),
             'projects' => __('Projecten'),
@@ -125,6 +126,14 @@ class Verschilrapport
             'contact_subjects' => __('Onderwerpen van je contactformulier'),
             'contact_fields' => __('Velden van je contactformulier'),
             'contact_settings' => __('Instellingen van je contactformulier'),
+            'footer_settings' => __('Voettekst'),
+
+            /*
+             * Een tabel die hier niet staat krijgt zijn eigen naam te zien
+             * -- `core_facts` in plaats van "Kerngegevens". Dat is geen
+             * storing maar wel databasejargon op het scherm van de klant.
+             * Komt er een module bij, zet hem dan ook hier erbij.
+             */
             default => $tabel,
         };
     }

@@ -100,6 +100,19 @@ const OPSCHRIFTEN: Record<string, () => string> = {
     desktop: () => t('Desktop'),
     nl: () => t('Nederlands'),
     en: () => t('Engels'),
+
+    /*
+     * De pagina's. De server stuurt de naam van de route, dus die namen
+     * staan hier -- en `project` dekt álle projectpagina's samen; zie
+     * Bezoekteller::pagina().
+     */
+    home: () => t('Voorpagina'),
+    privacy: () => t('Privacyverklaring'),
+    contact: () => t('Contact'),
+    'over-mij': () => t('Over mij'),
+    werkwijze: () => t('Werkwijze'),
+    projecten: () => t('Projecten'),
+    project: () => t('Een project'),
 };
 
 const opschrift = (sleutel: string): string =>
@@ -127,6 +140,11 @@ const uitsplitsingen = computed(() => [
         sleutel: 'taal',
         titel: t('Taal'),
         leeg: t('Nog geen talen gemeten.'),
+    },
+    {
+        sleutel: 'pagina',
+        titel: t('Welke pagina'),
+        leeg: t("Nog geen pagina's gemeten."),
     },
 ]);
 

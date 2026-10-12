@@ -337,7 +337,30 @@ draait. De grafiek blijft dan plat zonder dat er iets zichtbaar stuk is.
   dus een eigen afweging.
 - **Geen uren van de dag.** Zou kunnen met een kolom erbij; er is nog geen
   vraag naar.
-- **Geen pagina's.** De site is één pagina met ankers, dus "welke pagina's
-  bekijken ze" levert niets op. Komt er een tweede pagina bij, dan is dit
-  een vierde `kind` in `site_day_dimensions`.
+- **Geen cijfers per project.** De pagina-uitsplitsing hieronder telt alle
+  projectpagina's samen als `project`. Welk project het meest wordt
+  bekeken is een vraag die bij die module hoort, en hier zou hij van een
+  uitsplitsing een logboek maken dat met elk nieuw project langer wordt.
 - **Geen cookiebanner** -- en dat is de bedoeling, zie bovenaan.
+
+### De pagina-uitsplitsing kwam er later bij
+
+Hier stond: _"Geen pagina's. De site is één pagina met ankers, dus 'welke
+pagina's bekijken ze' levert niets op. Komt er een tweede pagina bij, dan
+is dit een vierde `kind` in `site_day_dimensions`."_
+
+Die voorwaarde is vervuld. De modules leveren inmiddels zes adressen op --
+de voorpagina, de privacyverklaring, contact, Over mij, de werkwijze en de
+projecten -- en die werden allemaal op één hoop geteld. `BezoekDimensie`
+heeft er daarom een vierde `case` bij, precies zoals voorspeld: een case
+erbij en geen migratie.
+
+**Opgeslagen wordt de naam van de route en niet het adres.** Een adres
+bevat de slug van een project, dus met adressen erbij groeit deze tabel
+met elk project dat de eigenaar aanmaakt. Nu zijn er hoogstens zeven
+waarden, net zo begrensd als apparaat en taal.
+
+**En de privacyverklaring is in dezelfde wijziging meegegaan.** Die
+beschrijft woord voor woord wat er wordt vastgelegd; er een gegeven bij
+tellen zonder die tekst aan te passen maakt van een kloppende verklaring
+een onwaarheid. Zie `Privacy.vue`.

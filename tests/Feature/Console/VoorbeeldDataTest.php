@@ -6,9 +6,12 @@ use App\Models\AboutPoint;
 use App\Models\AboutSetting;
 use App\Models\ContactSubject;
 use App\Models\ContactSubmission;
+use App\Models\CoreFact;
 use App\Models\FaqItem;
 use App\Models\FooterSetting;
 use App\Models\MailLog;
+use App\Models\Project;
+use App\Models\WorkStep;
 use Database\Seeders\ContactSeeder;
 use Database\Seeders\VoorbeeldDataSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -273,6 +276,71 @@ class VoorbeeldDataTest extends TestCase
      * meenemen. Dezelfde voorzichtigheid als bij een eigen punt onder
      * "Over mij".
      */
+    /**
+     * Zijn eigen telefoonnummer blijft staan, ook in een geseede rij.
+     *
+     * **Dit is het geval waarvoor het opruimen per veld gaat.** De voet is
+     * één rij met zeven losse velden, en de eigenaar kan daar zijn eigen
+     * nummer in hebben gezet terwijl de geseede zin eronder nog staat. Een
+     * `delete()` op die rij nam dat mee.
+     */
+    public function test_cleaning_up_keeps_what_the_owner_added_to_the_seeded_footer(): void
+    {
+        $this->seed(VoorbeeldDataSeeder::class);
+
+        $voet = FooterSetting::query()->sole();
+        $voet->update(['phone' => '06 99 88 77 66']);
+
+        $this->artisan('voorbeeld:opruimen --force')->assertSuccessful();
+
+        $overgebleven = FooterSetting::query()->first();
+
+        $this->assertNotNull(
+            $overgebleven,
+            'De hele voetrij is weggegooid, inclusief het eigen telefoonnummer.',
+        );
+
+        $this->assertSame('06 99 88 77 66', $overgebleven->phone);
+
+        // En wat wél van de seeder was, is weg.
+        $this->assertNull($overgebleven->tagline_nl);
+        $this->assertNull($overgebleven->kvk);
+    }
+
+    /**
+     * De stappen van de werkwijze tellen mee in de nulcontrole.
+     *
+     * Deden ze niet: staat alleen de werkwijze nog in de database, dan
+     * meldde het commando "er staat geen voorbeelddata" en liet de vier
+     * verzonnen stappen gewoon staan -- op een site die live kan zijn.
+     */
+    public function test_cleaning_up_still_runs_when_only_the_steps_are_left(): void
+    {
+        $this->seed(VoorbeeldDataSeeder::class);
+
+        // Alles weghalen behalve de stappen, zoals wanneer de eigenaar de
+        // rest zelf al had opgeruimd of aangepast.
+        ContactSubmission::query()->delete();
+        MailLog::query()->delete();
+        ContactSubject::query()->delete();
+        FaqItem::query()->delete();
+        AboutPoint::query()->delete();
+        AboutSetting::query()->delete();
+        Project::query()->delete();
+        CoreFact::query()->delete();
+        FooterSetting::query()->delete();
+
+        $this->assertGreaterThan(0, WorkStep::query()->count());
+
+        $this->artisan('voorbeeld:opruimen --force')->assertSuccessful();
+
+        $this->assertSame(
+            0,
+            WorkStep::query()->count(),
+            'De verzonnen stappen van de werkwijze zijn blijven staan.',
+        );
+    }
+
     public function test_cleaning_up_leaves_an_edited_footer_alone(): void
     {
         $this->seed(VoorbeeldDataSeeder::class);

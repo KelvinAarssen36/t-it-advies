@@ -1,2 +1,4 @@
 User-agent: *
 Disallow:
+
+Sitemap: https://atitadvies.nl/sitemap.xml

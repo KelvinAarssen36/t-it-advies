@@ -15,7 +15,11 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { bevestigAanmaken, bevestigBewerken } from '@/lib/bevestiging';
+import {
+    bevestigAanmaken,
+    bevestigBewerken,
+    bevestigVerwijderen,
+} from '@/lib/bevestiging';
 import { t } from '@/lib/i18n';
 import website from '@/routes/website';
 import punten from '@/routes/website/over-mij/punten';
@@ -36,6 +40,8 @@ const props = defineProps<{
 }>();
 
 const open = defineModel<boolean>('open', { required: true });
+
+const overPuntNl = computed(() => 80 - formulier.value.text_nl.length);
 
 const bewerkt = computed(() => props.item !== null);
 
@@ -109,7 +115,34 @@ const kanVertalen = computed(
     () => props.kanVertalen && formulier.value.text_nl.trim() !== '',
 );
 
-const vertaal = (): void => {
+const vertaal = async (): Promise<void> => {
+    /*
+     * **Eerst vragen.** Vijftien andere vensters doen dat al; deze knop
+     * verving meerdere velden tegelijk zonder iets te vragen, dus wie zijn
+     * Engels zelf had geschreven raakte het kwijt met één klik.
+     */
+    const erStaatAlEngels = formulier.value.text_en.trim() !== '';
+
+    if (erStaatAlEngels) {
+        open.value = false;
+        await adem();
+
+        const akkoord = await bevestigVerwijderen({
+            titel: t('Het Engels dat er staat overschrijven?'),
+            tekst: t(
+                'De vertaaldienst zet er zijn eigen tekst voor in de plaats. Wat je zelf hebt geschreven is dan weg.',
+            ),
+            knop: t('Ja, opnieuw vertalen'),
+        });
+
+        await adem();
+        openOpnieuw();
+
+        if (!akkoord) {
+            return;
+        }
+    }
+
     vertaalt.value = true;
     vertaalFout.value = null;
 
@@ -217,6 +250,9 @@ const adem = (): Promise<void> =>
                         "
                         v-focus
                     />
+                    <p class="text-xs text-muted-foreground">
+                        {{ $t('Nog :aantal tekens', { aantal: overPuntNl }) }}
+                    </p>
                     <InputError :message="fouten.text_nl" />
                 </div>
 
@@ -273,7 +309,7 @@ const adem = (): Promise<void> =>
             </div>
 
             <DialogFooter>
-                <Button type="button" variant="secondary" @click="open = false">
+                <Button type="button" variant="ghost" @click="open = false">
                     {{ $t('Annuleren') }}
                 </Button>
                 <Button

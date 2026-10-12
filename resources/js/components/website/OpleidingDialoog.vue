@@ -165,6 +165,16 @@ onMounted(() => {
         }
 
         automatisch.value = true;
+
+        /*
+         * De ijkwaarde opnieuw. Wat de dienst zojuist heeft
+         * voorgesteld is vanaf nu "Engels waar niemand aan heeft
+         * gezeten". Stond dit er niet, dan viel de vergelijking bij
+         * het opslaan altijd negatief uit en werd het merkje nooit
+         * gezet -- terwijl de documentatie zegt dat het juist dan
+         * hoort te staan. Zie docs/architecture/automatisch-vertalen.md.
+         */
+        engelsBijOpenen = engelsNu();
         vertaalFout.value = null;
     });
 });

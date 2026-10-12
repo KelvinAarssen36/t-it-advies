@@ -2,14 +2,20 @@
 import { AlertCircle } from '@lucide/vue';
 import { computed } from 'vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { t } from '@/lib/i18n';
 
 type Props = {
     errors: string[];
     title?: string;
 };
 
+/*
+ * De standaardtitel stond in het Engels, in een portaal dat Nederlands is
+ * tenzij de eigenaar het omzet. Nu gaat hij door dezelfde vertaallaag als
+ * de rest; laat je `title` weg, dan staat er wat er hoort te staan.
+ */
 const props = withDefaults(defineProps<Props>(), {
-    title: 'Something went wrong.',
+    title: () => t('Er ging iets mis.'),
 });
 
 const uniqueErrors = computed(() => Array.from(new Set(props.errors)));

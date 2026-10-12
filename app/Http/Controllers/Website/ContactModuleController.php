@@ -217,15 +217,41 @@ class ContactModuleController extends Controller
             return back();
         }
 
-        DB::transaction(function () use ($rij) {
+        /*
+         * **Via het model en niet via de query builder.** `Builder::update()`
+         * vuurt geen modelgebeurtenissen af, en `LogsActivity` haakt daar
+         * nu juist op. Het slepen van de onderwerpen kwam daardoor nergens
+         * in het activiteitenlogboek -- als enige module. Bovendien kon
+         * deze methode daardoor niet zien óf er iets veranderde, en meldde
+         * hij altijd succes.
+         */
+        $veranderd = false;
+
+        DB::transaction(function () use ($rij, &$veranderd) {
             foreach (array_values($rij) as $plek => $regel) {
-                ContactSubject::query()
-                    ->whereKey($regel['id'])
-                    ->update(['position' => $plek + 1]);
+                $onderwerp = ContactSubject::query()->find($regel['id']);
+
+                if ($onderwerp === null) {
+                    continue;
+                }
+
+                $onderwerp->position = $plek + 1;
+
+                if ($onderwerp->isDirty()) {
+                    $veranderd = true;
+                }
+
+                $onderwerp->save();
             }
         });
 
-        Toast::bijgewerkt(__('De volgorde is aangepast.'));
+        if (! $veranderd) {
+            Toast::melding(__('Er was niets veranderd.'));
+
+            return back();
+        }
+
+        Toast::bijgewerkt(__('De volgorde van je onderwerpen is aangepast.'));
 
         return back();
     }
@@ -252,7 +278,9 @@ class ContactModuleController extends Controller
         /** @var array<int, array{key: string, status: string, allow_custom?: bool}> $rij */
         $rij = $gegevens['velden'];
 
-        DB::transaction(function () use ($rij) {
+        $veranderd = false;
+
+        DB::transaction(function () use ($rij, &$veranderd) {
             foreach ($rij as $regel) {
                 $veld = ContactVeld::from($regel['key']);
 
@@ -266,9 +294,31 @@ class ContactModuleController extends Controller
                     $nieuw['allow_custom'] = $regel['allow_custom'];
                 }
 
-                ContactField::query()->where('key', $veld)->update($nieuw);
+                /*
+                 * Zie de toelichting bij `volgorde()`: via het model, zodat
+                 * het activiteitenlogboek deze wijziging ziet.
+                 */
+                $rijVeld = ContactField::query()->where('key', $veld)->first();
+
+                if ($rijVeld === null) {
+                    continue;
+                }
+
+                $rijVeld->fill($nieuw);
+
+                if ($rijVeld->isDirty()) {
+                    $veranderd = true;
+                }
+
+                $rijVeld->save();
             }
         });
+
+        if (! $veranderd) {
+            Toast::melding(__('Er was niets veranderd.'));
+
+            return back();
+        }
 
         Toast::bijgewerkt(__('De velden van je formulier zijn aangepast.'));
 

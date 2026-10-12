@@ -45,7 +45,8 @@ return new class extends Migration
              * Vrije tekst en geen cijferkolom: "06 12 34 56 78" en
              * "+31 6 12345678" zijn allebei geldig, en de eigenaar hoort
              * zelf te kiezen hoe zijn nummer eruitziet. De `tel:`-link
-             * strippen we in de browser.
+             * wordt op de server geschoond; zie
+             * FooterSetting::telefoonLink().
              */
             $table->string('phone', 32)->nullable();
 

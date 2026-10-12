@@ -50,6 +50,8 @@ const props = defineProps<{
 
 const open = defineModel<boolean>('open', { required: true });
 
+const overTitelNl = computed(() => 120 - formulier.value.title_nl.length);
+
 const bewerkt = computed(() => props.item !== null);
 
 const stap = ref(1);
@@ -211,6 +213,16 @@ onMounted(() => {
         }
 
         automatisch.value = true;
+
+        /*
+         * De ijkwaarde opnieuw. Wat de dienst zojuist heeft
+         * voorgesteld is vanaf nu "Engels waar niemand aan heeft
+         * gezeten". Stond dit er niet, dan viel de vergelijking bij
+         * het opslaan altijd negatief uit en werd het merkje nooit
+         * gezet -- terwijl de documentatie zegt dat het juist dan
+         * hoort te staan. Zie docs/architecture/automatisch-vertalen.md.
+         */
+        engelsBijOpenen = engelsNu();
         vertaalFout.value = null;
     });
 });
@@ -446,6 +458,13 @@ const adem = (): Promise<void> =>
                             v-model="formulier.title_nl"
                             maxlength="120"
                         />
+                        <p class="text-xs text-muted-foreground">
+                            {{
+                                $t('Nog :aantal tekens', {
+                                    aantal: overTitelNl,
+                                })
+                            }}
+                        </p>
                         <InputError :message="fouten.title_nl" />
                     </div>
 

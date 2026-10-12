@@ -340,6 +340,16 @@ onMounted(() => {
         }
 
         automatisch.value = true;
+
+        /*
+         * De ijkwaarde opnieuw. Wat de dienst zojuist heeft
+         * voorgesteld is vanaf nu "Engels waar niemand aan heeft
+         * gezeten". Stond dit er niet, dan viel de vergelijking bij
+         * het opslaan altijd negatief uit en werd het merkje nooit
+         * gezet -- terwijl de documentatie zegt dat het juist dan
+         * hoort te staan. Zie docs/architecture/automatisch-vertalen.md.
+         */
+        engelsBijOpenen = engelsNu();
         vertaalFout.value = null;
     });
 });
@@ -605,7 +615,13 @@ const adem = (): Promise<void> =>
                 >
                     <div class="grid gap-3 sm:grid-cols-[12rem_1fr]">
                         <div class="grid gap-1.5">
-                            <Label for="dienst-icon" verplicht>
+                            <!--
+                        Geen sterretje bij een keuzelijst die al een
+                        waarde heeft: leeglaten kan niet, dus er valt
+                        niets op te letten. Zie het pictogram bij een
+                        ervaring, dat dit al goed deed.
+                    -->
+                            <Label for="dienst-icon">
                                 {{ $t('Pictogram') }}
                             </Label>
                             <BrandSelect

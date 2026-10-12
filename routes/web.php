@@ -15,6 +15,7 @@ use App\Http\Controllers\PublicWerkwijzeController;
 use App\Http\Controllers\Security\ConfirmTwoFactorController;
 use App\Http\Controllers\Security\PortalEntryController;
 use App\Http\Controllers\Security\TwoFactorSetupController;
+use App\Http\Controllers\SitemapController;
 use App\Http\Middleware\TelBezoek;
 use Illuminate\Support\Facades\Route;
 use Spatie\Honeypot\ProtectAgainstSpam;
@@ -48,6 +49,19 @@ Route::get('/', HomeController::class)
  * die software. Zie docs/architecture/bezoekcijfers.md.
  */
 Route::get('privacy', PrivacyController::class)->name('privacy');
+
+/*
+ * De sitemap.
+ *
+ * **Een route en geen bestand in `public/`**, want welke pagina's bestaan
+ * hangt af van wat de eigenaar heeft aangezet. Een bestand dat bij de bouw
+ * is gemaakt klopt tot de eerste keer dat hij een onderdeel uitzet.
+ *
+ * **Zonder `TelBezoek`**, anders dan de pagina's eronder: een crawler is
+ * geen bezoeker, en Google die elke dag langskomt hoort niet in je
+ * bezoekcijfers te staan.
+ */
+Route::get('sitemap.xml', SitemapController::class)->name('sitemap');
 
 /*
  * De aparte contactpagina.

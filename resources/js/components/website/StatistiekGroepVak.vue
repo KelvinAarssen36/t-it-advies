@@ -189,11 +189,13 @@ const aantal = computed(() =>
 
             <div v-else class="grid gap-2 sm:grid-cols-2">
                 <div class="space-y-1">
-                    <Label
-                        :for="`groep-nl-${props.vak.id}`"
-                        verplicht
-                        class="text-xs"
-                    >
+                    <!--
+                        Géén sterretje: de serverregel is `present` en
+                        `nullable`, en een groep zonder naam is een geldige
+                        toestand -- die staat dan los bovenaan. Hier stond
+                        een verplichting die er niet was.
+                    -->
+                    <Label :for="`groep-nl-${props.vak.id}`" class="text-xs">
                         {{ $t('Naam van de groep') }}
                     </Label>
                     <Input

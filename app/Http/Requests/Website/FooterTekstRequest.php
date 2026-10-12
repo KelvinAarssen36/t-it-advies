@@ -67,10 +67,10 @@ class FooterTekstRequest extends FormRequest
              * zegt niet waaróm, en hier is dat juist de hele reden.
              */
             'tagline_nl.max' => __(
-                'Deze zin staat onderaan elke pagina en past op één regel. Wil je meer vertellen, dan is "Over mij" daarvoor de plek.',
+                'Deze zin staat onderaan elke pagina en is kort bedoeld -- één of twee regels. Wil je meer vertellen, dan is "Over mij" daarvoor de plek.',
             ),
             'tagline_en.max' => __(
-                'Deze zin staat onderaan elke pagina en past op één regel. Wil je meer vertellen, dan is "Over mij" daarvoor de plek.',
+                'Deze zin staat onderaan elke pagina en is kort bedoeld -- één of twee regels. Wil je meer vertellen, dan is "Over mij" daarvoor de plek.',
             ),
         ];
     }

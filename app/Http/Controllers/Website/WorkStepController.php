@@ -178,6 +178,30 @@ class WorkStepController extends Controller
     }
 
     /**
+     * De kop boven de werkwijze.
+     *
+     * **Deze methode ontbrak**, terwijl de route ernaar wees en het scherm
+     * hem aanriep: `routes/website.php` bindt `website.werkwijze.kop` aan
+     * `kop`, en `Werkwijze.vue` stuurt het bewerkvenster daarheen. Op
+     * opslaan gaf dat een 500. Elke andere module met een kop had hem wel;
+     * dit was de enige, en het was ook de enige zonder test op die route.
+     *
+     * Het werk zelf zit in `BewaartKoptekst::verwerkKoptekst()`; zie daar.
+     */
+    public function kop(Request $request): RedirectResponse
+    {
+        if (! $this->verwerkKoptekst($request)) {
+            Toast::melding(__('Er was niets veranderd.'));
+
+            return back();
+        }
+
+        Toast::bijgewerkt(__('De kop boven je werkwijze is aangepast.'));
+
+        return back();
+    }
+
+    /**
      * De volgorde, en daarmee de nummering.
      *
      * Dezelfde opzet als bij de projecten: de hele lijst moet meekomen,
