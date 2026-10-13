@@ -123,6 +123,42 @@ class SecurityLogger
         return $result;
     }
 
+    /**
+     * Schoont een stuk vrije tekst.
+     *
+     * `redact()` hierboven kijkt naar **sleutelnamen** in een array. Dat
+     * werkt voor context die wij zelf samenstellen, maar niet voor een
+     * losse zin -- en precies zo'n zin krijg je uit de melding van een
+     * uitzondering, waar zomaar `password=geheim` in kan staan omdat een
+     * pakket zijn eigen aanroep in de fout heeft gezet.
+     *
+     * Dit vervangt de waarde achter een bekende sleutel, in de vormen
+     * `sleutel=waarde`, `sleutel: waarde` en `"sleutel":"waarde"`.
+     *
+     * **Het is een vangnet en geen garantie.** Een geheim dat nergens een
+     * sleutelnaam naast zich heeft staan, wordt niet herkend. Bouw hier dus
+     * geen beleid op: de eerste regel blijft dat je geheimen nergens in
+     * tekst zet die ergens heen gaat.
+     */
+    public function redactText(string $text): string
+    {
+        /** @var array<int, string> $keys */
+        $keys = config('security.logging.redacted_keys', []);
+
+        $namen = array_map(
+            fn (string $key) => preg_quote(str_replace('_', '[-_]?', $key), '/'),
+            $keys,
+        );
+
+        if ($namen === []) {
+            return $text;
+        }
+
+        $patroon = '/(["\']?\b(?:'.implode('|', $namen).')\b["\']?\s*[=:]\s*)(["\']?)([^\s"\',;)&]+)\2/i';
+
+        return (string) preg_replace($patroon, '$1$2[redacted]$2', $text);
+    }
+
     private function normaliseKey(string $key): string
     {
         return Str::lower(preg_replace('/[^a-z0-9]/i', '', $key) ?? $key);

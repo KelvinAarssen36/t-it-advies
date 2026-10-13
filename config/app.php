@@ -78,7 +78,27 @@ return [
     |
     */
 
-    'locale' => env('APP_LOCALE', 'en'),
+    'locale' => env('APP_LOCALE', 'nl'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Beschikbare talen
+    |--------------------------------------------------------------------------
+    |
+    | De witte lijst. Alles wat hier niet in staat wordt geweigerd, waar het
+    | ook vandaan komt: de sessie, het profiel of de URL. Zonder die lijst is
+    | de taalkeuze een veld uit een verzoek dat rechtstreeks in de
+    | applicatie wordt gezet.
+    |
+    | Voeg je een taal toe, dan hoort daar ook een bestand in lang/ bij en
+    | een vlag in de wisselknoppen. Zie docs/architecture/vertalingen.md.
+    |
+    */
+
+    'available_locales' => [
+        'nl' => 'Nederlands',
+        'en' => 'English',
+    ],
 
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 

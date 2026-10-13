@@ -34,6 +34,7 @@ class AdminAccessTest extends TestCase
         $this->actingAs($user)->get(route('admin.dashboard'))->assertForbidden();
         $this->actingAs($user)->get(route('admin.mail.index'))->assertForbidden();
         $this->actingAs($user)->get(route('admin.security.index'))->assertForbidden();
+        $this->actingAs($user)->get(route('admin.users.index'))->assertForbidden();
     }
 
     public function test_an_admin_can_open_every_page(): void
@@ -44,14 +45,25 @@ class AdminAccessTest extends TestCase
         $this->actingAs($user)->get(route('admin.dashboard'))->assertOk();
         $this->actingAs($user)->get(route('admin.mail.index'))->assertOk();
         $this->actingAs($user)->get(route('admin.security.index'))->assertOk();
+        $this->actingAs($user)->get(route('admin.users.index'))->assertOk();
     }
 
-    public function test_permissions_are_checked_per_page(): void
+    public function test_one_permission_opens_everything(): void
     {
+        /*
+         * Er is één recht voor het hele beheergedeelte, en dat is een
+         * afspraak en geen toeval. Deze test stond er eerst andersom in --
+         * hij bewaakte dat elk scherm zijn eigen recht had -- en dat was
+         * precies het fijnmazige stelsel dat hier niet hoort. Zie
+         * docs/security/rollen-en-rechten.md.
+         */
         $user = User::factory()->create();
-        $user->givePermissionTo('view mail log');
+        $user->givePermissionTo('manage portal');
 
+        $this->actingAs($user)->get(route('admin.dashboard'))->assertOk();
+        $this->actingAs($user)->get(route('admin.activity.index'))->assertOk();
         $this->actingAs($user)->get(route('admin.mail.index'))->assertOk();
-        $this->actingAs($user)->get(route('admin.security.index'))->assertForbidden();
+        $this->actingAs($user)->get(route('admin.security.index'))->assertOk();
+        $this->actingAs($user)->get(route('admin.users.index'))->assertOk();
     }
 }

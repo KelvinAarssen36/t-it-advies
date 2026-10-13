@@ -30,7 +30,7 @@ Zet de middleware `2fa.confirm` op de route:
 
 ```php
 Route::delete('admin/users/{user}', [UserController::class, 'destroy'])
-    ->middleware(['can:manage users', '2fa.confirm'])
+    ->middleware(['can:manage portal', '2fa.confirm'])
     ->name('admin.users.destroy');
 ```
 
@@ -49,8 +49,68 @@ loopt drie stappen af:
    zou de bescherming te omzeilen zijn door 2FA simpelweg uit te laten.
 2. **Recent bevestigd?** Dan mag het verzoek door. "Recent" is
    `SENSITIVE_ACTION_TTL` seconden, standaard vijftien minuten.
-3. **Anders** wordt de huidige URL onthouden en gaat de gebruiker naar het
-   bevestigingsscherm. Daarna komt hij terug op de plek waar hij was.
+3. **Anders** wordt onthouden waar de gebruiker heen wilde en gaat hij naar
+   het bevestigingsscherm. Daarna komt hij terug op de plek waar hij was.
+
+**Let op bij stap 3 en niet-GET-routes.** Na het bevestigen stuurt Laravel de
+gebruiker met een GET naar de onthouden URL. Voor een `DELETE` of `PUT`
+bestaat die GET niet -- hij zou op een 405 landen. De middleware onthoudt
+daarom bij die methoden de pagina waar hij vandaan kwam. Daar staat de knop,
+en zijn bevestiging is dan vers genoeg om hem meteen nog een keer in te
+drukken. Haal dat niet weg zonder een andere oplossing: zonder die regel is
+elke gevoelige actie achter een formulier stuk.
+
+## Waar het nu op zit
+
+| Route                                 | Actie                                 |
+| ------------------------------------- | ------------------------------------- |
+| `PUT admin/users/{user}/roles`        | Rollen van een gebruiker              |
+| `DELETE admin/users/{user}`           | Een account verwijderen               |
+| `DELETE admin/aanvragen/{submission}` | Een aanvraag van een bezoeker wissen  |
+| `GET settings/inlogadres`             | Het venster voor een ander inlogadres |
+| `POST settings/inlogadres`            | Dat inlogadres aanvragen              |
+
+De eerste drie hebben `can:manage portal` ernaast. Zie
+[rollen en rechten](rollen-en-rechten.md) voor de twee vangnetten die daar
+nog bovenop zitten.
+
+**De GET op `settings/inlogadres` valt op**, want die bewaart niets. Hij
+staat er juist omdat de code dan wordt gevraagd vóórdat de eigenaar zijn
+formulier invult; zie hieronder.
+
+Wat er bewust **niet** achter zit: je eigen account verwijderen. Die route
+bestaat niet -- dit portaal heeft één account, en wie dat weghaalt sluit
+zichzelf buiten. Zie `routes/settings.php`.
+
+## De middleware werkt niet overal
+
+`2fa.confirm` kan een POST of PUT **niet onthouden**. Hij bewaart alleen de
+pagina waar je vandaan kwam, stuurt je naar het codescherm, en je verzoek
+is weg. Voor een knop die meteen iets doet -- een rij verwijderen -- is dat
+te verdedigen: je komt terug op dezelfde pagina en drukt nog een keer. Voor
+een handeling die je eerst invult is het dat niet.
+
+Twee gevallen in dit project, allebei op hun eigen manier opgelost:
+
+- **Het inlogadres wijzigen** zet de middleware op een GET die het venster
+  opent. De code wordt dan gevraagd vóórdat de eigenaar iets intypt. Zie
+  [het inlogadres wijzigen](inlogadres-wijzigen.md).
+- **De extra stap na een passkey** is een schuifje; daar valt niets te
+  openen. Het codeveld staat in het venster zelf en de code gaat mee in het
+  verzoek, gecontroleerd door `App\Support\Security\Authenticator` --
+  dezelfde klasse die het codescherm hierboven gebruikt. Zie
+  [de extra stap na een passkey](extra-stap-na-een-passkey.md).
+
+Die klasse bestaat juist zodat die tweede manier de regels van de eerste
+niet overschrijft. Verandert er iets aan wat een geldige code is, dan
+verandert het op één plek.
+
+> **Dit ging eerst mis**, en het is het soort fout dat je alleen in de
+> browser ziet. Het schuifje zat achter `2fa.confirm`: je zette het om, je
+> vulde je code in, je kwam terug -- en het stond weer zoals het stond,
+> want de PUT was onderweg weggegooid. Je moest het dus twee keer omzetten,
+> en alleen als je bevestiging al verlopen was. In de tests zag dat eruit
+> als gewenst gedrag.
 
 ## Instellingen
 
@@ -65,6 +125,58 @@ In `config/security.php`:
 
 Houd de geldigheidsduur kort. Zet je hem op een uur, dan is de check nog maar
 weinig waard; dan is de sessie in de praktijk net zo goed.
+
+## Het slotje, en de weg terug
+
+Achter de beveiligingsinstellingen zit een wachtwoordbevestiging. Dat is
+precies het soort drempel waar je van schrikt als je hem niet ziet aankomen:
+je klikt op een menu-item en krijgt ineens een scherm dat om je wachtwoord
+vraagt. Twee dingen vangen dat op.
+
+**Een slotje naast "Beveiliging".**
+[`PasswordLock.vue`](../../resources/js/components/PasswordLock.vue) staat in
+de instellingennavigatie en is dicht wanneer er nog om je wachtwoord wordt
+gevraagd, en open wanneer je zo doorloopt. Open is het blauw van de knoppen
+met een zachte gloed; dicht is gedempt en rustig. Bewust géén rood of
+oranje: er is niets mis, er komt alleen nog een vraag.
+
+Of het slot open staat komt uit de gedeelde prop `auth.passwordConfirmed`.
+Die maakt in
+[`HandleInertiaRequests`](../../app/Http/Middleware/HandleInertiaRequests.php)
+dezelfde som als de middleware: het tijdstip uit de sessie afgezet tegen
+`config('auth.password_timeout')`. Staat die som er niet, dan blijft het
+slotje open terwijl je wél opnieuw moet bevestigen -- en dan is het erger
+dan geen slotje.
+
+**Dit is weergave, geen beveiliging.** Wie die prop in zijn browser omzet
+krijgt een open slotje te zien en verder niets: de middleware doet de
+controle opnieuw, op de sessie waar de browser niet bij kan.
+
+**Inloggen telt als bevestigen.** De `LoginResponse` zet
+`auth.password_confirmed_at`, dus binnen de bewaartermijn (`password_timeout`,
+drie uur) na het inloggen gaat de beveiligingspagina open zonder extra vraag.
+
+Zonder die regel vraagt Laravel opnieuw om je wachtwoord, ook als je dertig
+seconden eerder hebt ingelogd. Dat voelt niet als zorgvuldigheid maar als een
+fout -- en erger: het leert iemand zijn wachtwoord klakkeloos in te tikken
+zodra het gevraagd wordt, precies het gedrag dat die bevestiging moest
+voorkomen.
+
+Wat we ervoor inleveren is te overzien. De bevestiging beschermt tegen een
+sessie die onbeheerd openstaat, en die grens schuift hiermee op naar drie uur
+na het inloggen. De handelingen die je écht niet wilt terugdraaien -- rollen
+wijzigen, een account verwijderen -- zitten achter `2fa.confirm` en vragen
+sowieso om een verse code uit de authenticator, ongeacht wanneer je hebt
+ingelogd.
+
+**Een weg terug op het bevestigingsscherm.** Onder het formulier staat
+"Toch niet, terug naar het dashboard". Zonder die link is dat scherm een
+doodlopende straat: je komt er ongevraagd terecht, en uitloggen zou de enige
+uitweg zijn. Dat is buiten verhouding voor iemand die zich bedenkt.
+
+Bewust een link naar het dashboard en niet de terugknop van de browser: die
+brengt je terug op de pagina die je juist niet mag zien, waarna je meteen
+weer op het bevestigingsscherm staat.
 
 ## Rate limiting
 

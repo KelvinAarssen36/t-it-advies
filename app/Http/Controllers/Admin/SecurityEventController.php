@@ -6,6 +6,7 @@ use App\Enums\SecurityEventType;
 use App\Enums\SecurityOutcome;
 use App\Http\Controllers\Controller;
 use App\Models\SecurityEvent;
+use App\Support\Datum;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -51,7 +52,7 @@ class SecurityEventController extends Controller
                 'ip_address' => $event->ip_address,
                 'user_agent' => $event->user_agent,
                 'context' => $event->context,
-                'created_at' => $event->created_at->toDateTimeString(),
+                'created_at' => Datum::tijdstip($event->created_at),
             ]);
 
         return Inertia::render('admin/SecurityEvents', [

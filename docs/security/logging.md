@@ -1,5 +1,10 @@
 # Security logging
 
+> Dit document gaat over het **beveiligingslogboek**: wie probeerde binnen te
+> komen, en lukte dat. Voor "wie heeft wat aan de website veranderd" is er
+> een tweede logboek met een eigen recht en een eigen scherm; zie
+> [activiteitenlogboek](activiteitenlogboek.md). Die scheiding is bewust.
+
 ## De harde regel
 
 **Er gaat nooit een wachtwoord, TOTP-code, recovery code, secret of token de
@@ -53,6 +58,11 @@ De volledige lijst staat in `App\Enums\SecurityEventType`. In grote lijnen:
 - **2FA** -- ingeschakeld, bevestigd, uitgeschakeld, gevraagd, gelukt,
   mislukt, recovery code gebruikt, nieuwe recovery codes aangemaakt.
 - **Gevoelige acties** -- zie [gevoelige acties](gevoelige-acties.md).
+- **Gebruikersbeheer** -- rollen gewijzigd, account verwijderd. Bij een
+  verwijderd account leggen we het e-mailadres vast: de koppeling naar
+  `users` wordt op null gezet, dus zonder dat adres loopt het spoor dood op
+  een id dat nergens meer bij hoort.
+- **Alarmering** -- er is een melding verstuurd.
 - **Spam** -- honeypot aangeslagen, Turnstile mislukt.
 - **Rate limiting** -- grens geraakt.
 - **Webhooks** -- geweigerd wegens ontbrekende of foute handtekening.
@@ -67,7 +77,7 @@ aan het aflopen is.
 
 ## Waar je het ziet
 
-`/admin/security`, achter het recht `view security log`. Je kunt filteren op
+`/admin/security`, achter het recht `manage portal`. Je kunt filteren op
 gebeurtenis, uitkomst, e-mailadres en IP-adres. Klik een regel open voor de
 user agent en de volledige context.
 
@@ -95,7 +105,14 @@ Voeg je een eigen gevoelige handeling toe, dan:
 `SECURITY_LOG_RETENTION_DAYS` (standaard 365) voor de tabel,
 `SECURITY_LOG_DAILY_DAYS` (standaard 90) voor het logbestand.
 
-> Er is nog geen opruimtaak die de tabel volgens de retentie-instelling
-> leegt. Dat is bewust overgelaten tot er productiedata is; voeg een
-> scheduled command toe zodra de tabel echt groeit, en werk dit document
-> dan bij.
+De tabel wordt elke nacht opgeruimd door `security:prune-events`, het bestand
+rouleert Laravel zelf. De taak draait alleen als de scheduler draait; zie
+[onderhoudstaken](../operations/onderhoudstaken.md) voor hoe dat werkt en
+waarom het in blokken gebeurt.
+
+## Alarmering
+
+Vastleggen is niet hetzelfde als merken. `security:report` kijkt elk uur in
+dit logboek en mailt bij een piek in mislukte inlogpogingen of bij
+mailproblemen. In die melding staan bewust geen e-mailadressen van
+gebruikers. Zie [onderhoudstaken](../operations/onderhoudstaken.md).

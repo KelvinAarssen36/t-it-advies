@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
+import { Mail, ShieldAlert } from '@lucide/vue';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { dashboard } from '@/routes/admin';
 import mail from '@/routes/admin/mail';
@@ -10,6 +12,8 @@ type Stats = {
     security_events_total: number;
     mails_sent: number;
     mail_problems: number;
+    /** Null als er nog nooit een back-up is gemaakt. */
+    backup_dagen: number | null;
 };
 
 type Failure = {
@@ -33,7 +37,7 @@ defineOptions({
 </script>
 
 <template>
-    <Head title="Beheer" />
+    <Head :title="$t('Beheer')" />
 
     <div class="flex flex-col gap-6 p-4">
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -42,7 +46,7 @@ defineOptions({
                     <CardTitle
                         class="text-sm font-medium text-muted-foreground"
                     >
-                        Mislukte pogingen (24u)
+                        {{ $t('Mislukte pogingen (24u)') }}
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -57,7 +61,7 @@ defineOptions({
                     <CardTitle
                         class="text-sm font-medium text-muted-foreground"
                     >
-                        Gebeurtenissen (24u)
+                        {{ $t('Gebeurtenissen (24u)') }}
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -72,7 +76,7 @@ defineOptions({
                     <CardTitle
                         class="text-sm font-medium text-muted-foreground"
                     >
-                        Mails verzonden (24u)
+                        {{ $t('Mails verzonden (24u)') }}
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -87,7 +91,7 @@ defineOptions({
                     <CardTitle
                         class="text-sm font-medium text-muted-foreground"
                     >
-                        Mailproblemen (24u)
+                        {{ $t('Mailproblemen (24u)') }}
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -101,27 +105,67 @@ defineOptions({
                     </p>
                 </CardContent>
             </Card>
+
+            <!--
+                De leeftijd van de nieuwste back-up. Hij staat hier omdat
+                niemand het back-upscherm opent om te ontdekken dat hij
+                iets had moeten doen.
+            -->
+            <Card>
+                <CardHeader class="pb-2">
+                    <CardTitle
+                        class="text-sm font-medium text-muted-foreground"
+                    >
+                        {{ $t('Laatste back-up') }}
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p
+                        class="text-3xl font-semibold tabular-nums"
+                        :class="
+                            stats.backup_dagen === null ||
+                            stats.backup_dagen >= 60
+                                ? 'text-warning'
+                                : ''
+                        "
+                    >
+                        {{
+                            stats.backup_dagen === null
+                                ? $t('geen')
+                                : $t(':aantal d', {
+                                      aantal: stats.backup_dagen,
+                                  })
+                        }}
+                    </p>
+                </CardContent>
+            </Card>
         </div>
 
         <Card>
             <CardHeader>
-                <CardTitle>Laatste mislukte pogingen</CardTitle>
+                <CardTitle>{{ $t('Laatste mislukte pogingen') }}</CardTitle>
             </CardHeader>
             <CardContent>
                 <p
                     v-if="recentFailures.length === 0"
                     class="text-sm text-muted-foreground"
                 >
-                    Niets te melden.
+                    {{ $t('Niets te melden.') }}
                 </p>
 
                 <table v-else class="w-full text-sm">
                     <thead class="text-left text-muted-foreground">
                         <tr>
-                            <th class="pb-2 font-medium">Gebeurtenis</th>
-                            <th class="pb-2 font-medium">E-mail</th>
-                            <th class="pb-2 font-medium">IP</th>
-                            <th class="pb-2 font-medium">Wanneer</th>
+                            <th class="pb-2 font-medium">
+                                {{ $t('Gebeurtenis') }}
+                            </th>
+                            <th class="pb-2 font-medium">
+                                {{ $t('E-mail') }}
+                            </th>
+                            <th class="pb-2 font-medium">{{ $t('IP') }}</th>
+                            <th class="pb-2 font-medium">
+                                {{ $t('Wanneer') }}
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -144,13 +188,30 @@ defineOptions({
             </CardContent>
         </Card>
 
-        <div class="flex gap-4 text-sm">
-            <Link :href="security.index()" class="underline underline-offset-4">
-                Volledig beveiligingslogboek
-            </Link>
-            <Link :href="mail.index()" class="underline underline-offset-4">
-                Mailoverzicht
-            </Link>
+        <!--
+            Doorverwijzingen naar de twee logboeken waarvan hierboven een
+            samenvatting staat. Dezelfde vorm als elders in het portaal:
+            een knop met de rand, een pictogram vooraan en `gap-2`. Het
+            waren onderstreepte tekstlinks, en die lazen als voetnoot
+            terwijl het de enige weg naar die schermen is.
+
+            De pictogrammen zijn dezelfde als in de zijbalk, zodat je aan
+            het teken al ziet waar je heen gaat.
+        -->
+        <div class="flex flex-wrap gap-2">
+            <Button variant="outline" as-child class="gap-2">
+                <Link :href="security.index()">
+                    <ShieldAlert class="size-4" />
+                    {{ $t('Volledig beveiligingslogboek') }}
+                </Link>
+            </Button>
+
+            <Button variant="outline" as-child class="gap-2">
+                <Link :href="mail.index()">
+                    <Mail class="size-4" />
+                    {{ $t('Mailoverzicht') }}
+                </Link>
+            </Button>
         </div>
     </div>
 </template>

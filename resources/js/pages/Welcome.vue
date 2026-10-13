@@ -1,226 +1,122 @@
 <script setup lang="ts">
-import { Form, Head, Link, usePage } from '@inertiajs/vue3';
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import HoneypotFields from '@/components/HoneypotFields.vue';
-import InputError from '@/components/InputError.vue';
-import TurnstileWidget from '@/components/TurnstileWidget.vue';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
-import {
-    gsap,
-    prefersReducedMotion,
-    revealOnScroll,
-    startSmoothScroll,
-} from '@/lib/motion';
-import { store as contactStore } from '@/routes/contact';
-import { dashboard, login } from '@/routes';
+import { Head } from '@inertiajs/vue3';
+import { onMounted, type Component } from 'vue';
+import CertificatenSection from '@/components/site/sections/CertificatenSection.vue';
+import ContactSection from '@/components/site/sections/ContactSection.vue';
+import DienstenSection from '@/components/site/sections/DienstenSection.vue';
+import ErvaringSection from '@/components/site/sections/ErvaringSection.vue';
+import FaqSection from '@/components/site/sections/FaqSection.vue';
+import HeroSection from '@/components/site/sections/HeroSection.vue';
+import KerngegevensSection from '@/components/site/sections/KerngegevensSection.vue';
+import LinkedinSection from '@/components/site/sections/LinkedinSection.vue';
+import OverMijSection from '@/components/site/sections/OverMijSection.vue';
+import ProjectenSection from '@/components/site/sections/ProjectenSection.vue';
+import StatistiekenSection from '@/components/site/sections/StatistiekenSection.vue';
+import WerkwijzeSection from '@/components/site/sections/WerkwijzeSection.vue';
+import { scrollNaar } from '@/lib/motion';
+import type { SiteKop } from '@/types/ervaring';
+import type { SectieSleutel } from '@/types/secties';
 
 /**
  * De publieke landingspagina.
  *
- * Dit is bewust een skelet, geen af ontwerp: de structuur, de animatielaag en
- * het beveiligde contactformulier staan er, zodat er een echte pagina
- * overheen gebouwd kan worden zonder de techniek opnieuw uit te vinden.
+ * Deze pagina bepaalt niet meer welke onderdelen er staan en in welke
+ * volgorde -- dat doet de klant, in het portaal onder Website. De server
+ * geeft alleen nog de sleutels door, op volgorde en al gezeefd: uitgezette
+ * en nog lege onderdelen zitten er niet bij.
+ *
+ * De kop staat er los boven, want die is niet te verslepen. De voettekst
+ * zit in PublicLayout, want die hoort bij elke pagina en niet bij deze.
+ *
+ * Smooth scrolling en de scroll-reveals zitten ook in PublicLayout; die
+ * worden bij elke navigatie opnieuw gescand, dus een andere volgorde hoeft
+ * daar niets voor te regelen.
+ *
+ * Zie docs/architecture/pagina-indeling.md.
  */
 
-const page = usePage();
-const status = computed(() => page.props.flash?.status);
+const props = defineProps<{
+    sections: SectieSleutel[];
+    /** De drie teksten van de kop; de klant beheert ze onder Website. */
+    heroHeading: SiteKop;
+}>();
 
-const root = ref<HTMLElement | null>(null);
+/**
+ * Van sleutel naar component.
+ *
+ * Bewust met vaste imports en niet met een dynamische naam: de bundler moet
+ * kunnen zien welke bestanden er nodig zijn, en TypeScript controleert zo
+ * dat elke sleutel ook echt een component heeft. Een tikfout in de enum
+ * loopt hier stuk in plaats van op de website.
+ */
+const componenten: Record<SectieSleutel, Component> = {
+    kerngegevens: KerngegevensSection,
+    'over-mij': OverMijSection,
+    diensten: DienstenSection,
+    werkwijze: WerkwijzeSection,
+    projecten: ProjectenSection,
+    ervaring: ErvaringSection,
+    certificaten: CertificatenSection,
+    statistieken: StatistiekenSection,
+    faq: FaqSection,
+    contact: ContactSection,
+    linkedin: LinkedinSection,
+};
 
-let stopScroll: (() => void) | undefined;
-let stopReveal: (() => void) | undefined;
-let intro: gsap.core.Timeline | undefined;
+/**
+ * De achtergrond wisselt per sectie af, en dat gaat op plek in de rij en
+ * niet op naam. Zou elke sectie zijn eigen tint kiezen, dan staan er na een
+ * verplaatsing zomaar twee verhoogde vlakken tegen elkaar aan -- en dan is
+ * de lijn ertussen weg.
+ */
+const toonVoor = (index: number): 'base' | 'raised' =>
+    index % 2 === 0 ? 'base' : 'raised';
 
+/**
+ * Aankomen bij het onderdeel dat in het adres staat.
+ *
+ * **Dit hoort bij de navigatie op de subpagina's.** Daar is elk menu-item
+ * een link naar `/#diensten`; zonder dit kom je dus bovenaan de voorpagina
+ * uit en moet je zelf gaan zoeken -- en dan is zo'n link niets beter dan de
+ * terugknop die er eerst stond.
+ *
+ * **Een sprong en geen glijbeweging.** Dit draait terwijl deze pagina nog
+ * onzichtbaar is -- hij komt net binnen in de overgang van PublicLayout --
+ * dus een glijbeweging zou zich achter een doorzichtige laag afspelen. Je
+ * hoort er gewoon te staan zodra het beeld komt.
+ *
+ * Twee frames wachten, om dezelfde reden als in SiteHeader: de secties
+ * moeten eerst getekend zijn, anders staat de plek van het doel nog niet
+ * vast. Dat valt ruim binnen de tijd die het infaden kost.
+ *
+ * **Hier en niet in de layout**, want dit werkt ook zonder overgang: open je
+ * `/#diensten` rechtstreeks uit een zoekresultaat of ververs je de pagina,
+ * dan is er geen wissel en dus geen `before-enter`, maar wel een `onMounted`.
+ * De layout doet het omgekeerde geval: naar boven, als er géén anker staat.
+ */
 onMounted(() => {
-    stopScroll = startSmoothScroll();
-    stopReveal = revealOnScroll('[data-reveal]', root.value);
+    const sleutel = window.location.hash.replace(/^#/, '');
 
-    if (prefersReducedMotion()) {
-        gsap.set('[data-intro]', { opacity: 1, y: 0 });
-
+    if (sleutel === '') {
         return;
     }
 
-    intro = gsap
-        .timeline({ defaults: { ease: 'power3.out' } })
-        .fromTo(
-            '[data-intro]',
-            { opacity: 0, y: 28 },
-            { opacity: 1, y: 0, duration: 0.9, stagger: 0.12 },
-        );
-});
-
-onBeforeUnmount(() => {
-    intro?.kill();
-    stopReveal?.();
-    stopScroll?.();
+    requestAnimationFrame(() =>
+        requestAnimationFrame(() => scrollNaar(sleutel, { direct: true })),
+    );
 });
 </script>
 
 <template>
-    <Head title="IT-advies dat blijft staan" />
+    <Head :title="$t('IT-advies dat blijft staan')" />
 
-    <div ref="root" class="min-h-screen bg-background text-foreground">
-        <header
-            class="mx-auto flex max-w-6xl items-center justify-between px-6 py-6"
-        >
-            <span class="text-lg font-semibold tracking-tight"
-                >@T IT Advies</span
-            >
+    <HeroSection :sections="props.sections" :heading="props.heroHeading" />
 
-            <nav class="flex items-center gap-4 text-sm">
-                <Link
-                    v-if="page.props.auth.user"
-                    :href="dashboard()"
-                    class="hover:text-foreground/70"
-                >
-                    Dashboard
-                </Link>
-                <Link v-else :href="login()" class="hover:text-foreground/70">
-                    Inloggen
-                </Link>
-            </nav>
-        </header>
-
-        <main>
-            <section class="mx-auto max-w-6xl px-6 py-24 sm:py-32">
-                <p
-                    data-intro
-                    class="mb-4 text-sm tracking-[0.2em] text-muted-foreground uppercase"
-                >
-                    IT-advies en realisatie
-                </p>
-                <h1
-                    data-intro
-                    class="max-w-3xl text-4xl leading-[1.05] font-semibold tracking-tight text-balance sm:text-6xl"
-                >
-                    Techniek die doet wat je bedrijf nodig heeft.
-                </h1>
-                <p
-                    data-intro
-                    class="mt-6 max-w-xl text-lg text-pretty text-muted-foreground"
-                >
-                    Van advies tot bouw en beheer. Zonder ruis, zonder
-                    afhankelijkheid van één leverancier.
-                </p>
-                <div data-intro class="mt-10 flex gap-3">
-                    <Button as="a" href="#contact" size="lg"
-                        >Neem contact op</Button
-                    >
-                </div>
-            </section>
-
-            <section class="border-t border-border">
-                <div
-                    class="mx-auto grid max-w-6xl gap-10 px-6 py-24 sm:grid-cols-3"
-                >
-                    <article
-                        v-for="n in 3"
-                        :key="n"
-                        data-reveal
-                        class="opacity-0"
-                    >
-                        <h2 class="mb-2 text-lg font-medium">Dienst {{ n }}</h2>
-                        <p class="text-muted-foreground">
-                            Korte omschrijving van wat je hier levert en wat de
-                            klant eraan heeft.
-                        </p>
-                    </article>
-                </div>
-            </section>
-
-            <section id="contact" class="border-t border-border">
-                <div class="mx-auto max-w-2xl px-6 py-24">
-                    <h2
-                        data-reveal
-                        class="mb-2 text-3xl font-semibold opacity-0"
-                    >
-                        Contact
-                    </h2>
-                    <p data-reveal class="mb-8 text-muted-foreground opacity-0">
-                        Laat een bericht achter, we reageren doorgaans binnen
-                        een werkdag.
-                    </p>
-
-                    <p
-                        v-if="status"
-                        class="mb-6 rounded-md border border-border bg-muted px-4 py-3 text-sm"
-                    >
-                        {{ status }}
-                    </p>
-
-                    <Form
-                        v-bind="contactStore.form()"
-                        reset-on-success
-                        v-slot="{ errors, processing }"
-                        class="space-y-5"
-                    >
-                        <HoneypotFields />
-
-                        <div class="grid gap-2">
-                            <Label for="name">Naam</Label>
-                            <Input
-                                id="name"
-                                name="name"
-                                required
-                                autocomplete="name"
-                            />
-                            <InputError :message="errors.name" />
-                        </div>
-
-                        <div class="grid gap-2">
-                            <Label for="email">E-mailadres</Label>
-                            <Input
-                                id="email"
-                                name="email"
-                                type="email"
-                                required
-                                autocomplete="email"
-                            />
-                            <InputError :message="errors.email" />
-                        </div>
-
-                        <div class="grid gap-2">
-                            <Label for="subject">Onderwerp</Label>
-                            <Input id="subject" name="subject" required />
-                            <InputError :message="errors.subject" />
-                        </div>
-
-                        <div class="grid gap-2">
-                            <Label for="message">Bericht</Label>
-                            <textarea
-                                id="message"
-                                name="message"
-                                rows="6"
-                                required
-                                class="rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                            />
-                            <InputError :message="errors.message" />
-                        </div>
-
-                        <TurnstileWidget />
-                        <InputError
-                            :message="errors['cf-turnstile-response']"
-                        />
-
-                        <Button :disabled="processing">
-                            <Spinner v-if="processing" />
-                            Versturen
-                        </Button>
-                    </Form>
-                </div>
-            </section>
-        </main>
-
-        <footer
-            class="border-t border-border px-6 py-10 text-sm text-muted-foreground"
-        >
-            <div class="mx-auto max-w-6xl">
-                &copy; {{ new Date().getFullYear() }} @T IT Advies
-            </div>
-        </footer>
-    </div>
+    <component
+        :is="componenten[key]"
+        v-for="(key, index) in props.sections"
+        :key="key"
+        :tone="toonVoor(index)"
+        divided
+    />
 </template>

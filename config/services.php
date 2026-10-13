@@ -36,6 +36,33 @@ return [
         'timeout' => 5,
     ],
 
+    /*
+     * De knop "Vertaal automatisch" in het portaal, via MyMemory.
+     *
+     * Er is bewust geen sleutel en geen account: de API staat open. Zie
+     * docs/architecture/automatisch-vertalen.md voor waarom die eis
+     * zwaarder woog dan de laatste procenten vertaalkwaliteit.
+     */
+    'translate' => [
+        /*
+         * Uitzetten laat de knop uit het scherm verdwijnen en de route een
+         * 404 geven. In tests staat hij uit, zodat geen enkele test per
+         * ongeluk het internet op gaat.
+         */
+        'enabled' => (bool) env('TRANSLATE_ENABLED', true),
+
+        'endpoint' => 'https://api.mymemory.translated.net/get',
+
+        /*
+         * Optioneel. Een adres hierin verhoogt het dagtegoed van 5.000
+         * naar 50.000 tekens; het gaat als parameter mee en er hoort geen
+         * aanmelding bij. Leeg laten mag.
+         */
+        'email' => env('TRANSLATE_EMAIL'),
+
+        'timeout' => (int) env('TRANSLATE_TIMEOUT', 6),
+    ],
+
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),

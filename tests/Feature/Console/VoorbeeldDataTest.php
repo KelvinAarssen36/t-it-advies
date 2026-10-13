@@ -1,0 +1,444 @@
+<?php
+
+namespace Tests\Feature\Console;
+
+use App\Models\AboutPoint;
+use App\Models\AboutSetting;
+use App\Models\ContactSubject;
+use App\Models\ContactSubmission;
+use App\Models\CoreFact;
+use App\Models\FaqItem;
+use App\Models\FooterSetting;
+use App\Models\MailLog;
+use App\Models\Project;
+use App\Models\WorkStep;
+use Database\Seeders\ContactSeeder;
+use Database\Seeders\VoorbeeldDataSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use RuntimeException;
+use Tests\TestCase;
+
+/**
+ * De verzonnen data en het opruimen daarvan.
+ *
+ * **Het gevaar van deze seeder is niet dat hij stuk is maar dat hij blijft
+ * staan.** Zijn rijen zien er in het portaal precies zo uit als echte
+ * aanvragen van echte mensen. Daarom twee dingen die vast moeten liggen: hij
+ * draait nergens anders dan lokaal, en het opruimen raakt alleen wat van hem
+ * is.
+ *
+ * Zie database/seeders/VoorbeeldDataSeeder.php.
+ */
+class VoorbeeldDataTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->seed(ContactSeeder::class);
+    }
+
+    /** De opdracht waarmee je hem normaal aanroept. */
+    public function test_the_command_seeds_and_reports(): void
+    {
+        $this->artisan('voorbeeld:zaaien')
+            ->expectsOutputToContain('@voorbeeld.test')
+            ->assertSuccessful();
+
+        $this->assertSame(9, ContactSubmission::query()->count());
+    }
+
+    public function test_the_seeder_puts_every_state_on_the_screen(): void
+    {
+        $this->seed(VoorbeeldDataSeeder::class);
+
+        $this->assertSame(5, ContactSubject::query()->count());
+        $this->assertSame(9, ContactSubmission::query()->count());
+
+        // Eén offline onderwerp, dus vier op de site.
+        $this->assertSame(4, ContactSubject::query()->online()->count());
+
+        // En één zonder Engelse naam, die op de Engelse site terugvalt.
+        $this->assertSame(1, ContactSubject::query()->whereNull('label_en')->count());
+
+        /*
+         * De standen waar het scherm om vraagt. Een seeder die negen keer
+         * hetzelfde neerzet is net zo nutteloos als een lege database.
+         */
+        $this->assertGreaterThan(0, ContactSubmission::query()->ongelezen()->count());
+        $this->assertGreaterThan(0, ContactSubmission::query()->whereNotNull('answered_at')->count());
+        $this->assertGreaterThan(0, ContactSubmission::query()->where('locale', 'en')->count());
+        $this->assertGreaterThan(0, ContactSubmission::query()->whereNotNull('company')->count());
+        $this->assertGreaterThan(0, ContactSubmission::query()->whereNotNull('phone')->count());
+        $this->assertGreaterThan(0, ContactSubmission::query()->where('subject_custom', true)->count());
+
+        // Een aanvraag waarvan het onderwerp is verwijderd: tekst wel,
+        // verwijzing niet.
+        $this->assertSame(
+            1,
+            ContactSubmission::query()
+                ->where('subject_custom', false)
+                ->whereNull('subject_id')
+                ->count(),
+        );
+
+        // En een bounce plus een verzending die nooit vertrok.
+        $this->assertSame(1, MailLog::query()->where('status', 'bounced')->count());
+        $this->assertSame(
+            1,
+            MailLog::query()->where('status', 'failed')->whereNull('sent_at')->count(),
+        );
+    }
+
+    /** Elke aanvraag staat op een adres dat nooit echt kan bestaan. */
+    public function test_every_address_is_unmistakably_fake(): void
+    {
+        $this->seed(VoorbeeldDataSeeder::class);
+
+        $echt = ContactSubmission::query()
+            ->where('email', 'not like', '%@voorbeeld.test')
+            ->pluck('email')
+            ->all();
+
+        $this->assertSame(
+            [],
+            $echt,
+            'Elke verzonnen aanvraag hoort op @voorbeeld.test te staan, anders kan voorbeeld:opruimen hem niet vinden.',
+        );
+    }
+
+    /**
+     * En buiten local gaat hij er niet in.
+     *
+     * Dit is de belangrijkste test van het bestand. Draait hij ooit in
+     * productie, dan staan er negen verzonnen aanvragen tussen de echte en
+     * is er geen manier om te zien welke welke zijn.
+     */
+    public function test_the_seeder_refuses_outside_local(): void
+    {
+        app()->detectEnvironment(fn () => 'production');
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('local en testing');
+
+        /*
+         * Rechtstreeks en niet via `$this->seed()`. Die gaat langs
+         * `db:seed`, en dat commando vraagt in productie eerst om
+         * bevestiging -- dan struikelt de test op de prompt en niet op de
+         * controle die we willen bewijzen.
+         */
+        (new VoorbeeldDataSeeder)->run();
+    }
+
+    /** En de opdracht meldt dat netjes in plaats van om te vallen. */
+    public function test_the_command_refuses_outside_local(): void
+    {
+        app()->detectEnvironment(fn () => 'production');
+
+        $this->artisan('voorbeeld:zaaien')->assertFailed();
+
+        $this->assertSame(0, ContactSubmission::query()->count());
+    }
+
+    /* --- Opruimen --------------------------------------------------------- */
+
+    public function test_cleaning_up_removes_the_example_data(): void
+    {
+        $this->seed(VoorbeeldDataSeeder::class);
+
+        $this->artisan('voorbeeld:opruimen --force')->assertSuccessful();
+
+        $this->assertSame(0, ContactSubmission::query()->count());
+        $this->assertSame(0, ContactSubject::query()->count());
+        $this->assertSame(0, MailLog::query()->where('message_id', 'like', 'voorbeeld-%')->count());
+        $this->assertSame(0, FaqItem::query()->count());
+    }
+
+    /**
+     * De vragen staan er in de vorm waarin je ze wilt zien.
+     *
+     * **Acht, en dat getal is gekozen.** Het blok op de site bladert per
+     * zes en één vraag staat offline, dus er komen er zeven op de site: zes
+     * op de eerste bladzijde en één op de tweede. Zo zie je het bladeren
+     * echt gebeuren in plaats van dat je het op je woord moet geloven.
+     *
+     * De drie bijzondere gevallen die je anders moet uitproberen zitten er
+     * ook in: een vraag zonder Engels, een antwoord met een witregel, en
+     * een vraag die offline staat.
+     */
+    public function test_the_seeder_puts_the_questions_in_a_usable_shape(): void
+    {
+        $this->seed(VoorbeeldDataSeeder::class);
+
+        $this->assertSame(8, FaqItem::query()->count());
+        $this->assertSame(7, FaqItem::query()->online()->count());
+
+        $this->assertSame(
+            1,
+            FaqItem::query()->whereNull('question_en')->count(),
+            'Er hoort precies één vraag zonder Engels te staan, voor de terugval.',
+        );
+
+        $metWitregel = FaqItem::query()
+            ->get()
+            ->filter(fn (FaqItem $vraag) => str_contains($vraag->answer_nl, "\n\n"));
+
+        $this->assertNotEmpty(
+            $metWitregel,
+            'Geen enkel antwoord heeft een witregel, dus de alinea\'s zijn niet te zien.',
+        );
+    }
+
+    /**
+     * "Over mij" staat er met de aparte pagina aan.
+     *
+     * **Met opzet aan én met een verhaal erin.** Zonder verhaal bestaat die
+     * pagina niet en komt er ook geen knop op de voorpagina -- dan zie je
+     * de helft van die module niet. Eén punt staat zonder Engels, zodat je
+     * ziet dat zo'n punt op de Engelse pagina wegvalt.
+     */
+    public function test_the_seeder_turns_the_about_page_on(): void
+    {
+        $this->seed(VoorbeeldDataSeeder::class);
+
+        $instelling = AboutSetting::query()->sole();
+
+        $this->assertTrue($instelling->page_enabled);
+        $this->assertTrue(
+            $instelling->paginaStaatKlaar(),
+            'De aparte pagina staat aan maar heeft geen verhaal; dan bestaat hij niet.',
+        );
+
+        $this->assertStringContainsString(
+            "\n\n",
+            (string) $instelling->story_nl,
+            'Het verhaal heeft geen witregel, dus de alinea\'s zijn niet te zien.',
+        );
+
+        $this->assertSame(4, AboutPoint::query()->count());
+        $this->assertSame(
+            1,
+            AboutPoint::query()->whereNull('text_en')->count(),
+            'Er hoort precies één punt zonder Engels te staan.',
+        );
+    }
+
+    /**
+     * De voet wordt gevuld, en met één rij.
+     *
+     * `firstOrNew` en geen `create`: draai je de seeder twee keer, dan
+     * hoort er niet een tweede rij naast te komen te staan.
+     */
+    public function test_the_seeder_fills_the_footer(): void
+    {
+        $this->seed(VoorbeeldDataSeeder::class);
+        $this->seed(VoorbeeldDataSeeder::class);
+
+        $voet = FooterSetting::query()->sole();
+
+        $this->assertNotNull($voet->phone);
+        $this->assertNotNull($voet->region_nl);
+        $this->assertNotNull($voet->vat);
+
+        /*
+         * Het verzonnen KvK-nummer hoort door zijn eigen validatie te
+         * komen: acht cijfers. Zou de seeder er zeven neerzetten, dan
+         * staat er voorbeelddata die het beheerscherm zelf zou weigeren.
+         */
+        $this->assertSame(
+            FooterSetting::KVK_CIJFERS,
+            mb_strlen((string) preg_replace('/\D/', '', (string) $voet->kvk)),
+            'Het verzonnen KvK-nummer heeft niet het aantal cijfers dat de validatie eist.',
+        );
+    }
+
+    /**
+     * En de voet gaat ook weer weg.
+     *
+     * Het opruimen gaat op de zin die de seeder neerzet, net als bij
+     * "Over mij": er is geen adres om op te herkennen.
+     */
+    public function test_cleaning_up_removes_the_footer(): void
+    {
+        $this->seed(VoorbeeldDataSeeder::class);
+
+        $this->artisan('voorbeeld:opruimen --force')->assertSuccessful();
+
+        $this->assertSame(0, FooterSetting::query()->count());
+    }
+
+    /**
+     * Maar niet als de eigenaar hem heeft aangepast.
+     *
+     * Dan is de rij van hém, en zou het opruimen zijn telefoonnummer
+     * meenemen. Dezelfde voorzichtigheid als bij een eigen punt onder
+     * "Over mij".
+     */
+    /**
+     * Zijn eigen telefoonnummer blijft staan, ook in een geseede rij.
+     *
+     * **Dit is het geval waarvoor het opruimen per veld gaat.** De voet is
+     * één rij met zeven losse velden, en de eigenaar kan daar zijn eigen
+     * nummer in hebben gezet terwijl de geseede zin eronder nog staat. Een
+     * `delete()` op die rij nam dat mee.
+     */
+    public function test_cleaning_up_keeps_what_the_owner_added_to_the_seeded_footer(): void
+    {
+        $this->seed(VoorbeeldDataSeeder::class);
+
+        $voet = FooterSetting::query()->sole();
+        $voet->update(['phone' => '06 99 88 77 66']);
+
+        $this->artisan('voorbeeld:opruimen --force')->assertSuccessful();
+
+        $overgebleven = FooterSetting::query()->first();
+
+        $this->assertNotNull(
+            $overgebleven,
+            'De hele voetrij is weggegooid, inclusief het eigen telefoonnummer.',
+        );
+
+        $this->assertSame('06 99 88 77 66', $overgebleven->phone);
+
+        // En wat wél van de seeder was, is weg.
+        $this->assertNull($overgebleven->tagline_nl);
+        $this->assertNull($overgebleven->kvk);
+    }
+
+    /**
+     * De stappen van de werkwijze tellen mee in de nulcontrole.
+     *
+     * Deden ze niet: staat alleen de werkwijze nog in de database, dan
+     * meldde het commando "er staat geen voorbeelddata" en liet de vier
+     * verzonnen stappen gewoon staan -- op een site die live kan zijn.
+     */
+    public function test_cleaning_up_still_runs_when_only_the_steps_are_left(): void
+    {
+        $this->seed(VoorbeeldDataSeeder::class);
+
+        // Alles weghalen behalve de stappen, zoals wanneer de eigenaar de
+        // rest zelf al had opgeruimd of aangepast.
+        ContactSubmission::query()->delete();
+        MailLog::query()->delete();
+        ContactSubject::query()->delete();
+        FaqItem::query()->delete();
+        AboutPoint::query()->delete();
+        AboutSetting::query()->delete();
+        Project::query()->delete();
+        CoreFact::query()->delete();
+        FooterSetting::query()->delete();
+
+        $this->assertGreaterThan(0, WorkStep::query()->count());
+
+        $this->artisan('voorbeeld:opruimen --force')->assertSuccessful();
+
+        $this->assertSame(
+            0,
+            WorkStep::query()->count(),
+            'De verzonnen stappen van de werkwijze zijn blijven staan.',
+        );
+    }
+
+    public function test_cleaning_up_leaves_an_edited_footer_alone(): void
+    {
+        $this->seed(VoorbeeldDataSeeder::class);
+
+        $voet = FooterSetting::query()->sole();
+        $voet->update(['tagline_nl' => 'Mijn eigen zin eronder.']);
+
+        $this->artisan('voorbeeld:opruimen --force')->assertSuccessful();
+
+        $this->assertModelExists($voet);
+        $this->assertSame(
+            'Mijn eigen zin eronder.',
+            FooterSetting::query()->sole()->tagline_nl,
+        );
+    }
+
+    /** En "Over mij" gaat ook weer weg. */
+    public function test_cleaning_up_removes_the_about_data(): void
+    {
+        $this->seed(VoorbeeldDataSeeder::class);
+
+        $eigen = AboutPoint::factory()->create([
+            'text_nl' => 'Een punt dat de klant zelf heeft geschreven',
+        ]);
+
+        $this->artisan('voorbeeld:opruimen --force')->assertSuccessful();
+
+        $this->assertModelExists($eigen);
+        $this->assertSame(1, AboutPoint::query()->count());
+        $this->assertSame(0, AboutSetting::query()->count());
+    }
+
+    /**
+     * En de vragen gaan ook weer weg.
+     *
+     * Die gaan op hun Nederlandse tekst en niet op een adres -- er is bij
+     * een vraag niets om een `@voorbeeld.test` in te zetten. Het commando
+     * waarschuwt daarvoor; zie de test hieronder.
+     */
+    public function test_cleaning_up_removes_the_questions_too(): void
+    {
+        $this->seed(VoorbeeldDataSeeder::class);
+
+        $eigen = FaqItem::factory()->create([
+            'question_nl' => 'Een vraag die de klant zelf heeft geschreven?',
+        ]);
+
+        $this->artisan('voorbeeld:opruimen --force')->assertSuccessful();
+
+        $this->assertModelExists($eigen);
+        $this->assertSame(1, FaqItem::query()->count());
+    }
+
+    /**
+     * Maar niet wat van de klant is.
+     *
+     * **Dit is waarom het opruimen op het adres afgaat en niet op een datum
+     * of een aantal.** Een echte aanvraag tussen de verzonnen rijen mag er
+     * niet mee verdwijnen, en dat kan alleen als er iets aan de rij zelf te
+     * zien is.
+     */
+    public function test_cleaning_up_leaves_real_rows_alone(): void
+    {
+        $this->seed(VoorbeeldDataSeeder::class);
+
+        $echt = ContactSubmission::factory()->create([
+            'email' => 'een.echte.bezoeker@example.com',
+            'name' => 'Een echte bezoeker',
+        ]);
+
+        $eigenMail = MailLog::query()->create([
+            'message_id' => 'een-echte-mail',
+            'mailable' => 'App\\Mail\\ContactBevestigingMail',
+            'mailer' => 'smtp',
+            'subject' => 'Bevestiging aan een bezoeker',
+            'to' => ['een.echte.bezoeker@example.com'],
+            'status' => 'sent',
+            'sent_at' => now(),
+        ]);
+
+        $this->artisan('voorbeeld:opruimen --force')->assertSuccessful();
+
+        $this->assertModelExists($echt);
+        $this->assertModelExists($eigenMail);
+        $this->assertSame(1, ContactSubmission::query()->count());
+    }
+
+    public function test_cleaning_up_says_so_when_there_is_nothing_to_clean(): void
+    {
+        $this->artisan('voorbeeld:opruimen --force')
+            ->expectsOutputToContain('geen voorbeelddata')
+            ->assertSuccessful();
+    }
+
+    public function test_cleaning_up_refuses_outside_local(): void
+    {
+        app()->detectEnvironment(fn () => 'production');
+
+        $this->artisan('voorbeeld:opruimen --force')->assertFailed();
+    }
+}

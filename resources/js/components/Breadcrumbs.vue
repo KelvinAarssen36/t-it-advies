@@ -15,6 +15,18 @@ type Props = {
 };
 
 defineProps<Props>();
+
+/*
+ * De titels worden hier vertaald en niet op de pagina zelf.
+ *
+ * Een kruimelpad staat in `defineOptions`, en dat wordt uitgevoerd zodra de
+ * module geladen wordt. Bij een volledige paginalading is dat vóórdat
+ * Inertia een pagina heeft, dus daar is nog geen taal om in te vertalen --
+ * en een `t()` op die plek levert een wit scherm op. De titel is daarom de
+ * Nederlandse zin, en die is tegelijk de sleutel.
+ *
+ * Zie docs/architecture/vertalingen.md.
+ */
 </script>
 
 <template>
@@ -23,11 +35,11 @@ defineProps<Props>();
             <template v-for="(item, index) in breadcrumbs" :key="index">
                 <BreadcrumbItem>
                     <template v-if="index === breadcrumbs.length - 1">
-                        <BreadcrumbPage>{{ item.title }}</BreadcrumbPage>
+                        <BreadcrumbPage>{{ $t(item.title) }}</BreadcrumbPage>
                     </template>
                     <template v-else>
                         <BreadcrumbLink as-child>
-                            <Link :href="item.href">{{ item.title }}</Link>
+                            <Link :href="item.href">{{ $t(item.title) }}</Link>
                         </BreadcrumbLink>
                     </template>
                 </BreadcrumbItem>

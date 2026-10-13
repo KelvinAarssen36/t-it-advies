@@ -1,0 +1,267 @@
+<?php
+
+namespace App\Enums;
+
+/**
+ * De onderdelen waaruit de landingspagina is opgebouwd.
+ *
+ * Dit is de enige lijst. De database bewaart alleen de **volgorde** en of
+ * een onderdeel aan staat; wát een onderdeel is, staat hier. Dat is met
+ * opzet zo verdeeld: een sectie die de klant zelf zou kunnen aanmaken heeft
+ * geen Vue-component om te tonen, dus een vrij invulbare lijst zou alleen
+ * maar lege plekken opleveren. Een nieuw onderdeel is werk voor ons, de
+ * volgorde en de inhoud zijn van hem.
+ *
+ * **Een onderdeel toevoegen** doe je in een vast rijtje stappen; ze staan uitgeschreven
+ * in docs/architecture/pagina-indeling.md. Kort:
+ *
+ * 1. Een `case` hier, met een label, een omschrijving en een positie.
+ * 2. Een migratie die de rij toevoegt -- of gewoon `PageSectionSeeder`
+ *    opnieuw draaien, die vult aan wat ontbreekt.
+ * 3. Een Vue-component, en die opnemen in de kaart in Welcome.vue.
+ * 4. Een teller registreren in `AppServiceProvider`, zodat het onderdeel
+ *    vanzelf verdwijnt zolang de klant er nog niets in heeft gezet.
+ * 5. Een regel in de zijbalk, onder Website. Elke module hoort daar zijn
+ *    eigen ingang te hebben; AppSidebarTest valt om als je het vergeet.
+ *
+ * Zie ook App\Support\Page\SectionContent.
+ */
+enum PageSectionKey: string
+{
+    case Hero = 'hero';
+    case Kerngegevens = 'kerngegevens';
+    case OverMij = 'over-mij';
+    case Diensten = 'diensten';
+    case Werkwijze = 'werkwijze';
+    case Projecten = 'projecten';
+    case Ervaring = 'ervaring';
+    case Certificaten = 'certificaten';
+    case Statistieken = 'statistieken';
+    case Faq = 'faq';
+    case Contact = 'contact';
+    case Linkedin = 'linkedin';
+    case Footer = 'footer';
+
+    /**
+     * Hoe het onderdeel heet op het indelingsscherm.
+     *
+     * Niet de technische sleutel: de klant leest "Kop", niet "hero".
+     */
+    public function label(): string
+    {
+        return match ($this) {
+            self::Hero => __('Kop'),
+            self::Kerngegevens => __('Kerngegevens'),
+            self::OverMij => __('Over mij'),
+            self::Diensten => __('Diensten'),
+            self::Werkwijze => __('Werkwijze'),
+            self::Projecten => __('Projecten'),
+            self::Ervaring => __('Ervaring'),
+            self::Certificaten => __('Certificaten'),
+            self::Statistieken => __('Statistieken'),
+            self::Faq => __('Vragen'),
+            self::Contact => __('Contact'),
+            self::Linkedin => __('LinkedIn'),
+            self::Footer => __('Voettekst'),
+        };
+    }
+
+    /** Eén regel die zegt wat er in dit onderdeel staat. */
+    public function omschrijving(): string
+    {
+        return match ($this) {
+            self::Hero => __('Het eerste dat een bezoeker ziet: de titel, de ondertitel en de twee knoppen.'),
+            self::Kerngegevens => __('De harde feiten: je beschikbaarheid, je werkgebied, hoe snel je reageert. Een strook onder je kop.'),
+            self::OverMij => __('Een kort stuk over jezelf, met een foto. Eventueel met een knop naar een uitgebreidere pagina.'),
+            self::Diensten => __('De diensten die je aanbiedt, elk met een korte toelichting en de expertise die eronder valt.'),
+            self::Werkwijze => __('De stappen van kennismaken tot overdragen.'),
+            self::Projecten => __('Je etalage: wat je hebt gedaan, met één project uitgelicht.'),
+            self::Ervaring => __('De tijdlijn met functies en organisaties, van nu naar vroeger.'),
+            self::Certificaten => __('De certificaten die je hebt gehaald, en eventueel je opleiding.'),
+            self::Statistieken => __('Je vaardigheden en kengetallen, als balken, ringen en tellers.'),
+            self::Faq => __('De vragen die je vaker krijgt, met je antwoord eronder.'),
+            self::Contact => __('Het contactformulier.'),
+            self::Linkedin => __('De uitnodiging om je op LinkedIn te volgen, met een knop naar je profiel.'),
+            self::Footer => __('De afsluiting onderaan elke pagina.'),
+        };
+    }
+
+    /**
+     * Valt er aan dit onderdeel iets te beheren?
+     *
+     * **Dit is niet hetzelfde als `beheerRoute() === null`.** Dat zegt
+     * "er is nog geen scherm voor", en het indelingsscherm zet er dan
+     * "Nog niet te beheren" bij -- een belofte dat het er ooit komt.
+     *
+     * Bij LinkedIn is er precies één ding -- de link -- die bewust
+     * vastligt. Daar valt niets te beheren, nu niet en later niet, en dan
+     * is "nog niet" een verkeerde mededeling.
+     *
+     * **De voettekst stond hier ook, en staat er niet meer.** Daar hoorde
+     * bij: "bij de kop en de voettekst staat de tekst in de code". Dat was
+     * waar zolang er in de voet niets stond dat alleen de eigenaar kan
+     * weten. Sinds er een telefoonnummer, een werkgebied en een
+     * KvK-nummer in staan is het dat niet meer: dat zijn zijn gegevens,
+     * geen ontwerpkeuzes van ons. De indeling, de kleuren, het jaartal en
+     * de sitemap liggen nog steeds vast -- zie FooterController voor waar
+     * die grens nu loopt.
+     *
+     * De kop blijft hier weg om een andere reden dan je zou denken: die
+     * heeft wél een scherm (`website.kop.index`), dus `beheerRoute()`
+     * wijst ergens heen.
+     */
+    public function teBeheren(): bool
+    {
+        return match ($this) {
+            self::Linkedin => false,
+            default => true,
+        };
+    }
+
+    /**
+     * Of dit onderdeel op zijn plek blijft staan.
+     *
+     * De kop hoort bovenaan en de voettekst onderaan -- dat is niet een
+     * voorkeur maar wat die twee onderdelen zíjn. Ze staan wél in de lijst,
+     * want de klant hoort zijn hele pagina te zien en niet alleen het
+     * middenstuk.
+     *
+     * Deze eigenschap staat hier en niet in de database, zodat hij niet met
+     * een aangepast verzoek te veranderen is. Zie WebsiteController.
+     */
+    public function vast(): bool
+    {
+        return match ($this) {
+            self::Hero, self::Footer => true,
+            default => false,
+        };
+    }
+
+    /**
+     * De plek in de rij waarmee dit onderdeel begint.
+     *
+     * Alleen voor de eerste keer zaaien. Daarna is de volgorde van de klant
+     * en raakt de seeder hem niet meer aan.
+     *
+     * De vaste onderdelen krijgen 0 en 1000. Dat er zoveel ruimte tussen
+     * zit is geen reserve maar duidelijkheid: de server nummert de
+     * verplaatsbare onderdelen bij elke opslag opnieuw als 1, 2, 3, en die
+     * liggen daarmee altijd tussen de kop en de voettekst in.
+     *
+     * Overigens hangt de plek van die twee niet van dit getal af. Het
+     * indelingsscherm zet ze boven- en onderaan omdat ze vast zijn, niet
+     * omdat hun positie dat zegt -- een verkeerd getal in de database kan
+     * de kop dus niet naar het midden verplaatsen.
+     */
+    public function standaardPositie(): int
+    {
+        return match ($this) {
+            self::Hero => 0,
+
+            /*
+             * Tegen de kop aan. Een feitenstrook is geen verhaal maar een
+             * aanvulling op de koptekst: de bezoeker heeft net gelezen
+             * wie hij is en krijgt meteen de praktische kant -- ben je
+             * beschikbaar, waar werk je, hoe snel reageer je.
+             *
+             * Daarom vóór "Over mij" en niet erna: dit is het antwoord
+             * op "kan ik met deze man in zee", en dat is de vraag die
+             * iemand nog eerder stelt dan "wie is hij".
+             */
+            self::Kerngegevens => 1,
+
+            /*
+             * Daarna pas: "wie ben ik" komt voor "wat doe ik". Een
+             * bezoeker die net heeft gelezen wát je aanbiedt weet nog
+             * niet van wie hij het koopt, en bij een eenmanszaak is dat
+             * precies de vraag die eerst komt.
+             */
+            self::OverMij => 2,
+
+            self::Diensten => 3,
+            self::Werkwijze => 4,
+
+            /*
+             * De etalage vlak na de werkwijze: eerst wát hij doet en
+             * hóe, dan het bewijs dat hij het heeft gedaan. Vóór de
+             * tijdlijn, want een bezoeker die een project herkent is
+             * daarna pas nieuwsgierig naar waar hij in dienst was.
+             */
+            self::Projecten => 5,
+
+            self::Ervaring => 6,
+
+            // Direct ná de tijdlijn: die vertelt wat hij heeft gedaan,
+            // dit is het bewijs erbij. Uit elkaar trekken maakt van twee
+            // halve verhalen twee losse blokken.
+            self::Certificaten => 7,
+
+            /*
+             * En daarna de cijfers. De rij leest zo als één verhaal:
+             * wat hij deed, waarvoor hij is getoetst, en waar hij goed
+             * in is.
+             *
+             * Hier stond dat dit het laatste blok vóór de vraag om
+             * contact was. Dat is het niet meer sinds de vragen bestaan;
+             * zie hieronder.
+             */
+            self::Statistieken => 8,
+
+            /*
+             * En dan de vragen, vlak vóór het contactformulier. Dat is
+             * geen willekeur: een vragenlijst neemt de laatste twijfel
+             * weg, en de knop om te mailen hoort meteen daarna te komen.
+             * Erboven zou hij de twijfel wegnemen die nog niet bestond.
+             */
+            self::Faq => 9,
+
+            self::Contact => 10,
+
+            // Ná het contactformulier: "en volg me verder op LinkedIn"
+            // is een afsluiter en geen uitnodiging om te mailen.
+            self::Linkedin => 11,
+
+            self::Footer => 1000,
+        };
+    }
+
+    /**
+     * De route naar het scherm waar de inhoud van dit onderdeel wordt
+     * beheerd, of null zolang dat scherm er nog niet is.
+     *
+     * Zolang hij null is, zet het indelingsscherm er "Nog niet te beheren"
+     * bij in plaats van een link die nergens heen gaat. De onderdelen die
+     * hier nog niet staan hebben hun tekst dus nog in een Vue-component.
+     */
+    public function beheerRoute(): ?string
+    {
+        return match ($this) {
+            self::Hero => 'website.kop.index',
+            self::Kerngegevens => 'website.kerngegevens.index',
+            self::OverMij => 'website.over-mij.index',
+            self::Diensten => 'website.diensten.index',
+            self::Werkwijze => 'website.werkwijze.index',
+            self::Projecten => 'website.projecten.index',
+            self::Ervaring => 'website.ervaring.index',
+            self::Certificaten => 'website.certificaten.index',
+            self::Statistieken => 'website.statistieken.index',
+            self::Faq => 'website.faq.index',
+            self::Contact => 'website.contact.index',
+            self::Footer => 'website.footer.index',
+            default => null,
+        };
+    }
+
+    /**
+     * Alle onderdelen die de klant mag verslepen.
+     *
+     * @return array<int, self>
+     */
+    public static function verplaatsbaar(): array
+    {
+        return array_values(array_filter(
+            self::cases(),
+            fn (self $sectie) => ! $sectie->vast(),
+        ));
+    }
+}

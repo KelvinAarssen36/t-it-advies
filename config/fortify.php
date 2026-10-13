@@ -161,7 +161,11 @@ return [
     */
 
     'features' => [
-        Features::registration(),
+        // Registratie staat bewust uit. Deze site heeft één gebruiker: de
+        // eigenaar. Een open registratieformulier zou vreemden een account
+        // geven op een applicatie die verder alleen voor hem is.
+        // Een account maak je met `php artisan user:create`; zie
+        // docs/security/authenticatie-en-2fa.md.
         Features::resetPasswords(),
         Features::emailVerification(),
         Features::twoFactorAuthentication([

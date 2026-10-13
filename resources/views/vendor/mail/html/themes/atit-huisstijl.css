@@ -1,0 +1,420 @@
+/*
+  Het mailthema in de huisstijl: Midnight Navy, zoals de website.
+
+  Zelfde structuur als `atit.css` -- tabellen in tabellen, inline stijlen --
+  want die opbouw is uitgevochten tegen twintig jaar mailprogramma's en die
+  strijd doen we niet over. Alleen de kleuren verschillen.
+
+  De eigenaar kiest tussen deze twee onder Instellingen → Weergave; zie
+  App\Enums\MailStijl en App\Concerns\VolgtDeMailstijl.
+
+  ---------------------------------------------------------------------------
+  Vijf dingen die een donkere mail anders maken dan een donkere webpagina.
+  Wie hier iets aanpast, lees dit eerst.
+  ---------------------------------------------------------------------------
+
+  1. **Elk vlak krijgt een eigen achtergrondkleur, ook als het de kleur van
+     zijn ouder is.** Sommige Outlooks negeren een achtergrond op een
+     buitenste tabel maar niet op een binnenste; laat je er één weg, dan
+     krijg je een wit gat midden in de mail.
+
+  2. **Geen `transparent` en geen `rgba()` op een achtergrond.** Daar valt
+     een mailprogramma op terug naar wit, en dan staat lichte tekst op wit.
+     Alle kleuren hieronder zijn volledig dekkend, ook waar dat op het web
+     een doorschijnende laag zou zijn.
+
+  3. **Geen `box-shadow`.** Op donker doet die niets zichtbaar en Outlook
+     tekent hem toch niet. In het lichte thema staat hij er wel: daar geeft
+     hij de kaart lucht.
+
+  4. **Tekst blijft licht, maar niet wit.** Zuiver wit op donkerblauw
+     flikkert op een scherm met weinig contrastinstelling. `#e8eef5` leest
+     rustiger en is nog ruim boven de toegankelijkheidsnorm.
+
+  5. **Het document moet zelf zeggen dat het donker is.** Een donkere
+     webpagina heeft daar niets voor nodig; een donkere mail wel. Zonder
+     die mededeling tekent een browser er een witte schuifbalk naast, en
+     gaan Apple Mail en Outlook.com hem alsnog zelf omkleuren. Dat
+     gebeurt hieronder met `color-scheme` en in de layout met twee
+     metategels.
+
+  De kleuren komen één op één uit `resources/css/app.css`:
+
+      --brand-navy        #061626   de donkerste laag, de buitenrand
+      --brand-navy-deep   #0a2340   de kaart zelf
+      --brand-navy-raised #102d4a   een vlak op de kaart
+      --brand-navy-line   #104a78   randen
+      --brand-cyan        #13c7f3   het accent
+
+  Op donker is `--brand-cyan` het accent en niet de donkerblauwe
+  `#0787e8` van het lichte thema: die laatste valt hier weg tegen de
+  achtergrond.
+
+  Zie docs/architecture/mail-en-queues.md.
+*/
+
+/* Base */
+
+/*
+  De schuifbalk van de mail.
+
+  Hier zat de fout die je zag: een donkerblauwe mail met een witte
+  schuifbalk met pijltjes ernaast, in het voorbeeld onder Instellingen →
+  Weergave. De oorzaak lag niet in de kleuren hieronder maar in de layout,
+  die in élke mail `color-scheme: light` zette -- en een browser tekent
+  zijn balk naar wat het document over zichzelf zegt.
+
+  Dezelfde kleuren als `--scrollbar-thumb` in `.dark` in
+  resources/css/app.css, zodat het voorbeeld dezelfde balk heeft als het
+  portaal eromheen.
+
+  Waarom er geen `::-webkit-scrollbar` in dit bestand kan staan, en waarom
+  `color-scheme` er twee keer is: zie het uitgebreide kopje in atit.css.
+*/
+html {
+    color-scheme: dark;
+    scrollbar-width: thin;
+    scrollbar-color: #2d5e83 #061626;
+}
+
+body,
+body *:not(html):not(style):not(br):not(tr):not(code) {
+    box-sizing: border-box;
+    font-family:
+        -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
+        sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+    position: relative;
+}
+
+body {
+    -webkit-text-size-adjust: none;
+    background-color: #061626;
+    color: #b9c7d6;
+    height: 100%;
+    line-height: 1.4;
+    margin: 0;
+    padding: 0;
+    width: 100% !important;
+}
+
+p,
+ul,
+ol,
+blockquote {
+    line-height: 1.4;
+    text-align: start;
+}
+
+a {
+    color: #13c7f3;
+}
+
+a img {
+    border: none;
+}
+
+/* Typography */
+
+h1 {
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: bold;
+    letter-spacing: -0.01em;
+    margin-top: 0;
+    text-align: start;
+}
+
+h2 {
+    color: #e8eef5;
+    font-size: 16px;
+    font-weight: bold;
+    margin-top: 0;
+    text-align: start;
+}
+
+h3 {
+    color: #e8eef5;
+    font-size: 14px;
+    font-weight: bold;
+    margin-top: 0;
+    text-align: left;
+}
+
+p {
+    color: #b9c7d6;
+    font-size: 16px;
+    line-height: 1.6em;
+    margin-top: 0;
+    text-align: left;
+}
+
+p.sub {
+    font-size: 12px;
+}
+
+img {
+    max-width: 100%;
+}
+
+/* Layout */
+
+.wrapper {
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 100%;
+    background-color: #061626;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+.content {
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 100%;
+    background-color: #061626;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+/* Header */
+
+.header {
+    background-color: #061626;
+    padding: 28px 0 22px;
+    text-align: center;
+}
+
+/*
+  De kleur van de alt-tekst van het logo.
+
+  Blokkeert een mailprogramma de beelden, dan staat hier de naam van het
+  bedrijf als gewone tekst -- en die moet dan wél leesbaar zijn op donker.
+  Zonder deze regel is dat de standaardkleur van een link, en die is per
+  programma anders.
+*/
+.header a {
+    color: #ffffff;
+    font-size: 19px;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+/* Logo */
+
+.logo {
+    height: 75px;
+    margin-top: 15px;
+    margin-bottom: 10px;
+    max-height: 75px;
+    width: 75px;
+}
+
+/* Body */
+
+.body {
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 100%;
+    background-color: #061626;
+    border-bottom: 1px solid #061626;
+    border-top: 1px solid #061626;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+/*
+  De kaart met de inhoud, met de accentstreep bovenaan: het enige stukje
+  merk dat elke mail draagt, in beide stijlen op dezelfde plek.
+*/
+.inner-body {
+    border-top: 4px solid #13c7f3;
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 570px;
+    background-color: #0a2340;
+    border-color: #104a78;
+    border-radius: 6px;
+    border-width: 1px;
+    margin: 0 auto;
+    padding: 0;
+    width: 570px;
+}
+
+.inner-body a {
+    word-break: break-all;
+}
+
+/* Subcopy */
+
+.subcopy {
+    border-top: 1px solid #104a78;
+    margin-top: 25px;
+    padding-top: 25px;
+}
+
+.subcopy p {
+    color: #8aa0b5;
+    font-size: 14px;
+}
+
+/* Footer */
+
+.footer {
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 570px;
+    background-color: #061626;
+    margin: 0 auto;
+    padding: 0;
+    text-align: center;
+    width: 570px;
+}
+
+.footer p {
+    color: #6f8599;
+    font-size: 12px;
+    text-align: center;
+}
+
+.footer a {
+    color: #6f8599;
+    text-decoration: underline;
+}
+
+/* Tables */
+
+.table table {
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 100%;
+    margin: 30px auto;
+    width: 100%;
+}
+
+.table th {
+    border-bottom: 1px solid #104a78;
+    color: #e8eef5;
+    margin: 0;
+    padding-bottom: 8px;
+}
+
+.table td {
+    color: #b9c7d6;
+    font-size: 15px;
+    line-height: 18px;
+    margin: 0;
+    padding: 10px 0;
+}
+
+.content-cell {
+    max-width: 100vw;
+    padding: 32px;
+}
+
+/* Buttons */
+
+.action {
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 100%;
+    margin: 30px auto;
+    padding: 0;
+    text-align: center;
+    width: 100%;
+    float: unset;
+}
+
+/*
+  De knop.
+
+  **Donkere tekst op de cyaan knop**, en niet wit: cyaan is een lichte
+  kleur, en wit erop is niet te lezen. Dezelfde keuze als op de website,
+  waar de merkknop ook donkere tekst heeft.
+
+  De randen in dezelfde kleur als de achtergrond zijn geen versiering maar
+  de manier waarop een mailknop zijn binnenruimte krijgt: `padding` op een
+  `<a>` wordt door Outlook genegeerd.
+*/
+.button {
+    -webkit-text-size-adjust: none;
+    border-radius: 6px;
+    color: #061626;
+    display: inline-block;
+    font-weight: bold;
+    overflow: hidden;
+    text-decoration: none;
+}
+
+.button-blue,
+.button-primary {
+    background-color: #13c7f3;
+    border-bottom: 8px solid #13c7f3;
+    border-left: 18px solid #13c7f3;
+    border-right: 18px solid #13c7f3;
+    border-top: 8px solid #13c7f3;
+    color: #061626;
+}
+
+.button-green,
+.button-success {
+    background-color: #22c55e;
+    border-bottom: 8px solid #22c55e;
+    border-left: 18px solid #22c55e;
+    border-right: 18px solid #22c55e;
+    border-top: 8px solid #22c55e;
+    color: #061626;
+}
+
+/*
+  Rood is de uitzondering: daar hoort lichte tekst op, want een rood vlak
+  met donkere tekst leest als een waarschuwing die je niet moet lezen.
+*/
+.button-red,
+.button-error {
+    background-color: #e4424d;
+    border-bottom: 8px solid #e4424d;
+    border-left: 18px solid #e4424d;
+    border-right: 18px solid #e4424d;
+    border-top: 8px solid #e4424d;
+    color: #ffffff;
+}
+
+/* Panels */
+
+/*
+  Het uitgelichte vak. Op donker een eigen vlak dat lichter is dan de kaart
+  eronder, met de accentkleur als streep ervoor -- precies zoals een kaart
+  op de website boven zijn achtergrond uitkomt.
+*/
+.panel {
+    border-left: #13c7f3 solid 4px;
+    margin: 21px 0;
+}
+
+.panel-content {
+    background-color: #102d4a;
+    color: #e8eef5;
+    padding: 16px;
+}
+
+.panel-content p {
+    color: #e8eef5;
+}
+
+.panel-item {
+    padding: 0;
+}
+
+.panel-item p:last-of-type {
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+/* Utilities */
+
+.break-all {
+    word-break: break-all;
+}

@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -13,23 +12,36 @@ class DatabaseSeeder extends Seeder
     /**
      * Seed the application's database.
      *
-     * De rollen en rechten worden altijd geseed, ook in productie: dat is
-     * geen testdata maar configuratie. Het beheerdersaccount maken we alleen
-     * lokaal aan, want een vast wachtwoord hoort nergens anders thuis.
+     * Al deze seeders horen in elke omgeving te draaien, ook in productie.
+     * Het zijn geen testdata maar de basis van de applicatie: zonder rollen
+     * werkt geen enkele rechtencontrole, zonder het account van de eigenaar
+     * kan niemand inloggen, zonder de secties is de landingspagina leeg, en
+     * de loopbaan is de echte werkervaring van de eigenaar.
+     *
+     * Ze zijn allemaal aanvullend en niet terugzettend: opnieuw draaien mag
+     * altijd en gooit niets weg wat de klant zelf heeft ingesteld.
+     *
+     * Komt er later wél testdata bij, zet die dan achter een controle op
+     * `app()->environment('local')` -- zoals het beheerdersaccount met een
+     * vast wachtwoord dat hier eerder stond.
      */
     public function run(): void
     {
-        $this->call(RolesAndPermissionsSeeder::class);
+        $this->call([
+            RolesAndPermissionsSeeder::class,
+            PortalAccountSeeder::class,
+            PageSectionSeeder::class,
+            ExperienceSeeder::class,
+            ExperienceStatSeeder::class,
+            ServiceSeeder::class,
 
-        if (! app()->environment('local')) {
-            return;
-        }
+            // De velden en de instellingen van het contactformulier. Geen
+            // onderwerpen: die verzint de klant zelf. Zie ContactSeeder.
+            ContactSeeder::class,
 
-        User::factory()
-            ->create([
-                'name' => 'Beheerder',
-                'email' => 'admin@t-it-advies.test',
-            ])
-            ->assignRole('admin');
+            // Eén seeder voor de koppen van alle onderdelen; die stonden
+            // hier eerst als drie losse regels. Zie SectionHeadingSeeder.
+            SectionHeadingSeeder::class,
+        ]);
     }
 }

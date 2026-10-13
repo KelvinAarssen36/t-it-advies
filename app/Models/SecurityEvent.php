@@ -58,7 +58,23 @@ class SecurityEvent extends Model
      */
     public function label(): string
     {
-        return SecurityEventType::tryFrom($this->event)?->label() ?? $this->event;
+        return __($this->sleutel());
+    }
+
+    /**
+     * De Nederlandse tekst van deze gebeurtenis, onvertaald.
+     *
+     * Nodig waar de taal niet die van het portaal is -- de antwoordtekst
+     * op het scherm Juridisch wordt in allebei de talen tegelijk
+     * opgebouwd. Zie `SecurityEventType::sleutel()`.
+     *
+     * Een onbekende soort valt terug op de ruwe waarde uit de database.
+     * Die staat dan niet in de woordenlijst en blijft dus zoals hij is,
+     * en dat is beter dan een lege regel.
+     */
+    public function sleutel(): string
+    {
+        return SecurityEventType::tryFrom($this->event)?->sleutel() ?? $this->event;
     }
 
     /**

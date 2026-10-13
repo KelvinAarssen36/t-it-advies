@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\PasswordUpdateRequest;
 use App\Http\Requests\Settings\TwoFactorAuthenticationRequest;
+use App\Support\Datum;
+use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
@@ -31,13 +33,22 @@ class SecurityController extends Controller
                         'id' => $passkey->id,
                         'name' => $passkey->name,
                         'authenticator' => $passkey->authenticator,
-                        'created_at_diff' => $passkey->created_at->diffForHumans(),
-                        'last_used_at_diff' => $passkey->last_used_at?->diffForHumans(),
+                        'created_at_diff' => Datum::geleden($passkey->created_at),
+                        'last_used_at_diff' => Datum::geleden($passkey->last_used_at),
                     ])
                     ->values()
                     ->all()
                 : [],
             'passwordRules' => Password::defaults()->toPasswordRulesString(),
+
+            /*
+             * De extra stap na een passkey. De ruwe kolom en niet
+             * `vraagtExtraCodeNaEenPasskey()`: het schuifje moet laten
+             * zien wat de eigenaar heeft gekozen, ook als 2FA er even
+             * niet is. Anders springt het uit zichzelf terug en lijkt
+             * het stuk.
+             */
+            'passkeyStep' => (bool) $request->user()->passkey_requires_two_factor,
         ];
 
         if (Features::canManageTwoFactorAuthentication()) {
@@ -45,6 +56,11 @@ class SecurityController extends Controller
 
             $props['twoFactorEnabled'] = $request->user()->hasEnabledTwoFactorAuthentication();
             $props['requiresConfirmation'] = Features::optionEnabled(Features::twoFactorAuthentication(), 'confirm');
+            // Staat 2FA verplicht, dan verbergen we de uitzetknop. Hij zou
+            // wel werken, maar de middleware stuurt je direct daarna terug
+            // naar de instelpagina -- een knop die je meteen weer ongedaan
+            // moet maken is geen keuze maar een valkuil.
+            $props['twoFactorRequired'] = (bool) config('security.two_factor.required');
         }
 
         return Inertia::render('settings/Security', $props);
@@ -59,7 +75,10 @@ class SecurityController extends Controller
             'password' => $request->password,
         ]);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Password updated.')]);
+        Toast::bijgewerkt(
+            __('Je wachtwoord is gewijzigd.'),
+            __('Bewaar het ergens veilig; we kunnen het niet voor je terughalen.'),
+        );
 
         return back();
     }

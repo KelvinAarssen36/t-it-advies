@@ -17,6 +17,15 @@ export type Auth = {
      * controle gebeurt op de server, in de route- en policy-laag.
      */
     permissions: string[];
+    /** Of de ingelogde gebruiker tweestapsverificatie heeft bevestigd. */
+    twoFactor: boolean;
+    /**
+     * Of het wachtwoord in deze sessie nog vers bevestigd is.
+     *
+     * Alleen voor het slotje naast "Beveiliging". De echte controle doet de
+     * middleware `password.confirm` op de server.
+     */
+    passwordConfirmed: boolean;
 };
 
 export type Passkey = {

@@ -8,9 +8,9 @@ import { send } from '@/routes/verification';
 
 defineOptions({
     layout: {
-        title: 'Email verification',
+        title: 'Bevestig je e-mailadres',
         description:
-            'Please verify your email address by clicking on the link we just emailed to you.',
+            'We hebben je een link gestuurd. Klik daarop om je e-mailadres te bevestigen.',
     },
 });
 
@@ -20,14 +20,13 @@ defineProps<{
 </script>
 
 <template>
-    <Head title="Email verification" />
+    <Head :title="$t('Bevestig je e-mailadres')" />
 
     <div
         v-if="status === 'verification-link-sent'"
         class="mb-4 text-center text-sm font-medium text-green-600"
     >
-        A new verification link has been sent to the email address you provided
-        during registration.
+        {{ $t('Er is een nieuwe link naar je e-mailadres gestuurd.') }}
     </div>
 
     <Form
@@ -37,11 +36,11 @@ defineProps<{
     >
         <Button :disabled="processing" variant="secondary">
             <Spinner v-if="processing" />
-            Resend verification email
+            {{ $t('Stuur de link opnieuw') }}
         </Button>
 
         <TextLink :href="logout()" as="button" class="mx-auto block text-sm">
-            Log out
+            {{ $t('Uitloggen') }}
         </TextLink>
     </Form>
 </template>
