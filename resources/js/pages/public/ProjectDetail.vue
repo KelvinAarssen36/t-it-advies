@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
-import { ArrowLeft } from '@lucide/vue';
+import { Head } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import SiteKruimels from '@/components/site/SiteKruimels.vue';
-import { Button } from '@/components/ui/button';
+import SiteTerug from '@/components/site/SiteTerug.vue';
 import { t } from '@/lib/i18n';
-import { home, projecten } from '@/routes';
+import { projecten } from '@/routes';
 import type { ProjectHerkomst, ProjectOpDePagina } from '@/types/projecten';
 
 /**
@@ -41,10 +40,19 @@ const props = withDefaults(
     { van: null },
 );
 
+/**
+ * De bestemming van de eerste knop, of `null` als `SiteTerug` hem zelf
+ * mag bepalen.
+ *
+ * Kwam je van de voorpagina, dan is het onderdeel "Projecten" daar het
+ * juiste antwoord -- en dat weet `SiteTerug` zelf, inclusief of dat
+ * onderdeel nog aanstaat. Kwam je van de lijst, dan is die lijst het
+ * antwoord en zeggen we het hier.
+ */
 const terug = computed(() =>
     props.van === 'start'
-        ? { adres: home(), tekst: t('Terug naar de voorpagina') }
-        : { adres: projecten(), tekst: t('Terug naar alle projecten') },
+        ? null
+        : { adres: projecten().url, tekst: t('Terug naar alle projecten') },
 );
 </script>
 
@@ -124,22 +132,19 @@ const terug = computed(() =>
         </div>
 
         <!--
-            De knop wijst terug naar de pagina waar je vandaan kwam.
+            De eerste knop wijst terug naar de plek waar je vandaan kwam.
 
             Kwam je van de voorpagina, dan stuurt die `?van=start` mee en
-            gaat de knop daarheen. In alle andere gevallen -- via
-            `/projecten`, via een gedeelde link, uit een zoekresultaat --
-            is de lijst het juiste antwoord. Zie `PublicProjectController`
-            voor waarom dit via het adres gaat en niet via de verwijzer
-            van de browser.
+            laten we `SiteTerug` zelf het anker van het onderdeel pakken --
+            dan kom je terug bij de projecten in plaats van bovenaan. In
+            alle andere gevallen -- via `/projecten`, via een gedeelde
+            link, uit een zoekresultaat -- is de lijst het juiste antwoord,
+            en die geven we mee. Zie `PublicProjectController` voor waarom
+            dit via het adres gaat en niet via de verwijzer van de browser.
         -->
-        <div class="brand-siteterug">
-            <Button variant="outline" as-child>
-                <Link :href="terug.adres">
-                    <ArrowLeft class="size-4" />
-                    {{ terug.tekst }}
-                </Link>
-            </Button>
-        </div>
+        <SiteTerug
+            :sleutel="props.van === 'start' ? 'projecten' : null"
+            :terug="terug"
+        />
     </div>
 </template>

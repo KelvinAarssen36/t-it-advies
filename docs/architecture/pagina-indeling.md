@@ -236,12 +236,35 @@ plek verschillen en staat dus bij de aanroeper.
 
 Wat de pagina's zelf nog wél hebben is een kruimelpad boven
 ([`SiteKruimels`](../../resources/js/components/site/SiteKruimels.vue)) en
-één knop onder ([`SiteTerug`](../../resources/js/components/site/SiteTerug.vue)).
+twee knoppen onder ([`SiteTerug`](../../resources/js/components/site/SiteTerug.vue)).
 Die dubbelen niet met de kop: het kruimelpad zegt waar je **bent**, het menu
-waar je **heen** kunt, en de knop onderaan is het einde van de pagina. De
+waar je **heen** kunt, en de knoppen onderaan zijn het einde van de pagina. De
 verdediging voor die tweede link op de privacyverklaring -- "onderaan een
 lange pagina is een link bovenaan geen link" -- klopte trouwens niet:
 `.brand-sitekop` is `position: sticky`, dus de navigatie is daar ook.
+
+### Twee knoppen onderaan, en waarom het er eerst één was
+
+Er stond alleen "Terug naar de voorpagina". Die deed precies wat hij
+beloofde en was toch verkeerd: wie van de voorpagina een project aanklikte
+landde daarna bovenaan en mocht de halve pagina opnieuw afscrollen.
+
+| Knop                                | Waarheen                                         |
+| ----------------------------------- | ------------------------------------------------ |
+| **Terug naar _onderdeel_** (nadruk) | het anker op de voorpagina, dus waar je weg ging |
+| Voorpagina                          | `/`, dus bovenaan                                |
+
+De eerste verschijnt alleen als dat onderdeel er echt is. De eigenaar kan
+elk onderdeel uitzetten, en een anker naar iets dat niet bestaat laat je
+alsnog bovenaan landen zonder dat iets dat zegt. `SiteTerug` kijkt daarom in
+dezelfde lijst als de kop en de voettekst -- `secties` uit `sectielink` --
+en laat bij een onbekend onderdeel alleen de tweede knop staan. De
+privacyverklaring is dat geval altijd: die hoort bij de voettekst en is geen
+onderdeel van de voorpagina.
+
+Een project is de uitzondering die zijn eerste knop zelf bepaalt: kwam je
+van de lijst, dan is de lijst het antwoord en niet een onderdeel waar je
+nooit bent geweest. Zie `?van=start` in `PublicProjectController`.
 
 ## De achtergrond wisselt af op plek, niet op naam
 

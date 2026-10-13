@@ -762,17 +762,69 @@ scherm leeg is. Daar hoort `scrollNaar(..., { direct: true })` bij: een
 glijbeweging achter een doorzichtige laag is tijd die je kwijt bent zonder
 dat iemand het ziet.
 
-Die sprong is verdeeld over twee plekken, en dat is geen slordigheid:
+Die sprong is verdeeld over drie gevallen, en dat is geen slordigheid:
 
-| Geval                               | Wie het doet                      |
-| ----------------------------------- | --------------------------------- |
-| Geen anker in het adres: naar boven | `PublicLayout`, in `before-enter` |
-| Wél een anker: naar dat onderdeel   | `Welcome.vue`, in `onMounted`     |
+| Geval                                       | Wie het doet                      |
+| ------------------------------------------- | --------------------------------- |
+| Alleen de taal gewisseld: blijf waar je was | `PublicLayout`, in `before-enter` |
+| Geen anker in het adres: naar boven         | `PublicLayout`, in `before-enter` |
+| Wél een anker: naar dat onderdeel           | `Welcome.vue`, in `onMounted`     |
 
-De tweede staat daar omdat hij ook zonder overgang moet werken. Open je
+Die laatste staat daar omdat hij ook zonder overgang moet werken. Open je
 `/#diensten` rechtstreeks uit een zoekresultaat of ververs je de pagina,
 dan is er geen wissel en dus geen `before-enter` -- maar wel een
 `onMounted`.
+
+#### Een taalwissel is geen paginawissel
+
+Hij komt wél langs deze overgang, want de taal zit in de sleutel van
+`<main>`. Maar de bezoeker gaat nergens heen: hij las iets en wil datzelfde
+stuk in de andere taal lezen. Naar boven springen gooit hem weg van waar
+hij was.
+
+`PublicLayout` kijkt daarom in een `watch` op de sleutel of alleen het
+taaldeel is veranderd, onthoudt daar waar de bezoeker stond, en zet dat in
+`before-enter` terug met `scrollNaar(<getal>)`.
+
+**Dat "waar hij stond" is een onderdeel en geen pixel.** De Engelse tekst
+is korter: op de voorpagina scheelt de hele pagina ruim duizend pixels. Bij
+een gelijke `scrollY` schoof de werkwijze daardoor 379 pixels en het
+contactblok 1007 -- je blijft op je plek en kijkt toch naar iets anders.
+`pakHouvast()` onthoudt daarom het laatste `section[id]` dat boven de
+bovenrand begon plus hoeveel ervan al voorbij was, en `zetTerug()` rekent
+de pixel daar na de wissel opnieuw uit. Staat de bezoeker nog in de hero of
+op een subpagina zonder onderdelen, dan is er niets om vast te houden en
+valt het terug op de pixel.
+
+**Die `watch` is het hele punt, en hij hing eerst aan het verkeerde
+touwtje.** De eerste poging gebruikte `router.on('navigate')`. Inertia
+vuurt dat alleen af als het adres verandert:
+
+```js
+// @inertiajs/core, in setPage
+if (!replace) {
+    fireNavigateEvent(page, { cached, visitId });
+}
+```
+
+Een taalwissel is een POST die via `back()` op dezelfde URL terugkomt, dus
+`replace` is waar en er komt niets binnen. Een `watch` op een computed
+vuurt wél, want die sleutel verandert gewoon. Bijkomend voordeel: een
+watcher met de normale `pre`-volgorde draait vóór de DOM-update, dus daar
+staat de scrollpositie nog goed.
+
+Dat terugzetten wacht twee beeldjes, zodat het ná het ankersprongetje van
+`Welcome.vue` komt. Anders wint dat sprongetje en sta je alsnog ergens
+anders.
+
+**En het vangnet kijkt bij een taalwissel tot de onderrand.** `alInBeeld`
+rekent standaard tot 85% van de schermhoogte; een blok dat daaronder
+begint wacht netjes op zijn scroll-trigger. Dat klopt als je bovenaan
+begint, maar bij een taalwissel blijf je staan waar je stond en valt er
+geregeld iets in die onderste strook. In de browser gemeten bleef stap vier
+van de werkwijze zo leeg achter. `naBinnenkomst` geeft `alInBeeld` daarom
+`1` mee zodra het alleen de taal was -- de bezoeker keek er een tel geleden
+nog naar.
 
 **De voortgangsbalk van Inertia blijft zoals hij is.** Die verschijnt pas
 na 250 ms, dus bij een snelle navigatie zie je hem niet en bij een trage

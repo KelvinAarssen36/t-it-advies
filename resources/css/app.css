@@ -688,6 +688,57 @@ html::-webkit-scrollbar-thumb:hover {
     overflow-wrap: break-word;
 }
 
+/*
+  En de doos waar dat woord in staat mag zelf ook niet meegroeien.
+
+  **De regel hierboven was niet genoeg, en daar zit de val.** `break-word`
+  laat een woord afbreken zodra het niet in zijn regel past -- maar een
+  flex-kind bepaalt zijn eigen breedte vóór dat moment. In een kolom groeit
+  het tot zijn langste woord, in een rij mag het niet smaller worden dan
+  dat woord. De doos wordt dus eerst te breed, en dán past het woord er
+  alsnog netjes in. Afbreken gebeurt nooit, en de doos steekt uit het
+  scherm.
+
+  Zo kwam er op een telefoon een horizontale schuifbalk op de voorpagina en
+  op Projecten. De projecttitel, de uitgever van een certificaat en de
+  organisatie in de tijdlijn werden alle drie zo breed als
+  "Bedrijfsinformatievoorzieningsbeheerder" -- op een ruime telefoon paste
+  dat nog net, op een smalle niet. Vandaar dat het alleen op kleine
+  toestellen te zien was, en dat de tekst in zo'n tegel werd afgeknipt.
+
+  `min-width` is het slot in een rij, `max-width` dat in een kolom; je hebt
+  ze allebei nodig omdat je hier niet weet welke kant het op staat. Op
+  gewone tekst doen ze niets.
+
+  **Hier en niet op de klassen die het nu raakt**, om dezelfde reden als
+  hierboven: zo'n lijst wordt bij elke module langer en er wordt er altijd
+  eentje vergeten. `:where()` weegt niets, dus een klasse die er zelf iets
+  van vindt wint hier gewoon van.
+*/
+.brand-dark-page
+    :where(
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        p,
+        li,
+        dt,
+        dd,
+        span,
+        strong,
+        em,
+        time,
+        address,
+        blockquote,
+        figcaption
+    ) {
+    min-width: 0;
+    max-width: 100%;
+}
+
 html:has(.brand-dark-page) {
     color-scheme: dark;
     --scrollbar-thumb: var(--brand-border-dark-strong);
@@ -4583,7 +4634,21 @@ button:hover > .brand-verlaat,
       belangrijkste. Hij krijgt daarom de lichtere kleur; de rest blijft
       grijs.
     */
+    /*
+      De organisatie in de regel onder de functietitel.
+
+      Afgekapt na twee regels, om dezelfde reden als bij
+      `.brand-certificaat-uitgever`: dit is een naam en geen verhaal, en een
+      lange invoer maakte er op een telefoon vier regels brokken van. De
+      hele tekst blijft in de HTML staan, en ook hier geen `hyphens: auto`
+      om de reden die daar staat.
+    */
     .brand-tijdlijn-org {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        overflow: hidden;
         color: var(--brand-ice);
     }
 
@@ -7063,7 +7128,34 @@ button:hover > .brand-verlaat,
         }
     }
 
+    /*
+      De uitgever en het jaar: "Microsoft · 2022".
+
+      **Dat is een regel en geen alinea, dus hij wordt afgekapt.** De klant
+      kan hier intikken wat hij wil, en in het beheerscherm past er een zin
+      van honderdnegentien tekens in. In een tegel van 124 pixels zijn dat
+      zeven regels losse brokken onder een kop van één woord -- gemeten op
+      een telefoon van 360. Twee regels en dan een beletselteken houdt de
+      tegels even hoog en leest als "hier staat meer".
+
+      Er gaat niets verloren: de tekst blijft gewoon in de HTML staan, dus
+      een schermlezer en een zoekmachine krijgen hem heel, en een tegel met
+      details opent het venster waar alles in staat.
+
+      **Geen `hyphens: auto`, en dat is gemeten.** Afbreken op lettergreep
+      leest netter dan een knip midden in een letter, maar het kost ruimte:
+      hetzelfde woord in hetzelfde vakje werd er drie regels van in plaats
+      van twee. Met een klem op twee regels verdwijnt er dan juist méér
+      tekst achter het beletselteken. In het Engels deed het trouwens
+      helemaal niets -- een Nederlands woord staat niet in het Engelse
+      woordenboek van de browser.
+    */
     .brand-certificaat-uitgever {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        overflow: hidden;
         font-size: 0.6875rem;
         color: var(--muted-foreground);
     }
@@ -9019,19 +9111,49 @@ button:hover > .brand-verlaat,
     }
 
     /*
-      De knop onder aan een subpagina.
+      De knoppen onder aan een subpagina.
 
       Een streep erboven en ruimte eromheen, want dit is het einde van de
       pagina en niet nog een regel tekst. Gecentreerd: er staat verder niets
-      op die hoogte, en links uitgelijnd zou hij eruitzien alsof er iets
+      op die hoogte, en links uitgelijnd zou het eruitzien alsof er iets
       naast hoort te staan.
+
+      **Op een telefoon onder elkaar en de eerste vol in de breedte.** Twee
+      knoppen naast elkaar op 320 pixels worden allebei te smal voor hun
+      tekst, en "Terug naar Certificaten" past daar niet op één regel.
+      Onder elkaar is het bovendien duidelijker wat de eerste keus is.
+
+      `flex-wrap` en geen mediaquery: past het niet, dan breekt het vanzelf.
+      Dat scheelt een grens die bij een lang onderdeelwoord net verkeerd
+      ligt.
     */
     .brand-siteterug {
         display: flex;
+        flex-wrap: wrap;
         justify-content: center;
+        gap: 0.75rem;
         margin-top: 4rem;
         border-top: 1px solid var(--border);
         padding-top: 2rem;
+    }
+
+    /*
+      De knop met de nadruk mag groeien tot de hele regel zodra hij naast
+      zijn buurman niet meer past, en blijft anders gewoon zo breed als
+      zijn tekst.
+    */
+    .brand-siteterug-eerst {
+        flex: 0 1 auto;
+    }
+
+    @media (max-width: 26rem) {
+        .brand-siteterug {
+            flex-direction: column;
+        }
+
+        .brand-siteterug > * {
+            width: 100%;
+        }
     }
 
     /* --- De bezoekcijfers -------------------------------------------- */
@@ -12571,39 +12693,38 @@ button:hover > .brand-verlaat,
         color: var(--muted-foreground);
     }
 
+    /*
+      Twee kolommen, ook op een telefoon.
+
+      **Kolomstroom en geen raster**, en dat is de hele reden dat dit werkt
+      zonder onderhoud: hoeveel links er staan hangt af van de indeling van
+      de eigenaar. Bij elf wordt het zes en vijf, bij zeven vier en drie,
+      en bij drie blijft het één kolom -- zonder dat wij ergens een getal
+      door tweeën delen.
+
+      `7rem` is de ondergrens per kolom. Past dat er niet twee keer in, dan
+      maakt de browser er vanzelf één van in plaats van twee kolommen waar
+      "Certificaten" doormidden breekt. Op 320 pixels blijft er na de
+      marges 272 over en passen twee kolommen van 112 met 24 ertussen; het
+      smalste toestel haalt het dus nog net, en haalt het een keer niet,
+      dan valt het vanzelf terug.
+
+      **Dit stond eerst alleen vanaf 48rem**, en daardoor was de voet op
+      een telefoon 954 pixels: meer dan een volle schermhoogte, waarvan 331
+      alleen deze elf links. Met twee kolommen past hij binnen één scherm.
+    */
     .brand-footer-lijst {
-        display: flex;
-        flex-direction: column;
-        gap: 0.625rem;
+        display: block;
+        columns: 7rem 2;
+        column-gap: 1.5rem;
     }
 
-    @media (min-width: 48rem) {
-        /*
-          Twee kolommen zodra er ruimte voor is.
+    .brand-footer-lijst > * {
+        display: block;
+        margin-bottom: 0.625rem;
 
-          **Kolomstroom en geen raster**, en dat is de hele reden dat dit
-          werkt zonder onderhoud: hoeveel links er staan hangt af van de
-          indeling van de eigenaar. Bij elf wordt het zes en vijf, bij
-          zeven vier en drie, en bij drie blijft het één kolom -- zonder
-          dat wij ergens een getal door tweeën delen.
-
-          `7rem` is de ondergrens per kolom. Past dat er niet twee keer in,
-          dan maakt de browser er vanzelf één van in plaats van twee
-          kolommen waar "Certificaten" doormidden breekt.
-        */
-        .brand-footer-lijst {
-            display: block;
-            columns: 7rem 2;
-            column-gap: 1.5rem;
-        }
-
-        .brand-footer-lijst > * {
-            display: block;
-            margin-bottom: 0.625rem;
-
-            /* Een link die over de kolomgrens afbreekt leest niemand. */
-            break-inside: avoid;
-        }
+        /* Een link die over de kolomgrens afbreekt leest niemand. */
+        break-inside: avoid;
     }
 
     .brand-footer-balk {

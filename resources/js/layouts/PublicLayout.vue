@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { router, usePage } from '@inertiajs/vue3';
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+import {
+    computed,
+    nextTick,
+    onBeforeUnmount,
+    onMounted,
+    ref,
+    watch,
+} from 'vue';
 import ScrollProgress from '@/components/site/ScrollProgress.vue';
 import SiteFooter from '@/components/site/SiteFooter.vue';
 import SiteHeader from '@/components/site/SiteHeader.vue';
@@ -56,12 +63,84 @@ const taal = computed(() => usePage().props.locale);
  * Een klik op een anker ín de voorpagina verandert deze sleutel niet, en
  * dat is precies goed -- daar scrol je, daar wissel je niet van pagina.
  */
-const paginaSleutel = computed(() => `${taal.value}|${usePage().component}`);
+const pagina = computed(() => usePage().component);
+const paginaSleutel = computed(() => `${taal.value}|${pagina.value}`);
 
 let stopScroll: (() => void) | undefined;
 let stopReveal: (() => void) | undefined;
 let stopSplit: (() => void) | undefined;
 let stopListening: (() => void) | undefined;
+
+/**
+ * Is er alleen van taal gewisseld, en waar stond de bezoeker toen?
+ *
+ * Een taalwissel verandert de sleutel hierboven en is voor Vue dus
+ * hetzelfde als naar een andere pagina gaan. Voor de bezoeker is het dat
+ * niet: hij was iets aan het lezen en wisselt van taal om datzelfde stuk
+ * in het Nederlands of Engels te lezen. Naar boven springen gooit hem dan
+ * weg van wat hij aan het doen was.
+ *
+ * **Dit hangt aan de reactiviteit van Vue en níet aan een gebeurtenis van
+ * Inertia, en dat is de kern.** Inertia vuurt `navigate` alleen af als het
+ * adres verandert (`if (!replace)` in zijn router). Een taalwissel is een
+ * POST die terugkomt op dezelfde pagina, dus daar hoor je niets van. Een
+ * `watch` op de sleutel vuurt wél, want die sleutel verandert gewoon.
+ *
+ * **En hier staat de scrollpositie nog goed.** Een watcher met de normale
+ * `pre`-volgorde draait vóórdat Vue de pagina bijwerkt, dus de oude `main`
+ * staat er nog in zijn volle hoogte. Een regel later is dat niet meer waar.
+ */
+let alleenDeTaal = false;
+let positieBijVertrek = 0;
+let vorigePagina = pagina.value;
+
+/**
+ * Waar de bezoeker stond, het liefst uitgedrukt in een onderdeel.
+ *
+ * **Dezelfde pixel is niet dezelfde plek.** De Engelse tekst is korter: op
+ * de voorpagina scheelt de hele pagina ruim duizend pixels. Zet je de
+ * bezoeker op dezelfde pixel terug, dan is alles bóven hem korter of langer
+ * geworden en kijkt hij dus naar iets anders. In de browser gemeten, bij
+ * gelijke `scrollY`: de werkwijze schoof 379 pixels en het contactblok
+ * 1007.
+ *
+ * Daarom onthouden we welk onderdeel bovenaan het scherm stond en hoeveel
+ * ervan al voorbij was. Dat onderdeel staat na de wissel op een andere
+ * hoogte, maar het is hetzelfde onderdeel -- en dat is wat hij las.
+ *
+ * `section[id]` en niet elk element met een id: een formulierveld heeft er
+ * ook een, en die van een uitklapper krijgt bij elke opbouw een nieuw
+ * nummer.
+ */
+type Houvast = { id: string; afstand: number };
+
+let houvast: Houvast | null = null;
+
+const pakHouvast = (): Houvast | null => {
+    let gevonden: Houvast | null = null;
+
+    for (const sectie of document.querySelectorAll<HTMLElement>(
+        'main section[id]',
+    )) {
+        const afstand = sectie.getBoundingClientRect().top;
+
+        // Het onderdeel waar je ín zit: het laatste dat boven de bovenrand
+        // van het scherm is begonnen. Is er nog niets begonnen, dan sta je
+        // in de hero en valt er niets aan vast te houden.
+        if (afstand <= 1 && (gevonden === null || afstand > gevonden.afstand)) {
+            gevonden = { id: sectie.id, afstand };
+        }
+    }
+
+    return gevonden;
+};
+
+watch(paginaSleutel, () => {
+    alleenDeTaal = pagina.value === vorigePagina;
+    vorigePagina = pagina.value;
+    positieBijVertrek = window.scrollY;
+    houvast = pakHouvast();
+});
 
 /**
  * Twee soorten reveals, en dat is een bewust onderscheid.
@@ -123,15 +202,109 @@ const scanReveals = () => {
  * en die pagina weet zelf waar dat staat; zie `Welcome.vue`. Zou het hier
  * óók gebeuren, dan springt hij eerst naar boven en daarna pas naar het
  * onderdeel.
+ *
+ * **En een taalwissel is géén paginawissel.** Die komt hier wel langs --
+ * de taal zit in de sleutel van `main` -- maar hoort de bezoeker te laten
+ * staan waar hij stond. Zie het blok hieronder.
  */
 const voorBinnenkomst = (): void => {
+    /*
+     * Alleen de taal is gewisseld: terugzetten waar de bezoeker stond.
+     *
+     * **Terugzetten en niet alleen de sprong overslaan.** De nieuwe pagina
+     * heeft een andere hoogte -- de Engelse tekst is korter -- dus niets
+     * doen laat de bezoeker achter op een pixel die ergens anders ligt dan
+     * waar hij keek. `zetTerug` mikt daarom op het onderdeel waar hij in
+     * zat en valt alleen terug op de pixel als dat er niet meer is.
+     *
+     * **Twee beeldjes wachten, en pas daarna springen.** `Welcome.vue`
+     * springt bij het opkomen naar het anker in het adres als dat er
+     * staat, en doet dat ook met twee beeldjes. Zou dit meteen gebeuren,
+     * dan won dat ankersprongetje en stond de bezoeker alsnog ergens
+     * anders dan waar hij was. Het valt allemaal binnen het infaden.
+     */
+    if (alleenDeTaal) {
+        requestAnimationFrame(() =>
+            requestAnimationFrame(() => {
+                zetTerug();
+
+                naHetScrollen();
+            }),
+        );
+
+        return;
+    }
+
     if (window.location.hash === '') {
         scrollNaar('top', { direct: true });
     }
 
+    naHetScrollen();
+};
+
+/**
+ * De bezoeker terugzetten waar hij stond.
+ *
+ * Eerst op het onderdeel dat hij aan het lezen was; bestaat dat niet meer
+ * -- een subpagina heeft er geen, en een onderdeel kan in de andere taal
+ * wegvallen -- dan alsnog op de pixel. Dat laatste is minder nauwkeurig,
+ * maar het is beter dan bovenaan beginnen.
+ */
+const zetTerug = (): void => {
+    const sectie =
+        houvast === null ? null : document.getElementById(houvast.id);
+
+    if (sectie !== null && houvast !== null) {
+        /*
+         * `scrollY + top` is de plek van het onderdeel in de hele pagina,
+         * los van waar we nu toevallig staan. Daar gaat af wat er van dat
+         * onderdeel al voorbij was, en dan staat het weer precies zo.
+         */
+        scrollNaar(
+            window.scrollY +
+                sectie.getBoundingClientRect().top -
+                houvast.afstand,
+            { direct: true },
+        );
+
+        return;
+    }
+
+    scrollNaar(positieBijVertrek, { direct: true });
+};
+
+/**
+ * Opnieuw scannen zodra er gescrold is.
+ *
+ * Twee beeldjes ná het scrollen en niet ervoor, om de reden die bij
+ * `voorBinnenkomst` staat: `alInBeeld` meet met `getBoundingClientRect`
+ * en Lenis zet zijn positie pas in zijn eigen beeldje door.
+ */
+const naHetScrollen = (): void => {
     requestAnimationFrame(() =>
         requestAnimationFrame(() => {
             scanReveals();
+
+            /*
+             * En dan nog één keer bijtrekken, twee beeldjes later.
+             *
+             * `splitReveal` knipt een kop in losse regels en wikkelt die in
+             * maskers. Dat maakt die koppen een paar pixels hoger, en dus
+             * schuift alles eronder mee -- zonder dat er gescrold wordt.
+             * Gemeten: het onderdeel waar de bezoeker in zat stond na het
+             * terugzetten drie pixels van zijn plek, en daarna alsnog acht.
+             *
+             * De twee beeldjes zijn nodig omdat die nieuwe hoogte pas in
+             * het volgende beeldje vaststaat; meteen opnieuw meten gaf
+             * dezelfde fout terug. Het valt binnen het infaden, dus de
+             * bezoeker ziet die correctie niet.
+             *
+             * Alleen bij een taalwissel: bij een echte paginawissel sta je
+             * bovenaan en valt er niets bij te trekken.
+             */
+            if (alleenDeTaal) {
+                requestAnimationFrame(() => requestAnimationFrame(zetTerug));
+            }
 
             /*
              * En zeggen dat de pagina is gewisseld.
@@ -166,6 +339,15 @@ const voorBinnenkomst = (): void => {
  * want een blok dat net is gescand staat dan allang aan het opkomen en dus
  * boven nul.
  *
+ * **Bij een taalwissel ligt die grens op de onderrand van het scherm en
+ * niet op 85%.** `alInBeeld` rekent standaard tot 85% van de hoogte: een
+ * blok dat daaronder begint is zichtbaar voor de bezoeker maar telt niet
+ * mee, en wacht netjes op zijn scroll-trigger. Dat klopt als je bovenaan
+ * begint. Bij een taalwissel blijf je staan waar je stond, en dan valt er
+ * geregeld iets in die onderste strook -- in de browser gemeten bleef stap
+ * vier van de werkwijze zo leeg achter. De bezoeker keek er een tel
+ * geleden nog naar, dus hij hoort het te blijven zien.
+ *
  * Vindt dit toch iets, dan is er iets mis met het moment waarop
  * `scanReveals` draait -- en niet met deze regel. Zie `voorBinnenkomst`.
  */
@@ -174,8 +356,10 @@ const naBinnenkomst = (): void => {
         '[data-reveal], [data-split]',
     );
 
+    const grens = alleenDeTaal ? 1 : 0.85;
+
     blokken?.forEach((blok) => {
-        if (!alInBeeld(blok)) {
+        if (!alInBeeld(blok, grens)) {
             return;
         }
 

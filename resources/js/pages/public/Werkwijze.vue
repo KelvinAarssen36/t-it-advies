@@ -188,6 +188,6 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- Het einde van de pagina: je bent klaar met lezen. -->
-        <SiteTerug />
+        <SiteTerug sleutel="werkwijze" />
     </div>
 </template>

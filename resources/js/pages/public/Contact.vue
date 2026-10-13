@@ -177,6 +177,6 @@ const linkedin = computed(
             schermhoogte: elke subpagina eindigt op dezelfde manier, en een
             uitzondering is iets wat je moet onthouden.
         -->
-        <SiteTerug />
+        <SiteTerug sleutel="contact" />
     </section>
 </template>

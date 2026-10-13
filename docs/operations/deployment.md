@@ -138,6 +138,22 @@ en pakken nieuwe code pas op na een herstart.
 `app/Listeners` automatisch; die scan wil je in productie niet bij elk verzoek
 doen.
 
+### Wie de site openstaan had tijdens de deploy moet verversen
+
+`npm run build` zet een hash in elke bestandsnaam en gooit de vorige versie
+weg. Een tabblad dat nog openstond vraagt dus om een bestand dat er niet
+meer is. Je krijgt dan 404's, en omdat de foutpagina HTML is weigert de
+browser hem met _"Refused to apply style ... MIME type ('text/html')"_.
+
+Bij deze site telt dat zwaarder dan bij een gewone website: Inertia haalt
+de code van een pagina pas op als je erheen klikt, dus zo'n openstaand
+tabblad kan ook halverwege blijven hangen bij een klik.
+
+Niets om tijdens het bouwen van zorgen te maken -- een harde verversing
+lost het op. Maar als je overdag live gaat terwijl er bezoekers op de site
+zitten, is dat het moment waarop het ze overkomt. Deploy dus liever op een
+rustig tijdstip, of wacht niet te lang met verversen als je het zelf ziet.
+
 ## Queue worker
 
 Met Supervisor:

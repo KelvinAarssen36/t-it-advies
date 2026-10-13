@@ -26,6 +26,52 @@ alleen nooit op de buurman toegepast.
 > het rastervak zich wel aan zijn kolom, maar steekt de tekst erbinnen er
 > alsnog uit.
 
+### Een breekregel helpt niet als de doos zelf meegroeit
+
+Dit is het vervolg op de regel hieronder, en het kostte een horizontale
+schuifbalk op elke kleine telefoon. `overflow-wrap: break-word` breekt een
+woord af zodra het niet in zijn regel past -- maar **een flex-kind bepaalt
+zijn eigen breedte vóór dat moment**. In een kolom groeit het tot zijn
+langste woord, in een rij mag het niet smaller worden dan dat woord. De
+doos wordt dus eerst te breed, en dán past het woord er netjes in.
+
+Op de voorpagina en op Projecten werden de projecttitel, de uitgever van
+een certificaat en de organisatie in de tijdlijn alle drie zo breed als
+`Bedrijfsinformatievoorzieningsbeheerder`. Op een ruime telefoon paste dat
+nog net; op een iPhone 16 niet. De tekst in zo'n tegel werd bovendien
+afgeknipt door de `overflow: hidden` van de kaart.
+
+Er staat nu één regel bij de breekregel op `.brand-dark-page` die
+tekstelementen `min-width: 0` en `max-width: 100%` geeft -- het slot in een
+rij en dat in een kolom, want je weet niet welke kant het op staat.
+
+> En let op het patroon: `align-items: flex-start` of `center` op een
+> kolom betekent dat élk kind op zijn eigen breedte uitkomt. Dat is precies
+> waar dit misgaat.
+
+### Een label is geen alinea, en moet dus een eind kennen
+
+Niet alles is opgelost met laten afbreken. Een uitgever van een certificaat
+en een organisatie in de tijdlijn zijn **regels van één regel**: in het
+ontwerp staat daar "Microsoft · 2022". Het beheerscherm laat er honderd­
+negentien tekens in, en die werden in een tegel van 124 pixels zeven regels
+brokken -- binnen de kaart, dus geen schuifbalk, maar het zag er stuk uit.
+
+Zulke velden krijgen een `line-clamp` met een beletselteken. De tekst
+blijft heel in de HTML staan, dus een schermlezer en een zoekmachine
+missen niets, en bij een tegel met details staat alles in het venster dat
+opengaat.
+
+> Vraag je bij een nieuw veld dus af of het een label is of lopende tekst.
+> Een alinea mag lang zijn; een label hoort een eind te hebben.
+
+**En `hyphens: auto` is hier géén verbetering -- dat is gemeten.** Op
+lettergreep afbreken leest netter dan een knip midden in een letter, maar
+het kost ruimte: hetzelfde woord in hetzelfde vakje werd drie regels in
+plaats van twee. Met een klem erop verdwijnt er dan juist méér tekst. In
+het Engels deed het bovendien niets, want een Nederlands woord staat niet
+in het Engelse woordenboek van de browser.
+
 ### Lange tekst breekt niet vanzelf af
 
 `text-wrap: pretty` maakt de regelverdeling mooi en doet **niets** aan een
@@ -70,6 +116,83 @@ no-preference)` zetten, óf hem in het `reduce`-blok op `animation: none`.
 > vertaalbalk zegt dat er iets bezig is; `animation: none` zou betekenen
 > dat iemand met bewegingsgevoeligheid niet meer ziet dát er gewacht wordt.
 > Die krijgt een volle balk op halve dekking.
+
+---
+
+## Navigatie en scrollen
+
+### Een taalwissel komt langs de paginaovergang, maar ís er geen
+
+De taal zit in de sleutel van `<main>`, dus wisselen van taal laat Vue de
+hele pagina weggooien en opnieuw opbouwen -- precies alsof je naar een
+andere pagina gaat. Alles wat aan die overgang hangt draait dus mee, en
+daar zat een sprong naar boven bij. **Je las halverwege een tekst, klikte
+op EN, en stond weer bovenaan.**
+
+Wat het zo laat vindbaar maakte: die sprong sloeg over als er een anker in
+het adres stond. Dat anker komt er alleen bij een klik op een menu-item, en
+Inertia gooit het er bij het volgende bezoek weer af. Dus de ene keer
+gebeurde het wel en de andere keer niet, en het leek van de richting van de
+wissel af te hangen. Dat was het niet.
+
+Komt er ooit nog iets in die sleutel, stel dan dezelfde vraag: gaat de
+bezoeker hier echt ergens heen, of ziet hij hetzelfde anders?
+
+### `router.on('navigate')` vuurt niet als het adres gelijk blijft
+
+Dit kostte een hele ronde. De eerste reparatie van de valkuil hierboven
+hing aan `router.on('navigate')` om te zien of alleen de taal was
+veranderd. In de router van Inertia staat:
+
+```js
+if (!replace) {
+    fireNavigateEvent(page, { cached, visitId });
+}
+```
+
+Een POST die met `back()` op dezelfde URL terugkomt -- de taalwissel, maar
+ook een formulier dat zichzelf opnieuw laadt -- zet `replace` op waar.
+**Er komt dan niets binnen, zonder enige foutmelding.** De vlag bleef dus
+op `false` en de fout was er gewoon nog, terwijl de code klopte als je hem
+las.
+
+> Hang zulke dingen aan de reactiviteit van Vue -- een `watch` op een
+> computed die uit de props komt -- en niet aan een gebeurtenis van het
+> framework. Die computed verandert altijd.
+
+### Dezelfde pixel is niet dezelfde plek
+
+Toen de taalwissel eenmaal de scrollpositie bewaarde, verschoof er nog
+steeds iets -- minder, maar zichtbaar. De oorzaak: de Engelse tekst is
+korter, en op de voorpagina scheelt dat **ruim duizend pixels over de hele
+pagina**. Bij een gelijke `scrollY` schoof de werkwijze 379 pixels en het
+contactblok 1007.
+
+Een positie bewaren is dus niet hetzelfde als een plek bewaren. Bewaar
+waar de bezoeker naar kéék -- welk onderdeel, en hoeveel ervan al voorbij
+was -- en reken de pixel daar achteraf uit.
+
+> Pak daarvoor iets met een vaste naam. De eerste opzet keek naar elk
+> element met een `id`; daar zitten formuliervelden tussen en uitklappers
+> die bij elke opbouw een nieuw nummer krijgen. `section[id]` is wél stabiel.
+
+### Een vangnet met dezelfde grens als de animatie dekt de rand niet
+
+`alInBeeld` rekent tot 85% van de schermhoogte. Het vangnet dat onzichtbare
+tekst moet aanzetten gebruikte diezelfde grens, dus **de onderste 15% van
+het scherm viel buiten het vangnet**. Zolang elke paginawissel bovenaan
+begon viel dat niemand op; zodra een taalwissel je op een willekeurige
+hoogte liet staan, bleef er geregeld één blok leeg achter.
+
+Vraag bij een vangnet dus niet "gebruikt het dezelfde regel als de rest",
+maar "dekt het alles wat de bezoeker kan zien".
+
+En: **een fout in het gedrag van een pagina bewijs je in een browser, niet
+door de code te lezen.** Er staat een headless Chrome in
+`~/.cache/ms-playwright`; die is via het DevTools-protocol aan te sturen
+met kale Node (`WebSocket` zit sinds versie 22 in de standaardbibliotheek).
+Een tijdlijn van `window.scrollY` had de eerste poging meteen onderuit
+gehaald.
 
 ---
 

@@ -183,4 +183,75 @@ class LocaleTest extends TestCase
             $this->assertFileExists(public_path('flags/'.$vlaggen[$taal]));
         }
     }
+
+    /**
+     * Van taal wisselen laat de bezoeker staan waar hij stond.
+     *
+     * **Dit was een echte fout en geen theorie.** De taal zit in de sleutel
+     * van `<main>`, dus Vue gooit bij een taalwissel de hele pagina weg en
+     * bouwt hem opnieuw op. De overgang die daarbij hoort springt naar
+     * boven, net als bij een gewone paginawissel. Je las dus halverwege een
+     * tekst, klikte op EN, en stond weer bovenaan.
+     *
+     * Het viel niet elke keer op: stond er een anker in het adres, dan sloeg
+     * die sprong over. Daardoor leek het van de richting van de wissel af te
+     * hangen, terwijl het afhing van de vraag of je er via het menu was
+     * gekomen.
+     *
+     * **Het moet een `watch` zijn en geen gebeurtenis van Inertia.** De
+     * eerste poging hing aan `router.on('navigate')`, en die vuurt alleen
+     * als het adres verandert (`if (!replace)` in zijn router). Een
+     * taalwissel is een POST die terugkomt op dezelfde pagina, dus daar
+     * kwam nooit iets binnen en bleef de vlag op `false` staan. In de
+     * browser gemeten: de fout was er gewoon nog.
+     *
+     * Deze test leest de layout als tekst, net als
+     * `PrivacyPageTest::test_the_footer_links_to_it`: het gaat om gedrag in
+     * de browser en niet om een antwoord van de server.
+     */
+    public function test_switching_language_keeps_your_place(): void
+    {
+        $layout = (string) file_get_contents(
+            resource_path('js/layouts/PublicLayout.vue'),
+        );
+
+        $this->assertStringContainsString(
+            'watch(paginaSleutel,',
+            $layout,
+            'De taalwissel wordt niet meer opgemerkt via de reactiviteit van Vue.',
+        );
+
+        $this->assertStringNotContainsString(
+            'alleenDeTaal = gewisseld',
+            $layout,
+            "De vlag hangt weer aan router.on('navigate'), en die vuurt niet bij een taalwissel.",
+        );
+
+        // En hij mikt op het onderdeel waar de bezoeker in zat, niet op een
+        // pixel: de Engelse pagina is ruim duizend pixels korter, dus
+        // dezelfde pixel is daar een heel ander stuk tekst.
+        $this->assertStringContainsString(
+            "'main section[id]'",
+            $layout,
+            'Het herstel houdt zich niet meer vast aan een onderdeel.',
+        );
+
+        $taalwissel = strpos($layout, 'if (alleenDeTaal)');
+        $naarBoven = strpos($layout, "scrollNaar('top'");
+
+        $this->assertIsInt(
+            $taalwissel,
+            'De layout kijkt niet meer of er alleen van taal is gewisseld.',
+        );
+
+        $this->assertIsInt($naarBoven, 'De sprong naar boven is verdwenen.');
+
+        // De volgorde is het hele punt: staat de sprong naar boven eerst,
+        // dan wint hij weer en is de fout terug.
+        $this->assertLessThan(
+            $naarBoven,
+            $taalwissel,
+            'De sprong naar boven staat vóór de taalwissel en wint dus weer.',
+        );
+    }
 }

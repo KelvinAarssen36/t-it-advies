@@ -51,20 +51,7 @@ import portal from '@/routes/portal';
  * je al ingelogd bent.
  */
 
-type NavItem = { key: string; label: string };
-
 const page = usePage();
-
-/**
- * De onderdelen die op de pagina staan, op volgorde.
- *
- * Leeg op een pagina die geen landing is -- een foutpagina bijvoorbeeld.
- * Dan toont de kop alleen het merk en de taalkeuze, want een anker naar
- * een onderdeel dat hier niet staat is een link die niets doet.
- */
-const items = computed<NavItem[]>(
-    () => (page.props.navigation as NavItem[] | undefined) ?? [],
-);
 
 /**
  * Wat een menu-item is, en waar het heen wijst.
@@ -85,7 +72,13 @@ const items = computed<NavItem[]>(
  * voettekst het ook nodig heeft -- en daar liep het mis zolang het twee
  * keer bestond.
  */
-const { opDeVoorpagina, anker, tag: menuTag } = useSectieLink();
+/*
+ * `secties` is de lijst met onderdelen die op de voorpagina staan. Leeg op
+ * een pagina die geen landing is -- een foutpagina bijvoorbeeld -- en dan
+ * toont de kop alleen het merk en de taalkeuze, want een anker naar een
+ * onderdeel dat hier niet staat is een link die niets doet.
+ */
+const { opDeVoorpagina, anker, secties: items, tag: menuTag } = useSectieLink();
 
 /**
  * Hoeveel onderdelen er los in de balk passen.

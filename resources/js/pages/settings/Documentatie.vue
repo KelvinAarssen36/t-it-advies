@@ -1232,7 +1232,7 @@ defineOptions({
                             <p>
                                 {{
                                     $t(
-                                        'De knop onderaan zo-n projectpagina brengt je terug naar de plek waar je vandaan kwam: naar je voorpagina als je daar hebt geklikt, en anders naar het overzicht met al je projecten.',
+                                        'Onderaan zo-n projectpagina staan twee knoppen. De eerste brengt je terug naar de plek waar je vandaan kwam -- naar je projecten op je voorpagina als je daar hebt geklikt, en anders naar het overzicht met al je projecten. Je komt dan terug bij dat onderdeel en niet bovenaan, zodat je niet opnieuw hoeft te scrollen. De tweede knop brengt je naar de bovenkant van je voorpagina.',
                                     )
                                 }}
                             </p>

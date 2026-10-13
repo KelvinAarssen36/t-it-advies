@@ -155,6 +155,38 @@ export function startSmoothScroll(): () => void {
 }
 
 /**
+ * Wanneer een beweging begint en hoe lang hij duurt.
+ *
+ * **Op een telefoon eerder en korter, en dat is rekenwerk en geen smaak.**
+ * Op een groot scherm scrol je met een muiswiel: een paar honderd pixels
+ * per keer, met pauzes ertussen. Op een telefoon veeg je, en dan schuift
+ * er al gauw tweeduizend pixels per seconde langs. In de acht tienden van
+ * een seconde die de beweging duurde was het blok dus meer dan een
+ * schermhoogte verder -- je las het al terwijl het nog aan het opkomen was.
+ *
+ * In de browser gemeten, tijdens een gewone veeg: van de elf blokken die
+ * langskwamen stonden er acht nog op minder dan negentig procent
+ * doorzichtigheid op het moment dat ze al halverwege het scherm stonden.
+ * Twee ervan op nul. Op een grotere telefoon werd het erger, want daar is
+ * de afstand tussen "komt net in beeld" en "staat er echt" groter.
+ *
+ * Daarom begint hij nu iets vóór de onderrand -- `105%` is net onder het
+ * scherm -- en duurt hij ruim de helft korter. De bezoeker ziet de
+ * beweging nog steeds; hij is alleen klaar tegen de tijd dat het blok op
+ * zijn plek staat.
+ *
+ * Dezelfde grens als de opmaak gebruikt (48rem), zodat "telefoon" hier en
+ * in de CSS hetzelfde betekent.
+ */
+function beweging(): { vanaf: number; duur: number } {
+    const telefoon =
+        typeof window !== 'undefined' &&
+        window.matchMedia('(max-width: 48rem)').matches;
+
+    return telefoon ? { vanaf: 1.15, duur: 0.4 } : { vanaf: 0.85, duur: 0.8 };
+}
+
+/**
  * Laat elementen binnenkomen zodra ze in beeld scrollen.
  *
  * Bij reduced motion zetten we de elementen direct op hun eindtoestand in
@@ -195,6 +227,8 @@ export function revealOnScroll(
         return () => {};
     }
 
+    const { vanaf, duur } = beweging();
+
     const tweens = targets.map((target) =>
         gsap.fromTo(
             target,
@@ -202,7 +236,7 @@ export function revealOnScroll(
             {
                 opacity: 1,
                 y: 0,
-                duration: 0.8,
+                duration: duur,
                 ease: 'power2.out',
 
                 // Klaar, dus bij een herscan overslaan. Zie de zeef boven.
@@ -215,12 +249,12 @@ export function revealOnScroll(
                  * meteen spelen: die trigger komt nooit meer langs en
                  * dan blijft de tekst onzichtbaar. Zie `alInBeeld`.
                  */
-                ...(alInBeeld(target)
+                ...(alInBeeld(target, vanaf)
                     ? {}
                     : {
                           scrollTrigger: {
                               trigger: target,
-                              start: 'top 85%',
+                              start: `top ${vanaf * 100}%`,
                               once: true,
                           },
                       }),
@@ -743,6 +777,15 @@ export function splitReveal(
          */
         target.dataset.gezien = '';
 
+        /*
+         * Dezelfde afspraak als bij `revealOnScroll`, en om dezelfde reden:
+         * op een telefoon eerder beginnen en korter doen. Een kop die regel
+         * voor regel opkomt is hier zelfs gevoeliger voor, want de laatste
+         * regel wacht ook nog op zijn spreiding -- die gaat dus mee omlaag.
+         */
+        const { vanaf, duur } = beweging();
+        const koprand = vanaf === 0.85 ? 0.88 : vanaf;
+
         return SplitText.create(target, {
             type: 'lines',
             mask: 'lines',
@@ -750,18 +793,18 @@ export function splitReveal(
             onSplit: (self) =>
                 gsap.from(self.lines, {
                     yPercent: 115,
-                    duration: 0.9,
-                    stagger: 0.09,
+                    duration: duur * 1.1,
+                    stagger: duur * 0.11,
                     ease: 'power3.out',
 
                     // Al in beeld? Dan meteen, zonder trigger. Zie
                     // `alInBeeld`.
-                    ...(alInBeeld(target, 0.88)
+                    ...(alInBeeld(target, koprand)
                         ? {}
                         : {
                               scrollTrigger: {
                                   trigger: target,
-                                  start: 'top 88%',
+                                  start: `top ${koprand * 100}%`,
                                   once: true,
                               },
                           }),
@@ -1740,13 +1783,36 @@ export function tekenRing(
  * Geeft terug of het gelukt is. Bestaat het doel niet -- de klant heeft
  * dat onderdeel net uitgezet -- dan `false`, en dan hoort de aanroeper de
  * link gewoon zijn werk te laten doen.
+ *
+ * **Een getal is een plek in pixels en geen onderdeel.** Dat is voor het
+ * ene geval waarin we de bezoeker precies terug moeten zetten waar hij
+ * stond in plaats van bij iets: een taalwissel. Zie PublicLayout.
  */
 export function scrollNaar(
-    doel: string,
+    doel: string | number,
     { verschuiving = -72, direct = false } = {},
 ): boolean {
     if (typeof document === 'undefined') {
         return false;
+    }
+
+    /*
+     * Een plek in pixels. Hermeten moet ook hier eerst -- om dezelfde
+     * reden als hieronder -- en daarna knipt Lenis zelf af op de hoogte
+     * van de pagina. Staat de bezoeker onderaan en is de nieuwe pagina
+     * korter, dan landt hij dus onderaan en niet buiten de pagina.
+     */
+    if (typeof doel === 'number') {
+        if (lenis === undefined) {
+            window.scrollTo(0, doel);
+
+            return true;
+        }
+
+        lenis.resize();
+        lenis.scrollTo(doel, { immediate: true });
+
+        return true;
     }
 
     const element =

@@ -154,6 +154,6 @@ const linkedin = computed(
         </div>
 
         <!-- Het einde van de pagina: je bent klaar met lezen. -->
-        <SiteTerug />
+        <SiteTerug sleutel="over-mij" />
     </div>
 </template>

@@ -42,13 +42,7 @@ import type { VoetOpDeSite } from '@/types/voettekst';
  *
  * Zie docs/architecture/modules/voettekst.md.
  */
-type NavItem = { key: string; label: string };
-
 const page = usePage();
-
-const items = computed<NavItem[]>(
-    () => (page.props.navigation as NavItem[] | undefined) ?? [],
-);
 
 /**
  * Wat de eigenaar zelf in zijn voet heeft gezet.
@@ -73,7 +67,7 @@ const linkedin = computed(
     () => (page.props.linkedin as string | undefined) ?? '',
 );
 
-const { opDeVoorpagina, anker, tag } = useSectieLink();
+const { opDeVoorpagina, anker, secties: items, tag } = useSectieLink();
 
 /**
  * Een klik op een regel in de voettekst.

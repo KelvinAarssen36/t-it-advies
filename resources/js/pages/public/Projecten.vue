@@ -110,6 +110,6 @@ const props = defineProps<{
         </template>
 
         <!-- Het einde van de pagina: je bent klaar met kijken. -->
-        <SiteTerug />
+        <SiteTerug sleutel="projecten" />
     </div>
 </template>

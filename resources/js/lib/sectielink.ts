@@ -20,11 +20,37 @@ import { home } from '@/routes';
  *
  * Zie docs/architecture/pagina-indeling.md.
  */
+/**
+ * Een onderdeel in het menu: zijn sleutel en hoe het heet.
+ *
+ * **Hier en niet in elk component dat het gebruikt.** De kop en de
+ * voettekst hadden allebei hun eigen regel met dezelfde twee velden, en de
+ * terugknop onder aan een subpagina zou de derde zijn geweest. Dit is
+ * dezelfde afweging als die hierboven over `anker`.
+ *
+ * De naam is niet `NavItem`: dat bestaat al in `@/types/navigation` en
+ * beschrijft een rij in de zijbalk van het portaal, met een icoon en een
+ * adres. Twee verschillende dingen die toevallig allebei "menu" heten.
+ */
+export type SectieItem = { key: string; label: string };
+
 export function useSectieLink() {
     const page = usePage();
 
     /** Of we op de voorpagina staan; daar bestaan de ankers echt. */
     const opDeVoorpagina = computed(() => page.component === 'Welcome');
+
+    /**
+     * De onderdelen die nu op de voorpagina staan, op volgorde.
+     *
+     * Elke publieke pagina krijgt die lijst mee; zie `Navigatie::sleutels()`
+     * voor waarom dat per controller gaat en niet via de gedeelde props.
+     * Wat er niet in staat, staat ook niet op de voorpagina -- dus is dit
+     * meteen het antwoord op "bestaat dit onderdeel nog".
+     */
+    const secties = computed<SectieItem[]>(
+        () => (page.props.navigation as SectieItem[] | undefined) ?? [],
+    );
 
     /**
      * Waar een item naartoe wijst.
@@ -45,5 +71,5 @@ export function useSectieLink() {
      */
     const tag = computed(() => (opDeVoorpagina.value ? 'a' : Link));
 
-    return { opDeVoorpagina, anker, tag };
+    return { opDeVoorpagina, anker, secties, tag };
 }
