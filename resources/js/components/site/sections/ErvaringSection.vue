@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { usePage } from '@inertiajs/vue3';
 import { LayoutList, Radius, Rows3 } from '@lucide/vue';
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue';
 import ErvaringVenster from '@/components/site/ErvaringVenster.vue';
 import SectionHeading from '@/components/site/SectionHeading.vue';
 import ErvaringCarrousel from '@/components/site/sections/ErvaringCarrousel.vue';
 import ErvaringLijst from '@/components/site/sections/ErvaringLijst.vue';
 import SiteSection from '@/components/site/SiteSection.vue';
-import { countUp } from '@/lib/motion';
+import { countUp, gsap, prefersReducedMotion } from '@/lib/motion';
 import type {
     ErvaringCijfer,
     ErvaringKop,
@@ -74,9 +74,18 @@ const cijfers = computed<ErvaringCijfer[]>(
  * pagina in de cache, of een verse database zonder seeder. Dan staat er
  * een kop in plaats van een gat.
  */
-const kop = computed<ErvaringKop>(
+/*
+ * Het opschrift komt mee van de server (`SectionHeading::voorDeSite`), ook
+ * al heeft het beheerscherm van de tijdlijn er geen veld voor. Hier stond
+ * het woord "Ervaring" vast in het sjabloon -- ook op de Engelse site, en
+ * los van wat er in de database stond. Nu staat er wat de server zegt, en
+ * staat er niets als dat leeg is.
+ */
+type KopOpDeSite = ErvaringKop & { opschrift?: string | null };
+
+const kop = computed<KopOpDeSite>(
     () =>
-        (page.props.experienceHeading as ErvaringKop | undefined) ?? {
+        (page.props.experienceHeading as KopOpDeSite | undefined) ?? {
             titel: 'Waar dit vandaan komt',
             inleiding: 'De weg ernaartoe, van nu naar toen.',
         },
@@ -99,9 +108,113 @@ const KEUZE_VANAF = 4;
  * ernaartoe te glijden. En op een telefoon is het genoeg om met de lijst
  * te beginnen.
  */
-const keuzeTonen = computed(() => items.value.length >= KEUZE_VANAF);
+const genoeg = computed(() => items.value.length >= KEUZE_VANAF);
+
+/**
+ * Of de carrousel er mag zijn.
+ *
+ * **Niet bij `prefers-reduced-motion`.** Een vak dat je scroll overneemt is
+ * precies waar iemand met bewegingsklachten last van heeft, en een
+ * carrousel die alleen niet glijdt neemt je scroll nog steeds over. Dan is
+ * er de lijst, en die is compleet. De keuzeknop verdwijnt dan ook: een knop
+ * die iets aanbiedt wat we bewust niet doen, is een kapotte knop. "Toon
+ * alles" blijft, want dat venster scrollt gewoon.
+ *
+ * Een ref die pas in `onMounted` wordt gezet, om dezelfde reden als de
+ * beginstand hieronder: op de server bestaat `window` niet.
+ */
+const bewegingMag = ref(true);
+
+const keuzeTonen = computed(() => genoeg.value && bewegingMag.value);
 
 const cijferrij = ref<HTMLElement | null>(null);
+
+/**
+ * De jaarband: de loopbaan als één regel jaartallen met hun organisatie.
+ *
+ * Van oud naar nieuw, één per beginjaar. Hij schuift tijdens het scrollen
+ * door de sectie langzaam van links naar rechts, en loopt dus terug in de
+ * tijd terwijl je naar beneden leest -- dezelfde richting als de lijst
+ * eronder, die met het nieuwste begint. Omhoogscrollen draait het om.
+ *
+ * Het is een beeld van wat eronder staat en geen tweede bron: `aria-hidden`,
+ * en alles erin komt uit dezelfde ervaringen. Zie `schuifBand`.
+ */
+const band = computed(() => {
+    const perJaar = new Map<string, string>();
+
+    for (const item of items.value) {
+        if (item.jaar !== '' && !perJaar.has(item.jaar)) {
+            perJaar.set(item.jaar, item.organisatie);
+        }
+    }
+
+    return [...perJaar.entries()]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([jaar, organisatie]) => ({ jaar, organisatie }));
+});
+
+const bandVak = useTemplateRef<HTMLElement>('bandVak');
+const bandSpoor = useTemplateRef<HTMLElement>('bandSpoor');
+let stopBand: (() => void) | undefined;
+
+/**
+ * De band schuift van links naar rechts, gekoppeld aan de scroll.
+ *
+ * **De afstand komt uit de maten zelf, en is begrensd.** Het spoor begint
+ * met het nieuwste jaar aan de rechterrand van het vak en schuift dan een
+ * stuk naar rechts, terug in de tijd. Niet de hele lengte: met zevenentwintig
+ * jaren is het spoor zesduizend pixels lang, en dat in één schermhoogte
+ * scrollen is geen beweging meer maar een veeg. Hoogstens zestig procent
+ * van het vak, en minstens een kwart, zodat ook een korte loopbaan beweegt.
+ *
+ * Als functies, met `invalidateOnRefresh`: na een andere taal, een andere
+ * schermbreedte of nieuw geladen letters wordt het opnieuw gemeten. Het vak
+ * knipt het spoor af, dus de pagina wordt er niet breder van.
+ *
+ * Onder reduced motion staat hij stil, op het nieuwste jaar.
+ */
+const schuifBand = (): (() => void) => {
+    const vak = bandVak.value;
+    const spoor = bandSpoor.value;
+
+    if (vak === null || spoor === null) {
+        return () => {};
+    }
+
+    /** Waar het nieuwste jaar net aan de rechterrand staat. */
+    const begin = (): number =>
+        -Math.max(spoor.scrollWidth - vak.clientWidth, 0);
+    const afstand = (): number => vak.clientWidth * 0.6;
+
+    if (prefersReducedMotion()) {
+        gsap.set(spoor, { x: begin() });
+
+        return () => gsap.set(spoor, { clearProps: 'transform' });
+    }
+
+    const tween = gsap.fromTo(
+        spoor,
+        { x: () => begin() },
+        {
+            x: () => begin() + afstand(),
+            ease: 'none',
+            scrollTrigger: {
+                trigger: vak,
+                start: 'top bottom',
+                end: 'bottom top',
+                scrub: true,
+                invalidateOnRefresh: true,
+            },
+        },
+    );
+
+    return () => {
+        tween.scrollTrigger?.kill();
+        tween.kill();
+        gsap.set(spoor, { clearProps: 'transform' });
+    };
+};
 
 let stopTellen: (() => void) | undefined;
 
@@ -136,7 +249,12 @@ onMounted(() => {
      * Alleen de **beginstand** hangt hiervan af. Wisselen kan daarna
      * altijd, met de knop erboven.
      */
-    if (!window.matchMedia('(min-width: 50rem)').matches) {
+    bewegingMag.value = !prefersReducedMotion();
+
+    if (
+        !bewegingMag.value ||
+        !window.matchMedia('(min-width: 50rem)').matches
+    ) {
         weergave.value = 'lijst';
     }
 
@@ -148,21 +266,30 @@ onMounted(() => {
     );
 });
 
-onBeforeUnmount(() => stopTellen?.());
+onMounted(() => {
+    stopBand = schuifBand();
+});
+
+onBeforeUnmount(() => {
+    stopTellen?.();
+    stopBand?.();
+});
 </script>
 
 <template>
     <SiteSection id="ervaring" :tone="tone" :divided="divided">
         <SectionHeading
-            eyebrow="Ervaring"
+            :eyebrow="kop.opschrift ?? undefined"
             :title="kop.titel"
             :intro="kop.inleiding ?? undefined"
         />
 
         <!--
-            Drie cijfers die de lijst eronder in één blik samenvatten. Ze
-            tellen omhoog zodra je ze in beeld scrolt; het eindgetal staat
-            al in de HTML, zodat er ook zonder JavaScript iets klopt.
+            De cijfers die de loopbaan in één blik samenvatten, als
+            gedeelde meting: het getal groot, het label eronder, een
+            haarlijn ertussen (zie basis.css). Ze tellen omhoog zodra je ze in beeld
+            scrolt; het eindgetal staat al in de HTML, zodat er ook zonder
+            JavaScript iets klopt.
 
             Wat erin staat bepaalt de klant: leeg laten betekent "rekenen
             jullie het maar uit". Zie App\Support\Loopbaan.
@@ -170,35 +297,75 @@ onBeforeUnmount(() => stopTellen?.());
         <dl
             v-if="cijfers.length > 0"
             ref="cijferrij"
-            class="brand-loopbaan-cijfers mt-10"
+            class="brand-site-ervaring-cijfers brand-site-metingen"
+            :data-aantal="cijfers.length"
         >
-            <div v-for="cijfer in cijfers" :key="cijfer.label">
-                <dd data-teller :data-tot="cijfer.waarde">
+            <div
+                v-for="cijfer in cijfers"
+                :key="cijfer.label"
+                class="brand-site-meting"
+            >
+                <dt class="brand-site-meting-label">{{ cijfer.label }}</dt>
+                <dd
+                    class="brand-site-meting-waarde"
+                    data-teller
+                    :data-tot="cijfer.waarde"
+                >
                     {{ cijfer.waarde }}
                 </dd>
-                <dt>{{ cijfer.label }}</dt>
             </div>
         </dl>
 
         <!--
-            `flex-wrap` en niet `whitespace-nowrap`: op een smalle telefoon
-            passen drie knoppen niet naast elkaar, en dan zakt "Toon alles"
-            netjes naar de regel erboven in plaats van dat de hele rij uit
-            het scherm loopt.
+            De jaarband: alleen bij meer dan één jaar, want één jaartal is
+            geen tijdlijn. Zie `band` en `schuifBand` hierboven.
         -->
         <div
-            v-if="keuzeTonen"
-            class="mt-8 flex flex-wrap items-center justify-between gap-2"
+            v-if="band.length > 1"
+            ref="bandVak"
+            class="brand-site-ervaring-band"
+            aria-hidden="true"
         >
-            <button type="button" class="brand-toon-alles" @click="toonAlles">
+            <div ref="bandSpoor" class="brand-site-ervaring-band-spoor">
+                <span
+                    v-for="stap in band"
+                    :key="stap.jaar"
+                    class="brand-site-ervaring-band-stap"
+                >
+                    <span class="brand-site-ervaring-band-jaar">
+                        {{ stap.jaar }}
+                    </span>
+                    <span class="brand-site-ervaring-band-org">
+                        {{ stap.organisatie }}
+                    </span>
+                </span>
+            </div>
+        </div>
+
+        <!--
+            "Toon alles" staat er vanaf vier functies, ook als de keuze
+            tussen de weergaven er niet is (onder reduced motion): dat
+            venster scrollt gewoon en neemt niets over.
+        -->
+        <div v-if="genoeg" class="brand-site-ervaring-bediening">
+            <button
+                type="button"
+                class="brand-site-ervaring-alles"
+                @click="toonAlles"
+            >
                 <Rows3 class="size-4" />
                 {{ $t('Toon alles') }}
-                <span class="tabular-nums opacity-60">
+                <span class="brand-site-data opacity-60">
                     {{ items.length }}
                 </span>
             </button>
 
-            <div class="brand-weergave" role="group">
+            <div
+                v-if="keuzeTonen"
+                class="brand-site-ervaring-weergave"
+                role="group"
+                :aria-label="$t('Weergave van de tijdlijn')"
+            >
                 <button
                     type="button"
                     :data-actief="weergave === 'carrousel' ? '' : undefined"

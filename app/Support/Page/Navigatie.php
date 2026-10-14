@@ -63,7 +63,8 @@ class Navigatie
      * Het menu zoals de kop het nodig heeft.
      *
      * De labels komen van de server en niet uit een tabel in de frontend,
-     * want ze zijn vertaald. Zie PageSectionKey::label().
+     * want ze zijn vertaald. Het korte woord voor het menu, niet de volle
+     * naam uit het beheer; zie PageSectionKey::menuLabel().
      *
      * @param  array<int, string>|null  $sleutels  De al bepaalde lijst, als
      *                                             de aanroeper hem toch al
@@ -77,7 +78,7 @@ class Navigatie
         return array_map(
             fn (string $sleutel) => [
                 'key' => $sleutel,
-                'label' => PageSectionKey::from($sleutel)->label(),
+                'label' => PageSectionKey::from($sleutel)->menuLabel(),
             ],
             $sleutels ?? $this->sleutels(),
         );

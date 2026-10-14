@@ -87,6 +87,7 @@ import statistiekenRoutes from '@/routes/website/statistieken';
 import kop from '@/routes/website/kop';
 import ervaring from '@/routes/website/ervaring';
 import voettekst from '@/routes/website/footer';
+import linkedinRoutes from '@/routes/website/linkedin';
 
 /**
  * De handleiding bij het portaal.
@@ -569,7 +570,7 @@ defineOptions({
                             <p>
                                 {{
                                     $t(
-                                        'Op je publieke website komt tekst op terwijl je scrolt, tekent er een lijn mee met de stappen van je werkwijze, en verschuift de gloed op de achtergrond licht met de muis. Bij binnenkomst is er kort een merkintro; die zie je één keer per bezoek en niet bij elke pagina opnieuw.',
+                                        'Je website is gebouwd rond je logo: een oog dat scherpstelt. Bij binnenkomst gaat het oog open als een lens en verschijnt je foto in een ring. Daarna beweegt de pagina mee terwijl je bezoeker scrolt: vlakken komen uit de diepte omhoog, het beeld van je project opent zich, je certificaten zetten zich in elkaar en het licht van je werkwijze loopt door de stappen. Het hangt allemaal aan het scrollen zelf, dus niemand hoeft ergens op te wachten. De merkintro zie je één keer per bezoek.',
                                     )
                                 }}
                             </p>
@@ -584,6 +585,40 @@ defineOptions({
                                 {{
                                     $t(
                                         'Heeft een bezoeker in zijn systeeminstellingen aangegeven minder beweging te willen, dan zetten we het vanzelf uit en ziet hij dezelfde site zonder animaties. Dat is geen uitzondering die wij per geval regelen; het gaat overal automatisch.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Op een computer schuiven de stappen van je werkwijze zijwaarts voorbij terwijl je bezoeker gewoon naar beneden scrolt, en scrolt hij terug, dan schuiven ze terug. Passen ze al naast elkaar, dan blijven ze staan. Op een telefoon staan ze onder elkaar.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Alles wat je kunt aanklikken reageert op dezelfde manier: onder de muis licht het op en schuift een pijl een stapje mee, en wie met het toetsenbord door de pagina gaat, ziet een blauwe rand om waar hij is. Iets wat niets doet als je erop klikt -- een label, een jaartal -- reageert ook niet. Bij je diensten licht onder de muis het onderdeel op waar je bezoeker naar wijst, zodat hij ziet wat bij die dienst hoort.',
+                                    )
+                                }}
+                            </p>
+                        </UitlegKaart>
+
+                        <UitlegKaart
+                            :titel="$t('Het menu op je website')"
+                            :icoon="LayoutList"
+                        >
+                            <p>
+                                {{
+                                    $t(
+                                        'Het menu bovenaan je website volgt je indeling: wat je uitzet verdwijnt eruit, en wat je versleept schuift mee. In het menu staan kortere namen dan hier in het beheer, zodat er meer naast elkaar past: Kerngegevens heet daar Feiten, Werkwijze heet Aanpak en Statistieken heet Cijfers. In het Engels Facts, Approach en Numbers.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Er staan zoveel onderdelen los in de balk als er op het scherm van je bezoeker passen, hoogstens zeven; de rest staat onder "Meer". Op een breed scherm zijn dat er dus meer dan op een tablet, en op een telefoon zit alles achter de menuknop. Daar hoef je niets voor te doen.',
                                     )
                                 }}
                             </p>
@@ -959,51 +994,11 @@ defineOptions({
                             </template>
                         </UitlegKaart>
 
-                        <UitlegKaart :titel="$t('LinkedIn')" :icoon="Share2">
-                            <p>
-                                {{
-                                    $t(
-                                        'Onderaan je website staat een blok dat bezoekers uitnodigt je op LinkedIn te volgen, met een knop naar je profiel. Dat is de plek waar iemand die nog geen bericht wil sturen je toch kan blijven volgen.',
-                                    )
-                                }}
-                            </p>
-                            <p>
-                                {{
-                                    $t(
-                                        'Helemaal bovenaan staat hetzelfde logo nog een keer, klein, naast de twee knoppen in de kop. Dat is voor de bezoeker die meteen weet wat hij zoekt en niet eerst naar beneden wil.',
-                                    )
-                                }}
-                            </p>
-                            <p>
-                                {{
-                                    $t(
-                                        'Hier valt niets in te vullen: je LinkedIn-adres ligt vast. Dat is met opzet -- een tikfout in die link is een knop op je voorpagina die nergens heen gaat. Wil je hem ooit wijzigen, laat het ons dan weten.',
-                                    )
-                                }}
-                            </p>
-                            <p>
-                                {{
-                                    $t(
-                                        'Wat je er wél mee kunt: hem verslepen naar een andere plek op je pagina, of helemaal uitzetten. Dat doe je op het scherm Indeling, net als bij de andere onderdelen.',
-                                    )
-                                }}
-                            </p>
-
-                            <template #voorbeeld>
-                                <Button variant="outline" size="sm" as-child>
-                                    <Link :href="website.index()">
-                                        <LayoutList class="size-4" />
-                                        {{ $t('Open de indeling') }}
-                                    </Link>
-                                </Button>
-                            </template>
-                        </UitlegKaart>
-
                         <UitlegKaart :titel="$t('Kop')" :icoon="KopIcoon">
                             <p>
                                 {{
                                     $t(
-                                        'De drie teksten bovenaan je website: het kleine opschrift in hoofdletters, de grote titel eronder, en de zin daar weer onder. Dit is het eerste dat een bezoeker leest, dus het is ook het eerste dat je wilt kloppen.',
+                                        'De drie teksten bovenaan je website: het kleine opschrift, de grote titel eronder, en de zin daar weer onder. Dit is het eerste dat een bezoeker leest, dus het is ook het eerste dat je wilt kloppen. Een lange titel mag: hoe langer hij is, hoe kleiner de letter, zodat alles in beeld blijft.',
                                     )
                                 }}
                             </p>
@@ -1046,7 +1041,7 @@ defineOptions({
                             <p>
                                 {{
                                     $t(
-                                        'Een strook met de praktische feiten over zakendoen met jou: wanneer je kunt, waar je werkt, hoe snel je reageert. Het is het antwoord op de vragen die iemand stelt vlak voordat hij belt -- nu staat het er, en hoeft hij ze niet te stellen.',
+                                        'Een overzicht van de praktische feiten over zakendoen met jou: wanneer je kunt, waar je werkt, hoe snel je reageert. Het is het antwoord op de vragen die iemand stelt vlak voordat hij belt -- nu staat het er, en hoeft hij ze niet te stellen.',
                                     )
                                 }}
                             </p>
@@ -1067,7 +1062,7 @@ defineOptions({
                             <p>
                                 {{
                                     $t(
-                                        'Je hoeft niet op een rond aantal uit te komen. De strook deelt zichzelf in naar hoeveel je er hebt: bij zeven worden het vier en drie, en die drie vullen samen de hele breedte. Er blijft dus nooit een leeg vak over. Op een telefoon staan ze allemaal onder elkaar.',
+                                        'Je hoeft niet op een rond aantal uit te komen. Op een groot scherm staan de feiten in twee kolommen, en elke regel is zo hoog als wat erin staat, dus er blijft geen leeg vak over. Heb je een oneven aantal, dan krijgt het laatste feit de hele breedte. Op een telefoon staan ze allemaal onder elkaar.',
                                     )
                                 }}
                             </p>
@@ -1081,14 +1076,14 @@ defineOptions({
                             <p>
                                 {{
                                     $t(
-                                        'Op je website zetten de waarden zich letter voor letter vast zodra de strook in beeld komt, als een vertrekbord op een station. Een langere waarde doet hetzelfde, maar dan per woord. Heb je in je systeeminstellingen minder beweging aangezet, dan staat alles meteen stil op zijn plek.',
+                                        'Op je website schuiven de twee kolommen van links en van rechts naar elkaar toe terwijl je bezoeker scrolt, en daarna zetten de waarden zich letter voor letter vast, als een vertrekbord op een station. Een langere waarde doet hetzelfde, maar dan per woord. Heeft iemand in zijn systeeminstellingen minder beweging aangezet, dan staat alles meteen goed.',
                                     )
                                 }}
                             </p>
                             <p>
                                 {{
                                     $t(
-                                        'Daarna blijft de strook leven: om de paar seconden trekt er een lichtje langs de scheidingslijntjes, alsof er stroom door het bord loopt. En ga je met je muis over een vak, dan licht het pictogram op en kleurt het vak mee. Er valt niets te klikken -- het laat alleen zien dat je er bent.',
+                                        'Ga je met je muis over een feit, dan licht het vakje met het pictogram op. Er valt niets te klikken -- het laat alleen zien dat de regel bij elkaar hoort.',
                                     )
                                 }}
                             </p>
@@ -1107,14 +1102,14 @@ defineOptions({
                             <p>
                                 {{
                                     $t(
-                                        'Wat je aanbiedt, als kaarten op je website. Elke dienst krijgt een pictogram, een titel, een korte tekst en een lijstje met de expertise die eronder valt.',
+                                        'Wat je aanbiedt. Op een groot scherm staan je diensten als een rij grote namen; wijst een bezoeker er een aan, dan verschijnt ernaast de korte tekst en het lijstje met expertise. Op een telefoon staan ze als kaarten onder elkaar. Elke dienst krijgt een pictogram, een titel, een korte tekst en dat lijstje.',
                                     )
                                 }}
                             </p>
                             <p>
                                 {{
                                     $t(
-                                        'Er is geen maximum: zet er zoveel neer als je wilt. Op je website staan er vier tegelijk, en op een telefoon drie -- daarna bladert je bezoeker met de knopjes eronder naar de volgende. Zo wordt het blok nooit zo lang dat de rest van je pagina eronder verdwijnt.',
+                                        'Er is geen maximum: zet er zoveel neer als je wilt. Op je website staan er zes tegelijk, en op een telefoon drie -- daarna bladert je bezoeker met de knopjes eronder naar de volgende. Zo wordt het blok nooit zo lang dat de rest van je pagina eronder verdwijnt.',
                                     )
                                 }}
                             </p>
@@ -1147,7 +1142,7 @@ defineOptions({
                             <p>
                                 {{
                                     $t(
-                                        'De stappen die iemand doorloopt als hij met je in zee gaat. Op je website staan ze genummerd naast elkaar, met een lijn die zich tekent terwijl de bezoeker scrolt en elke stap oplicht als hij aan de beurt is.',
+                                        'De stappen die iemand doorloopt als hij met je in zee gaat. Op je website staan ze genummerd, met een lichtlijn die zich door de stappen tekent terwijl de bezoeker scrolt; elke stap licht op als hij aan de beurt is. Bij twee tot vier stappen staan ze naast elkaar, bij meer onder elkaar.',
                                     )
                                 }}
                             </p>
@@ -1720,6 +1715,53 @@ defineOptions({
                                     )
                                 }}
                             </p>
+                        </UitlegKaart>
+
+                        <UitlegKaart :titel="$t('LinkedIn')" :icoon="Share2">
+                            <p>
+                                {{
+                                    $t(
+                                        'Onderaan je website staat een blok dat bezoekers uitnodigt je op LinkedIn te volgen, met een knop naar je profiel. Dat is de plek waar iemand die nog geen bericht wil sturen je toch kan blijven volgen. Helemaal bovenaan staat hetzelfde logo nog een keer, klein, naast de knoppen in de kop.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Onder Website → LinkedIn pas je de tekst van dat blok aan: het kleine woord bovenaan, de titel, de zin eronder en wat er op de knop staat. Dat zijn twee knoppen "Aanpassen", één voor de tekst en één voor de knop. Je bevestigt elke wijziging voordat hij live gaat.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Elke tekst heeft een Nederlands en een Engels veld. Met de knop "Vertaal" vul je het Engels in één keer; lees het daarna even na. Laat je de Engelse titel leeg, dan staat daar het Nederlands. Laat je de knop leeg, dan staat er "Bekijk" met je naam erachter, in de taal van de bezoeker.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Je LinkedIn-adres zelf kun je hier niet wijzigen; je ziet het wel staan, met een slotje. Dat is met opzet -- een tikfout in die link is een knop op je voorpagina die nergens heen gaat. Wil je hem ooit wijzigen, laat het ons dan weten.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Verslepen of uitzetten doe je op het scherm Indeling, net als bij de andere onderdelen. En de teksten gaan mee in je back-ups. Zet je een back-up terug van vóór dit scherm bestond, dan blijven je LinkedIn-teksten gewoon staan zoals ze nu zijn.',
+                                    )
+                                }}
+                            </p>
+
+                            <template #voorbeeld>
+                                <Button variant="outline" size="sm" as-child>
+                                    <Link :href="linkedinRoutes.index()">
+                                        <Share2 class="size-4" />
+                                        {{ $t('Naar je LinkedIn-blok') }}
+                                    </Link>
+                                </Button>
+                            </template>
                         </UitlegKaart>
 
                         <UitlegKaart

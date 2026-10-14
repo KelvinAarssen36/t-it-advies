@@ -2,54 +2,53 @@
 import { usePage } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, onMounted, useTemplateRef } from 'vue';
 import LinkedinMerk from '@/components/site/LinkedinMerk.vue';
-import SiteSection from '@/components/site/SiteSection.vue';
 import { Button } from '@/components/ui/button';
 import { INTRO_DUUR, introSpeeltAf } from '@/lib/intro';
 import {
     gsap,
+    irisOpen,
+    kopOpkomst,
     opEenTelefoon,
-    parallax,
     prefersReducedMotion,
+    scrollNaar,
     tekenRing,
-    typMachine,
     volgDeMuis,
 } from '@/lib/motion';
 import type { SiteKop } from '@/types/ervaring';
 
 /**
- * De kop van de landingspagina.
+ * De kop van de landingspagina: "Iris".
  *
  * Staat altijd bovenaan en is niet te verslepen; dat is geen instelling
- * maar wat dit onderdeel is. Zie App\Enums\PageSectionKey.
+ * maar wat dit onderdeel is. Zie App\Enums\PageSectionKey. Hij heeft
+ * bewust geen `id`: het houvast bij een taalwissel zoekt `main section[id]`,
+ * en in de hero valt niets vast te houden.
  *
- * De binnenkomstanimatie staat hier en niet in de layout, omdat hij bij
- * déze sectie hoort: de rest van de pagina komt binnen door te scrollen,
- * deze is er al als je aankomt.
+ * **Het merk is een oog, en deze scène speelt daarop.** Het portret staat in
+ * een iris van ringen. Bij binnenkomst gaat die open als een diafragma, de
+ * achtergrond stelt scherp en de kop komt regel voor regel op. Bij het
+ * scrollen zakt de scène in drie lagen weg -- achtergrond het langzaamst,
+ * tekst het snelst -- en trekt de iris iets samen, alsof het oog
+ * scherpstelt op wat eronder komt.
  *
- * **De scène bestaat uit drie lagen die los van elkaar bewegen:** de
- * achtergrond, het portret, en de tekst. Bij het scrollen loopt de tekst
- * het snelst weg en de achtergrond het langzaamst, en daardoor lijkt er
- * diepte te zitten tussen dingen die allemaal even plat zijn. Meer dan
- * een paar tientallen pixels verschil moet het niet worden -- parallax
- * die opvalt is parallax die misselijk maakt.
+ * Het scrollen hangt aan de positie (`scrub`), en dat mag hier: het drukt
+ * uit wáár je bent en geen waarde. Zie de les over `scrub` in
+ * docs/architecture/frontend-en-animatie.md. Er zit geen `pin` op; de hero
+ * groeit gewoon mee met een lange kop of inleiding.
  */
 const props = defineProps<{
     /**
      * Welke onderdelen er verder op de pagina staan.
      *
-     * Alleen om te bepalen of de knop naar de diensten ergens heen gaat.
-     * Zet de klant dat onderdeel uit, dan zou die knop naar een anker
-     * springen dat niet bestaat -- en dan gebeurt er bij het klikken niets,
-     * wat er van buiten uitziet als een kapotte website.
+     * Alleen om te bepalen of de knoppen ergens heen gaan. Zet de klant
+     * contact of de diensten uit, dan zou die knop naar een anker springen
+     * dat niet bestaat -- en dan gebeurt er bij het klikken niets, wat er
+     * van buiten uitziet als een kapotte website.
      */
     sections: string[];
 
     /**
-     * De drie teksten, uit de database en niet meer uit dit bestand.
-     *
-     * Ze stonden hier hardgecodeerd, en daarmee was dit het enige stuk
-     * van de voorpagina dat de klant níet kon aanpassen -- terwijl het
-     * het eerste is wat iedereen leest. De keuze tussen Nederlands en
+     * De drie teksten, uit de database. De keuze tussen Nederlands en
      * Engels is op de server al gemaakt; zie App\Models\SectionHeading.
      */
     heading: SiteKop;
@@ -65,10 +64,9 @@ const heroSrcset = [
 ].join(', ');
 
 /*
- * Hetzelfde verhaal voor het portret. Het origineel is een PNG van bijna
- * twee megabyte met doorzichtige achtergrond; dit zijn de WebP-varianten
- * daarvan, met die doorzichtigheid intact. De PNG blijft in de map staan
- * als bron, maar komt niet op de website.
+ * Het portret: de WebP-varianten van het medaillon, met de doorzichtige
+ * achtergrond intact. De bron-PNG staat in de map, maar komt niet op de
+ * website; LandingBeeldTest bewaakt dat.
  */
 const portretSrcset = [
     '/images/persoon-medaillon-320.webp 320w',
@@ -77,143 +75,189 @@ const portretSrcset = [
     '/images/persoon-medaillon-960.webp 960w',
 ].join(', ');
 
-/**
- * De naam onder de titel, op een telefoon.
- *
- * Hij komt uit `config/security.php`, waar hij als het account van de
- * eigenaar al vastligt. Laat je hem leeg, dan toont het visitekaartje
- * alleen de foto en de functie -- ook dat oogt af.
- *
- * Een naam wordt niet vertaald; de functie eronder wel, en die staat
- * daarom in het sjabloon in een `$t()`. Zodra de kop een module wordt
- * komen ze allebei uit de database, samen met de titel en de twee
- * knoppen; zie docs/openstaand.md.
- */
-const NAAM = 'Erik Aarssen';
+const page = usePage();
 
 /**
- * Het LinkedIn-adres, uit dezelfde bron als het blok onderaan.
- *
- * Gedeeld via Inertia en niet hier neergezet: twee knoppen die naar
- * hetzelfde profiel wijzen horen niet uit elkaar te kunnen lopen. Zie
- * config/site.php.
+ * De naam op het visitekaartje, uit dezelfde bron als het portaalaccount
+ * (`config/security.php`, gedeeld als `eigenaar`). Hij stond hier eerst
+ * hardgecodeerd. Leeg is geen probleem: dan toont het kaartje alleen de
+ * foto en de functie, en ook dat oogt af.
+ */
+const naam = computed(() => page.props.eigenaar ?? '');
+
+/**
+ * Het LinkedIn-adres, uit dezelfde bron als het blok verderop. Gedeeld via
+ * Inertia, zodat twee knoppen naar hetzelfde profiel niet uit elkaar
+ * kunnen lopen. Zie config/site.php.
  */
 const linkedin = computed(
-    () => (usePage().props.linkedin as string | undefined) ?? '',
+    () => (page.props.linkedin as string | undefined) ?? '',
 );
 
+/**
+ * De maat van de kop, op lengte.
+ *
+ * De klant typt hem zelf, tot ruim tachtig tekens. Een maat die bij vijf
+ * woorden indrukwekkend is, maakt van tachtig tekens een muur die de
+ * knoppen onder de vouw duwt. De grenzen hier, de maten in
+ * resources/css/site/hero.css.
+ */
+const lengte = computed(() => {
+    const tekens = props.heading.titel.trim().length;
+
+    if (tekens <= 42) {
+        return 'kort';
+    }
+
+    return tekens <= 80 ? 'middel' : 'lang';
+});
+
+/** Een lange inleiding krijgt een kleinere letter, om dezelfde reden. */
+const langeInleiding = computed(
+    () => (props.heading.inleiding ?? '').trim().length > 180,
+);
+
+const scene = useTemplateRef<HTMLElement>('scene');
+const beeld = useTemplateRef<HTMLElement>('beeld');
 const gloed = useTemplateRef<HTMLElement>('gloed');
-const portret = useTemplateRef<HTMLElement>('portret');
 const tekst = useTemplateRef<HTMLElement>('tekst');
 const kop = useTemplateRef<HTMLElement>('kop');
+const iris = useTemplateRef<HTMLElement>('iris');
+const pupil = useTemplateRef<HTMLElement>('pupil');
 const ring = useTemplateRef<SVGCircleElement>('ring');
 const baan = useTemplateRef<SVGGElement>('baan');
+const schaal = useTemplateRef<SVGCircleElement>('schaal');
 
 let intro: gsap.core.Timeline | undefined;
 const opruimers: Array<() => void> = [];
 
 /**
- * De typmachine staat apart van de rest van de opruimers.
- *
- * Hij knipt de kop in losse letters en zet die bij het opruimen terug.
- * Dat moet gebeuren vóórdat iemand anders in dat element schrijft, dus
- * het is de moeite waard om hem los bij de hand te hebben. Wisselt de
- * bezoeker van taal, dan gooit PublicLayout deze hele sectie weg en
- * bouwt hem opnieuw op; zie de toelichting bij `taal` daar.
+ * Een knop in de hero naar een onderdeel verderop: glijden en niet
+ * springen. Hetzelfde als het menu: het adres krijgt het anker via
+ * `replaceState` (een terugknop hoort je niet van anker naar anker te
+ * sturen), en Ctrl- of middelklik gaat gewoon door naar de browser.
  */
-let stopTypen: (() => void) | undefined;
+const gaNaar = (sleutel: string, gebeurtenis: MouseEvent): void => {
+    if (
+        gebeurtenis.metaKey ||
+        gebeurtenis.ctrlKey ||
+        gebeurtenis.shiftKey ||
+        gebeurtenis.button !== 0
+    ) {
+        return;
+    }
+
+    if (document.getElementById(sleutel) === null) {
+        return;
+    }
+
+    gebeurtenis.preventDefault();
+    history.replaceState(history.state, '', `#${sleutel}`);
+    scrollNaar(sleutel);
+};
 
 onMounted(() => {
-    // Bij reduced motion zetten we de elementen meteen op hun eindtoestand.
-    // De animatie overslaan zou ze onzichtbaar laten; zie motion.ts.
+    const opkomers =
+        scene.value?.querySelectorAll<HTMLElement>('[data-intro]') ?? [];
+
+    /*
+     * Bij reduced motion staat alles meteen in zijn eindtoestand: de iris
+     * open, de kop zichtbaar, de achtergrond scherp en stil. De animatie
+     * overslaan zou de `opacity-0` laten staan; zie motion.ts.
+     */
     if (prefersReducedMotion()) {
-        gsap.set('[data-intro]', { opacity: 1, y: 0 });
-        gsap.set([kop.value, portret.value], { opacity: 1, x: 0 });
+        gsap.set([...opkomers, kop.value, pupil.value, beeld.value], {
+            opacity: 1,
+            y: 0,
+        });
+
+        if (ring.value !== null) {
+            opruimers.push(tekenRing(ring.value, baan.value));
+        }
 
         return;
     }
 
     /*
-     * Het portret komt van opzij binnen en de tekst van onderen. Twee
-     * richtingen, en dat is met opzet: kwamen ze allebei van onderen, dan
-     * is het één blok dat omhoogschuift in plaats van een scène die zich
-     * opbouwt.
-     *
-     * Het portret begint een fractie eerder dan de tekst. Je oog gaat
-     * eerst naar het gezicht en leest daarna; die volgorde omdraaien
-     * levert een kop op die je al gelezen hebt voordat het beeld er is.
-     */
-    /*
-     * Speelt de merkintro, dan begint de hero pas als die weg is. De
-     * vraag wordt hier opnieuw gesteld en niet doorgegeven: lib/intro.ts
-     * legt het antwoord bij de eerste keer vast, dus de introlaag en deze
-     * sectie krijgen gegarandeerd hetzelfde te horen -- ook al mounten ze
-     * op een ander moment. Zou de introlaag helemaal niet verschijnen,
-     * dan is dit hoogstens een korte vertraging en geen tekst die nooit
-     * komt.
-     */
-    /*
-     * Op een telefoon begint de hero eerder en loopt hij sneller.
-     *
-     * Niet overslaan -- de entree hoort er te zijn -- maar wel op tijd.
-     * Op een breed scherm wacht de hero tot de introlaag vrijwel weg is
-     * en komt hij in 1,2 seconde op; samen met het laden van de pagina is
-     * dat op een telefoon al gauw bijna twee seconden waarin er niets
-     * staat, en dan lijkt de site leeg in plaats van statig.
-     *
-     * Smal begint hij halverwege het wegvloeien van de introlaag en loopt
-     * de hele tijdlijn anderhalf keer zo snel. Je ziet hem nog steeds
-     * opkomen; hij is alleen eerder klaar.
+     * Speelt de merkintro, dan begint de hero pas als het oog daar
+     * opengaat. lib/intro.ts legt het antwoord bij de eerste vraag vast,
+     * dus de intro en deze sectie horen hetzelfde. Op een telefoon begint
+     * hij halverwege en loopt hij sneller: anderhalve seconde niets op een
+     * klein scherm leest als een lege site, niet als een statige.
      */
     const smal = opEenTelefoon();
-    const volledigWachten = INTRO_DUUR - 0.25;
+    const volledigWachten = INTRO_DUUR - 0.3;
     const wachten = introSpeeltAf()
         ? smal
             ? volledigWachten / 2
             : volledigWachten
         : 0;
 
-    intro = gsap
-        .timeline({ delay: wachten, defaults: { ease: 'power3.out' } })
-        .fromTo(
-            portret.value,
-            { opacity: 0, x: 40, scale: 1.04 },
-            { opacity: 1, x: 0, scale: 1, duration: 1.2 },
+    intro = gsap.timeline({
+        delay: wachten,
+        defaults: { ease: 'expo.out' },
+    });
+
+    /*
+     * De achtergrond stelt scherp: van een waas naar scherp, en van iets
+     * te dichtbij naar zijn plek. Alleen op een breed scherm met blur; een
+     * filter over een heel scherm kost op een telefoon meer dan hij
+     * oplevert, daar komt hij alleen op.
+     */
+    if (beeld.value !== null) {
+        intro.fromTo(
+            beeld.value,
+            smal
+                ? { opacity: 0 }
+                : { opacity: 0, scale: 1.16, filter: 'blur(14px)' },
+            smal
+                ? { opacity: 1, duration: 1 }
+                : {
+                      opacity: 1,
+                      scale: 1.06,
+                      filter: 'blur(0px)',
+                      duration: 2,
+                      clearProps: 'filter',
+                  },
             0,
-        )
-        .fromTo(
-            '[data-intro]',
-            { opacity: 0, y: 28 },
-            { opacity: 1, y: 0, duration: 0.9, stagger: 0.12 },
-            0.15,
         );
+    }
+
+    intro.fromTo(
+        opkomers,
+        { opacity: 0, y: 24 },
+        { opacity: 1, y: 0, duration: 1, stagger: 0.1 },
+        0.45,
+    );
 
     if (smal) {
-        intro.timeScale(1.5);
+        intro.timeScale(1.4);
     }
 
     /*
-     * De kop wordt letter voor letter ingetikt, en de ring om het
-     * portret tekent zich ondertussen. Allebei los van de tijdlijn
-     * hierboven: ze hebben hun eigen opruimfunctie en hun eigen
-     * begintoestand.
-     *
-     * De kop draagt daarom geen `data-intro`. Twee systemen die om
-     * beurten in dezelfde doorzichtigheid schrijven, is precies hoe je
-     * een knipperende kop krijgt.
+     * De kop, de iris en de ring hebben elk hun eigen opruimfunctie en
+     * begintoestand, en staan dus los van de tijdlijn. De kop draagt
+     * daarom geen `data-intro`: twee systemen die om beurten in dezelfde
+     * doorzichtigheid schrijven, is precies hoe je een knipperende kop
+     * krijgt.
      */
     if (kop.value !== null) {
-        stopTypen = typMachine(kop.value, {
-            wachten: wachten + 0.12,
-            // Even snel tikken als de rest op een telefoon gaat; anders
-            // staat de kop nog te verschijnen als alles eromheen al staat.
-            perTeken: smal ? 0.055 : 0.09,
-        });
+        opruimers.push(kopOpkomst(kop.value, { wachten: wachten + 0.1 }));
+    }
+
+    if (pupil.value !== null) {
+        opruimers.push(
+            irisOpen(pupil.value, {
+                direct: true,
+                wachten: wachten + 0.15,
+                duur: 1.6,
+            }),
+        );
     }
 
     if (ring.value !== null) {
         opruimers.push(
-            tekenRing(ring.value, baan.value, { wachten: wachten + 0.2 }),
+            tekenRing(ring.value, baan.value, { wachten: wachten + 0.35 }),
         );
     }
 
@@ -222,35 +266,59 @@ onMounted(() => {
     }
 
     /*
-     * De drie lagen lopen uiteen zodra je gaat scrollen. De getallen zijn
-     * klein en het verschil ertussen is wat het werk doet: de achtergrond
-     * blijft het meest achter, de tekst loopt het hardst weg.
+     * De diepte bij het scrollen, alleen op een breed scherm.
      *
-     * **Alleen op een breed scherm**, en dat is geen smaakkwestie. Een
-     * element dat permanent met de scroll meebeweegt staat permanent in
-     * een bewegende compositielaag, en die rastert de browser in lagere
-     * resolutie; de scherpte komt pas terug als hij stilstaat. Bij het
-     * portret zag je dat als een foto die de hele tijd wazig is. Op een
-     * telefoon kost de parallax dus scherpte en levert hij, op dat
-     * formaat, nauwelijks diepte op.
-     *
-     * `gsap.matchMedia` zorgt dat het meegaat als je je telefoon draait,
-     * en draait bij het passeren van de grens netjes terug wat het had
-     * gezet.
+     * Een element dat permanent met de scroll meebeweegt, staat permanent
+     * in een bewegende compositielaag, en die rastert de browser in lagere
+     * resolutie -- bij het portret zag je dat als een foto die de hele tijd
+     * wazig is. Op een telefoon kost het dus scherpte en levert het op dat
+     * formaat nauwelijks diepte op. `gsap.matchMedia` draait het netjes
+     * terug als je je scherm draait.
      */
     const mm = gsap.matchMedia();
 
     mm.add('(min-width: 50rem)', () => {
-        const stoppers = [
-            portret.value === null
-                ? () => {}
-                : parallax(portret.value, { afstand: 90 }),
-            tekst.value === null
-                ? () => {}
-                : parallax(tekst.value, { afstand: -60 }),
-        ];
+        if (scene.value === null) {
+            return;
+        }
 
-        return () => stoppers.forEach((stop) => stop());
+        const diepte = gsap.timeline({
+            defaults: { ease: 'none' },
+            scrollTrigger: {
+                trigger: scene.value,
+                start: 'top top',
+                end: 'bottom top',
+                scrub: true,
+                invalidateOnRefresh: true,
+            },
+        });
+
+        if (beeld.value !== null) {
+            diepte.to(beeld.value, { yPercent: 14, scale: 1.14 }, 0);
+        }
+
+        if (iris.value !== null) {
+            diepte.to(iris.value, { y: 90, scale: 0.84 }, 0);
+        }
+
+        /*
+         * De maatverdeling draait mee terwijl je wegscrolt, als de ring van
+         * een lens die je scherpstelt. Eén cirkel met streepjes, gedraaid
+         * om zijn eigen midden: dat kost niets en het is de beweging die
+         * het oog-motief het duidelijkst maakt.
+         */
+        if (schaal.value !== null) {
+            diepte.to(schaal.value, { rotation: 50, svgOrigin: '50 50' }, 0);
+        }
+
+        if (tekst.value !== null) {
+            diepte.to(tekst.value, { y: -70, opacity: 0.35 }, 0);
+        }
+
+        return () => {
+            diepte.scrollTrigger?.kill();
+            diepte.kill();
+        };
     });
 
     opruimers.push(() => mm.revert());
@@ -258,112 +326,112 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
     intro?.kill();
-    stopTypen?.();
     opruimers.forEach((opruimen) => opruimen());
 });
 </script>
 
 <template>
-    <SiteSection
-        tone="gradient"
-        image="/images/hero-achtergrond-1600.webp"
-        :image-srcset="heroSrcset"
-        priority
-    >
+    <section ref="scene" class="brand-site-hero">
         <!--
-            De gloed achter de scène. Hij ligt achter alles en vangt niets
-            aan muisgebeurtenissen af, vandaar `pointer-events-none` en
-            `aria-hidden`. De verschuiving met de cursor staat in CSS en
-            leest `--muis-x` en `--muis-y`; JavaScript bepaalt alleen waar
-            de muis is.
+            De diepste laag: de achtergrond, met een waas eroverheen die de
+            tekst zijn contrast geeft. Een sfeerbeeld, dus leeg `alt`.
         -->
-        <div
-            ref="gloed"
-            class="brand-hero-gloed pointer-events-none"
-            aria-hidden="true"
-        />
+        <div class="brand-site-hero-diepte" aria-hidden="true">
+            <img
+                ref="beeld"
+                class="brand-site-hero-beeld"
+                src="/images/hero-achtergrond-1600.webp"
+                :srcset="heroSrcset"
+                sizes="100vw"
+                alt=""
+                loading="eager"
+                fetchpriority="high"
+                decoding="async"
+            />
+            <div class="brand-site-hero-waas" />
+            <!--
+                De gloed volgt de cursor. De verschuiving staat in CSS en
+                leest `--muis-x` en `--muis-y`; JavaScript bepaalt alleen
+                waar de muis is.
+            -->
+            <div ref="gloed" class="brand-site-hero-gloed" />
+        </div>
 
-        <div class="brand-hero-raster py-8 sm:py-16">
-            <div ref="tekst" class="min-w-0">
+        <div class="brand-site-raam brand-site-hero-raster">
+            <div ref="tekst" class="brand-site-hero-tekst">
                 <!--
-                    Op een telefoon staat de functie in het visitekaartje
-                    onder de titel, dus daar zou dit opschrift hem
-                    herhalen.
+                    Op een telefoon staat het opschrift in het visitekaartje
+                    onder de titel, dus daar zou het zich hier herhalen.
                 -->
                 <p
+                    v-if="props.heading.opschrift"
                     data-intro
-                    class="mb-4 hidden text-sm tracking-[0.2em] text-brand-cyan uppercase opacity-0 tablet:block"
+                    class="brand-site-opschrift brand-site-hero-opschrift opacity-0"
                 >
                     {{ props.heading.opschrift }}
                 </p>
 
                 <h1
                     ref="kop"
-                    class="max-w-3xl text-4xl leading-[1.05] font-semibold tracking-tight text-pretty text-white opacity-0 sm:text-6xl"
+                    class="brand-site-hero-titel opacity-0"
+                    :data-lengte="lengte"
                 >
                     {{ props.heading.titel }}
                 </h1>
 
                 <!--
-                    Het visitekaartje: alleen op een telefoon.
-
-                    Daar stond de grote cirkel onder de knoppen, en die
-                    kostte een kwart schermhoogte voor iets wat je pas
-                    zag als je er al voorbij was. Zo krijgt de foto een
-                    reden om er te staan -- het is niet een plaatje maar
-                    wie het doet -- en kost hij een strook in plaats van
-                    een blok.
-
-                    Vanaf een tablet is hij weg: daar staat het
-                    medaillon ernaast, en dan zou dit hetzelfde gezicht
-                    twee keer tonen.
+                    Het visitekaartje, alleen op een telefoon. Daar staat de
+                    iris niet naast de tekst, en zo krijgt het gezicht toch
+                    een plek: als wie het doet, in een strook in plaats van
+                    een blok. Vanaf een tablet is hij weg; daar zou hij
+                    hetzelfde gezicht twee keer tonen.
                 -->
-                <div data-intro class="brand-visitekaartje opacity-0">
-                    <img
-                        src="/images/persoon-medaillon-320.webp"
-                        alt=""
-                        width="320"
-                        height="320"
-                        decoding="async"
-                        fetchpriority="high"
-                    />
+                <div data-intro class="brand-site-visitekaartje opacity-0">
+                    <span class="brand-site-visitekaartje-oog">
+                        <img
+                            src="/images/persoon-medaillon-320.webp"
+                            alt=""
+                            width="320"
+                            height="320"
+                            decoding="async"
+                            fetchpriority="high"
+                        />
+                    </span>
 
                     <span class="min-w-0">
-                        <span v-if="NAAM" class="brand-visitekaartje-naam">
-                            {{ NAAM }}
+                        <span v-if="naam" class="brand-site-visitekaartje-naam">
+                            {{ naam }}
                         </span>
-                        <!--
-                            Hetzelfde opschrift als hierboven, en dat is
-                            precies de bedoeling: op een telefoon staat
-                            het hier en op een breder scherm daar. De
-                            klant past het op één plek aan.
-                        -->
-                        <span class="brand-visitekaartje-functie">
+                        <span
+                            v-if="props.heading.opschrift"
+                            class="brand-site-visitekaartje-functie"
+                        >
                             {{ props.heading.opschrift }}
                         </span>
                     </span>
                 </div>
 
                 <!--
-                    De zin eronder is optioneel. Laat de klant hem leeg,
-                    dan staat er gewoon niets in plaats van een lege regel
-                    die de knoppen omlaag duwt.
+                    De zin eronder is optioneel. Laat de klant hem leeg, dan
+                    staat er niets in plaats van een lege regel die de
+                    knoppen omlaag duwt.
                 -->
                 <p
                     v-if="props.heading.inleiding"
                     data-intro
-                    class="mt-6 max-w-xl text-lg text-pretty text-muted-foreground opacity-0"
+                    class="brand-site-hero-inleiding opacity-0"
+                    :data-lang="langeInleiding ? '' : undefined"
                 >
                     {{ props.heading.inleiding }}
                 </p>
 
-                <div data-intro class="mt-10 flex flex-wrap gap-3 opacity-0">
+                <div data-intro class="brand-site-hero-knoppen opacity-0">
                     <Button
                         v-if="props.sections.includes('contact')"
                         as="a"
                         href="#contact"
-                        size="lg"
                         variant="brand"
+                        @click="gaNaar('contact', $event)"
                     >
                         {{ $t('Neem contact op') }}
                     </Button>
@@ -371,27 +439,18 @@ onBeforeUnmount(() => {
                         v-if="props.sections.includes('diensten')"
                         as="a"
                         href="#diensten"
-                        size="lg"
                         variant="brand-outline"
+                        @click="gaNaar('diensten', $event)"
                     >
                         {{ $t('Bekijk de diensten') }}
                     </Button>
 
                     <!--
-                        Het LinkedIn-knopje. Bewust klein en zonder tekst:
-                        dit is de derde keuze op deze regel, en twee
-                        knoppen met woorden plus een derde met woorden is
-                        geen keuze meer maar een menu.
-
-                        Het merkteken alleen is genoeg -- dat herkent
-                        iedereen -- en de naam staat in het `aria-label`
-                        voor wie het niet ziet. Bij hover draait het rond
-                        en kleurt het mee; zie `brand-merkknop` in
-                        app.css.
-
-                        Nieuw tabblad, net als in het blok onderaan: dit
-                        is een ander domein en een bezoeker hoort zijn
-                        plek op deze pagina niet kwijt te raken.
+                        Het LinkedIn-knopje: alleen het merkteken, met de
+                        naam in het `aria-label`. Twee knoppen met woorden
+                        plus een derde met woorden is geen keuze meer maar
+                        een menu. Nieuw tabblad: een ander domein, en de
+                        bezoeker hoort zijn plek hier niet kwijt te raken.
                     -->
                     <a
                         v-if="linkedin"
@@ -407,95 +466,104 @@ onBeforeUnmount(() => {
             </div>
 
             <!--
-                Het portret als rond medaillon.
+                De iris: het portret in een stelsel van ringen.
 
-                Het is één samengesteld beeld: het oog-embleem uit de
-                huisstijl met de uitgeknipte persoon erop, in dezelfde
-                uitsnede gebakken. Twee losse lagen in CSS zou ook kunnen,
-                maar dan verschuift de uitlijning per schermbreedte en
-                staat zijn hoofd de ene keer wel en de andere keer niet
-                voor het oog.
+                Het portret is één samengesteld beeld -- het oog-embleem uit
+                de huisstijl met de uitgeknipte persoon erop -- zodat zijn
+                hoofd op elke breedte voor het oog staat. De pupil gaat open
+                als een diafragma (`irisOpen`), de buitenste ring tekent
+                zich (`tekenRing`) en een lichtboog blijft er langzaam
+                omheen lopen.
 
-                De ring eromheen is een SVG en geen `border`, want een
-                rand kun je niet laten tekenen. Hij begint op nul en
-                trekt zich in ruim een seconde rond; zie tekenRing() in
-                motion.ts.
-
-                Leeg `alt`: de naam en het bedrijf staan er al in tekst
-                naast, en een schermlezer heeft aan "een foto van een man
-                met een bril" niets.
+                Leeg `alt`: de naam en de functie staan er al in tekst, en
+                een schermlezer heeft aan "een man met een bril" niets.
             -->
-            <div class="brand-hero-portret hidden tablet:block">
-                <div ref="portret" class="brand-medaillon opacity-0">
-                    <img
-                        src="/images/persoon-medaillon-480.webp"
-                        :srcset="portretSrcset"
-                        sizes="(min-width: 64rem) 28rem, (min-width: 50rem) 18rem, min(62vw, 16rem)"
-                        alt=""
-                        width="960"
-                        height="960"
-                        decoding="async"
-                        fetchpriority="high"
-                    />
-
-                    <svg
-                        class="brand-medaillon-ring"
-                        viewBox="0 0 100 100"
-                        aria-hidden="true"
-                    >
-                        <!-- Het vaste kader: tekent zich één keer. -->
-                        <circle
-                            ref="ring"
-                            cx="50"
-                            cy="50"
-                            r="48.5"
-                            fill="none"
-                            stroke="url(#medaillon-verloop)"
-                            stroke-width="1"
-                            vector-effect="non-scaling-stroke"
-                        />
-
-                        <!--
-                            De lichtboog die blijft ronddraaien. De groep
-                            eromheen is er voor de rotatie: een cirkel
-                            draait anders om de hoek van het tekenvlak en
-                            niet om zijn eigen midden.
-                        -->
-                        <g ref="baan" class="brand-medaillon-baan">
-                            <circle
-                                cx="50"
-                                cy="50"
-                                r="48.5"
-                                fill="none"
-                                stroke="#13c7f3"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-dasharray="26 279"
-                                vector-effect="non-scaling-stroke"
-                            />
-                            <circle cx="50" cy="1.5" r="1.8" fill="#a9e8fa" />
-                        </g>
-
+            <div class="brand-site-hero-oog" aria-hidden="true">
+                <div ref="iris" class="brand-site-hero-iris">
+                    <svg class="brand-site-hero-ringen" viewBox="0 0 100 100">
                         <defs>
                             <linearGradient
-                                id="medaillon-verloop"
+                                id="hero-iris-verloop"
                                 x1="0"
                                 y1="0"
                                 x2="1"
                                 y2="1"
                             >
-                                <stop offset="0%" stop-color="#13c7f3" />
-                                <stop offset="55%" stop-color="#0787e8" />
+                                <stop
+                                    offset="0%"
+                                    style="stop-color: var(--brand-cyan)"
+                                />
+                                <stop
+                                    offset="55%"
+                                    style="stop-color: var(--brand-blue)"
+                                />
                                 <stop
                                     offset="100%"
-                                    stop-color="#13c7f3"
-                                    stop-opacity="0.25"
+                                    style="
+                                        stop-color: var(--brand-cyan);
+                                        stop-opacity: 0.2;
+                                    "
                                 />
                             </linearGradient>
                         </defs>
+
+                        <!-- De maatstreepjes: een vaste schaal, zoals op een lens. -->
+                        <circle
+                            ref="schaal"
+                            class="brand-site-hero-schaal"
+                            cx="50"
+                            cy="50"
+                            r="49.4"
+                            pathLength="360"
+                            vector-effect="non-scaling-stroke"
+                        />
+
+                        <!-- De ring die zich één keer tekent. -->
+                        <circle
+                            ref="ring"
+                            cx="50"
+                            cy="50"
+                            r="47"
+                            fill="none"
+                            stroke="url(#hero-iris-verloop)"
+                            stroke-width="1"
+                            vector-effect="non-scaling-stroke"
+                        />
+
+                        <!--
+                            De lichtboog die blijft rondgaan. De groep is er
+                            voor de rotatie: een cirkel draait anders om de
+                            hoek van het tekenvlak en niet om zijn midden.
+                        -->
+                        <g ref="baan" class="brand-site-hero-baan">
+                            <circle
+                                cx="50"
+                                cy="50"
+                                r="47"
+                                fill="none"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-dasharray="22 274"
+                                vector-effect="non-scaling-stroke"
+                            />
+                            <circle cx="50" cy="3" r="1.4" />
+                        </g>
                     </svg>
+
+                    <div ref="pupil" class="brand-site-hero-pupil opacity-0">
+                        <img
+                            src="/images/persoon-medaillon-480.webp"
+                            :srcset="portretSrcset"
+                            sizes="(min-width: 80rem) 30rem, (min-width: 50rem) 38vw, 16rem"
+                            alt=""
+                            width="960"
+                            height="960"
+                            decoding="async"
+                            fetchpriority="high"
+                        />
+                    </div>
                 </div>
             </div>
         </div>
-    </SiteSection>
+    </section>
 </template>

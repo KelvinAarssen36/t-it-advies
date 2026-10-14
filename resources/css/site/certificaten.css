@@ -1,0 +1,378 @@
+/*
+  Certificaten ("Credentialwand") en de opleidingen eronder.
+
+  Zie CertificatenSection.vue en docs/architecture/modules/certificaten.md.
+*/
+
+/*
+  De wand. Twee kolommen op een telefoon en vier vanaf 40rem -- dus
+  allebei de keren twee rijen van de paginagrootte (BREED = 8, SMAL = 4
+  in CertificatenSection.vue). Die getallen en dit raster horen bij
+  elkaar; meteen naar vier en niet eerst naar drie, want drie kolommen
+  met vier tegels laat een halve rij over.
+*/
+.brand-site-certificaten-wand {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.625rem;
+}
+
+@media (min-width: 40rem) {
+    .brand-site-certificaten-wand {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.875rem;
+    }
+}
+
+/*
+  De tegel: een glazen plaat. Logo linksboven en groot, de naam eronder,
+  uitgever en jaar onderaan. Links uitgelijnd en niet gecentreerd: in een
+  wand lijnen de namen dan op één lijn uit, en lees je hem als een rij
+  bewijsstukken in plaats van als losse badges.
+
+  Aanwijzen doen alle tegels hetzelfde; in een wand van negen zag je
+  anders vier tegels bewegen en vijf niet. Alleen een tegel met details
+  krijgt het handje, de focusrand en het pijltje.
+*/
+.brand-site-certificaten-tegel {
+    position: relative;
+    display: flex;
+    min-width: 0;
+    min-height: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    border: 1px solid var(--site-plaat-rand);
+    border-radius: 0.875rem;
+    background:
+        linear-gradient(
+            160deg,
+            color-mix(in oklab, var(--brand-platinum) 4%, transparent),
+            transparent 40%
+        ),
+        var(--site-plaat);
+    padding: 0.875rem 0.8rem 0.95rem;
+    text-align: left;
+    color: inherit;
+    font: inherit;
+    transition:
+        border-color 0.35s var(--site-ease),
+        background-color 0.35s var(--site-ease);
+}
+
+@media (min-width: 40rem) {
+    .brand-site-certificaten-tegel {
+        gap: 0.6rem;
+        padding: 1.05rem 1.05rem 1.1rem;
+    }
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-certificaten-tegel:hover {
+        border-color: var(--site-plaat-rand-sterk);
+    }
+}
+
+.brand-site-certificaten-tegel[data-klikbaar] {
+    cursor: pointer;
+}
+
+.brand-site-certificaten-tegel[data-klikbaar]:focus-visible {
+    outline: 2px solid var(--brand-cyan);
+    outline-offset: 2px;
+}
+
+/*
+  De plaat waar het logo in staat. Een eigen vlak, zodat een donker
+  merkteken op de donkere pagina niet verdwijnt.
+*/
+.brand-site-certificaten-plaat {
+    display: flex;
+    width: 2.375rem;
+    height: 2.375rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 1px solid var(--site-plaat-rand);
+    border-radius: 0.75rem;
+    background-color: var(--site-plaat-vol);
+    color: var(--brand-cyan);
+    transition: box-shadow 0.4s var(--site-ease);
+}
+
+@media (min-width: 40rem) {
+    .brand-site-certificaten-plaat {
+        width: 2.75rem;
+        height: 2.75rem;
+    }
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-certificaten-tegel:hover .brand-site-certificaten-plaat {
+        box-shadow: 0 0 1.5rem var(--site-licht);
+    }
+}
+
+/*
+  Geen uitzondering voor een logo met doorzichtige randen: de server bakt
+  de achtergrond al in het bestand. Zie App\Support\Media\Logo.
+*/
+.brand-site-certificaten-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.brand-site-certificaten-teken {
+    width: 45%;
+    height: 45%;
+}
+
+/* Het pijltje rechtsboven: hier zit een venster achter. */
+.brand-site-certificaten-meer {
+    position: absolute;
+    top: 0.9rem;
+    right: 0.9rem;
+    width: 1rem;
+    height: 1rem;
+    color: var(--site-tekst-zacht);
+    opacity: 0.6;
+    transition:
+        transform 0.35s var(--site-ease),
+        opacity 0.35s var(--site-ease),
+        color 0.35s var(--site-ease);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-certificaten-tegel:hover .brand-site-certificaten-meer {
+        transform: translate(2px, -2px);
+        opacity: 1;
+        color: var(--brand-cyan);
+    }
+}
+
+.brand-site-certificaten-naam {
+    max-width: 100%;
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+    color: var(--site-kop);
+}
+
+@media (min-width: 40rem) {
+    .brand-site-certificaten-naam {
+        font-size: var(--site-maat-tekst);
+    }
+}
+
+/*
+  Uitgever en jaar, onderaan de tegel (`margin-top: auto`), zodat ze in
+  een rij tegels op één hoogte staan. De uitgever is een vrij tekstveld en
+  wordt na twee regels afgekapt; de hele tekst blijft in de HTML, en een
+  tegel met details opent het venster waar alles staat.
+*/
+.brand-site-certificaten-uitgever {
+    display: flex;
+    max-width: 100%;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.2rem;
+    margin-top: auto;
+    font-size: 0.75rem;
+    color: var(--site-tekst-zacht);
+}
+
+.brand-site-certificaten-uitgever-naam {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+}
+
+/* De harde feiten in het venster: behaald, geldig tot, nummer. */
+.brand-site-certificaten-feiten {
+    display: grid;
+    gap: 0.85rem;
+    border: 1px solid var(--site-plaat-rand);
+    border-radius: 0.75rem;
+    background-color: var(--site-plaat);
+    padding: 0.9rem 1rem;
+}
+
+@media (min-width: 30rem) {
+    .brand-site-certificaten-feiten {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.brand-site-certificaten-feiten > div {
+    min-width: 0;
+}
+
+.brand-site-certificaten-feiten dt {
+    font-family: var(--site-font-data);
+    font-size: 0.6875rem;
+    color: var(--site-tekst-zacht);
+}
+
+.brand-site-certificaten-feiten dd {
+    margin-top: 0.2rem;
+    font-size: 0.875rem;
+    overflow-wrap: anywhere;
+    color: var(--site-kop);
+}
+
+/* ---------------------------------------------------------------------
+   De opleidingen als tijdstrook
+
+   Op een breed scherm naast elkaar langs één lijn bovenaan, met een punt
+   per opleiding; er passen er zoveel naast elkaar als de breedte toelaat,
+   en de rest loopt door op een volgende strook. Op een telefoon onder
+   elkaar langs een lijn aan de linkerkant.
+   --------------------------------------------------------------------- */
+.brand-site-certificaten-opleidingen {
+    margin-top: clamp(2rem, 4vw, 3rem);
+}
+
+.brand-site-certificaten-kopje {
+    font-size: var(--site-maat-klein);
+    font-weight: 600;
+    letter-spacing: 0.005em;
+    color: var(--brand-cyan);
+}
+
+.brand-site-certificaten-strook {
+    display: grid;
+    position: relative;
+    grid-template-columns: minmax(0, 1fr);
+    margin-top: 1rem;
+}
+
+/*
+  De lichtlijn langs de strook: hij tekent met je scroll mee, van het
+  eerste jaar naar het laatste (`--voortgang` van `scrollVoortgang`). De
+  dunne lijn eronder -- de randen van de opleidingen -- is het spoor; dit
+  is het licht dat erlangs loopt. Op een breed scherm horizontaal over de
+  bovenste rij, op een telefoon verticaal langs de linkerkant.
+*/
+.brand-site-certificaten-strook::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1px;
+    height: 100%;
+    background: linear-gradient(180deg, var(--brand-cyan), var(--brand-ice));
+    box-shadow: 0 0 10px var(--site-licht);
+    transform: scaleY(var(--voortgang, 1));
+    transform-origin: 50% 0;
+    pointer-events: none;
+}
+
+@media (min-width: 50rem) {
+    .brand-site-certificaten-strook::after {
+        width: 100%;
+        height: 1px;
+        background: linear-gradient(90deg, var(--brand-cyan), var(--brand-ice));
+        transform: scaleX(var(--voortgang, 1));
+        transform-origin: 0 50%;
+    }
+}
+
+@media (min-width: 50rem) {
+    .brand-site-certificaten-strook {
+        grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
+        row-gap: 1.5rem;
+    }
+}
+
+.brand-site-certificaten-opleiding {
+    position: relative;
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.25rem;
+    border-left: 1px solid
+        color-mix(in oklab, var(--brand-cyan) 22%, transparent);
+    padding: 0 0 1.25rem 1.25rem;
+}
+
+.brand-site-certificaten-opleiding:last-child {
+    padding-bottom: 0;
+}
+
+/* Het punt op de lijn. */
+.brand-site-certificaten-opleiding::before {
+    content: '';
+    position: absolute;
+    top: 0.3rem;
+    left: calc(-0.3125rem - 0.5px);
+    width: 0.625rem;
+    height: 0.625rem;
+    border: 1px solid var(--brand-cyan);
+    border-radius: 999px;
+    background-color: var(--site-veld);
+    box-shadow: 0 0 0.75rem var(--site-licht);
+}
+
+@media (min-width: 50rem) {
+    .brand-site-certificaten-opleiding {
+        border-top: 1px solid
+            color-mix(in oklab, var(--brand-cyan) 22%, transparent);
+        border-left: 0;
+        padding: 1.125rem 1.25rem 0 0;
+    }
+
+    .brand-site-certificaten-opleiding:last-child {
+        padding-bottom: 0;
+    }
+
+    .brand-site-certificaten-opleiding::before {
+        top: calc(-0.3125rem - 0.5px);
+        left: 0;
+    }
+}
+
+.brand-site-certificaten-periode {
+    font-size: 0.75rem;
+    color: var(--brand-cyan);
+}
+
+.brand-site-certificaten-opleiding-naam {
+    margin-top: 0.2rem;
+    font-size: var(--site-maat-tekst);
+    font-weight: 500;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+    color: var(--site-kop);
+}
+
+.brand-site-certificaten-instelling,
+.brand-site-certificaten-niveau {
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+    color: var(--site-tekst-zacht);
+}
+
+.brand-site-certificaten-niveau {
+    font-size: var(--site-maat-label);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .brand-site-certificaten-tegel,
+    .brand-site-certificaten-plaat,
+    .brand-site-certificaten-meer {
+        transition: none;
+    }
+
+    .brand-site-certificaten-tegel:hover .brand-site-certificaten-meer {
+        transform: none;
+    }
+}

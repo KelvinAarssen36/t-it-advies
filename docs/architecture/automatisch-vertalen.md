@@ -72,6 +72,7 @@ die er acht tegelijk overschrijft is te grof.
 | `waarde_nl`      | 80     | De waarde van een kerngegeven -- "Vanaf januari"                                                                                           |
 | `tagline_nl`     | 120    | De zin onder het merk in de voet                                                                                                           |
 | `region_nl`      | 60     | De plaats of het werkgebied in de voet                                                                                                     |
+| `button_nl`      | 40     | De tekst op de knop van het LinkedIn-blok. De kop erboven gaat via `eyebrow_nl`, `title_nl` en `intro_nl`                                  |
 | `groep_nl`       | 60     | De groep waarin een statistiek valt. Gaat mee met de grote knop in het bewerkvenster, en los met het kleine knopje in het indelingsvenster |
 | `woord_nl`       | 40     | Het woord onder één cijfer                                                                                                                 |
 | `punt_nl`        | 60     | Eén expertisepunt                                                                                                                          |

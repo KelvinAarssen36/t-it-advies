@@ -96,36 +96,118 @@ Vier dingen die daarbij bewust zo zijn:
   pad golft, dus de helft van de lengte ligt niet bij de helft van de
   stappen. Tweehonderd monsters langs het pad, en per stap het dichtstbije.
 
-### Rij of kolom, en niets ertussenin
+### Breed een spoor, smal een kolom
 
-**Tot vier stappen een rij, daarboven een kolom.** Geen raster van meerdere
-rijen, en die keuze volgt rechtstreeks uit de lijn: een lijn die van het
-einde van de ene rij naar het begin van de volgende moet, snijdt onderweg
-dwars door de tekst van de kaarten ertussen. Er is geen route die dat niet
-doet.
+**Op een breed scherm (≥64rem) is de werkwijze een korte scène:** de
+stappen staan op één spoor naast elkaar en schuiven tijdens het gewone
+verticale scrollen van rechts naar links, precies met de scroll mee. Dat is
+de horizontale compositie van de landing, en hij hoort hier: een werkwijze
+is een volgorde die je doorloopt, geen rij blokjes.
 
-De eerste poging liet de lijn in dat geval maar weg. Dat was erger: bij vijf
-stappen stond er ineens een leeg vak waar iets hoorde. Nu schakelt de opmaak
-om naar één kolom -- precies wat een telefoon al deed -- en loopt de lijn er
-verticaal langs. Die vorm werkt bij elk aantal.
+- **Het podium plakt** (kop, knop en het venster met het spoor), met CSS
+  `position: sticky` binnen de sectie. Geen ScrollTrigger-`pin`: die zet
+  een spacer om de sectie en duwde de kop ooit achter de kopbalk (zie
+  `kaartenBinnen` in motion.ts).
+- **De scène kost precies de afstand die het spoor aflegt.** Het component
+  meet de breedte van het spoor min die van het venster en zet die als
+  hoogte op een leeg blok ná het podium (`.brand-site-werkwijze-reis`,
+  `--reis`). Meer scroll dan dat zou lege scroll zijn. Is de afstand meer
+  dan een schermhoogte (zes lange stappen op een smal laptopscherm), dan
+  blijft de scroll op één schermhoogte en gaat het spoor iets sneller.
+- **Het licht gaat de andere kant op.** Over de knopen loopt een haarlijn;
+  het verlichte deel groeit van de eerste naar de laatste knoop, met het
+  lichtpunt op de kop. Het spoor schuift naar links, het licht naar rechts:
+  in beeld loopt het lichtpunt van links naar rechts over het scherm terwijl
+  de stappen eronderdoor gaan. Elke stap krijgt `data-bereikt` op het
+  moment dat het licht zijn knoop passeert, en de stap waar het licht nu is
+  `data-actief` (de helderste knoop en een gloed op het nummer). Een
+  positie, geen waarde: terugscrollen dooft ze weer.
+- **Waar het podium plakt:** in het midden van het scherm als het klein
+  genoeg is, anders 88 pixels onder de bovenrand, net onder de zwevende
+  kopbalk. Nooit erachter.
+- **Het venster reikt tot vlak voor de rand van de plaat** (`--rand`,
+  gemeten, hooguit 8rem) en vervaagt daar, zodat een vertrekkende stap tot
+  aan de rand doorschuift. Gemeten en niet met `100vw` uitgerekend: dat telt
+  de schuifbalk mee, en dan steekt het venster net buiten de pagina.
+  `overflow-x: clip` en geen `hidden`, zodat het podium kan blijven plakken
+  en er geen schuifvlak ontstaat.
 
-Het component zet daarvoor `data-rij` op het raster bij **twee tot vier**
-stappen; de CSS hangt de hele omschakeling daaraan op, zodat de opmaak op
-één plek staat. In de kolomvorm is de breedte begrensd op 48rem: een regel
-die over een breed scherm doorloopt is niet te lezen.
+**Geen scène als die niets toevoegt.** `meet()` draait bij het begin en bij
+elke verversing van ScrollTrigger (`refreshInit`, dus ook na een resize) en
+zet `data-baan` op de scène:
 
-Eén stap telt niet als rij. De rijvorm houdt bovenaan vijf rem vrij voor de
-lijn, en bij één stap is er geen lijn -- één punt verbindt niets. Zonder
-die ondergrens staat er tachtig pixels leegte boven een enkele stap.
+| `data-baan` | Wanneer                                               | Wat je ziet                                          |
+| ----------- | ----------------------------------------------------- | ---------------------------------------------------- |
+| `scene`     | Het spoor is breder dan het venster                   | Podium plakt, spoor schuift, licht loopt mee         |
+| `rij`       | Het spoor past (2-3 stappen, of een breed scherm)     | Een stilstaande rij; alleen het licht loopt mee      |
+| _(geen)_    | Reduced motion, of het podium past niet in het scherm | Een raster dat afbreekt, alles helder, geen beweging |
 
-**Wat er gebeurt bij elk aantal:**
+Het podium wordt gemeten in de vorm van de scène (het raster breekt af en is
+dan lager), en pas daarna wordt gekozen. Een podium dat hoger is dan het
+scherm krijgt geen scène: een scène waarvan je de onderkant niet ziet is
+erger dan geen scène. Zonder JavaScript staat er ook gewoon het raster.
 
-| Stappen | Breed scherm (≥64rem)               | Smaller                      |
-| ------- | ----------------------------------- | ---------------------------- |
-| 0       | Het hele onderdeel valt van de site | idem                         |
-| 1       | Kolom, compact, geen lijn           | idem                         |
-| 2-4     | Rij, lijn erboven met uitloop       | Kolom, lijn door de kantlijn |
-| 5+      | Kolom, lijn door de kantlijn        | idem                         |
+**Onder 64rem een kolom** met de straal verticaal langs de knopen. Die
+tekent `tekenPad()`, met de scroll mee. Geen sticky op een telefoon of
+tablet: daar scrol je met je duim, en een stuk pagina dat ineens zijwaarts
+gaat voelt als een fout. De knop naar `/werkwijze` staat daar ná de stappen
+(de zijkant is `display: contents`, en `order` zet de knop achteraan).
+
+De keuze tussen breed en smal maakt `gsap.matchMedia`, met drie toestanden:
+breed met beweging (`spoor()`), smal (`kolom()`, met `tekenPad`), en breed
+met reduced motion (alles bereikt, niets beweegt). Bij een wissel ruimt
+matchMedia de vorige toestand op, met de attributen en de ruimte onder het
+podium.
+
+Eén stap telt niet als reeks: één punt verbindt niets. Dan staat er geen
+straal en geen knoop, alleen de stap (`data-vorm="enkel"`).
+
+**Wat er gebeurt bij elk aantal** (gemeten met lange teksten):
+
+| Stappen | 1440 breed                          | 1024 breed             | Smaller                       |
+| ------- | ----------------------------------- | ---------------------- | ----------------------------- |
+| 0       | Het hele onderdeel valt van de site | idem                   | idem                          |
+| 1       | Eén stap, geen straal               | idem                   | idem                          |
+| 2-3     | `rij`                               | `rij`                  | Kolom, straal langs de knopen |
+| 4       | `scene`, 386 px reis                | `scene`, 258 px reis   | Kolom, straal langs de knopen |
+| 6       | `scene`, 1160 px reis in 900 px     | `scene`, 700 px scroll | Kolom, straal langs de knopen |
+
+### Het lichtpad ("Helder zicht")
+
+De vormgeving hoort bij de taal van de hele site; zie
+[frontend en animatie](../frontend-en-animatie.md#de-landing-als-scène).
+
+- **De stappen lichten op, ze vervagen niet in.** Zolang het licht een stap
+  nog niet bereikt heeft, ligt hij zacht terug (doorzichtigheid 0,5 en een
+  halve rem lager of opzij); komt het licht langs, dan komt hij helder naar
+  voren. Overgangen en geen keyframes, zodat heen en weer scrollen een
+  lopende overgang ombuigt. Het dimmen hangt aan `data-licht` op de lijst,
+  en dat zet het component alleen als er echt licht loopt.
+- **Op het spoor** staat het nummer groot boven de titel
+  (`--site-maat-titel`, Geist met cijfers van gelijke breedte; het is een
+  volgorde en geen meting, dus geen mono). Een stap is
+  `clamp(17rem, 24vw, 21.5rem)` breed: breed genoeg om een samenvatting van
+  driehonderd tekens in een rustige kolom te lezen terwijl hij beweegt.
+- **Duur en resultaat** staan als twee feiten onder de tekst, het label
+  klein ervoor en op één regel naast elkaar waar het past; de duur in het
+  datalettertype.
+
+**De knopen in de kolom liggen precies op de straal**, en dat vraagt een
+truc. `tekenPad` hangt de straal aan de ankers (`[data-stap-punt]`) en laat
+de middelste stappen tien pixels opzij golven (`GOLF`), om en om. De ankers
+moeten recht onder elkaar blijven staan -- wijken ze meer dan acht pixels
+af, dan tekent `tekenPad` geen lijn. Daarom blijft het anker op zijn plek
+en schuift de **zichtbare** knoop mee met de golf: `--golf` (-1, 0 of 1)
+zet het component per stap. Pas je `GOLF` in motion.ts aan, doe het dan ook
+in [`resources/css/site/werkwijze.css`](../../../resources/css/site/werkwijze.css).
+
+Onder reduced motion staat de straal er meteen helemaal, zijn alle stappen
+bereikt en beweegt er niets.
+
+**Een fout die hierbij boven kwam:** het component herstartte bij een
+taalwissel met een `watch` zonder `flush: 'post'`. Die draait vóórdat Vue de
+nieuwe stappen in de pagina zet, dus `tekenPad` mat de stappen die net
+weggingen. Nu `flush: 'post'`.
 
 ### Het maximum: zes
 
@@ -137,8 +219,8 @@ er bijna altijd beter twee samenvoegen -- en dat zegt het scherm er ook
 bij, in plaats van alleen te weigeren.
 
 Praktisch telt mee dat de kolomvorm zo hoog is als de som van alle stappen.
-Bij zes is dat zo'n 550 beeldpunten; bij tien is het geen sectie meer maar
-een pagina.
+Bij zes is dat ruim een scherm; bij tien is het geen sectie meer maar een
+pagina.
 
 De grens staat op drie plekken, en dat is met opzet:
 
@@ -162,20 +244,27 @@ na of er niet twee stappen zijn die eigenlijk één stap zijn.
 
 ### De uitloop
 
-De nummers staan links in hun kolom, dus het laatste nummer zit op
-driekwart van de breedte. Een lijn die daar ophoudt leest als een streepje
-dat toevallig tussen vier punten past, met een kwart leegte ernaast. Er komt
-daarom een uitloop bij tot aan de rand -- wat het oude, vaste pad ook deed.
-
-Die uitlooppunten staan bewust niet in de lijst waarop de posities worden
-opgezocht: een punt dat geen stap is hoort daar niet bij. Gevolg is dat de
-laatste stap oplicht vóórdat de lijn klaar is, en dat de staart daarna nog
-doorloopt. Dat is ook hoe het hoort te lezen.
+`tekenPad` laat een lijn op een rij tot aan de rand doorlopen. Sinds de
+rij op de voorpagina een spoor is (zie hierboven) gebruikt geen enkele
+pagina die rijvorm nog: de kolom heeft geen uitloop. De code staat er nog
+voor wie `tekenPad` ooit op een rij zet.
 
 ## De pagina `/werkwijze`
 
 Op de voorpagina staan de stappen als korte kaarten; hier krijgt elke stap
 de ruimte die daar niet is.
+
+**Dezelfde taal als de voorpagina.** Het opschrift en de titel van de
+subpagina's (`.brand-site-opschrift`, `.brand-site-subpagina-titel`), en per
+stap een knoop met het nummer op een verticale straal die `tekenPad` met
+de scroll mee tekent; elke knoop licht op als het licht hem bereikt. Naast
+de knoop: "Stap 2 van 6" en de duur, de titel in `--site-maat-titel-lang`,
+de korte zin, het verhaal in lopende tekst (62 tekens breed) en wat het
+oplevert als een feit met een haarlijn ervoor. De stappen komen één keer
+binnen (`data-reveal`); daarna leest het stil. De knoop schuift met de golf
+van `tekenPad` mee (`--golf`, als transform: `tekenPad` meet met
+`offsetLeft` en ziet die verschuiving niet). De stijl staat onderaan
+`resources/css/site/werkwijze.css` (`.brand-site-werkwijzepagina-*`).
 
 **Drie grendels, en de derde onderscheidt hem van `/projecten`:**
 

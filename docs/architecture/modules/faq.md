@@ -57,13 +57,43 @@ is geen verbetering. `FaqPublishingTest` legt alle drie de gevallen vast.
 
 ## Het blok op de website
 
+### Twee kolommen: de kop blijft staan
+
+Vanaf 64rem staat het blok in twee kolommen. Links de kop van de klant, die
+**sticky** blijft staan terwijl je door de vragen gaat, met daaronder één
+link naar het contactblok; rechts de vragen, groot gezet (tot 1,375rem),
+met tussen elke vraag een haarlijn en bij de vraag die open staat een
+cyaan lichtlijn die van links aangroeit. Op een telefoon staat het onder
+elkaar.
+
+**De link naar contact staat er alleen als het contactblok er ook staat**
+(het menu van de server, via `useSectieLink()`). Hij glijdt met
+`scrollNaar` naar het blok en zet het anker met `replaceState`, net als het
+menu; Ctrl-klik en middelklik gaan gewoon door. Er staat bewust geen zin
+voor ("staat je vraag er niet bij?"): de inleiding die de klant boven de
+vragen zet zegt dat vaak al, en dan stond het er twee keer.
+
+Het teken achter een vraag is een plus in een rondje van 44px, dat bij
+openen een kwartslag draait tot een kruisje. Het rondje is er voor het
+aanraakvlak op een telefoon.
+
+### Bewust rust
+
+Dit is het onderdeel waar gelezen wordt, en het enige zonder eigen
+scrollmoment: de kop komt op zoals elke kop, en verder beweegt alleen het
+openklappen. Dat is een CSS-overgang en dus onderbreekbaar: klik je snel
+twee keer, dan keert hij halverwege om in plaats van eerst af te maken.
+De vragen staan op `--site-maat-kop`, het antwoord op `--site-maat-tekst`;
+de ronde knop met het plusje is 2,25rem, maar de hele regel is de knop,
+dus het tikvlak is ruim.
+
 ### De accordeon komt uit reka-ui
 
 Niet zelf gebouwd, en dat scheelt drie dingen die je met een eigen `v-if`
 alle drie fout doet: de pijltjestoetsen tussen de vragen, `aria-expanded`
-op de knop met `aria-controls` naar het antwoord, en een hoogte om naartoe
-te animeren (`--reka-accordion-content-height`). Een vragenlijst die je
-alleen met de muis kunt openen is geen vragenlijst.
+op de knop met `aria-controls` naar het antwoord, en de toestand op elk
+onderdeel (`data-state`). Een vragenlijst die je alleen met de muis kunt
+openen is geen vragenlijst.
 
 `type="single"` met `collapsible`: er staat er **één open tegelijk** en je
 kunt hem ook weer dichtklikken. Zo groeit dit blok nooit met meer dan één
@@ -110,8 +140,10 @@ veertien vragen.
 ### En een briefje voor de zoekmachines
 
 In de `<head>` van de landingspagina staat de lijst ook als
-`FAQPage`-structuurdata (JSON-LD); zie `vragenBriefje` in
-[Welcome.vue](../../../resources/js/pages/Welcome.vue). Het zegt expliciet
+`FAQPage`-structuurdata (JSON-LD); `vragenBriefje()` in
+[HomeController](../../../app/Http/Controllers/HomeController.php) maakt
+hem, en [app.blade.php](../../../resources/views/app.blade.php) zet hem in
+de pagina. Het zegt expliciet
 wát die tekst is -- een vragenlijst met per vraag het bijbehorende antwoord
 -- zodat een zoekmachine dat niet uit de opmaak hoeft te raden.
 
@@ -125,7 +157,28 @@ met wat er zichtbaar staat -- en dat is ook de regel van Google zelf. Zijn er
 geen vragen, dan staat er niets in de `<head>`; een lege lijst opgeven is
 erger dan hem weglaten.
 
-### De glans
+### Openklappen met `grid-template-rows`
+
+Het antwoord staat **altijd in de pagina** (`force-mount` op
+`AccordionContent`). Dicht is het een rij van `0fr`, open een rij van
+`1fr`, en daar gaat de browser zelf vloeiend tussen over -- zonder een
+hoogte te meten en zonder keyframes. De tekst erin komt een fractie later
+op en zakt een halve rem op zijn plek.
+
+Een dicht antwoord is daarbij `visibility: hidden`, met een vertraging zo
+lang als het dichtklappen (0,5 seconde). Zo blijft het tijdens het
+dichtgaan zichtbaar, en slaat een schermlezer het over zodra het dicht is
+-- net als toen het er helemaal niet stond.
+
+Bijkomend voordeel: de antwoorden staan nu ook in de HTML, niet alleen de
+vragen.
+
+### De glans (vervallen)
+
+Hieronder staat waarom de oude veeg (`brand-faq-knop`) een eigen veeg had
+en geen `brand-glans`. **In het nieuwe ontwerp is er geen veeg meer**: de
+open vraag krijgt een lichtlijn langs de onderrand. De les eronder blijft
+gelden.
 
 De FAQ heeft zijn **eigen** veeg in `brand-faq-knop`, en níet die van
 `brand-glans`. Dat was de eerste opzet, en die is teruggedraaid nadat de
@@ -155,8 +208,9 @@ als een voorwerp dat langsschuift.
 > als het dan in een andere cascadelaag staat, kun je het niet eens
 > bijstellen.
 
-Bij `prefers-reduced-motion` glanst er niets, springt een antwoord open in
-plaats van te groeien, en draait de chevron niet. Alles blijft werken.
+Bij `prefers-reduced-motion` springt een antwoord open in plaats van te
+groeien, groeit de lichtlijn niet aan en draait het plusje niet. Alles
+blijft werken.
 
 ### Niet `brand-blad-tekst` voor het antwoord
 
@@ -164,7 +218,8 @@ Die klasse doet het alineawerk ook, maar hij is gemaakt voor een venster: hij
 heeft een streep erboven en op een breed scherm een eigen schuifgebied van
 46svh. Een vak dat binnen een opengeklapt antwoord zelf gaat schuiven is
 precies wat je hier niet wil. Wat ervan overblijft is één eigenschap --
-`white-space: pre-line` -- en die staat in `brand-faq-tekst`.
+`white-space: pre-line` -- en die staat in `brand-site-faq-tekst`
+([`faq.css`](../../../resources/css/site/faq.css)).
 
 ## Het beheerscherm
 

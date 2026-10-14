@@ -310,12 +310,33 @@ getypt.
 
 ## Het ontwerp van de twee publieke onderdelen
 
-**Het blok op de voorpagina**: de foto en één alinea naast elkaar vanaf de
-tabletgrens, eronder op een telefoon. De foto heeft een vaste maat en de
-alinea vult de rest -- omgekeerd zou een korte samenvatting een enorme foto
-naast zich krijgen. Het beeld is rond, ook een eigen foto, omdat het
-medaillon rond is; anders verspringt de pagina zodra de eigenaar er een
-inzet.
+**Het blok op de voorpagina** is een editoriaal portret. Vanaf de
+tabletgrens staat de foto links (tot 18rem), in een ronde uitsnede
+met een schaal van zestig maatstreepjes eromheen -- dezelfde taal als de
+wijzers bij de [statistieken](statistieken.md). Rechts staan de kop en de
+samenvatting als grote leestekst, met de knop eronder. Op een telefoon
+staat de foto kleiner bovenaan.
+
+- **Het diafragma gaat open terwijl je scrolt.** Op een breed scherm hangt
+  de opening aan je positie (`scrub` op een `clip-path: circle()`, van 22%
+  tot helemaal open tegen de tijd dat het portret in het midden van het
+  scherm staat), draait de schaal een stukje mee, en beweegt het portret
+  iets trager dan de tekst ernaast. Nooit van nul: wie snel langs scrolt
+  of via een anker binnenkomt ziet altijd een gezicht. Op een telefoon gaat
+  het één keer open bij binnenkomst (`irisOpen()`), zonder scrub of
+  parallax. Onder `prefers-reduced-motion` staat hij er gewoon.
+- **De samenvatting kiest haar maat op lengte**, net als de koppen: tot 160
+  tekens groot in de koptint, tot 280 een maat kleiner, daarboven gewone
+  leestekst. De klant mag tot 400 tekens typen, en wat bij twee zinnen een
+  mooie leestekst is wordt bij vier een muur.
+- Het beeld is rond, ook een eigen foto, omdat het medaillon rond is;
+  anders verspringt de pagina zodra de eigenaar er een inzet.
+- De knop gaat via de route-helper `overMij()` en niet via een
+  hardgecodeerd adres.
+
+De opmaak staat in
+[`over-mij.css`](../../../resources/css/site/over-mij.css), onder
+`brand-site-overmij-*` en `brand-site-overmijpagina-*`.
 
 **De aparte pagina** volgt de aparte contactpagina als voorbeeld, inclusief
 de drie dingen die daar eerst misgingen: een kop die echt wordt getekend (en
@@ -325,7 +346,7 @@ maakt dan een lap tekst -- hier de foto, de naam met het adres, en de punten.
 
 Daar kwamen drie dingen bij, nadat de eigenaar de pagina voor het eerst zag:
 
-- **De contactgegevens zijn kaartjes geworden** (`brand-overmijpagina-kaartje`):
+- **De contactgegevens zijn kaartjes geworden** (`brand-site-overmijpagina-kaartje`):
   het mailadres en, als die is ingesteld, LinkedIn. Allebei met hun tekentje
   en met het pijltje naar buiten bij de link die het portaal verlaat.
 - **Het mailtekentje stond náást de tekst in plaats van ervoor.** Dat was
@@ -333,10 +354,12 @@ Daar kwamen drie dingen bij, nadat de eigenaar de pagina voor het eerst zag:
   Tailwinds preflight, die een tekentje in een `<a>` op een eigen regel zet.
   `.brand-sitemail` is daarom `inline-flex` -- en dat repareerde ook de
   aparte contactpagina, waar het net zo stond.
-- **Achter de foto staat beweging**: twee ringen die in zeven en veertien
-  seconden ademen en draaien (`brand-portret-adem`, `brand-portret-draai`).
-  Langzaam genoeg om niet op te vallen zolang je leest, en onder
-  `prefers-reduced-motion` staan ze stil.
+- **De foto staat in een ronde uitsnede met een dubbele rand**, net als op
+  de voorpagina. De ademende ringen die er eerst achter stonden zijn weg
+  met het nieuwe ontwerp: op deze pagina wordt gelezen, en de beweging
+  hoort op de voorpagina.
+- **Het verhaal ligt op een glazen plaat** (`brand-site-glas`), met de
+  punten in twee kolommen eronder vanaf 40rem.
 
 Het verhaal staat in één kolom van hoogstens 68 tekens. Een alinea over de
 volle breedte van een scherm raak je kwijt als je naar het begin van de

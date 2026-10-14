@@ -67,7 +67,7 @@ Nieuw op dit project? Lees in deze volgorde:
 
 De onderdelen waarmee de klant zijn website vult. Wil je er een bijbouwen,
 lees dan eerst [pagina-indeling](architecture/pagina-indeling.md) -- daar
-staan de vijf stappen -- en daarna een bestaande module als voorbeeld.
+staan de stappen -- en daarna een bestaande module als voorbeeld.
 
 - [Ervaring](architecture/modules/ervaring.md) -- de tijdlijn met functies en organisaties. De eerste module, en daarmee het voorbeeld voor de volgende.
 - [Kop](architecture/modules/kop.md) -- de drie teksten bovenaan de landingspagina. De kleinste module: één rij, één venster, geen lijst.
@@ -81,7 +81,7 @@ staan de vijf stappen -- en daarna een bestaande module als voorbeeld.
 - [Contact](architecture/modules/contact.md) -- het contactformulier: beheerbare onderwerpen, instelbare velden, een bevestigingsmail in de taal van de bezoeker, en de postbus onder Beheer. De enige module die inhoud van een bezoeker bewaart, met alles wat dat voor de privacyverklaring betekent.
 - [Module Kerngegevens](architecture/modules/kerngegevens.md) -- de feitenstrook met beschikbaarheid, werkgebied en reactietijd, en waarom dat geen statistiek is.
 - [Module Voettekst](architecture/modules/voettekst.md) -- de afsluiting van de site, wat de klant er wel en niet aan beheert, en waarom het KvK-nummer daar los staat van de kerngegevens.
-- [LinkedIn](architecture/modules/linkedin.md) -- geen module maar een blok: één vaste link, wel te verslepen en uit te zetten.
+- [LinkedIn](architecture/modules/linkedin.md) -- de uitnodiging om te volgen: de teksten in twee talen te beheren, de link ligt vast.
 
 ## Beveiliging
 

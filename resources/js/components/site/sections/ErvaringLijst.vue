@@ -176,7 +176,7 @@ const tekenOpnieuw = (): void => {
 
 const volgJaren = (): void => {
     stopJaren?.();
-    stopJaren = followYears(zoek('.brand-tijdlijn-groep'));
+    stopJaren = followYears(zoek('.brand-site-ervaring-lijst-groep'));
 };
 
 /**
@@ -203,7 +203,7 @@ onMounted(() => {
     breedte.addEventListener('change', meetPagina);
     meetPagina();
 
-    stopKaarten = revealCards(zoek('.brand-tijdlijn-kaart'));
+    stopKaarten = revealCards(zoek('.brand-site-ervaring-lijst-kaart'));
     tekenOpnieuw();
     volgJaren();
 });
@@ -242,7 +242,7 @@ const naarPagina = async (nieuw: number): Promise<void> => {
 
     await nextTick();
 
-    revealCards(zoek('.brand-tijdlijn-kaart'), { direct: true });
+    revealCards(zoek('.brand-site-ervaring-lijst-kaart'), { direct: true });
 
     ScrollTrigger.refresh();
     tekenOpnieuw();
@@ -256,13 +256,17 @@ const naarPagina = async (nieuw: number): Promise<void> => {
 
 <template>
     <div>
-        <div ref="lijst" class="brand-tijdlijn">
-            <div ref="rail" class="brand-tijdlijn-rail" aria-hidden="true" />
+        <div ref="lijst" class="brand-site-ervaring-lijst">
+            <div
+                ref="rail"
+                class="brand-site-ervaring-lijst-rail"
+                aria-hidden="true"
+            />
 
             <div
                 v-for="groep in groepen"
                 :key="groep.sleutel"
-                class="brand-tijdlijn-groep"
+                class="brand-site-ervaring-lijst-groep"
             >
                 <!--
                     Het jaartal blijft hangen zolang je in zijn groep zit en
@@ -271,20 +275,24 @@ const naarPagina = async (nieuw: number): Promise<void> => {
                     raster. Op een telefoon is er geen kolom voor en staat
                     de periode toch al op elke regel.
                 -->
-                <span data-jaar class="brand-tijdlijn-jaar" aria-hidden="true">
+                <span
+                    data-jaar
+                    class="brand-site-ervaring-lijst-jaar"
+                    aria-hidden="true"
+                >
                     {{ groep.jaar }}
                 </span>
 
-                <div class="brand-tijdlijn-groep-items">
+                <div class="brand-site-ervaring-lijst-groep-items">
                     <article
                         v-for="item in groep.items"
                         :key="item.id"
-                        class="brand-tijdlijn-item"
+                        class="brand-site-ervaring-lijst-item"
                     >
                         <span
                             data-punt
                             :data-loopt="item.loopt ? '' : undefined"
-                            class="brand-tijdlijn-punt"
+                            class="brand-site-ervaring-lijst-punt"
                             aria-hidden="true"
                         >
                             <img v-if="item.logo" :src="item.logo" alt="" />
@@ -310,20 +318,22 @@ const naarPagina = async (nieuw: number): Promise<void> => {
                         -->
                         <button
                             type="button"
-                            class="brand-tijdlijn-kaart"
+                            class="brand-site-ervaring-lijst-kaart"
                             @click="emit('open', item)"
                         >
-                            <div class="brand-tijdlijn-kop">
+                            <div class="brand-site-ervaring-lijst-kop">
                                 <div class="min-w-0 flex-1">
                                     <div
                                         class="flex flex-wrap items-center gap-x-2 gap-y-1"
                                     >
-                                        <h3 class="font-medium text-white">
+                                        <h3
+                                            class="brand-site-ervaring-lijst-functie"
+                                        >
                                             {{ item.functie }}
                                         </h3>
                                         <span
                                             v-if="item.loopt"
-                                            class="brand-tijdlijn-nu"
+                                            class="brand-site-ervaring-nu"
                                         >
                                             {{ $t('Nu') }}
                                         </span>
@@ -339,8 +349,8 @@ const naarPagina = async (nieuw: number): Promise<void> => {
                                         een link in een knop mag niet, en
                                         in het venster staat hij wél.
                                     -->
-                                    <p class="brand-tijdlijn-meta mt-1">
-                                        <span class="brand-tijdlijn-org">
+                                    <p class="brand-site-ervaring-meta mt-1">
+                                        <span class="brand-site-ervaring-org">
                                             {{ item.organisatie }}
                                         </span>
 
@@ -353,13 +363,15 @@ const naarPagina = async (nieuw: number): Promise<void> => {
                                     </p>
                                 </div>
 
-                                <p class="brand-tijdlijn-tijd">
+                                <p
+                                    class="brand-site-ervaring-lijst-tijd brand-site-data"
+                                >
                                     <span>{{ item.periode }}</span>
                                     <span>{{ item.duur }}</span>
                                 </p>
 
                                 <ChevronRight
-                                    class="brand-tijdlijn-pijl"
+                                    class="brand-site-ervaring-pijl"
                                     aria-hidden="true"
                                 />
                             </div>

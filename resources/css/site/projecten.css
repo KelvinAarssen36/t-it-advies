@@ -1,0 +1,1415 @@
+/*
+  Projecten: "Casus".
+
+  Het uitgelichte project als filmisch blok met een beeld dat onthuld
+  wordt, de slideshow als diafragma dat van de ene dia naar de volgende
+  veegt, en de overige kaarten in een compositie die zich naar het aantal
+  voegt. Daarna de twee projectpagina's, die dezelfde onderdelen delen.
+
+  Alles onder `brand-site-project*`, `brand-site-casus*` en
+  `brand-site-dia*`. Zie docs/architecture/modules/projecten.md.
+*/
+
+/* --- Gedeeld: badge, wie en wanneer ------------------------------------ */
+
+/*
+  Het etiket met het soort werk. Klein, rustig en in de mono: het is een
+  label dat je scant, geen kop. Een badge die om aandacht vraagt
+  concurreert met de titel eronder.
+*/
+.brand-site-project-badge {
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+    min-height: 1.375rem;
+    border: 1px solid var(--site-plaat-rand-sterk);
+    border-radius: 999px;
+    padding: 0.125rem 0.625rem;
+    font-size: var(--site-maat-label);
+    font-weight: 500;
+    line-height: 1.4;
+    letter-spacing: 0.02em;
+    color: var(--brand-cyan);
+    background-color: color-mix(in oklab, var(--brand-cyan) 8%, transparent);
+    overflow-wrap: anywhere;
+}
+
+/*
+  Twee regels met losse delen ertussen. De scheiding zet de CSS, zodat er
+  geen los teken overblijft als een deel ooit wegvalt. Eén schuine streep
+  en geen puntje: die leest als "en", en in de mono als een maatregel.
+*/
+.brand-site-project-wie,
+.brand-site-project-wanneer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.125rem 0.625rem;
+    min-width: 0;
+}
+
+.brand-site-project-wie {
+    font-size: var(--site-maat-klein);
+    color: var(--site-tekst);
+}
+
+.brand-site-project-wanneer {
+    font-size: var(--site-maat-label);
+    color: var(--site-tekst-zacht);
+}
+
+.brand-site-project-wie > * + *::before,
+.brand-site-project-wanneer > * + *::before {
+    content: '/';
+    margin-right: 0.625rem;
+    color: var(--brand-border-dark-strong);
+}
+
+/*
+  Op een smal scherm staan organisatie en rol onder elkaar. Naast elkaar
+  breekt de regel daar bijna altijd, en dan begint de tweede regel met een
+  los scheidingsteken.
+*/
+@media (max-width: 39.999rem) {
+    .brand-site-project-wie {
+        flex-direction: column;
+        gap: 0.125rem;
+    }
+
+    .brand-site-project-wie > * + *::before {
+        content: none;
+    }
+}
+
+/* --- De sectie op de voorpagina --------------------------------------- */
+
+.brand-site-projecten {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(1.5rem, 3vw, 2.25rem);
+
+    /*
+      Beeld, tekst en kaarten schuiven bij het binnenscrollen van opzij
+      naar hun plek (zie ProjectUitgelicht.vue en ProjectenSection.vue).
+      Wat dan nog buiten de rij steekt, knipt dit af: zonder zou de pagina
+      op dat moment zijwaarts kunnen schuiven. `clip` en geen `hidden`, zodat
+      er geen schuifvlak ontstaat; de marge laat de gloed en de rand van
+      een kaart heel.
+    */
+    overflow-x: clip;
+    overflow-clip-margin: 1.5rem;
+}
+
+/* --- De casus: het uitgelichte project -------------------------------- */
+
+.brand-site-casus {
+    position: relative;
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: center;
+    border: 1px solid var(--site-plaat-rand);
+    border-radius: 1rem;
+    padding: clamp(1rem, 2.2vw, 1.75rem);
+    background:
+        radial-gradient(
+            90% 120% at 0% 0%,
+            var(--site-licht-blauw),
+            transparent 60%
+        ),
+        var(--site-plaat-hoog);
+    box-shadow:
+        inset 0 1px 0 color-mix(in oklab, var(--brand-platinum) 8%, transparent),
+        0 40px 100px -60px var(--site-schaduw);
+}
+
+/*
+  In de slideshow is de dia zelf de plaat; zie `.brand-site-dia-blad`.
+  Zou de casus ook zijn eigen plaat houden, dan liggen er twee randen op
+  elkaar en schijnt de vorige dia door de halfdoorzichtige vulling heen.
+*/
+.brand-site-casus[data-in-dia] {
+    height: 100%;
+    /* Een kortere dia (zonder beeld) zet zijn inhoud in het midden. */
+    align-content: center;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+}
+
+@media (min-width: 50rem) {
+    .brand-site-casus {
+        grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+        gap: clamp(1.5rem, 3vw, 2.75rem);
+    }
+
+    /*
+      Zonder beeld vervalt de kolom. Zonder deze regel is de tekst het
+      eerste rasteritem en belandt hij in de smalle beeldkolom.
+    */
+    .brand-site-casus[data-zonder-beeld] {
+        grid-template-columns: minmax(0, 3fr) minmax(0, 9fr);
+    }
+}
+
+.brand-site-casus-beeld {
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.75rem;
+    border: 1px solid var(--site-plaat-rand);
+    background-color: var(--site-plaat-vol);
+}
+
+/*
+  Staand op een breed scherm, liggend op een telefoon. Het bronbeeld is
+  altijd een vierkant van 640 pixels; beide verhoudingen knippen er maar
+  een strook vanaf. Liggend op een telefoon houdt de dia laag genoeg om
+  de knop in beeld te houden.
+*/
+.brand-site-casus-beeld img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    transform-origin: 50% 60%;
+}
+
+@media (min-width: 50rem) {
+    .brand-site-casus-beeld img {
+        aspect-ratio: 1;
+    }
+}
+
+/* Een zachte binnenrand van licht over het beeld, als op glas. */
+.brand-site-casus-beeld::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(
+        180deg,
+        transparent 55%,
+        color-mix(in oklab, var(--brand-navy) 55%, transparent)
+    );
+    box-shadow: inset 0 0 0 1px
+        color-mix(in oklab, var(--brand-platinum) 6%, transparent);
+}
+
+/*
+  Het letterveld van een casus zonder beeld: de eerste letter van de
+  organisatie in het licht, in dezelfde opening als een beeld. Liggend op
+  een telefoon, zo hoog als de tekst op een breed scherm -- het staat naast
+  een tekst en niet boven een filmstill, dus het hoeft geen vierkant te zijn.
+*/
+.brand-site-casus-letter {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 16 / 7;
+    margin: 0;
+    font-size: clamp(3rem, 2.4rem + 3vw, 5.5rem);
+    font-weight: 500;
+    line-height: 1;
+    color: color-mix(in oklab, var(--brand-cyan) 85%, transparent);
+    background:
+        radial-gradient(
+            60% 70% at 50% 45%,
+            var(--site-licht-blauw),
+            transparent 72%
+        ),
+        var(--site-plaat-vol);
+}
+
+@media (min-width: 50rem) {
+    .brand-site-casus-letter {
+        align-self: stretch;
+        aspect-ratio: auto;
+        min-height: 12rem;
+    }
+}
+
+.brand-site-casus-tekst {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.brand-site-casus-titel {
+    margin-top: 0.875rem;
+    max-width: 24ch;
+    font-size: var(--site-maat-titel);
+    font-weight: 600;
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+    color: var(--site-kop);
+}
+
+.brand-site-casus-titel[data-lengte='lang'] {
+    max-width: 32ch;
+    font-size: var(--site-maat-titel-lang);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    overflow-wrap: anywhere;
+}
+
+.brand-site-casus-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-top: 0.875rem;
+}
+
+.brand-site-casus-knop {
+    margin-top: 1.25rem;
+}
+
+.brand-site-casus-zin {
+    margin-top: 0.875rem;
+    max-width: 62ch;
+    font-size: var(--site-maat-tekst);
+    line-height: 1.65;
+    text-wrap: pretty;
+    color: var(--site-tekst-zacht);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 5;
+    overflow: hidden;
+}
+
+/* --- De slideshow: een diafragma van dia naar dia ---------------------- */
+
+.brand-site-dia {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+/*
+  Alle dia's liggen in één rastercel op elkaar, dus het venster is vanzelf
+  zo hoog als de hoogste. `pan-y` laat een verticale veeg gewoon de pagina
+  scrollen; alleen horizontaal is van de slideshow.
+*/
+.brand-site-dia-venster {
+    position: relative;
+    display: grid;
+    border: 1px solid var(--site-plaat-rand);
+    border-radius: 1rem;
+    background: var(--site-plaat-vol);
+    box-shadow: 0 40px 100px -60px var(--site-schaduw);
+    overflow: hidden;
+    touch-action: pan-y;
+    user-select: none;
+    cursor: grab;
+}
+
+.brand-site-dia-venster[data-sleept] {
+    cursor: grabbing;
+}
+
+/*
+  Een dia die niet aan de beurt is, staat onzichtbaar in dezelfde cel. De
+  huidige ligt bovenop; de vorige blijft er heel onder liggen tot de nieuwe
+  er volledig overheen is geveegd. Die veeg zelf (`clip-path`, het beeld,
+  de tekst) is een tijdlijn in ProjectSlideshow.vue en geen overgang hier:
+  een overgang speelt alleen als de waarde verandert, en de dia die net
+  weg was stond al open -- dan veegde alleen de eerste wissel.
+
+  De dia's hebben een volle achtergrond, zodat de vorige niet door de
+  nieuwe heen schijnt.
+*/
+.brand-site-dia-blad {
+    grid-area: 1 / 1;
+    display: grid;
+    align-content: center;
+    min-width: 0;
+    background:
+        radial-gradient(
+            90% 120% at 0% 0%,
+            var(--site-licht-blauw),
+            transparent 60%
+        ),
+        var(--site-plaat-vol);
+    visibility: hidden;
+}
+
+.brand-site-dia-blad[data-vorig] {
+    z-index: 1;
+    visibility: visible;
+}
+
+/*
+  De overgang hier is alleen voor het terugveren na een sleep die geen
+  veeg werd; de veeg zelf zet zijn waarden per beeldje.
+*/
+.brand-site-dia-blad[data-aan] {
+    z-index: 2;
+    visibility: visible;
+    transition:
+        transform 0.3s var(--site-ease),
+        opacity 0.3s var(--site-ease);
+}
+
+/* Tijdens het slepen volgt de dia de vinger zonder vertraging. */
+.brand-site-dia-venster[data-sleept] > .brand-site-dia-blad[data-aan] {
+    transition: none;
+}
+
+/* De bediening: pijlen en één lijn per dia. */
+.brand-site-dia-bediening {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/*
+  De lijnen staan tussen de twee pijlen en niet uitgerekt over de hele
+  breedte: dan staat de pijl naar rechts een meter verderop en lijkt hij
+  bij iets anders te horen.
+*/
+
+.brand-site-dia-pijl {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 1px solid var(--site-plaat-rand-sterk);
+    border-radius: 999px;
+    color: var(--site-kop);
+    background-color: color-mix(
+        in oklab,
+        var(--brand-navy-deep) 60%,
+        transparent
+    );
+    transition:
+        transform var(--site-duur-druk) var(--site-ease),
+        border-color var(--site-duur-hover) var(--site-ease),
+        background-color var(--site-duur-hover) var(--site-ease),
+        color var(--site-duur-hover) var(--site-ease);
+}
+
+.brand-site-dia-pijl svg {
+    transition: transform var(--site-duur-hover) var(--site-ease);
+}
+
+.brand-site-dia-pijl:active {
+    transform: scale(0.92);
+}
+
+/* De pijl in de knop wijst een stap verder in zijn eigen richting. */
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-dia-pijl:hover {
+        border-color: color-mix(in oklab, var(--brand-cyan) 60%, transparent);
+        background-color: var(--site-plaat-hoog);
+        color: var(--brand-ice);
+    }
+
+    .brand-site-dia-pijl[data-kant='terug']:hover svg {
+        transform: translateX(-2px);
+    }
+
+    .brand-site-dia-pijl[data-kant='vooruit']:hover svg {
+        transform: translateX(2px);
+    }
+}
+
+.brand-site-dia-pijl:focus-visible,
+.brand-site-dia-lijn:focus-visible {
+    outline: 2px solid var(--brand-cyan);
+    outline-offset: 2px;
+}
+
+.brand-site-dia-lijnen {
+    display: flex;
+    flex: 0 1 auto;
+    min-width: 0;
+    gap: 0.375rem;
+}
+
+/*
+  Het aanraakvlak is de volle hoogte van de pijlen; de lijn zelf is twee
+  pixels. Een streepje van twee pixels hoog raak je op een telefoon niet.
+*/
+.brand-site-dia-lijn {
+    position: relative;
+    flex: 0 1 auto;
+    width: 3.5rem;
+    min-width: 1.25rem;
+    height: 2.75rem;
+}
+
+.brand-site-dia-lijn::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    top: 50%;
+    height: 2px;
+    margin-top: -1px;
+    border-radius: 999px;
+    background-color: var(--site-plaat-rand-sterk);
+    transition:
+        background-color var(--site-duur-hover) var(--site-ease),
+        transform var(--site-duur-hover) var(--site-ease);
+}
+
+.brand-site-dia-lijn:active::before {
+    transform: scaleY(2);
+}
+
+/* Een lijn die je aanwijst wordt dikker en lichter: dit is een knop. */
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-dia-lijn:not([data-aan]):hover::before {
+        background-color: color-mix(
+            in oklab,
+            var(--brand-cyan) 55%,
+            transparent
+        );
+        transform: scaleY(2);
+    }
+}
+
+/* "1 / 3": waar je bent, voor wie de lijnen niet telt. */
+.brand-site-dia-teller {
+    margin-left: auto;
+    font-size: var(--site-maat-label);
+    color: var(--site-tekst-zacht);
+    font-variant-numeric: tabular-nums;
+}
+
+.brand-site-dia-lijn[data-aan]::before {
+    background-color: color-mix(in oklab, var(--brand-ice) 35%, transparent);
+}
+
+/*
+  De vulling: loopt in de wachttijd van links naar rechts vol en staat
+  stil zolang de slideshow pauzeert.
+*/
+.brand-site-dia-voortgang {
+    position: absolute;
+    inset-inline: 0;
+    top: 50%;
+    height: 2px;
+    margin-top: -1px;
+    border-radius: 999px;
+    background: var(--brand-gradient);
+    transform-origin: 0 50%;
+    animation: brand-site-dia-voortgang var(--dia-wachttijd, 7000ms) linear
+        forwards;
+}
+
+.brand-site-dia-voortgang[data-stil] {
+    animation-play-state: paused;
+}
+
+@keyframes brand-site-dia-voortgang {
+    from {
+        transform: scaleX(0);
+    }
+
+    to {
+        transform: scaleX(1);
+    }
+}
+
+/* Zonder beweging: geen veeg (die slaat het script dan over), gewoon de dia. */
+@media (prefers-reduced-motion: reduce) {
+    .brand-site-dia-blad[data-aan],
+    .brand-site-dia-pijl,
+    .brand-site-dia-lijn::before {
+        transition: none;
+    }
+}
+
+/* --- De overige kaarten ------------------------------------------------ */
+
+/*
+  Het raster voegt zich naar het aantal (`data-aantal`, uit
+  ProjectenSection): één wordt een brede rij, twee staan naast elkaar,
+  drie worden één grote met twee gestapeld ernaast. Zonder `data-aantal`
+  (op /projecten) is het een gewoon raster van drie.
+
+  `minmax(0, 1fr)` en niet `1fr`: de ondergrens van een gewone `1fr` is
+  de breedte van het langste woord, en dan puilt een kaart met een lange
+  organisatienaam buiten een smal scherm.
+*/
+.brand-site-projecten-raster {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 50rem) {
+    .brand-site-projecten-raster {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .brand-site-projecten-raster[data-aantal='1'] {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .brand-site-projecten-raster[data-aantal='3'] > :first-child {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (min-width: 64rem) {
+    .brand-site-projecten-raster:not([data-aantal]),
+    .brand-site-projecten-raster[data-aantal='4'] {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .brand-site-projecten-raster[data-aantal='3'] {
+        grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+        grid-template-rows: auto auto;
+    }
+
+    .brand-site-projecten-raster[data-aantal='3'] > :first-child {
+        grid-column: 1;
+        grid-row: 1 / span 2;
+    }
+}
+
+/* --- Eén kaart --------------------------------------------------------- */
+
+.brand-site-projectkaart {
+    --site-kaart-binnen: clamp(1rem, 1.8vw, 1.375rem);
+
+    position: relative;
+    display: flex;
+    min-width: 0;
+    border: 1px solid var(--site-plaat-rand);
+    border-radius: 1rem;
+    background: var(--site-plaat-hoog);
+    box-shadow:
+        inset 0 1px 0 color-mix(in oklab, var(--brand-platinum) 7%, transparent),
+        0 30px 80px -56px var(--site-schaduw);
+    transition:
+        border-color var(--site-duur-hover) var(--site-ease),
+        background-color var(--site-duur-hover) var(--site-ease),
+        translate var(--site-duur-hover) var(--site-ease);
+}
+
+/*
+  Een kaart die je aanwijst of met het toetsenbord bereikt, komt een
+  fractie naar je toe: de rand wordt helderder, het beeld zakt iets
+  dichterbij en de pijl schuift een stap. Alleen met een muis bij hover
+  (op een telefoon blijft een hover hangen); de focus krijgt hetzelfde,
+  zodat je met de tab-toets even goed ziet waar je bent. Indrukken duwt
+  hem terug -- dat voelt als een knop die meegeeft.
+
+  `translate` en geen `transform`: op de voorpagina schuift de kaart met
+  de scroll mee via `transform`, en twee animaties op dezelfde eigenschap
+  vechten om elk beeldje.
+*/
+.brand-site-projectkaart:has(.brand-site-projectkaart-link:focus-visible) {
+    z-index: 2;
+    border-color: color-mix(in oklab, var(--brand-cyan) 45%, transparent);
+    translate: 0 -3px;
+}
+
+.brand-site-projectkaart:has(.brand-site-projectkaart-link:active) {
+    translate: 0 0;
+    transition-duration: var(--site-duur-druk);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-projectkaart:hover {
+        z-index: 2;
+        border-color: color-mix(in oklab, var(--brand-cyan) 45%, transparent);
+        translate: 0 -3px;
+    }
+
+    .brand-site-projectkaart:hover:has(.brand-site-projectkaart-link:active) {
+        translate: 0 0;
+    }
+}
+
+.brand-site-projectkaart-link {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: var(--site-kaart-binnen);
+    border-radius: inherit;
+}
+
+.brand-site-projectkaart-link:focus-visible {
+    outline: 2px solid var(--brand-cyan);
+    outline-offset: 3px;
+}
+
+/*
+  Het beeld bovenaan: op een telefoon altijd, op een breed scherm alleen
+  op de grote kaart. Het steekt tot aan de randen van de kaart uit, met de
+  negatieve marge van de binnenruimte.
+*/
+.brand-site-projectkaart-banner,
+.brand-site-projectkaart-letterveld {
+    display: block;
+    align-self: stretch;
+    overflow: hidden;
+    margin: calc(-1 * var(--site-kaart-binnen));
+    margin-bottom: 0.5rem;
+    border-radius: 1rem 1rem 0 0;
+    border-bottom: 1px solid var(--site-plaat-rand);
+}
+
+.brand-site-projectkaart-banner img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 2 / 1;
+    object-fit: cover;
+    transition: transform 0.6s var(--site-ease);
+}
+
+.brand-site-projectkaart-link:focus-visible
+    .brand-site-projectkaart-banner
+    img {
+    transform: scale(1.04);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-projectkaart:hover .brand-site-projectkaart-banner img {
+        transform: scale(1.04);
+    }
+}
+
+/*
+  `max-width: none`, want `.brand-dark-page` geeft elk tekstelement
+  `max-width: 100%` met dezelfde specificiteit als één klasse -- en die
+  regel staat later in de stylesheet. Dan houdt de negatieve marge het
+  vlak op de breedte van de binnenruimte en komt het rechts niet tot de
+  rand. Twee klassen winnen wel.
+*/
+.brand-site-projectkaart .brand-site-projectkaart-banner,
+.brand-site-projectkaart .brand-site-projectkaart-letterveld {
+    max-width: none;
+}
+
+/* Een grote kaart zonder beeld: de letter groot, in een vlak met licht. */
+.brand-site-projectkaart-letterveld {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 2 / 1;
+    font-size: clamp(2.5rem, 2rem + 2.4vw, 4.25rem);
+    font-weight: 500;
+    line-height: 1;
+    color: color-mix(in oklab, var(--brand-cyan) 80%, transparent);
+    background:
+        radial-gradient(
+            60% 80% at 50% 40%,
+            var(--site-licht-blauw),
+            transparent 70%
+        ),
+        var(--site-plaat-vol);
+}
+
+/*
+  De grote kaart staat naast twee gestapelde kaarten. Het letterveld vult
+  dan de hoogte die die twee samen innemen, in plaats van met een vaste
+  verhouding de rij hoger te maken dan nodig: dat leverde een letter van
+  bijna een half scherm hoog op.
+*/
+@media (min-width: 64rem) {
+    .brand-site-projecten-raster[data-aantal='3']
+        .brand-site-projectkaart[data-groot]
+        .brand-site-projectkaart-letterveld {
+        flex: 1 1 auto;
+        min-height: 7rem;
+        aspect-ratio: auto;
+    }
+}
+
+.brand-site-projectkaart-kop {
+    display: flex;
+    min-width: 0;
+    max-width: 100%;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* Het tegeltje: het beeld klein, of de letter in de mono. */
+.brand-site-projectkaart-tegel {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    overflow: hidden;
+    border: 1px solid var(--site-plaat-rand);
+    border-radius: 0.5rem;
+    background-color: var(--site-plaat-vol);
+    font-size: 1rem;
+    color: var(--brand-cyan);
+    transition:
+        border-color var(--site-duur-hover) var(--site-ease),
+        background-color var(--site-duur-hover) var(--site-ease);
+}
+
+.brand-site-projectkaart-link:focus-visible .brand-site-projectkaart-tegel {
+    border-color: color-mix(in oklab, var(--brand-cyan) 45%, transparent);
+    background-color: var(--site-licht);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-projectkaart-link:hover .brand-site-projectkaart-tegel {
+        border-color: color-mix(in oklab, var(--brand-cyan) 45%, transparent);
+        background-color: var(--site-licht);
+    }
+}
+
+.brand-site-projectkaart-tegel img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/*
+  Een telefoon toont het beeld al bovenaan, dus daar is het tegeltje er
+  alleen nog voor de letter. Op een breed scherm is het andersom: daar
+  staat het beeld bovenaan alleen op de grote kaart.
+*/
+.brand-site-projectkaart[data-beeld] .brand-site-projectkaart-tegel,
+.brand-site-projectkaart[data-groot] .brand-site-projectkaart-tegel {
+    display: none;
+}
+
+@media (min-width: 50rem) {
+    .brand-site-projectkaart:not([data-groot]) .brand-site-projectkaart-banner {
+        display: none;
+    }
+
+    .brand-site-projectkaart[data-beeld]:not([data-groot])
+        .brand-site-projectkaart-tegel {
+        display: grid;
+    }
+}
+
+.brand-site-projectkaart-titel {
+    margin-top: 0.25rem;
+    max-width: 100%;
+    font-size: var(--site-maat-kop);
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+    color: var(--site-kop);
+    transition: color var(--site-duur-hover) var(--site-ease);
+}
+
+.brand-site-projectkaart[data-groot] .brand-site-projectkaart-titel {
+    font-size: var(--site-maat-titel-lang);
+}
+
+.brand-site-projectkaart-link:focus-visible .brand-site-projectkaart-titel {
+    color: var(--brand-ice);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-projectkaart-link:hover .brand-site-projectkaart-titel {
+        color: var(--brand-ice);
+    }
+}
+
+.brand-site-projectkaart-zin {
+    margin-top: 0.125rem;
+    font-size: var(--site-maat-tekst);
+    line-height: 1.6;
+    text-wrap: pretty;
+    color: var(--site-tekst-zacht);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+}
+
+/*
+  "Bekijk project" zakt naar de onderkant, zodat de kaarten in een rij er
+  allemaal op dezelfde hoogte eindigen, hoe lang de tekst erboven ook is.
+*/
+.brand-site-projectkaart-meer {
+    margin-top: auto;
+    padding-top: 0.5rem;
+    font-size: var(--site-maat-klein);
+}
+
+/*
+  De hele kaart is de link; "Bekijk project" reageert mee alsof je hem
+  zelf aanwees. De focusrand staat op de kaart, niet nog eens op dit
+  zinnetje.
+*/
+.brand-site-projectkaart-link:focus-visible .brand-site-projectkaart-meer {
+    color: var(--brand-ice);
+    background-size: 100% 1px;
+}
+
+.brand-site-projectkaart-link:focus-visible .brand-site-projectkaart-meer svg {
+    transform: translateX(3px);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-projectkaart-link:hover .brand-site-projectkaart-meer {
+        color: var(--brand-ice);
+        background-size: 100% 1px;
+    }
+
+    .brand-site-projectkaart-link:hover .brand-site-projectkaart-meer svg {
+        transform: translateX(3px);
+    }
+}
+
+/*
+  Het zwevende beeld bij het aanwijzen. `ProjectKaart` zet met `x` en `y`
+  de plek van de cursor; de marge zet het midden van het beeld net
+  rechtsboven de cursor, zodat het nooit de tekst afdekt waar je naar
+  wijst. Alleen met een muis en op een breed scherm; daaronder staat het
+  beeld gewoon bovenaan in de kaart.
+*/
+.brand-site-projectkaart-zweef {
+    display: none;
+}
+
+@media (hover: hover) and (pointer: fine) and (min-width: 50rem) {
+    .brand-site-projectkaart-zweef {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 3;
+        display: block;
+        width: 11rem;
+        margin: -12rem 0 0 1.5rem;
+        overflow: hidden;
+        border: 1px solid var(--site-plaat-rand-sterk);
+        border-radius: 0.75rem;
+        pointer-events: none;
+        opacity: 0;
+        scale: 0.85;
+        box-shadow: 0 30px 60px -20px var(--site-schaduw);
+        transition:
+            opacity 0.3s var(--site-ease),
+            scale 0.45s var(--site-ease);
+    }
+
+    .brand-site-projectkaart-zweef img {
+        display: block;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1;
+        object-fit: cover;
+    }
+
+    .brand-site-projectkaart:hover .brand-site-projectkaart-zweef {
+        opacity: 1;
+        scale: 1;
+    }
+}
+
+/*
+  Onder reduced motion verandert alleen de kleur: geen kaart die naar je
+  toe komt en geen beeld dat inzoomt. Je ziet nog steeds wat je aanwijst.
+*/
+@media (prefers-reduced-motion: reduce) {
+    .brand-site-projectkaart,
+    .brand-site-projectkaart-banner img,
+    .brand-site-projectkaart-titel,
+    .brand-site-projectkaart-tegel {
+        transition: none;
+    }
+
+    .brand-site-projectkaart.brand-site-projectkaart,
+    .brand-site-projectkaart .brand-site-projectkaart-banner img {
+        translate: none;
+        transform: none;
+    }
+
+    .brand-site-projectkaart-zweef {
+        display: none;
+    }
+}
+
+/* --- De lijst op /projecten ------------------------------------------- */
+
+/*
+  Elk project een eigen regel, alle regels even groot. Eén lijn tussen de
+  regels en geen kader eromheen: je scant de titels van boven naar
+  beneden.
+*/
+.brand-site-projectlijst {
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--site-plaat-rand);
+}
+
+.brand-site-projectbreed {
+    border-bottom: 1px solid var(--site-plaat-rand);
+}
+
+/*
+  De hele regel is de link. Bij aanwijzen of focus licht er een vlak op
+  achter de regel (een pseudo-element, zodat de regel zelf geen maat
+  verandert), de titel wordt helderder, het tegeltje krijgt licht en de
+  pijl rechts vult zich en schuift een stap. Indrukken zet het vlak een
+  tikje dieper.
+*/
+.brand-site-projectbreed-link {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    align-items: start;
+    gap: 0.875rem;
+    grid-template-columns: auto minmax(0, 1fr);
+    /*
+      De regel steekt aan beide kanten een stukje buiten de lijst, met
+      evenveel binnenruimte terug: de inhoud blijft op de lijn van de
+      kop erboven, en het oplichtende vlak en de focusrand krijgen lucht
+      om de tekst. Vlak en rand vallen zo precies samen.
+    */
+    margin-inline: -0.625rem;
+    padding: 1rem 0.625rem;
+    border-radius: 0.875rem;
+}
+
+.brand-site-projectbreed-link::before {
+    content: '';
+    position: absolute;
+    inset: 0.25rem 0;
+    z-index: -1;
+    border-radius: inherit;
+    background-color: var(--site-plaat-hoog);
+    opacity: 0;
+    transition: opacity var(--site-duur-hover) var(--site-ease);
+}
+
+/* De rand om het vlak, niet om de hele regel met zijn haarlijnen. */
+.brand-site-projectbreed-link:focus-visible {
+    outline: none;
+}
+
+.brand-site-projectbreed-link:focus-visible::before {
+    outline: 2px solid var(--brand-cyan);
+    outline-offset: 2px;
+}
+
+.brand-site-projectbreed-link:focus-visible::before {
+    opacity: 1;
+}
+
+.brand-site-projectbreed-link:active::before {
+    opacity: 1;
+    background-color: var(--site-plaat-vol);
+    transition-duration: var(--site-duur-druk);
+}
+
+@media (min-width: 50rem) {
+    .brand-site-projectbreed-link {
+        align-items: center;
+        gap: 1.25rem;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        margin-inline: -0.875rem;
+        padding: 1.125rem 0.875rem;
+    }
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-projectbreed-link:hover::before {
+        opacity: 1;
+    }
+}
+
+.brand-site-projectbreed-beeld {
+    display: grid;
+    width: 2.75rem;
+    height: 2.75rem;
+    flex-shrink: 0;
+    place-items: center;
+    overflow: hidden;
+    border: 1px solid var(--site-plaat-rand);
+    border-radius: 0.625rem;
+    background-color: var(--site-plaat-vol);
+    font-size: 1.0625rem;
+    color: var(--brand-cyan);
+    transition:
+        border-color var(--site-duur-hover) var(--site-ease),
+        background-color var(--site-duur-hover) var(--site-ease);
+}
+
+@media (min-width: 50rem) {
+    .brand-site-projectbreed-beeld {
+        width: 3.5rem;
+        height: 3.5rem;
+        border-radius: 0.75rem;
+        font-size: 1.25rem;
+    }
+}
+
+.brand-site-projectbreed-link:focus-visible .brand-site-projectbreed-beeld {
+    border-color: color-mix(in oklab, var(--brand-cyan) 45%, transparent);
+    background-color: var(--site-licht);
+}
+
+.brand-site-projectbreed-beeld img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.brand-site-projectbreed-tekst {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.375rem;
+}
+
+.brand-site-projectbreed-kop {
+    display: flex;
+    max-width: 100%;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.375rem 0.75rem;
+}
+
+.brand-site-projectbreed-wanneer {
+    font-size: var(--site-maat-label);
+    color: var(--site-tekst-zacht);
+}
+
+.brand-site-projectbreed-titel {
+    max-width: 100%;
+    font-size: var(--site-maat-kop);
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+    color: var(--site-kop);
+    transition: color var(--site-duur-hover) var(--site-ease);
+}
+
+.brand-site-projectbreed-link:focus-visible .brand-site-projectbreed-titel {
+    color: var(--brand-ice);
+}
+
+.brand-site-projectbreed-zin {
+    max-width: 68ch;
+    font-size: var(--site-maat-tekst);
+    line-height: 1.6;
+    color: var(--site-tekst-zacht);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+}
+
+.brand-site-projectbreed-pijl {
+    display: none;
+}
+
+@media (min-width: 50rem) {
+    .brand-site-projectbreed-pijl {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.75rem;
+        height: 2.75rem;
+        border: 1px solid var(--site-plaat-rand);
+        border-radius: 999px;
+        color: var(--brand-cyan);
+        transition:
+            border-color var(--site-duur-hover) var(--site-ease),
+            background-color var(--site-duur-hover) var(--site-ease),
+            color var(--site-duur-hover) var(--site-ease),
+            transform var(--site-duur-hover) var(--site-ease);
+    }
+
+    .brand-site-projectbreed-link:focus-visible .brand-site-projectbreed-pijl {
+        border-color: transparent;
+        background-color: var(--brand-cyan);
+        color: var(--brand-navy);
+        transform: translateX(4px);
+    }
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-projectbreed-link:hover .brand-site-projectbreed-titel {
+        color: var(--brand-ice);
+    }
+
+    .brand-site-projectbreed-link:hover .brand-site-projectbreed-beeld {
+        border-color: color-mix(in oklab, var(--brand-cyan) 45%, transparent);
+        background-color: var(--site-licht);
+    }
+}
+
+@media (hover: hover) and (pointer: fine) and (min-width: 50rem) {
+    .brand-site-projectbreed-link:hover .brand-site-projectbreed-pijl {
+        border-color: transparent;
+        background-color: var(--brand-cyan);
+        color: var(--brand-navy);
+        transform: translateX(4px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .brand-site-projectbreed-link::before,
+    .brand-site-projectbreed-beeld,
+    .brand-site-projectbreed-titel,
+    .brand-site-projectbreed-pijl {
+        transition: none;
+    }
+
+    .brand-site-projectbreed-link .brand-site-projectbreed-pijl {
+        transform: none;
+    }
+}
+
+/* --- De pagina's: het overzicht en één project ------------------------ */
+
+/*
+  De kop van /projecten en van een project, in dezelfde taal als de
+  sectiekoppen op de voorpagina: het opschrift als sectielabel (halfvet,
+  in cyaan, zonder lijntje ervoor), de titel groot in Geist.
+*/
+.brand-site-projectpagina-opschrift {
+    display: block;
+    max-width: 100%;
+    font-size: var(--site-maat-klein);
+    font-weight: 600;
+    line-height: 1.45;
+    letter-spacing: 0.005em;
+    color: var(--brand-cyan);
+    overflow-wrap: anywhere;
+}
+
+.brand-site-projectpagina-titel {
+    margin-top: 0.75rem;
+    font-size: var(--site-maat-titel-kort);
+    font-weight: 600;
+    line-height: 1.06;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+    color: var(--site-kop);
+}
+
+.brand-site-projectpagina-inleiding {
+    margin-top: 1rem;
+    max-width: 60ch;
+    font-size: var(--site-maat-lead);
+    line-height: 1.6;
+    text-wrap: pretty;
+    color: var(--site-tekst-zacht);
+}
+
+.brand-site-projectpagina-uitgelicht {
+    margin-top: clamp(2rem, 4vw, 2.75rem);
+}
+
+.brand-site-projectpagina-overig {
+    margin-top: clamp(2rem, 4vw, 2.75rem);
+}
+
+/*
+  Eén project. De kolom van het beeld (`--project-kolom`) loopt door de
+  hele pagina: het beeld staat erin, en verderop de kopjes van de lange
+  teksten. Zo heeft de pagina één linkerlijn voor de beelden en kopjes en
+  één voor de tekst, en leest hij als een verslag in plaats van als een
+  stapel blokken.
+*/
+.brand-site-projectpagina {
+    --project-kolom: clamp(11rem, 18vw, 14.5rem);
+}
+
+.brand-site-projectpagina-kop {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+}
+
+@media (min-width: 50rem) {
+    .brand-site-projectpagina-kop {
+        grid-template-columns: var(--project-kolom) minmax(0, 1fr);
+        gap: clamp(2rem, 4vw, 3rem);
+    }
+}
+
+.brand-site-projectpagina-beeld {
+    position: relative;
+    margin: 0;
+    overflow: hidden;
+    border: 1px solid var(--site-plaat-rand);
+    border-radius: 1rem;
+    background-color: var(--site-plaat-vol);
+    box-shadow: 0 30px 80px -50px var(--site-schaduw);
+}
+
+/*
+  Liggend op een telefoon, vierkant ernaast op een breed scherm: hetzelfde
+  bronbeeld als de casus (een vierkant van 640), dus beide knippen er
+  hoogstens een strook af.
+*/
+.brand-site-projectpagina-beeld img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+}
+
+/* Dezelfde glazen binnenrand als de casus op de voorpagina. */
+.brand-site-projectpagina-beeld::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    box-shadow: inset 0 0 0 1px
+        color-mix(in oklab, var(--brand-platinum) 6%, transparent);
+}
+
+/*
+  Zonder beeld de letter van de organisatie, zoals in de casus. Op een
+  telefoon een laag vlak: een groot leeg vierkant boven de titel zou de
+  titel onder de vouw duwen.
+*/
+.brand-site-projectpagina-letter {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 16 / 6;
+    font-size: clamp(2.75rem, 2rem + 3vw, 4.5rem);
+    font-weight: 500;
+    line-height: 1;
+    color: color-mix(in oklab, var(--brand-cyan) 85%, transparent);
+    background:
+        radial-gradient(
+            60% 70% at 50% 45%,
+            var(--site-licht-blauw),
+            transparent 72%
+        ),
+        var(--site-plaat-vol);
+}
+
+@media (min-width: 50rem) {
+    .brand-site-projectpagina-beeld img,
+    .brand-site-projectpagina-letter {
+        aspect-ratio: 1;
+    }
+}
+
+.brand-site-projectpagina-kop .brand-site-projectpagina-titel {
+    margin-top: 0.875rem;
+    max-width: 22ch;
+    font-size: var(--site-maat-titel);
+}
+
+.brand-site-projectpagina-titel[data-lengte='lang'],
+.brand-site-projectpagina-kop
+    .brand-site-projectpagina-titel[data-lengte='lang'] {
+    max-width: 32ch;
+    font-size: var(--site-maat-titel-lang);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+}
+
+/*
+  De feiten: een strook van vier, twee op een telefoon. Label klein en
+  zacht boven de waarde, net als bij de kerngegevens op de voorpagina.
+  Rijen tussen haarlijnen; geen kaders, want dit is een opsomming en geen
+  stel knoppen.
+*/
+.brand-site-projectpagina-feiten {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem 1.5rem;
+    margin: clamp(2rem, 4vw, 2.75rem) 0 0;
+    padding-block: 1.125rem;
+    border-block: 1px solid var(--site-plaat-rand);
+}
+
+@media (min-width: 50rem) {
+    .brand-site-projectpagina-feiten {
+        grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+        gap: 1.5rem;
+    }
+}
+
+.brand-site-projectpagina-feiten > div {
+    display: grid;
+    align-content: start;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.brand-site-projectpagina-feiten dt {
+    font-size: var(--site-maat-label);
+    font-weight: 500;
+    color: var(--site-tekst-zacht);
+}
+
+.brand-site-projectpagina-feiten dd {
+    margin: 0;
+    font-size: var(--site-maat-tekst);
+    font-weight: 500;
+    line-height: 1.45;
+    color: var(--site-kop);
+    overflow-wrap: anywhere;
+}
+
+/*
+  De lange teksten: het kopje links in de kolom van het beeld, de tekst
+  rechts op de lijn van de titel. Op een telefoon onder elkaar.
+*/
+.brand-site-projectpagina-blad {
+    display: grid;
+    margin-top: clamp(2rem, 4vw, 3rem);
+}
+
+.brand-site-projectpagina-deel {
+    display: grid;
+    gap: 0.75rem;
+    padding-block: clamp(1.25rem, 3vw, 2rem);
+}
+
+.brand-site-projectpagina-deel + .brand-site-projectpagina-deel {
+    border-top: 1px solid var(--site-plaat-rand);
+}
+
+@media (min-width: 50rem) {
+    .brand-site-projectpagina-deel {
+        grid-template-columns: var(--project-kolom) minmax(0, 1fr);
+        gap: clamp(2rem, 4vw, 3rem);
+    }
+}
+
+.brand-site-projectpagina-kopje {
+    font-size: var(--site-maat-kop);
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+    color: var(--site-kop);
+}
+
+.brand-site-projectpagina-tekst {
+    max-width: 68ch;
+    font-size: 1rem;
+    line-height: 1.75;
+    text-wrap: pretty;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+    color: var(--site-tekst);
+}

@@ -417,6 +417,32 @@ rechtsboven de tijdlijn:
 Klikken op een ervaring opent in allebei de gevallen hetzelfde venster met
 de volledige tekst.
 
+### De vormgeving ("Helder zicht")
+
+Dit blok volgt de taal van de hele publieke site: een lens die op één
+ding scherpstelt. Zie
+[frontend en animatie](../frontend-en-animatie.md#de-landing-als-scène).
+
+- **De carrousel werkt met scherptediepte.** De voorste kaart staat
+  scherp op een eigen glazen plaat met een cyaan rand; de buren erboven en
+  eronder worden kleiner en zakken terug in het donker. Dat is schaal en
+  doorzichtigheid, **nooit blur**: de buren moeten te lezen blijven, en een
+  filter per kaart per scrollstap kost te veel.
+- **De lijst is een tijdlijn met een lichtrail.** Een dunne lijn waar een
+  straal van Electric Blue naar cyaan doorheen tekent terwijl je scrolt;
+  de punten lichten op zodra de straal ze bereikt.
+- **Alles wat tijd is, staat in Geist Mono**: perioden, jaartallen langs
+  de rail, de stand "4 / 27", de duur in de lijst.
+- **De cijfers zijn groot en mono, zonder kaders.** Het getal is het
+  beeld; een doos eromheen maakt er een tegel van. Een dun cyaan streepje
+  boven het label is de enige versiering.
+
+De opmaak staat in
+[`resources/css/site/ervaring.css`](../../../resources/css/site/ervaring.css),
+onder het voorvoegsel `brand-site-ervaring-`. De oude klassen
+`brand-loopbaan-*` en `brand-tijdlijn-*` worden door deze componenten niet
+meer gebruikt.
+
 De keuze verschijnt pas vanaf vier ervaringen; daaronder staat de hele
 loopbaan toch al in beeld en is een carrousel alleen maar extra werk. Welke
 van de twee de standaard is, staat als één constante bovenin
@@ -428,56 +454,59 @@ woord.**
 
 Het probleem dat hij oplost is hoogte. Ook met compacte regels en
 dichtgeklapte beschrijvingen is vijfentwintig functies onder elkaar meters
-pagina. Dit onderdeel is precies **één scherm hoog**; hoeveel functies
-erbij komen verandert daar niets aan, alleen hoe lang je erdoorheen
-scrolt.
+pagina. Dit onderdeel heeft een **vaste hoogte** (hoogstens 32rem, of
+twee derde van het scherm); hoeveel functies erbij komen verandert daar
+niets aan, alleen hoe ver je erdoorheen bladert.
 
-**Je klikt nergens op: je scrolt in het vak.** Hang je met je muis in het
-omlijnde vak, dan gaat je scroll naar de loopbaan; hang je ernaast, dan
-scrolt de pagina gewoon door. De pagina blijft ondertussen staan waar hij
-staat. De functie waar je bent staat vooraan op een eigen kaart; die
-ervóór en die erna staan kleiner erboven en eronder, **leesbaar** -- je
-ziet dus niet alleen dát er iets voor en na komt, maar ook wát.
+**Het muiswiel is van de pagina, niet van het vak.** Je bladert met de
+pijlknoppen onderin het vak, met de jaartallen in de rail, door op een
+kaart te klikken, of met de pijltjestoetsen als het vak de focus heeft. De
+functie waar je bent staat vooraan op een eigen kaart; die ervóór en die
+erna staan kleiner erboven en eronder, **leesbaar** -- je ziet dus niet
+alleen dát er iets voor en na komt, maar ook wát.
 
-**Waarom niet het blok vastzetten en de pagina eronder laten doorlopen.**
-Dat was de eerste opzet, en hij werkte technisch prima. Alleen: dan is het
-vak niet het gebied waar het gebeurt. Je scrolt ver van het vak vandaan en
-de kaarten schuiven mee, of je scrolt er vlak naast en er lijkt niets te
-gebeuren. Dat leest als een onnauwkeurig onderdeel, ook al doet de code
-precies wat er staat. Nu is de afbakening echt: het vak is de zone, en de
-rand licht op zodra je erin hangt.
+**Hier nam het vak eerst je scroll over, en dat is eruit gehaald.** Hing je
+muis in het vak en besloeg het het midden van het scherm, dan ging het wiel
+naar de loopbaan en bleef de pagina staan. Met een loopbaan van
+zevenentwintig regels stond de pagina zo achtentwintig wielstappen stil;
+nagemeten in de browser op ruim 2400 pixels. Voor wie gewoon verder wilde
+lezen voelde dat als een site die vastloopt, en dat was de belangrijkste
+reden dat de eigenaar de pagina "buggy" noemde. Wie de loopbaan wil
+doorlopen, heeft knoppen; wie verder wil, scrolt.
 
-Onderin staat waar je bent (`9 / 27`), een zinnetje dat scrollen het
-middel is, en een voortgangsbalk. Dat zinnetje wordt duidelijker zodra je
-muis in het vak hangt -- dan is het ook waar.
+**Bij binnenkomst waaiert de stapel open.** Hij ligt eerst als een dicht
+pak achter de voorste kaart en gaat dan, één keer, open naar zijn
+scherptediepte: je ziet dat er meer onder ligt. Dat is een tween op één
+getal (`waaier`, 0 tot 1) dat `plaats()` gebruikt, niet op de kaarten
+zelf -- die krijgen hun transform al van `plaats()`, en twee systemen in
+dezelfde transform laten een kaart springen. Staat de stapel al in beeld
+(terug van een subpagina), dan begint hij open; onder reduced motion
+bestaat de carrousel niet.
+
+Onderin staat waar je bent (`9 / 27`), een zinnetje dat zegt hoe je
+bladert, de twee pijlknoppen (44 pixels, voor een duim) en een
+voortgangsbalk. De voet heeft een eigen ondergrond: de kaarten onder de
+voorste lopen tot de rand van het vak en schemerden er anders doorheen.
 
 De afstanden tussen de kaarten **schalen mee met de hoogte van het vak**.
 Met vaste getallen staan ze op een groot scherm als een klein kluitje in
 een half leeg vak -- precies de lege ruimte die dit onderdeel moest
 oplossen. Een `ResizeObserver` houdt die maat bij.
 
-Zes dingen die daarbij bewust zo zijn:
+Wat daarbij bewust zo is:
 
-- **Je komt er altijd uit.** Ben je aan het begin of het eind van de
-  loopbaan, dan houden we de scroll niet meer tegen en gaat de pagina
-  gewoon verder. Zonder die uitweg zit de bezoeker vast in het vak, en dat
-  is het ergste wat een onderdeel als dit kan doen. Om dezelfde reden
-  pakt het vak je scroll pas zodra het het midden van het scherm beslaat
-  -- anders werkt het tegen terwijl je er alleen maar langsschuift.
 - **Met het toetsenbord werkt het ook.** Het vak is aan te wijzen met Tab,
   en dan bladeren de pijltjes, Page Up/Down, Home en End erdoorheen. Een
   onderdeel dat alleen met een muis te bedienen is, is stuk voor wie geen
-  muis gebruikt. Op een telefoon veeg je erin.
+  muis gebruikt. Op een telefoon gebruik je de knoppen.
 - **De kaarten worden rechtstreeks verplaatst, buiten Vue om.** Dat loopt
   met elke scrollstap mee; zou Vue elke kaart opnieuw moeten tekenen, dan
   gaat het haperen. Wat Vue wél bijhoudt is welke ervaring vooraan staat
   -- dat verandert een paar tientallen keren en niet per beeldje.
-- **Er zijn twee posities: een doel en een stand.** Je scroll verzet het
-  doel; de stapel kruipt daar elk beeldje een stukje naartoe, op de ticker
-  van GSAP. Zonder dat tussenstation springt de stapel per
-  scrollgebeurtenis, en die komen bij een muiswiel in schokken van honderd
-  tegelijk binnen -- dan hapert het. Mét dat tussenstation loopt de
-  beweging nog even door nadat je bent gestopt, en glijdt het.
+- **Er zijn twee posities: een doel en een stand.** Een klik of toets
+  verzet het doel; de stapel kruipt daar elk beeldje een stukje naartoe, op
+  de ticker van GSAP. Zo glijdt hij naar een ver jaartal in plaats van te
+  springen.
 - **De afstanden worden gemeten, niet geraden.** Er stonden eerst vaste
   getallen en daarna een percentage van de hoogte van het vak; allebei
   gaan ze mis zodra een kaart hoger of lager uitvalt dan verwacht, en dat
@@ -500,17 +529,24 @@ Zes dingen die daarbij bewust zo zijn:
   vijfentwintig functies over vijfendertig jaar zouden ze anders over
   elkaar vallen, en dan is het geen oriëntatiepunt meer maar een grijze
   streep. Erop klikken springt naar die plek.
-- **Bij `prefers-reduced-motion` bestaat de carrousel niet.** Een vak dat
-  je scroll overneemt is precies waar iemand met bewegingsklachten last
-  van heeft. Er is dan geen afgezwakte versie; er is een lijst, en die is
+- **Bij `prefers-reduced-motion` bestaat de carrousel niet.** Een stapel
+  die glijdt en openwaaiert is precies waar iemand met bewegingsklachten
+  last van heeft. Er is dan geen afgezwakte versie; er is een lijst, en die is
   compleet. De keuzeknop verdwijnt daarom ook -- een knop die iets
-  aanbiedt wat we bewust niet doen, is een kapotte knop.
+  aanbiedt wat we bewust niet doen, is een kapotte knop. "Toon alles"
+  blijft wel staan: dat venster scrollt gewoon en neemt niets over.
 
-Het opvangen van het wiel en de vinger staat als `scrollThrough` in
-[`motion.ts`](../../../resources/js/lib/motion.ts), zodat een volgende
-module hetzelfde kan doen. Eén ding dat daarbij makkelijk wordt vergeten:
-`data-lenis-prevent` hoort op het element, anders neemt Lenis het wiel als
-eerste af en komt onze afhandeling nooit aan de beurt.
+    **De code was hier een tijd van dit document afgedreven**: de carrousel
+    bleef onder reduced motion staan en sprong alleen zonder te glijden.
+    Dat neemt je scroll nog steeds over, dus het is teruggezet naar wat hier
+    staat. Zie `bewegingMag` in
+    [`ErvaringSection.vue`](../../../resources/js/components/site/sections/ErvaringSection.vue).
+
+`scrollThrough` -- het opvangen van wiel en vinger binnen één vak -- is
+daarna ook uit [`motion.ts`](../../../resources/js/lib/motion.ts) gehaald:
+niets gebruikte het nog. Wil een volgende module zoiets, lees dan eerst
+hierboven waarom het hier wegging: met veel items houdt het de pagina te
+lang vast.
 
 Het pictogram in het rondje schaalt mee met het rondje (42% van de
 diameter) in plaats van een vaste maat te hebben. Met een vast formaat
@@ -677,6 +713,12 @@ ervaring, en om dezelfde reden:
 - **De inleiding niet.** Half Nederlands op een Engelse pagina is
   slordiger dan geen zin, en zonder die zin ziet het blok er ook goed uit.
 
+**Het opschrift komt ook van de server**, al heeft het beheerscherm er
+geen veld voor (`SectionHeading::standaard()` zet er voor de tijdlijn
+geen). Er stond hier het woord "Ervaring" vast in het sjabloon -- ook op
+de Engelse site, en los van wat er in de database stond. Nu staat er wat
+`voorDeSite()` meegeeft, en is het leeg, dan staat er niets.
+
 Ontbreekt de prop helemaal -- een verse database zonder seeder, of een
 oude pagina uit de cache -- dan valt
 [`ErvaringSection`](../../../resources/js/components/site/sections/ErvaringSection.vue)
@@ -685,9 +727,24 @@ gat.
 
 ### De cijfers erboven
 
-Hoogstens vier getallen boven de tijdlijn. Ze tellen omhoog zodra je ze in
+Hoogstens vier getallen boven de tijdlijn, in de gedeelde vorm van een
+meting (`.brand-site-metingen` en `.brand-site-meting-*` in
+`resources/css/site/basis.css`): het getal bovenaan, groot en halfvet, het
+label eronder, klein en zilver, en een haarlijn links die de metingen van
+elkaar scheidt. Er stond eerst een kort lijntje boven elk label, met het
+label boven het getal; dat lijntje werd afgekapt tot een wigje en het
+label stond in geen verhouding tot het getal. In de HTML staat nu het label
+(`dt`) vóór het getal (`dd`), zoals een definitielijst hoort -- het stond
+andersom -- en `column-reverse` zet het getal op het scherm bovenaan.
+
+Ze tellen omhoog zodra je ze in Ze tellen omhoog zodra je ze in
 beeld scrolt, en het eindgetal staat al in de HTML -- gaat er iets mis met
 het tellen, dan staat er nog steeds het goede getal.
+
+Het aantal bepaalt de kolommen (`data-aantal` op de lijst): op een breed
+scherm staan ze allemaal naast elkaar, op een telefoon één, twee of drie
+naast elkaar en bij vier twee aan twee. Drie in twee kolommen liet het
+derde cijfer alleen op een rij staan.
 
 **De klant beheert de lijst zelf.** Hij bepaalt hoeveel cijfers er staan,
 in welke volgorde, hoe ze heten en waar het getal vandaan komt. Vier is
@@ -780,6 +837,34 @@ klant er 27 in en komt er daarna een functie bij, dan blijft er 27 staan
 het: onder het veld staat "Wij tellen er 28", en op de knop komt een
 waarschuwingsteken zodra een cijfer achterloopt. Terug op automatisch zetten
 lost het op.
+
+### De jaarband
+
+Onder de cijfers staat de loopbaan als één regel jaartallen, van oud naar
+nieuw, één per beginjaar met de organisatie erbij. **Hij schuift tijdens
+het scrollen door de sectie van links naar rechts**, gekoppeld aan de
+scroll (`scrub`, van het moment dat hij onder in beeld komt tot hij boven
+verdwijnt): hij loopt dus terug in de tijd terwijl je naar beneden leest,
+in dezelfde richting als de lijst eronder, die met het nieuwste begint.
+Omhoogscrollen draait het om. Zie `band` en `schuifBand` in
+[`ErvaringSection.vue`](../../../resources/js/components/site/sections/ErvaringSection.vue).
+
+- **De afstand is begrensd.** Met zevenentwintig jaren is het spoor
+  zesduizend pixels lang, en dat in één schermhoogte scrollen is geen
+  beweging meer maar een veeg (in de browser gemeten: zes pixels band per
+  pixel scroll). Het spoor begint met het nieuwste jaar aan de rechterrand
+  en schuift hoogstens zestig procent van het vak op.
+- **Alles komt uit de maten zelf** en wordt bij een verversing opnieuw
+  gemeten (`invalidateOnRefresh`): na een taalwissel, een andere breedte
+  of geladen letters klopt het nog. Het vak knipt het spoor af en laat het
+  aan de randen wegvloeien, dus de pagina wordt er niet breder van.
+- **Het is een beeld en geen tweede bron**: `aria-hidden`, en alles erin
+  komt uit dezelfde ervaringen. Bij één beginjaar staat hij er niet: één
+  jaartal is geen tijdlijn. Onder reduced motion staat hij stil op het
+  nieuwste jaar.
+- De jaartallen zijn omlijnd en niet gevuld: het is een achtergrond voor de
+  cijfers en de lijst, geen tweede kop. Een organisatienaam wordt na 11rem
+  afgekort; de volle naam staat in de lijst.
 
 ### De animaties van de lijst
 

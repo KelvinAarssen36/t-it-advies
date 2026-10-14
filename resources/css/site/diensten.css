@@ -1,0 +1,487 @@
+/*
+  Diensten: de lens-index.
+
+  Breed: links de namen groot onder elkaar, met een lichte rail die naar
+  de actieve naam schuift; rechts één glazen paneel waarin de panelen van
+  alle diensten op deze pagina op elkaar liggen. Smal: kaarten onder
+  elkaar. Zie DienstenSection.vue en docs/architecture/modules/diensten.md.
+
+  **De maten komen uit de rollen in basis.css** (`--site-maat-*`). In de
+  eerste ronde stonden de namen op 30 pixels en het paneel op een titel
+  van 36: het blok nam een heel scherm voor zes woorden.
+*/
+
+.brand-site-diensten {
+    display: grid;
+    gap: clamp(1.75rem, 3.5vw, 3.5rem);
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    align-items: start;
+}
+
+.brand-site-diensten[data-enkel] {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 52rem;
+}
+
+/* --- De index ---------------------------------------------------------- */
+
+.brand-site-diensten-index {
+    position: relative;
+    display: grid;
+    gap: 0.125rem;
+    padding-left: 1rem;
+}
+
+/* De rail waar de lens langs schuift. */
+.brand-site-diensten-index::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 1px;
+    background: linear-gradient(
+        180deg,
+        transparent,
+        var(--site-plaat-rand) 12%,
+        var(--site-plaat-rand) 88%,
+        transparent
+    );
+}
+
+/*
+  Het spoor: de rail vult zich met licht terwijl je door de index scrolt.
+  `--voortgang` (0 tot 1) komt van `scrollVoortgang` en staat op dit ene
+  smalle element, niet op de index: een CSS-variabele erft, en op de index
+  zou elke scrollstap de stijl van alle namen opnieuw laten berekenen.
+  Zonder JavaScript en onder reduced motion staat hij vol.
+*/
+.brand-site-diensten-spoor {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 1px;
+    background: linear-gradient(
+        180deg,
+        color-mix(in oklab, var(--brand-cyan) 70%, transparent),
+        color-mix(in oklab, var(--brand-blue) 40%, transparent) 85%,
+        transparent
+    );
+    transform-origin: top;
+    transform: scaleY(var(--voortgang, 1));
+}
+
+/*
+  De lens zelf: een stuk rail van honderd pixels dat met een schaal op de
+  hoogte van de actieve naam wordt gebracht. Alleen transform, dus de
+  browser hoeft er niets voor op te meten.
+*/
+.brand-site-diensten-lens {
+    position: absolute;
+    top: 0;
+    left: -1px;
+    width: 3px;
+    height: 100px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, var(--brand-cyan), var(--brand-blue));
+    box-shadow: 0 0 14px var(--site-licht);
+    transform-origin: top;
+    transform: translateY(var(--lens-y, 0)) scaleY(var(--lens-schaal, 0));
+    transition: transform 0.3s var(--site-ease);
+}
+
+.brand-site-diensten-naam {
+    display: grid;
+    width: 100%;
+    min-height: 2.75rem;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.5rem 0.5rem 0;
+    border-radius: 0.75rem;
+    text-align: left;
+    color: var(--site-tekst-zacht);
+    cursor: pointer;
+    transition: color 0.35s var(--site-ease);
+}
+
+.brand-site-diensten-naam-icoon {
+    display: inline-flex;
+    width: 2rem;
+    height: 2rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--site-plaat-rand);
+    border-radius: 999px;
+    color: var(--site-tekst-zacht);
+    transition:
+        color 0.35s var(--site-ease),
+        border-color 0.35s var(--site-ease),
+        background-color 0.35s var(--site-ease);
+}
+
+/*
+  Het masker en de regel erin. Het masker knipt de naam af zolang hij
+  onder de rand zit (`stapelBinnen` schuift de regel er van onderen in);
+  de kleine marge onderaan houdt de staart van een g of j binnen beeld.
+  De afkapping op drie regels zit op de regel zelf, want daar staat de
+  tekst.
+*/
+.brand-site-diensten-naam-tekst {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    padding-bottom: 0.12em;
+    margin-bottom: -0.12em;
+}
+
+.brand-site-diensten-naam-regel {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+    font-size: var(--site-maat-kop);
+    font-weight: 500;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+    overflow-wrap: anywhere;
+}
+
+.brand-site-diensten-naam-pijl {
+    color: var(--brand-cyan);
+    opacity: 0;
+    transform: translateX(-0.375rem);
+    transition:
+        opacity 0.2s var(--site-ease),
+        transform 0.2s var(--site-ease);
+}
+
+.brand-site-diensten-naam[aria-current] {
+    color: var(--site-kop);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-diensten-naam:hover {
+        color: var(--site-kop);
+    }
+}
+
+.brand-site-diensten-naam[aria-current] .brand-site-diensten-naam-icoon {
+    color: var(--brand-cyan);
+    border-color: var(--site-plaat-rand-sterk);
+    background-color: color-mix(in oklab, var(--brand-cyan) 8%, transparent);
+}
+
+.brand-site-diensten-naam[aria-current] .brand-site-diensten-naam-pijl {
+    opacity: 1;
+    transform: none;
+}
+
+.brand-site-diensten-naam:focus-visible {
+    outline: 2px solid var(--brand-cyan);
+    outline-offset: 2px;
+}
+
+/* --- Het paneel ---------------------------------------------------------- */
+
+/*
+  Plakt onder de kop, zodat het paneel bij een lange index in beeld blijft.
+  De afstand is de hoogte van de zwevende kopbalk plus lucht.
+*/
+.brand-site-diensten-paneel {
+    position: sticky;
+    top: 5rem;
+    padding: clamp(1.25rem, 2.4vw, 2rem);
+}
+
+/* Alle panelen in dezelfde rastercel: het blok is zo hoog als de langste. */
+.brand-site-diensten-stapel {
+    display: grid;
+}
+
+/*
+  Wisselen tussen diensten: een korte kruisovergang met een kleine stap
+  omhoog, onder de 220 milliseconden. Dit gebeurt bij elke beweging van de
+  muis over de index, dus het moet aanvoelen als het paneel dat volgt en
+  niet als een animatie waarop je wacht. Overgangen en geen keyframes: wie
+  snel langs de namen gaat, buigt de lopende overgang om in plaats van een
+  nieuwe te starten.
+*/
+.brand-site-diensten-blad {
+    grid-area: 1 / 1;
+    min-width: 0;
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(0.375rem);
+    transition:
+        opacity 0.12s var(--site-ease),
+        transform 0.2s var(--site-ease),
+        visibility 0s linear 0.12s;
+}
+
+.brand-site-diensten-blad[data-actief] {
+    visibility: visible;
+    opacity: 1;
+    transform: none;
+    transition:
+        opacity 0.2s var(--site-ease),
+        transform 0.22s var(--site-ease),
+        visibility 0s;
+}
+
+/*
+  Het pictogram in een klein diafragma: twee ringen om een vol midden, het
+  oog van het merk in het klein.
+*/
+.brand-site-diensten-iris {
+    position: relative;
+    display: inline-flex;
+    width: 2.75rem;
+    height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    color: var(--brand-cyan);
+    background: radial-gradient(
+        circle,
+        color-mix(in oklab, var(--brand-cyan) 16%, transparent),
+        transparent 70%
+    );
+    box-shadow:
+        inset 0 0 0 1px var(--site-plaat-rand-sterk),
+        0 0 0 5px color-mix(in oklab, var(--brand-cyan) 5%, transparent),
+        0 0 0 6px var(--site-plaat-rand);
+}
+
+.brand-site-diensten-titel {
+    margin-top: 1.25rem;
+    font-size: var(--site-maat-titel-lang);
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.025em;
+    color: var(--site-kop);
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+}
+
+.brand-site-diensten-zin {
+    margin-top: 0.75rem;
+    max-width: 38rem;
+    font-size: var(--site-maat-lead);
+    line-height: 1.6;
+    color: var(--site-tekst);
+    text-wrap: pretty;
+    overflow-wrap: anywhere;
+}
+
+.brand-site-diensten-meer {
+    margin-top: 1.5rem;
+}
+
+/*
+  De expertisepunten: kleine pillen. Ook gebruikt in DienstVenster en op
+  de kaart, zodat een steekwoord er overal hetzelfde uitziet.
+*/
+.brand-site-diensten-punten {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin-top: 1.125rem;
+}
+
+/*
+  Steekwoorden en geen maat of telling, dus in de gewone letter: mono was
+  hier een kostuum.
+*/
+.brand-site-diensten-punten > li {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    min-width: 0;
+    max-width: 100%;
+    padding: 0.25rem 0.625rem;
+    border: 1px solid var(--site-plaat-rand);
+    border-radius: 999px;
+    font-size: var(--site-maat-label);
+    line-height: 1.4;
+    color: var(--site-tekst);
+    background-color: color-mix(in oklab, var(--brand-navy) 40%, transparent);
+    overflow-wrap: anywhere;
+    transition:
+        color var(--site-duur-hover) var(--site-ease),
+        border-color var(--site-duur-hover) var(--site-ease),
+        background-color var(--site-duur-hover) var(--site-ease);
+}
+
+/*
+  Een lichtpunt voor elk onderdeel. Het staat er altijd, gedimd, zodat er
+  onder de muis niets bij komt en niets verschuift: alleen het licht gaat
+  aan.
+*/
+.brand-site-diensten-punten > li::before {
+    content: '';
+    flex: none;
+    width: 0.3125rem;
+    height: 0.3125rem;
+    border-radius: 50%;
+    background: var(--site-plaat-rand-sterk);
+    translate: 0 -0.0625rem;
+    transition:
+        background-color var(--site-duur-hover) var(--site-ease),
+        box-shadow var(--site-duur-hover) var(--site-ease);
+}
+
+/*
+  Wijs je een onderdeel aan, dan licht het op en stappen de andere een
+  stapje terug: je leest het als "dit hoort bij de dienst", zoals een
+  lens één ding scherp zet.
+
+  **Bewust geen knop.** Een onderdeel opent niets, dus het krijgt geen
+  handje, geen lift en geen indrukken; alleen licht. Een badge die zich
+  als knop gedraagt, belooft een klik die niets doet. De kleur en niet de
+  doorzichtigheid gaat omlaag bij de buren: de entree hieronder houdt de
+  doorzichtigheid met `both` vast, en een animatie wint van een gewone
+  regel.
+*/
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-diensten-punten:hover > li:not(:hover) {
+        color: var(--site-tekst-zacht);
+        border-color: color-mix(
+            in oklab,
+            var(--site-plaat-rand) 60%,
+            transparent
+        );
+    }
+
+    .brand-site-diensten-punten > li:hover {
+        color: var(--brand-ice);
+        border-color: color-mix(in oklab, var(--brand-cyan) 45%, transparent);
+        background-color: var(--site-licht);
+    }
+
+    .brand-site-diensten-punten > li:hover::before {
+        background: var(--brand-cyan);
+        box-shadow: 0 0 0.5rem
+            color-mix(in oklab, var(--brand-cyan) 70%, transparent);
+    }
+}
+
+/*
+  Bij een nieuwe dienst lichten de punten van links naar rechts op, één
+  voor één. `--punt` is het nummer in de rij; zie DienstenSection.
+*/
+.brand-site-diensten-blad[data-actief] .brand-site-diensten-punten > li {
+    animation: brand-site-diensten-punt 0.3s var(--site-ease) both;
+    animation-delay: calc(0.05s + min(var(--punt, 0), 6) * 0.03s);
+}
+
+@keyframes brand-site-diensten-punt {
+    from {
+        opacity: 0;
+        transform: translateY(0.375rem);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* --- Smal: de kaarten ---------------------------------------------------- */
+
+.brand-site-diensten-kaarten {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.brand-site-dienst-kaart {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    padding: 1.25rem;
+    text-align: left;
+}
+
+.brand-site-dienst-kaart[data-klikbaar] {
+    cursor: pointer;
+}
+
+.brand-site-dienst-kaart[data-klikbaar]:focus-visible {
+    outline: 2px solid var(--brand-cyan);
+    outline-offset: 2px;
+}
+
+.brand-site-dienst-kaart-icoon {
+    display: inline-flex;
+    width: 2.25rem;
+    height: 2.25rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    color: var(--brand-cyan);
+    box-shadow: inset 0 0 0 1px var(--site-plaat-rand-sterk);
+}
+
+.brand-site-dienst-kaart-titel {
+    margin-top: 0.875rem;
+    font-size: var(--site-maat-kop);
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+    color: var(--site-kop);
+    overflow-wrap: anywhere;
+}
+
+.brand-site-dienst-kaart-zin {
+    margin-top: 0.5rem;
+    font-size: var(--site-maat-tekst);
+    line-height: 1.6;
+    color: var(--site-tekst-zacht);
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 5;
+    overflow: hidden;
+}
+
+.brand-site-dienst-kaart .brand-site-diensten-punten {
+    margin-top: 0.875rem;
+}
+
+.brand-site-dienst-kaart-meer {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+    font-size: var(--site-maat-klein);
+    font-weight: 500;
+    color: var(--brand-cyan);
+}
+
+.brand-site-dienst-kaart[data-klikbaar]:active {
+    transform: scale(0.99);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .brand-site-diensten-lens,
+    .brand-site-diensten-spoor,
+    .brand-site-diensten-naam,
+    .brand-site-diensten-naam-icoon,
+    .brand-site-diensten-naam-pijl,
+    .brand-site-diensten-blad,
+    .brand-site-diensten-blad[data-actief],
+    .brand-site-diensten-punten > li,
+    .brand-site-diensten-punten > li::before {
+        transition: none;
+    }
+
+    .brand-site-diensten-blad {
+        transform: none;
+    }
+
+    .brand-site-diensten-blad[data-actief] .brand-site-diensten-punten > li {
+        animation: none;
+    }
+}

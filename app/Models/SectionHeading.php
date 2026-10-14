@@ -255,6 +255,21 @@ class SectionHeading extends Model
                 'intro_en' => 'We usually reply within one working day.',
             ],
 
+            /*
+             * Precies de tekst die in LinkedinSection.vue stond voordat dit
+             * blok te beheren werd, met de Engelse vertaling die toen in
+             * lang/en.json stond. Een bestaande site ziet na de update dus
+             * niets veranderen. De knoptekst staat in LinkedinSetting.
+             */
+            PageSectionKey::Linkedin => [
+                'eyebrow_nl' => 'LinkedIn',
+                'eyebrow_en' => 'LinkedIn',
+                'title_nl' => 'Blijf op de hoogte',
+                'title_en' => 'Stay in the loop',
+                'intro_nl' => 'Wat er speelt in het vak, waar ik aan werk en wat er af is: dat deel ik op LinkedIn. Nog niet toe aan een bericht? Volgen mag ook.',
+                'intro_en' => 'What is going on in the field, what I am working on and what is finished: I share it on LinkedIn. Not ready to send a message? Following is fine too.',
+            ],
+
             default => ['title_nl' => ucfirst($sectie->value)],
         };
     }

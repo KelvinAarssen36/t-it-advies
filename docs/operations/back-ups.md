@@ -31,7 +31,7 @@ _inhoud van de website_ vast, niet de hele database.
 | Terugzetten          | `BackupTerugzetter`                                                   |
 | Opruimen             | `Opruimer`                                                            |
 | Scherm               | `admin/Backups.vue` + `admin/BackupCodeDialoog.vue`                   |
-| Tests                | `tests/Feature/Admin/Backup*Test.php` (46 stuks)                      |
+| Tests                | `tests/Feature/Admin/Backup*Test.php` (70 stuks)                      |
 
 ## Geen gegenereerde PHP
 
@@ -55,7 +55,7 @@ weggeschreven of uitgevoerd.
 Alles uit `Inhoudsregister::tabellen()`: de indeling, de koppen, de
 loopbaan, de diensten, de certificaten, de opleidingen, de statistieken, de
 kerngegevens, de vragen, Over mij, de projecten, de werkwijze, het
-contactformulier en de voettekst. Plus
+contactformulier, de voettekst en het LinkedIn-blok. Plus
 de bestanden achter `logo_path`, `photo_path` en `image_path`.
 
 ### En wat er nooit in gaat
@@ -225,6 +225,47 @@ laatst gedraaide migratie. Bij het terugzetten:
 
 Het venster waarschuwt vooraf als het schema of de site-vingerafdruk
 afwijkt.
+
+### Een kop van een onderdeel dat later te beheren werd
+
+De regel "ongemoeid laten" geldt voor een hele tabel. Het LinkedIn-blok
+had een gat waar die regel niet bij kon: zijn **kop** staat in de gedeelde
+tabel `section_headings`, die in elke back-up zit. Een back-up van vóór het
+LinkedIn-beheer heeft voor dat blok geen rij -- de tekst stond toen in de
+code -- en de gewone vergelijking ("rij alleen in de database →
+verwijderen") zou de kop die de eigenaar sindsdien schreef dan weggooien.
+
+Daarom kent `Inhoudsregister` een kleine kaart, `KOP_BIJ_TABEL`: de kop
+van `linkedin` hoort bij de tabel `linkedin_settings`. Staat die tabel
+niet in de back-up, dan is de back-up van vóór dit beheer, en:
+
+- gaat de huidige LinkedIn-kop vóór het terugzetten opzij en komt hij
+  erna terug (`BackupTerugzetter::bewaarKoppenVanNa()` en
+  `zetKoppenTerug()`);
+- **zonder zijn oude `id`**: dat nummer kan in de oude stand bij een andere
+  kop horen, en dan wint de back-up dat nummer. De sleutel die telt is
+  `section`, en die is uniek;
+- blijft de knoptekst staan omdat `linkedin_settings` niet in de back-up
+  zit, de bestaande regel;
+- en meldt het verslag allebei.
+
+Was er nog niets ingevuld, dan valt er niets opzij te zetten en toont de
+site de standaardtekst -- dezelfde tekst die er stond toen de back-up werd
+gemaakt.
+
+**Een back-up van ná het beheer werkt gewoon zoals elke andere.** Daar zit
+`linkedin_settings` in, ook als hij leeg is, en dan telt de stand van
+toen: stond LinkedIn toen op de standaardtekst, dan staat hij na het
+terugzetten weer op de standaardtekst.
+
+Het adres van LinkedIn gaat niet mee: dat staat in `config/site.php` en
+niet in de database. Zie [LinkedIn](../architecture/modules/linkedin.md).
+`BackupLinkedinTest` legt al deze gevallen vast, inclusief de botsende
+`id` en de proefterugzetting.
+
+Komt er later weer een onderdeel bij waarvan de kop in `section_headings`
+staat maar dat zelf een eigen tabel krijgt, zet het dan in
+`KOP_BIJ_TABEL`.
 
 > **Let op na een terugzetting gevolgd door een deploy.**
 > `ExperienceSeeder` voegt ontbrekende rijen per stuk toe. Heeft de

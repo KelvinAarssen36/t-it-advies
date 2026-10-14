@@ -32,22 +32,34 @@ import type { OnderwerpOpDeSite, VeldOpDeSite } from '@/types/contact';
  *
  * Zie docs/architecture/modules/contact.md.
  */
-const props = defineProps<{
-    velden: VeldOpDeSite[];
-    onderwerpen: OnderwerpOpDeSite[];
-    eigenOnderwerpToegestaan: boolean;
-    /** Vingerafdruk van het formulier; zie ContactRequest::after(). */
-    instellingen: string;
-    /**
-     * Het publieke adres, als uitweg onder het formulier.
-     *
-     * **Niet alleen een vriendelijkheid.** Het tokenveld van Turnstile is
-     * verplicht, dus laadt Cloudflare niet, dan is dit formulier niet te
-     * versturen. Dat is de bedoeling -- liever dicht dan onbeschermd --
-     * maar dan moet er wél een andere manier zijn om iemand te bereiken.
-     */
-    email: string;
-}>();
+const props = withDefaults(
+    defineProps<{
+        velden: VeldOpDeSite[];
+        onderwerpen: OnderwerpOpDeSite[];
+        eigenOnderwerpToegestaan: boolean;
+        /** Vingerafdruk van het formulier; zie ContactRequest::after(). */
+        instellingen: string;
+        /**
+         * Het publieke adres, als uitweg onder het formulier.
+         *
+         * **Niet alleen een vriendelijkheid.** Het tokenveld van Turnstile is
+         * verplicht, dus laadt Cloudflare niet, dan is dit formulier niet te
+         * versturen. Dat is de bedoeling -- liever dicht dan onbeschermd --
+         * maar dan moet er wél een andere manier zijn om iemand te bereiken.
+         */
+        email: string;
+        /**
+         * Of die uitweg onder de knop staat.
+         *
+         * Uit op de landing: daar staat het adres al groot naast het
+         * formulier, en twee keer hetzelfde adres in één beeld is ruis. Aan op
+         * de contactpagina en overal waar het formulier alleen staat. Zet je
+         * hem uit, zorg dan dat het adres ergens anders in beeld staat.
+         */
+        toonMail?: boolean;
+    }>(),
+    { toonMail: true },
+);
 
 const page = usePage();
 const status = computed(() => page.props.flash?.status);
@@ -264,22 +276,37 @@ const invoertype = (soort: string): string => {
 
         Het komen zelf staat niet in CSS maar in `animeerBevestiging`: dat
         vinkje hoort met een overshoot in te ploffen, en dat is wat GSAP
-        beter doet dan een overgang.
+        beter doet dan een overgang. Het weggaan staat in
+        resources/css/site/contact.css.
     -->
     <Transition
-        name="brand-contactwissel"
+        name="brand-site-contact-wissel"
         mode="out-in"
         appear
         @enter="animeerBevestiging"
     >
-        <div v-if="status" data-bevestiging class="brand-contactgelukt">
-            <span class="brand-contactgelukt-vink" aria-hidden="true">
+        <div
+            v-if="status"
+            data-bevestiging
+            class="brand-site-contact-gelukt"
+            role="status"
+        >
+            <!--
+                Het vinkje in een iris: een ring die één keer uitdijt als
+                een pupil die zich opent. Dat staat in CSS
+                (`brand-site-contact-iris`) en speelt niet onder reduced
+                motion; het vinkje zelf ploft er met GSAP in.
+            -->
+            <span class="brand-site-contact-vink" aria-hidden="true">
+                <span class="brand-site-contact-iris" />
                 <CheckCheck data-bevestiging-vink class="size-6" />
             </span>
 
-            <h3 class="text-lg font-semibold">{{ $t('Aanvraag gelukt') }}</h3>
+            <h3 class="brand-site-contact-gelukt-titel">
+                {{ $t('Aanvraag gelukt') }}
+            </h3>
 
-            <p class="max-w-prose text-pretty text-muted-foreground">
+            <p class="brand-site-contact-gelukt-tekst">
                 {{ status }}
             </p>
         </div>
@@ -290,7 +317,7 @@ const invoertype = (soort: string): string => {
             reset-on-success
             :options="VERSTUUROPTIES"
             v-slot="{ errors, processing }"
-            class="brand-contactformulier"
+            class="brand-site-contact-formulier"
             :data-bezig="bezig ? '' : undefined"
             @start="bezig = true"
             @finish="bezig = false"
@@ -326,7 +353,7 @@ const invoertype = (soort: string): string => {
         -->
             <p
                 v-if="errors.instellingen"
-                class="brand-contactwaarschuwing"
+                class="brand-site-contact-waarschuwing"
                 role="alert"
             >
                 <TriangleAlert
@@ -342,12 +369,12 @@ const invoertype = (soort: string): string => {
             het bericht over de volle breedte. Een formulier dat één kolom
             blijft terwijl er ruimte is, leest als een enquête.
         -->
-            <div class="brand-contactvelden">
+            <div class="brand-site-contact-velden">
                 <template v-for="veld in props.velden" :key="veld.naam">
                     <!-- Het onderwerp: een keuzelijst, een tekstveld, of beide. -->
                     <div
                         v-if="veld.type === 'onderwerp'"
-                        class="brand-contactveld-vak is-breed"
+                        class="brand-site-contact-veld is-breed"
                     >
                         <Label
                             :for="`contact-${veld.naam}`"
@@ -399,7 +426,7 @@ const invoertype = (soort: string): string => {
                     <!-- Het bericht: altijd over de volle breedte. -->
                     <div
                         v-else-if="veld.type === 'tekstvak'"
-                        class="brand-contactveld-vak is-breed"
+                        class="brand-site-contact-veld is-breed"
                     >
                         <Label
                             :for="`contact-${veld.naam}`"
@@ -417,7 +444,7 @@ const invoertype = (soort: string): string => {
                     </div>
 
                     <!-- De gewone velden. -->
-                    <div v-else class="brand-contactveld-vak">
+                    <div v-else class="brand-site-contact-veld">
                         <Label
                             :for="`contact-${veld.naam}`"
                             :verplicht="veld.verplicht"
@@ -439,10 +466,11 @@ const invoertype = (soort: string): string => {
             <TurnstileWidget ref="widget" />
             <InputError :message="errors['cf-turnstile-response']" />
 
-            <div class="flex flex-wrap items-center gap-x-4 gap-y-3">
+            <div class="brand-site-contact-voet">
                 <Button
                     :disabled="processing"
                     variant="brand"
+                    size="lg"
                     class="w-full sm:w-auto"
                 >
                     <Spinner v-if="processing" />
@@ -459,7 +487,10 @@ const invoertype = (soort: string): string => {
                 formulier bewust niet te versturen, en dan mag een bezoeker
                 niet met lege handen staan.
             -->
-                <p class="text-sm text-pretty text-muted-foreground">
+                <p
+                    v-if="props.toonMail"
+                    class="text-sm text-pretty text-muted-foreground"
+                >
                     {{ $t('Of mail rechtstreeks:') }}
                     <a :href="`mailto:${props.email}`" class="brand-sitemail">
                         {{ props.email }}

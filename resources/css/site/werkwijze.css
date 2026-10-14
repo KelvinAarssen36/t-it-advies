@@ -1,0 +1,654 @@
+/*
+  Werkwijze: het lichtpad. Zie WerkwijzeSection.vue.
+
+  **Op een breed scherm een korte scène.** Het podium (kop, knop en het
+  venster met de stappen) plakt met `position: sticky`; de lege ruimte
+  erna (`.brand-site-werkwijze-reis`, hoog `--reis`) is precies de
+  afstand die het spoor naar links aflegt. Het component meet die en zet
+  `data-baan` op de scène:
+  - `scene`: het spoor schuift, het podium plakt;
+  - `rij`: het spoor past; alleen het licht loopt mee;
+  - niets: een raster dat afbreekt (reduced motion, of een podium dat
+    niet in het scherm past). Dat is ook wat je ziet zonder JavaScript.
+
+  **Onder 64rem een kolom** met de straal verticaal langs de knopen,
+  getekend door `tekenPad` in motion.ts. Die hangt de straal aan de
+  ankers (`data-stap-punt`) en laat hem tien pixels om de middelste
+  stappen heen golven; `--golf` (-1, 0 of 1) schuift de zichtbare knoop
+  mee. Pas je die tien pixels in motion.ts aan, doe het dan hier ook.
+
+  Zie docs/architecture/modules/werkwijze.md.
+*/
+
+/* --- De opbouw ---------------------------------------------------------- */
+
+/*
+  Op een smal scherm is de zijkant `display: contents`: de kop en de knop
+  zijn dan gewone rasteritems van het podium, en `order` zet de knop ná
+  de stappen.
+*/
+.brand-site-werkwijze-podium {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.brand-site-werkwijze-zijkant {
+    display: contents;
+}
+
+.brand-site-werkwijze {
+    position: relative;
+    order: 1;
+    min-width: 0;
+}
+
+.brand-site-werkwijze-knop {
+    order: 2;
+    margin-top: 1.75rem;
+}
+
+.brand-site-werkwijze-reis {
+    display: none;
+}
+
+/* De straal van het spoor bestaat alleen op een breed scherm. */
+.brand-site-werkwijze-straal {
+    display: none;
+}
+
+/* --- De straal van de kolom (smal scherm) ------------------------------- */
+
+.brand-site-werkwijze-lijn {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: visible;
+    pointer-events: none;
+}
+
+.brand-site-werkwijze-lijn[data-leeg],
+.brand-site-werkwijze-scene[data-vorm='enkel'] .brand-site-werkwijze-lijn {
+    display: none;
+}
+
+.brand-site-werkwijze-verloop-begin {
+    stop-color: var(--brand-blue);
+}
+
+.brand-site-werkwijze-verloop-eind {
+    stop-color: var(--brand-cyan);
+}
+
+/* Het lichtpunt dat over de straal reist. */
+.brand-site-werkwijze-licht {
+    fill: var(--brand-ice);
+    filter: drop-shadow(0 0 6px var(--brand-cyan));
+}
+
+/* --- De stappen: de kolom, de standaardvorm ----------------------------- */
+
+.brand-site-werkwijze-stappen {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    max-width: 46rem;
+    gap: 1.25rem;
+}
+
+.brand-site-werkwijze-stap {
+    position: relative;
+    display: grid;
+    grid-template-columns: 2.25rem minmax(0, 1fr);
+    column-gap: 0.875rem;
+    min-width: 0;
+}
+
+.brand-site-werkwijze-knoop {
+    position: relative;
+    width: 2.25rem;
+    height: 2.25rem;
+}
+
+/* De zichtbare knoop: een ring die oplicht als het licht hem bereikt. */
+.brand-site-werkwijze-knoop::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: calc(50% - var(--golf, 0) * 10px);
+    width: 0.75rem;
+    height: 0.75rem;
+    margin: -0.375rem 0 0 -0.375rem;
+    border: 1px solid var(--site-plaat-rand-sterk);
+    border-radius: 999px;
+    background-color: var(--site-veld);
+    transition:
+        background-color 0.4s var(--site-ease),
+        box-shadow 0.4s var(--site-ease),
+        transform 0.4s var(--site-ease);
+}
+
+.brand-site-werkwijze-stap[data-bereikt] .brand-site-werkwijze-knoop::before {
+    background-color: var(--brand-cyan);
+    box-shadow:
+        0 0 0 5px color-mix(in oklab, var(--brand-cyan) 14%, transparent),
+        0 0 18px var(--brand-cyan);
+    transform: scale(1.15);
+}
+
+/*
+  Het anker: onzichtbaar, zonder maat, en altijd recht onder het vorige.
+  De straal wijkt er zijwaarts van af; de knoop hierboven schuift mee.
+*/
+.brand-site-werkwijze-anker {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+}
+
+.brand-site-werkwijze-inhoud {
+    min-width: 0;
+    padding-top: 0.375rem;
+}
+
+/*
+  Een stap die op het licht wacht: zachter en een fractie opzij, en terug
+  als het licht komt. Overgangen en geen keyframes, zodat wie snel heen en
+  weer scrolt een lopende overgang ombuigt in plaats van er telkens een
+  nieuwe te starten. Leesbaar blijft hij altijd.
+*/
+.brand-site-werkwijze-stappen[data-licht] .brand-site-werkwijze-inhoud {
+    opacity: 0.5;
+    transform: translateX(-0.375rem);
+    transition:
+        opacity 0.5s var(--site-ease),
+        transform 0.5s var(--site-ease);
+}
+
+.brand-site-werkwijze-stappen[data-licht]
+    .brand-site-werkwijze-stap[data-bereikt]
+    .brand-site-werkwijze-inhoud {
+    opacity: 1;
+    transform: none;
+}
+
+/*
+  Het nummer is een volgorde en geen meting, dus geen mono; wel cijfers
+  van gelijke breedte, zodat 01 en 04 even breed staan.
+*/
+.brand-site-werkwijze-nummer {
+    display: block;
+    font-size: var(--site-maat-klein);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.4;
+    color: var(--site-tekst-zacht);
+    transition:
+        color 0.4s var(--site-ease),
+        text-shadow 0.4s var(--site-ease);
+}
+
+.brand-site-werkwijze-stap[data-bereikt] .brand-site-werkwijze-nummer {
+    color: var(--brand-cyan);
+}
+
+.brand-site-werkwijze-titel {
+    margin-top: 0.25rem;
+    font-size: var(--site-maat-kop);
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+    color: var(--site-kop);
+    overflow-wrap: anywhere;
+}
+
+.brand-site-werkwijze-tekst {
+    margin-top: 0.375rem;
+    font-size: var(--site-maat-tekst);
+    line-height: 1.6;
+    color: var(--site-tekst-zacht);
+    text-wrap: pretty;
+    overflow-wrap: anywhere;
+}
+
+/*
+  Duur en resultaat: twee feiten, het label klein ervoor, naast elkaar
+  waar het past.
+*/
+.brand-site-werkwijze-feiten {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem 1.5rem;
+    margin-top: 0.625rem;
+}
+
+.brand-site-werkwijze-feiten > div {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.brand-site-werkwijze-feiten dt {
+    flex: none;
+    font-size: var(--site-maat-label);
+    letter-spacing: 0.02em;
+    color: color-mix(in oklab, var(--brand-silver) 80%, transparent);
+}
+
+.brand-site-werkwijze-feiten dd {
+    min-width: 0;
+    font-size: var(--site-maat-klein);
+    line-height: 1.5;
+    color: var(--site-tekst);
+    overflow-wrap: anywhere;
+}
+
+.brand-site-werkwijze-feiten dd.brand-site-data {
+    font-size: var(--site-maat-label);
+    color: var(--brand-ice);
+}
+
+/* --- Eén stap: geen straal, geen knoop ---------------------------------- */
+
+.brand-site-werkwijze-scene[data-vorm='enkel'] .brand-site-werkwijze-stap {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.brand-site-werkwijze-scene[data-vorm='enkel'] .brand-site-werkwijze-knoop {
+    display: none;
+}
+
+/* --- Het brede scherm: het spoor ---------------------------------------- */
+
+@media (min-width: 64rem) {
+    /* De kop links, de knop rechts ernaast: samen staan ze stil. */
+    .brand-site-werkwijze-zijkant {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 1rem 2.5rem;
+        margin-bottom: var(--site-ruimte-kop);
+    }
+
+    .brand-site-werkwijze-zijkant .brand-site-kop {
+        flex: 1 1 32rem;
+        min-width: 0;
+        margin-bottom: 0;
+    }
+
+    .brand-site-werkwijze-knop {
+        flex: none;
+        margin-top: 0;
+    }
+
+    .brand-site-werkwijze-scene .brand-site-werkwijze-lijn {
+        display: none;
+    }
+
+    /*
+      Het venster reikt voorbij het raam tot vlak voor de rand van de
+      plaat (`--rand`, gemeten door het component, hooguit 8rem), zodat
+      een stap die vertrekt tot aan de rand doorschuift en niet midden in
+      de zijruimte wordt afgesneden. Over die rand vervaagt hij. Het
+      spoor zelf begint en eindigt op het raam, dus in rust valt er niets
+      in de vervaging. `clip` en geen `hidden`: dat maakt geen schuifvlak,
+      en het podium blijft gewoon kunnen plakken.
+
+      Onderaan een rem lucht: een stap die op het licht wacht staat een
+      halve rem lager, en het masker knipt af op de rand van het vak.
+    */
+    .brand-site-werkwijze {
+        overflow-x: clip;
+    }
+
+    .brand-site-werkwijze-scene[data-baan] .brand-site-werkwijze {
+        --rand: 0px;
+        margin-inline: calc(-1 * var(--rand));
+        margin-bottom: -1rem;
+        padding: 0 var(--rand) 1rem;
+        -webkit-mask-image: linear-gradient(
+            90deg,
+            transparent,
+            #000 var(--rand),
+            #000 calc(100% - var(--rand)),
+            transparent
+        );
+        mask-image: linear-gradient(
+            90deg,
+            transparent,
+            #000 var(--rand),
+            #000 calc(100% - var(--rand)),
+            transparent
+        );
+    }
+
+    .brand-site-werkwijze-baan {
+        position: relative;
+    }
+
+    /*
+      Het raster: de vorm zonder scène. Breekt af waar het moet, dus elk
+      aantal stappen en elke breedte past.
+    */
+    .brand-site-werkwijze-stappen {
+        max-width: none;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+        gap: 2rem clamp(1.5rem, 2.5vw, 2.5rem);
+        align-items: start;
+    }
+
+    .brand-site-werkwijze-stap {
+        display: block;
+        padding-top: 2rem;
+    }
+
+    /*
+      De knoop ligt bovenaan, op de straal: een ring van 0.75rem met zijn
+      midden op 0.375rem. Dat getal staat ook bij de straal hieronder.
+    */
+    .brand-site-werkwijze-knoop {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 0.75rem;
+        height: 0.75rem;
+    }
+
+    .brand-site-werkwijze-knoop::before {
+        top: 0;
+        left: 0;
+        margin: 0;
+    }
+
+    .brand-site-werkwijze-inhoud {
+        padding-top: 0;
+    }
+
+    .brand-site-werkwijze-stappen[data-licht] .brand-site-werkwijze-inhoud {
+        transform: translateY(0.5rem);
+    }
+
+    .brand-site-werkwijze-nummer {
+        font-size: var(--site-maat-titel);
+        font-weight: 400;
+        line-height: 1;
+        letter-spacing: -0.05em;
+        color: color-mix(in oklab, var(--brand-silver) 45%, transparent);
+    }
+
+    .brand-site-werkwijze-stap[data-bereikt] .brand-site-werkwijze-nummer {
+        color: var(--site-kop);
+    }
+
+    /* De stap waar het licht nu is: de knoop het helderst. */
+    .brand-site-werkwijze-stap[data-actief] .brand-site-werkwijze-nummer {
+        text-shadow: 0 0 28px var(--site-licht);
+    }
+
+    .brand-site-werkwijze-stap[data-actief]
+        .brand-site-werkwijze-knoop::before {
+        transform: scale(1.35);
+    }
+
+    .brand-site-werkwijze-titel {
+        margin-top: 0.75rem;
+    }
+
+    /* --- Het spoor: alleen als het component meet (`data-baan`) --------- */
+
+    /*
+      Eén regel stappen, elk even breed. `flex-grow` vult de breedte als
+      het spoor past (de rij); past het niet, dan blijven ze op hun maat
+      en steekt het spoor rechts uit het venster (de scène).
+    */
+    .brand-site-werkwijze-scene[data-baan] .brand-site-werkwijze-baan {
+        width: max-content;
+        min-width: 100%;
+    }
+
+    .brand-site-werkwijze-scene[data-baan] .brand-site-werkwijze-stappen {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: clamp(1.75rem, 3vw, 2.75rem);
+    }
+
+    .brand-site-werkwijze-scene[data-baan] .brand-site-werkwijze-stap {
+        flex: 1 0 var(--stap-breedte);
+        width: var(--stap-breedte);
+        max-width: 30rem;
+        --stap-breedte: clamp(17rem, 24vw, 21.5rem);
+    }
+
+    .brand-site-werkwijze-scene[data-baan='scene'] .brand-site-werkwijze-baan {
+        will-change: transform;
+    }
+
+    /*
+      De straal: een vaste haarlijn over het hele spoor, het verlichte deel
+      van de eerste tot de laatste knoop (schaalt van links), en het licht
+      op de kop daarvan. Het component zet `--spoor-begin` en
+      `--spoor-lengte` en schuift het licht met `x`.
+    */
+    .brand-site-werkwijze-scene[data-baan] .brand-site-werkwijze-straal {
+        position: absolute;
+        top: calc(0.375rem - 0.5px);
+        right: 0;
+        left: 0;
+        display: block;
+        height: 1px;
+        background: var(--site-plaat-rand);
+        pointer-events: none;
+    }
+
+    .brand-site-werkwijze-straal-vol {
+        position: absolute;
+        top: -0.5px;
+        left: calc(var(--spoor-begin, 0px) + 0.375rem);
+        width: var(--spoor-lengte, 0px);
+        height: 2px;
+        background: linear-gradient(
+            90deg,
+            var(--brand-blue),
+            var(--brand-cyan)
+        );
+        transform-origin: left center;
+    }
+
+    .brand-site-werkwijze-straal-licht {
+        position: absolute;
+        top: -4px;
+        left: calc(var(--spoor-begin, 0px) + 0.375rem - 4.5px);
+        width: 9px;
+        height: 9px;
+        border-radius: 999px;
+        background: var(--brand-ice);
+        box-shadow:
+            0 0 0 4px color-mix(in oklab, var(--brand-cyan) 18%, transparent),
+            0 0 16px var(--brand-cyan);
+    }
+
+    /* --- De scène: het podium plakt ------------------------------------- */
+
+    .brand-site-werkwijze-scene[data-baan='scene']
+        .brand-site-werkwijze-podium {
+        position: sticky;
+        top: var(--podium-boven, 5.5rem);
+    }
+
+    .brand-site-werkwijze-scene[data-baan='scene'] .brand-site-werkwijze-reis {
+        display: block;
+        height: var(--reis, 0px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .brand-site-werkwijze-knoop::before,
+    .brand-site-werkwijze-nummer,
+    .brand-site-werkwijze-inhoud {
+        transition: none;
+    }
+
+    .brand-site-werkwijze-stap[data-bereikt]
+        .brand-site-werkwijze-knoop::before {
+        transform: none;
+    }
+}
+
+/* --- De pagina /werkwijze ----------------------------------------------- */
+
+/*
+  De hele werkwijze, met de ruimte die op de voorpagina niet is. Dezelfde
+  taal: het nummer in een knoop op de straal (`tekenPad`, verticaal), de
+  titel in een kopmaat, het verhaal in lopende tekst en wat het oplevert
+  als een feit met een haarlijn ervoor. Zie pages/public/Werkwijze.vue.
+*/
+.brand-site-werkwijzepagina-kop {
+    max-width: 44rem;
+    margin-top: 2rem;
+}
+
+.brand-site-werkwijzepagina-kop
+    .brand-site-opschrift
+    + .brand-site-subpagina-titel {
+    margin-top: 0.75rem;
+}
+
+.brand-site-werkwijzepagina-inleiding {
+    margin-top: 1rem;
+    max-width: 60ch;
+    font-size: var(--site-maat-lead);
+    line-height: 1.6;
+    color: var(--site-tekst-zacht);
+    text-wrap: pretty;
+}
+
+.brand-site-werkwijzepagina {
+    position: relative;
+    margin-top: clamp(2.5rem, 5vw, 3.5rem);
+}
+
+.brand-site-werkwijzepagina-stappen {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    gap: clamp(2.25rem, 4vw, 3rem);
+}
+
+.brand-site-werkwijzepagina-stap {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    column-gap: clamp(1rem, 2.5vw, 1.75rem);
+}
+
+/*
+  De knoop met het nummer erin: daar hangt `tekenPad` de straal aan. Hij
+  krijgt de achtergrond van het veld, zodat de straal achter het nummer
+  langs loopt en er niet doorheen.
+*/
+.brand-site-werkwijzepagina-knoop {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 1px solid var(--site-plaat-rand-sterk);
+    border-radius: 999px;
+    background-color: var(--site-veld);
+    font-size: var(--site-maat-label);
+    font-variant-numeric: tabular-nums;
+    color: var(--site-tekst-zacht);
+    transform: translateX(calc(var(--golf, 0) * -10px));
+    transition:
+        color 0.4s var(--site-ease),
+        border-color 0.4s var(--site-ease),
+        box-shadow 0.4s var(--site-ease);
+}
+
+.brand-site-werkwijzepagina-stap[data-bereikt]
+    .brand-site-werkwijzepagina-knoop {
+    border-color: color-mix(in oklab, var(--brand-cyan) 60%, transparent);
+    color: var(--brand-ice);
+    box-shadow:
+        0 0 0 4px color-mix(in oklab, var(--brand-cyan) 12%, transparent),
+        0 0 18px -4px var(--brand-cyan);
+}
+
+.brand-site-werkwijzepagina-inhoud {
+    min-width: 0;
+}
+
+.brand-site-werkwijzepagina-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 1rem;
+    min-height: 2.5rem;
+    padding-top: 0.6rem;
+    font-size: var(--site-maat-label);
+    color: var(--site-tekst-zacht);
+}
+
+.brand-site-werkwijzepagina-duur {
+    color: var(--brand-ice);
+}
+
+.brand-site-werkwijzepagina-titel {
+    font-size: var(--site-maat-titel-lang);
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    color: var(--site-kop);
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+}
+
+.brand-site-werkwijzepagina-kort {
+    margin-top: 0.625rem;
+    max-width: 62ch;
+    font-size: var(--site-maat-lead);
+    line-height: 1.6;
+    color: var(--site-tekst);
+    text-wrap: pretty;
+    overflow-wrap: anywhere;
+}
+
+.brand-site-werkwijzepagina-tekst {
+    display: grid;
+    gap: 0.875rem;
+    margin-top: 0.875rem;
+    max-width: 62ch;
+    font-size: var(--site-maat-tekst);
+    line-height: 1.7;
+    color: var(--site-tekst-zacht);
+    text-wrap: pretty;
+    overflow-wrap: anywhere;
+}
+
+/* Wat het oplevert: een feit, zoals de metingen elders op de site. */
+.brand-site-werkwijzepagina-resultaat {
+    display: grid;
+    gap: 0.25rem;
+    margin-top: 1.25rem;
+    max-width: 62ch;
+    padding-left: 1rem;
+    border-left: 1px solid var(--site-plaat-rand-sterk);
+    font-size: var(--site-maat-tekst);
+    line-height: 1.55;
+    color: var(--site-tekst);
+    overflow-wrap: anywhere;
+}
+
+.brand-site-werkwijzepagina-resultaat-kop {
+    font-size: var(--site-maat-label);
+    font-weight: 600;
+    color: var(--brand-cyan);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .brand-site-werkwijzepagina-knoop {
+        transition: none;
+    }
+}

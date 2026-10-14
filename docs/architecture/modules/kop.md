@@ -78,7 +78,8 @@ dan staat er vroeg of laat half Nederlands op een Engelse pagina.
 Het opschrift staat op twee plekken op de pagina, en welke je ziet hangt
 af van de breedte:
 
-- **Vanaf een tablet** staat het klein in hoofdletters boven de titel.
+- **Vanaf een tablet** staat het klein, in Geist Mono met een lichtstreepje
+  ervoor, boven de titel.
 - **Op een telefoon** staat het op het visitekaartje, als functie onder de
   naam. Dat opschrift boven de titel is daar verborgen, anders zou het
   hetzelfde twee keer zeggen.
@@ -90,6 +91,22 @@ die kan achterlopen.
 
 De zin eronder is optioneel en verdwijnt met `v-if` als hij leeg is --
 geen lege alinea die de knoppen omlaag duwt.
+
+## Hoe hij eruitziet: "Iris"
+
+De kop is de eerste scène van de nieuwe vormgeving (zie
+[besluit 019](../../decisions/README.md)): het portret staat in een iris
+van ringen die bij binnenkomst opengaat als een diafragma, de achtergrond
+stelt scherp en de titel komt regel voor regel op. Bij het scrollen zakt de
+scène in drie lagen weg. Hoe dat technisch werkt staat in
+[frontend en animatie](../frontend-en-animatie.md#de-hero-iris).
+
+**De titel kiest zijn maat op lengte**, en dat is voor dit scherm het
+belangrijkste om te weten. De klant mag hier lange zinnen typen; tot 42
+tekens krijgt de kop de grootste maat, tot 80 een middelste, en daarboven
+een kleinere, zodat de knoppen boven de vouw blijven. Een inleiding van
+meer dan 180 tekens krijgt ook een kleinere letter. Er wordt niets
+afgekapt.
 
 ## De kop staat in de gedeelde tabel
 
@@ -155,7 +172,8 @@ kop voegde daar `eyebrow_nl` aan toe. Zie
   formaat en bijsnijden. Zie het logo bij een ervaring voor hoe dat
   eruitziet als we het doen.
 - **De naam op het visitekaartje.** Die komt uit `config/security.php`,
-  waar hij als het account van de eigenaar al vastligt. Hem hier ook
+  waar hij als het account van de eigenaar al vastligt, via de gedeelde
+  prop `eigenaar` (dezelfde als in het LinkedIn-blok). Hem hier ook
   kunnen wijzigen betekent dat dezelfde persoon op twee plekken anders
   kan heten.
 - **Een aparte tekst voor mobiel.** Zie hierboven.

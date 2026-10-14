@@ -9,6 +9,7 @@ use App\Http\Controllers\Website\FaqController;
 use App\Http\Controllers\Website\FooterController;
 use App\Http\Controllers\Website\HeroController;
 use App\Http\Controllers\Website\LayoutController;
+use App\Http\Controllers\Website\LinkedinController;
 use App\Http\Controllers\Website\ProjectController;
 use App\Http\Controllers\Website\ServiceController;
 use App\Http\Controllers\Website\StatisticController;
@@ -347,6 +348,18 @@ Route::middleware(['auth', 'verified', 'two-factor.required', 'can:manage portal
             Route::patch('{experience}/online', [ExperienceController::class, 'online'])
                 ->name('online');
             Route::delete('{experience}', [ExperienceController::class, 'destroy'])->name('destroy');
+        });
+
+        /*
+         * Het LinkedIn-blok: de kop en de knoptekst. Twee PUT's op vaste
+         * paden, want het is één blok en er valt niets te kiezen. De link
+         * zelf heeft geen route: die ligt vast in config/site.php.
+         */
+        Route::prefix('linkedin')->name('linkedin.')->group(function () {
+            Route::get('/', [LinkedinController::class, 'index'])->name('index');
+
+            Route::put('kop', [LinkedinController::class, 'kop'])->name('kop');
+            Route::put('knop', [LinkedinController::class, 'knop'])->name('knop');
         });
 
         /*

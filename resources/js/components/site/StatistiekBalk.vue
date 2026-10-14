@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import { formatteerGetal } from '@/lib/motion';
+import { formatteerGetal } from '@/lib/getallen';
 import type { StatistiekOpDeSite } from '@/types/statistieken';
 
 /**
- * Eén statistiek als balk die volloopt.
+ * Eén statistiek als lijn die over een schaalverdeling volloopt.
  *
  * Het werkpaard van deze module: tien vaardigheden onder elkaar blijven
  * leesbaar, en je ziet in één blik welke eruit springen.
@@ -43,19 +43,20 @@ const doel = computed(() => Math.min(100, Math.max(0, props.item.waarde)));
 
 <template>
     <!--
-        Geen eigen klasse op dit vak, anders dan bij de ring en de
-        teller: die twee hebben een eigen indeling nodig, een balk niet.
-        Een `brand-`-klasse zonder regels laat de volgende lezer in
-        app.css zoeken naar iets wat er niet is.
-
-        `data-vul` is de aanhaking voor `vulStatistieken`, en `--doel`
-        het percentage waar de balk naartoe loopt.
+        `data-vul` is de aanhaking voor `vulStatistieken`, en `--doel` het
+        percentage waar de lijn naartoe loopt.
     -->
-    <div data-vul :style="{ '--doel': doel }">
-        <div class="brand-statistiek-balk-kop">
-            <span class="brand-statistiek-naam">{{ props.item.naam }}</span>
+    <div
+        data-vul
+        class="brand-site-statistiek-balk"
+        :style="{ '--doel': doel }"
+    >
+        <div class="brand-site-statistiek-balk-kop">
+            <span class="brand-site-statistiek-naam">
+                {{ props.item.naam }}
+            </span>
 
-            <span class="brand-statistiek-waarde">
+            <span class="brand-site-statistiek-balk-waarde font-data">
                 <span v-if="props.item.voor">{{ props.item.voor }}</span>
                 <span data-getal>{{ getal }}</span>
                 <span>{{ props.item.na ?? '%' }}</span>
@@ -63,15 +64,17 @@ const doel = computed(() => Math.min(100, Math.max(0, props.item.waarde)));
         </div>
 
         <!--
-            De baan en de vulling. `aria-hidden` omdat het getal er als
-            tekst naast staat: een schermlezer heeft aan "Microsoft 365,
-            90%" genoeg en niet aan een balk die hij niet kan zien.
+            De schaal en de lijn. Geen gevulde baan eronder maar een
+            schaalverdeling, zoals op een meetinstrument: de streepjes
+            zeggen hoe ver het had gekund, zonder een blok dat de helft
+            van de ruimte grijs maakt. `aria-hidden` omdat het getal er
+            als tekst naast staat.
         -->
-        <div class="brand-statistiek-baan" aria-hidden="true">
-            <span class="brand-statistiek-vulling" />
+        <div class="brand-site-statistiek-schaal" aria-hidden="true">
+            <span class="brand-site-statistiek-lijn" />
         </div>
 
-        <p v-if="props.item.notitie" class="brand-statistiek-notitie">
+        <p v-if="props.item.notitie" class="brand-site-statistiek-notitie">
             {{ props.item.notitie }}
         </p>
     </div>

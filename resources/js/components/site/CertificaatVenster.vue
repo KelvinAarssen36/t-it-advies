@@ -120,7 +120,7 @@ watch(open, (isOpen) => {
                         nummer. Wat er niet is staat er niet; een regel
                         met een streepje erachter is geen informatie.
                     -->
-                    <dl data-rij class="brand-certificaat-feiten">
+                    <dl data-rij class="brand-site-certificaten-feiten">
                         <div v-if="props.item.behaald">
                             <dt>{{ $t('Behaald') }}</dt>
                             <dd>{{ props.item.behaald }}</dd>

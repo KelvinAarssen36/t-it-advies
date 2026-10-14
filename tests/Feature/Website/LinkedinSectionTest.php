@@ -13,15 +13,14 @@ use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
 /**
- * Het LinkedIn-blok op de landingspagina.
+ * Het LinkedIn-blok op de landingspagina: het omhulsel.
  *
- * Geen module: er valt niets te beheren. Het adres staat in
- * `config/site.php` en ligt bewust vast, want een tikfout in een link
- * naar buiten is een dode knop op de voorpagina.
- *
- * Wat hier wordt nagelopen is dus vooral het omhulsel: dat het adres bij
- * de bezoeker aankomt, dat het een échte link naar LinkedIn is, en dat
- * de klant dit onderdeel net als elk ander kan verslepen en uitzetten.
+ * Het adres staat in `config/site.php` en ligt bewust vast, want een
+ * tikfout in een link naar buiten is een dode knop op de voorpagina. Wat
+ * hier wordt nagelopen: dat het adres bij de bezoeker aankomt, dat het een
+ * échte link naar LinkedIn is, en dat de klant dit onderdeel net als elk
+ * ander kan verslepen en uitzetten. Het beheer van de teksten staat in
+ * LinkedinCrudTest, het terugzetten in BackupTerugzetTest.
  *
  * Zie docs/architecture/modules/linkedin.md.
  */
@@ -59,7 +58,7 @@ class LinkedinSectionTest extends TestCase
     /**
      * Het adres is een echte LinkedIn-link.
      *
-     * Dit is geen formaliteit. Er is geen beheerscherm en dus geen
+     * Dit is geen formaliteit. Het adres heeft geen beheerscherm en dus geen
      * validatie die meekijkt; de enige bescherming tegen een adres dat
      * nergens heen gaat -- of naar iets heel anders -- is deze test.
      */
@@ -127,13 +126,14 @@ class LinkedinSectionTest extends TestCase
     }
 
     /**
-     * Het indelingsscherm belooft geen beheerscherm dat nooit komt.
+     * Het indelingsscherm wijst naar het beheerscherm van dit blok.
      *
-     * "Nog niet te beheren" is een belofte; bij dit onderdeel valt er
-     * niets in te vullen, nu niet en later niet. Zie
-     * PageSectionKey::teBeheren().
+     * Hier stond eerst de omgekeerde test: "er valt niets te beheren".
+     * Dat was waar zolang er alleen een vaste link was. Sinds de teksten
+     * van het blok te beheren zijn, hoort het indelingsscherm ernaar te
+     * linken, net als bij elk ander onderdeel.
      */
-    public function test_the_layout_screen_says_there_is_nothing_to_manage(): void
+    public function test_the_layout_screen_links_to_the_management_screen(): void
     {
         $beheerder = User::factory()->create();
         $beheerder->givePermissionTo('manage portal');
@@ -155,18 +155,16 @@ class LinkedinSectionTest extends TestCase
             ->firstWhere('key', PageSectionKey::Linkedin->value);
 
         $this->assertNotNull($regel);
-        $this->assertNull($regel['manageUrl']);
-        $this->assertFalse($regel['manageable']);
-
-        // En bij een onderdeel dat er wél een krijgt staat het andersom.
-        $this->assertTrue(PageSectionKey::Werkwijze->teBeheren());
+        $this->assertSame(route('website.linkedin.index'), $regel['manageUrl']);
+        $this->assertTrue($regel['manageable']);
     }
 
     public function test_it_never_counts_as_empty(): void
     {
         /*
          * Er is geen teller voor dit onderdeel, en dat is de bedoeling:
-         * de inhoud staat in de code en kan dus niet leeg zijn. Zonder
+         * de kop valt altijd terug op de standaardtekst en kan dus niet
+         * leeg zijn. Zonder
          * die afspraak zou het blok van de website vallen omdat niemand
          * eraan dacht een teller aan te melden.
          */

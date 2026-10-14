@@ -81,25 +81,34 @@ const page = usePage();
 const { opDeVoorpagina, anker, secties: items, tag: menuTag } = useSectieLink();
 
 /**
- * Hoeveel onderdelen er los in de balk passen.
+ * Hoeveel onderdelen er hoogstens los in de balk staan.
  *
- * Er zijn er nu vier, en dan doet dit getal niets. Het staat er voor
- * straks: elke module die de klant erbij krijgt komt hier vanzelf in, en
- * bij acht of tien loopt de balk over de taalknop en de contactknop heen.
- * Wat er niet in past gaat achter "Meer", en dan houdt de kop dezelfde
- * hoogte hoeveel modules er ook bijkomen.
- *
- * Vijf en niet drie: onder de vijf is een uitklaplijstje meer werk voor
- * de bezoeker dan een link, en boven de zes wordt de balk te vol.
+ * Er wordt gemeten hoeveel er passen (zie `pasIn()`), maar ook op een breed
+ * scherm staan er niet meer dan zeven: daarboven is de balk een rij
+ * woorden en geen menu meer, en dan zoekt een bezoeker langer dan hij in
+ * een lijstje achter "Meer" zou doen.
  */
-const MAX_IN_DE_BALK = 5;
+const MAX_IN_DE_BALK = 7;
+
+/**
+ * Hoeveel er nu los in de balk staan. Gemeten, niet gegokt.
+ *
+ * **Hier stond een vast getal (vijf), en dat klopte nergens.** Op 1440
+ * pixels stonden er vier woorden en "Meer" in een balk met ruimte voor
+ * het dubbele; op een tablet liepen dezelfde vijf bijna tegen de knoppen
+ * aan. De breedte van een woord hangt af van de taal ("Certificaten",
+ * "Certifications") en van wat de klant aanzet, dus een vast aantal is
+ * altijd voor één situatie goed.
+ *
+ * Tot de eerste meting staat het op het maximum, en de balk is dan
+ * onzichtbaar (`data-gemeten`), zodat je bij het laden geen items ziet
+ * verschijnen en weer verdwijnen.
+ */
+const inDeBalk = ref(MAX_IN_DE_BALK);
+const gemeten = ref(false);
 
 /** De onderdelen die los in de balk staan. */
-const zichtbaar = computed(() =>
-    items.value.length <= MAX_IN_DE_BALK
-        ? items.value
-        : items.value.slice(0, MAX_IN_DE_BALK - 1),
-);
+const zichtbaar = computed(() => items.value.slice(0, inDeBalk.value));
 
 /** En wat er achter "Meer" verdwijnt. Leeg zolang alles past. */
 const rest = computed(() => items.value.slice(zichtbaar.value.length));
@@ -162,8 +171,16 @@ const gaNaar = (sleutel: string, gebeurtenis: MouseEvent): void => {
 
     gebeurtenis.preventDefault();
 
+    /*
+     * De bestaande `state` blijft staan, en dat is geen detail: daarin
+     * bewaart Inertia de pagina en de scrollpositie. Hier stond `null`, en
+     * dan wist een klik in het menu precies dat -- ga je daarna naar
+     * /werkwijze en weer terug, dan heeft de terugknop niets om te
+     * herstellen en blijf je op /werkwijze staan. De hero en de FAQ deden
+     * het al zo.
+     */
     window.history.replaceState(
-        null,
+        window.history.state,
         '',
         sleutel === 'top' ? window.location.pathname : `#${sleutel}`,
     );
@@ -271,9 +288,61 @@ const meetStreep = (): void => {
 
 watch(actief, () => void nextTick(meetStreep));
 
+/**
+ * Rekent uit hoeveel onderdelen er in de balk passen.
+ *
+ * Gemeten aan een onzichtbare kopie van alle items (`data-maat`) die in
+ * de balk zelf ligt, met dezelfde klasse en dus dezelfde letter en
+ * opvulling. De balk heeft `flex: 1`: zijn breedte is de ruimte tussen
+ * het merk en de knoppen, en niet de breedte van wat erin staat. Daardoor
+ * verandert die breedte niet als er een item bij komt of afgaat, en kan
+ * dit niet heen en weer gaan springen.
+ *
+ * Past niet alles, dan telt "Meer" mee: anders past het laatste item
+ * precies en valt "Meer" van de balk af.
+ */
+const pasIn = (): void => {
+    const baan = balk.value;
+
+    if (baan === null) {
+        return;
+    }
+
+    const maten = [
+        ...baan.querySelectorAll<HTMLElement>('[data-maat-item]'),
+    ].map((item) => item.getBoundingClientRect().width);
+    const meer =
+        baan
+            .querySelector<HTMLElement>('[data-maat-meer]')
+            ?.getBoundingClientRect().width ?? 0;
+    const tussen = parseFloat(getComputedStyle(baan).columnGap) || 0;
+    const ruimte = baan.clientWidth;
+
+    const breedte = (aantal: number, metMeer: boolean): number =>
+        maten.slice(0, aantal).reduce((som, maat) => som + maat, 0) +
+        (metMeer ? meer : 0) +
+        tussen * Math.max(0, aantal + (metMeer ? 1 : 0) - 1);
+
+    let aantal = Math.min(maten.length, MAX_IN_DE_BALK);
+
+    while (aantal > 0 && breedte(aantal, aantal < maten.length) > ruimte) {
+        aantal -= 1;
+    }
+
+    inDeBalk.value = aantal;
+    gemeten.value = true;
+};
+
+/** Eerst passen, dan pas de markering: die hangt af van wat er staat. */
+const herschik = (): void => {
+    pasIn();
+    void nextTick(meetStreep);
+};
+
 /* --- Het uitklapmenu op mobiel ---------------------------------------- */
 
 const paneel = useTemplateRef<HTMLElement>('paneel');
+const knop = useTemplateRef<HTMLElement>('knop');
 
 /**
  * Het menu vouwt open en de regels komen erachteraan.
@@ -287,22 +356,39 @@ const vouwOpen = (): void => {
         return;
     }
 
-    gsap.fromTo(
-        paneel.value,
-        { height: 0, opacity: 0 },
-        { height: 'auto', opacity: 1, duration: 0.35, ease: 'power3.out' },
-    );
+    /*
+     * Het menu gaat open als een diafragma, vanuit de knop waar je op
+     * tikte: een cirkel die vanaf die plek groeit tot hij het scherm vult.
+     * Zo zie je waar het vandaan komt, en het is dezelfde beweging als de
+     * iris in de hero. Alleen `clip-path` en de regels eronder; de hoogte
+     * van het paneel ligt vast, dus er valt niets op te meten.
+     */
+    const vlak = knop.value?.getBoundingClientRect();
+    const midden =
+        vlak === undefined
+            ? '100% 0%'
+            : `${vlak.left + vlak.width / 2}px ${vlak.top + vlak.height / 2}px`;
 
     gsap.fromTo(
+        paneel.value,
+        { clipPath: `circle(0% at ${midden})` },
+        {
+            clipPath: `circle(150% at ${midden})`,
+            duration: 0.65,
+            ease: 'expo.inOut',
+            clearProps: 'clipPath',
+        },
+    );
+    gsap.fromTo(
         paneel.value.querySelectorAll('[data-menu-regel]'),
-        { opacity: 0, y: -8 },
+        { opacity: 0, y: 28 },
         {
             opacity: 1,
             y: 0,
-            duration: 0.3,
-            stagger: 0.05,
-            delay: 0.08,
-            ease: 'power2.out',
+            duration: 0.55,
+            stagger: 0.045,
+            delay: 0.18,
+            ease: 'expo.out',
         },
     );
 };
@@ -378,7 +464,16 @@ const hervatVolgen = (): void => {
  * opnieuw. Een oude reeks wijst naar elementen die er niet meer zijn, en
  * dan licht er nooit meer iets op.
  */
-watch(items, () => void nextTick(hervatVolgen), { deep: true });
+watch(
+    items,
+    () =>
+        void nextTick(() => {
+            hervatVolgen();
+            // Een andere taal is een andere breedte per woord.
+            herschik();
+        }),
+    { deep: true },
+);
 
 /**
  * Opnieuw meten zodra de balk van maat verandert.
@@ -404,7 +499,7 @@ let kijker: ResizeObserver | undefined;
  */
 const opPaginaWissel = (): void => {
     hervatVolgen();
-    void nextTick(meetStreep);
+    void nextTick(herschik);
 };
 
 onMounted(() => {
@@ -414,7 +509,7 @@ onMounted(() => {
     window.addEventListener('brand:pagina-gewisseld', opPaginaWissel);
 
     if (balk.value !== null && typeof ResizeObserver !== 'undefined') {
-        kijker = new ResizeObserver(() => meetStreep());
+        kijker = new ResizeObserver(() => herschik());
 
         /*
          * Allebei, want ze vangen iets anders. De balk zelf verandert van
@@ -434,9 +529,12 @@ onMounted(() => {
     // Het lettertype komt na het laden binnen en maakt elk woord een paar
     // pixels anders breed. Meet je alleen daarvoor, dan staat de
     // markering vanaf dat moment net verkeerd.
-    void document.fonts?.ready.then(() => meetStreep());
+    void document.fonts?.ready.then(() => herschik());
 
-    void nextTick(hervatVolgen);
+    void nextTick(() => {
+        hervatVolgen();
+        herschik();
+    });
 });
 
 onBeforeUnmount(() => {
@@ -452,10 +550,12 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <header class="brand-sitekop" :data-vast="scrolled ? '' : undefined">
-        <div
-            class="mx-auto flex h-16 max-w-6xl items-center justify-between px-6"
-        >
+    <header
+        class="brand-site-kopbalk"
+        :data-vast="scrolled ? '' : undefined"
+        :data-open="open ? '' : undefined"
+    >
+        <div class="brand-site-kopbalk-pil">
             <!--
                 Het merkteken staat voor de naam. Op een smal scherm blijft
                 alleen het teken over: dat is herkenbaar genoeg, en het
@@ -475,14 +575,14 @@ onBeforeUnmount(() => {
             <component
                 :is="opDeVoorpagina ? 'a' : Link"
                 :href="opDeVoorpagina ? '#top' : home().url"
-                class="brand-merk"
+                class="brand-site-merk"
                 aria-label="@T IT Advies"
                 @click="opDeVoorpagina && gaNaar('top', $event)"
             >
-                <AppLogoIcon class="brand-merk-teken" />
-                <span class="brand-merk-naam" aria-hidden="true">
+                <AppLogoIcon class="brand-site-merk-teken" />
+                <span class="brand-site-merk-naam" aria-hidden="true">
                     <span class="brand-text-gradient">@T</span>
-                    <span class="text-white"> IT Advies</span>
+                    <span class="brand-site-merk-rest"> IT Advies</span>
                 </span>
             </component>
 
@@ -508,7 +608,8 @@ onBeforeUnmount(() => {
             <nav
                 v-if="items.length > 0"
                 ref="balk"
-                class="brand-navbalk hidden tablet:flex"
+                class="brand-site-nav"
+                :data-gemeten="gemeten ? '' : undefined"
                 :style="{
                     '--streep-x': `${streep.x}px`,
                     // Zonder eenheid: de markering is één pixel breed
@@ -516,14 +617,36 @@ onBeforeUnmount(() => {
                     '--streep-w': streep.breedte,
                 }"
             >
-                <span class="brand-navstreep" aria-hidden="true" />
+                <span class="brand-site-nav-lens" aria-hidden="true" />
+
+                <!--
+                    De meetlat: alle items en "Meer" nog een keer, onzichtbaar
+                    en zonder plek in de balk. Hieraan meet `pasIn()` hoeveel
+                    er passen; de echte items zijn daar te wisselend voor,
+                    want die staan er juist niet allemaal.
+                -->
+                <span class="brand-site-nav-maat" aria-hidden="true">
+                    <span class="brand-site-nav-maat-rij">
+                        <span
+                            v-for="item in items"
+                            :key="item.key"
+                            data-maat-item
+                            class="brand-site-nav-link"
+                            >{{ item.label }}</span
+                        >
+                        <span data-maat-meer class="brand-site-nav-link">
+                            {{ $t('Meer') }}
+                            <ChevronDown class="ml-1 inline size-3.5" />
+                        </span>
+                    </span>
+                </span>
 
                 <component
                     :is="menuTag"
                     v-for="item in zichtbaar"
                     :key="item.key"
                     :href="anker(item.key)"
-                    class="brand-navlink"
+                    class="brand-site-nav-link"
                     :class="{ 'is-active': actief === item.key }"
                     :aria-current="actief === item.key ? 'true' : undefined"
                     @click="kiesItem(item.key, $event)"
@@ -537,10 +660,10 @@ onBeforeUnmount(() => {
                 </component>
 
                 <!--
-                    Wat er niet in de balk past. Leeg zolang er vijf of
-                    minder onderdelen zijn, dus nu zie je hier niets --
-                    maar zodra de klant zijn zesde module krijgt, loopt de
-                    kop niet over.
+                    Wat er niet in de balk past. Leeg zolang alles past;
+                    hoeveel dat is hangt af van de schermbreedte en de
+                    taal (zie `pasIn()`), dus de kop loopt nooit over,
+                    hoeveel modules de klant ook aanzet.
 
                     De knop zelf draagt geen `data-woord`: de markering
                     eronder hoort bij een onderdeel, en "Meer" is er geen.
@@ -549,14 +672,17 @@ onBeforeUnmount(() => {
                 -->
                 <DropdownMenu v-if="rest.length > 0">
                     <DropdownMenuTrigger
-                        class="brand-navlink"
+                        class="brand-site-nav-link"
                         :class="{ 'is-active': restIsActief }"
                     >
                         {{ $t('Meer') }}
                         <ChevronDown class="ml-1 inline size-3.5" />
                     </DropdownMenuTrigger>
 
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent
+                        align="end"
+                        class="brand-site-nav-meer"
+                    >
                         <DropdownMenuItem
                             v-for="item in rest"
                             :key="item.key"
@@ -574,11 +700,11 @@ onBeforeUnmount(() => {
                 </DropdownMenu>
             </nav>
 
-            <div class="hidden items-center gap-3 tablet:flex">
+            <div class="brand-site-kopbalk-acties">
                 <Link
                     v-if="magPortaalZien"
                     :href="portal.enter()"
-                    class="text-sm text-muted-foreground transition-colors hover:text-brand-cyan"
+                    class="brand-site-nav-portaal"
                 >
                     {{ $t('Dashboard') }}
                 </Link>
@@ -641,7 +767,8 @@ onBeforeUnmount(() => {
 
             <button
                 type="button"
-                class="text-foreground tablet:hidden"
+                ref="knop"
+                class="brand-site-menuknop"
                 :aria-expanded="open"
                 aria-controls="site-menu"
                 aria-label="Menu"
@@ -656,9 +783,10 @@ onBeforeUnmount(() => {
             v-if="open"
             id="site-menu"
             ref="paneel"
-            class="overflow-hidden border-t border-border bg-background tablet:hidden"
+            class="brand-site-menu"
+            data-lenis-prevent
         >
-            <nav class="mx-auto flex max-w-6xl flex-col gap-1 px-6 py-4">
+            <nav class="brand-site-menu-lijst">
                 <!--
                     Dezelfde items als op de voorpagina, ook buiten de
                     voorpagina. De terugregel die hier stond is weg: die
@@ -671,7 +799,7 @@ onBeforeUnmount(() => {
                     :key="item.key"
                     data-menu-regel
                     :href="anker(item.key)"
-                    class="brand-navlink-mobiel"
+                    class="brand-site-menu-link"
                     :class="{ 'is-active': actief === item.key }"
                     @click="kiesItem(item.key, $event)"
                 >
@@ -681,7 +809,7 @@ onBeforeUnmount(() => {
                     v-if="magPortaalZien"
                     data-menu-regel
                     :href="portal.enter()"
-                    class="brand-navlink-mobiel"
+                    class="brand-site-menu-link"
                     @click="open = false"
                 >
                     {{ $t('Dashboard') }}
@@ -691,7 +819,7 @@ onBeforeUnmount(() => {
                     In het uitklapmenu is er ruimte zat, dus daar staan de
                     volledige taalnamen.
                 -->
-                <LocaleToggle data-menu-regel class="mt-2 self-start" />
+                <LocaleToggle data-menu-regel class="brand-site-menu-taal" />
             </nav>
         </div>
     </header>

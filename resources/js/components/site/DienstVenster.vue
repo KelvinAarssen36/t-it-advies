@@ -118,7 +118,7 @@ watch(open, (isOpen) => {
                         <p class="brand-blad-kopje">
                             {{ $t('Waar dit over gaat') }}
                         </p>
-                        <ul class="brand-dienstkaart-punten mt-2">
+                        <ul class="brand-site-diensten-punten mt-2">
                             <li v-for="punt in props.item.punten" :key="punt">
                                 {{ punt }}
                             </li>

@@ -132,6 +132,16 @@ is erger dan de migratie zelf.
 een `??`; zonder die regel valt hij om op een kolom die daar niet
 bestaat.
 
+## LinkedIn: een kop naast een eigen tabel
+
+Het LinkedIn-blok gebruikt deze tabel voor zijn opschrift, titel en zin,
+met de standaardtekst die eerst in `LinkedinSection.vue` stond. De tekst op
+de knop staat in een eigen tabel, `linkedin_settings`. Dat heeft één
+gevolg voor de back-ups: een back-up van vóór dat beheer heeft hier geen
+rij voor LinkedIn, en het terugzetten laat de huidige kop dan staan. Zie
+[back-ups](../operations/back-ups.md#een-kop-van-een-onderdeel-dat-later-te-beheren-werd)
+en [LinkedIn](modules/linkedin.md).
+
 ## Wat er níet veranderd is
 
 **De tijdlijn heeft nog steeds geen opschrift.** De kolom bestaat nu wel,

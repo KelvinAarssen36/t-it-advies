@@ -564,6 +564,68 @@ lichte blok binnen het donkere geheel (Platinum of Cloud als vlak), en niet
 door het thema per sectie om te draaien. Dat laatste breekt de
 `dark:`-varianten van de componenten die erin staan.
 
+### De lagen van de site
+
+De publieke site ("Helder zicht", zie [besluit 019](../decisions/README.md))
+heeft een eigen set tokens. **Het zijn geen nieuwe kleuren**, alleen
+mengsels van het palet hierboven met `color-mix()`, zodat de verhouding
+blijft kloppen en alles meeschuift als een merkkleur ooit verandert. Ze
+staan in `:root` én in `.dark` van `app.css`, met dezelfde waarde.
+
+| Token                     | Wat het is                                         | Gemaakt van                    |
+| ------------------------- | -------------------------------------------------- | ------------------------------ |
+| `--site-veld`             | Het doorlopende donker onder alles                 | Midnight Navy                  |
+| `--site-plaat`            | Een plaat in de pagina (een sectie op oneven plek) | Deep Navy, 78% dekkend         |
+| `--site-plaat-vol`        | Een plaat die niet mag doorschijnen (een venster)  | Deep Navy                      |
+| `--site-plaat-hoog`       | Een kaart of paneel op een plaat                   | de verhoogde navy, 86% dekkend |
+| `--site-plaat-rand`       | De glazen rand van een plaat                       | Platinum, 9%                   |
+| `--site-plaat-rand-sterk` | Een rand die oplicht: actief, hover, focus         | Cyan, 32%                      |
+| `--site-licht`            | Het licht: een gloed, een spotlicht                | Cyan, 20%                      |
+| `--site-licht-blauw`      | Het diepere licht in het lichtveld en de hero      | Electric Blue, 22%             |
+| `--site-schaduw`          | Schaduw, getint naar het veld en nooit zwart       | Midnight Navy, 78%             |
+| `--site-kop`              | Koppen                                             | Cloud                          |
+| `--site-tekst`            | Lopende tekst                                      | tekst op donker (#D8E2EA)      |
+| `--site-tekst-zacht`      | Inleidingen en metadata                            | Steel Silver                   |
+
+Binnen `.brand-site` staan daarnaast een paar maten en de letters:
+`--site-ease`, `--site-raam` (de breedte van het raam, 80rem),
+`--site-goot` (de zijruimte), `--site-font` en `--site-font-data`.
+
+**De schaal staat er ook, als rollen.** Op `.brand-site` (en op de vensters,
+die buiten de site in een portaal staan) staan de lettermaten en ruimtes
+die elk onderdeel gebruikt: `--site-maat-titel-kort`, `--site-maat-titel`,
+`--site-maat-titel-lang`, `--site-maat-kop`, `--site-maat-lead`,
+`--site-maat-tekst`, `--site-maat-klein`, `--site-maat-label`, en
+`--site-ruimte-sectie`, `--site-ruimte-plaat`, `--site-ruimte-kop` en
+`--site-ruimte-groep`. Een onderdeel kiest een rol en geen eigen maat.
+
+De eerste versie zette alles een maat te groot: sectiekoppen van 60 pixels
+(vóór het ontwerp 36), 136 pixels lucht boven en onder elke sectie (vóór
+het ontwerp 112), en een raam van 80rem. De pagina werd daardoor dertig
+procent langer. Nu lopen de sectiekoppen tot 48 pixels, de sectieruimte
+tot 96 en het raam tot 75rem.
+
+**Labels en cijfers hebben elk één vorm**: het sectielabel (klein, halfvet,
+cyaan, zonder lijntje ervoor) en de meting (het getal groot, het label
+klein en zilver eronder, een haarlijn links). Zie
+[frontend en animatie](frontend-en-animatie.md#labels-zonder-lijntjes).
+
+**De verhouding blijft die van hierboven.** Electric Blue is een vulling
+(de knop, een actieve staat) en nooit tekst op donker; cyaan en ice zijn
+het licht, de links en de accentlijnen; zilver is voor metadata.
+
+**Eén vormregel voor de hele site:** knoppen en navigatie zijn pillen,
+platen en kaarten hebben een ronding van 16 pixels, invoervelden van 10.
+Een knop op de publieke site wordt die pil via
+`.brand-site [data-slot='button']` in `resources/css/site/basis.css`; in het
+portaal blijft dezelfde knop een rechthoek.
+
+**Veld en plaat volgen de plek in de rij, niet het onderdeel.** Welcome.vue
+geeft even posities `base` (open veld, met een horizonlijn erboven) en
+oneven posities `raised` (een ingesprongen plaat). Zo liggen er nooit twee
+platen tegen elkaar, hoe de klant ook schuift. Zie
+[pagina-indeling](pagina-indeling.md#veld-en-plaat).
+
 ## Het logo
 
 Het logo bestaat uit een blauw/cyaan oog met zilveren metalen delen. De
@@ -572,15 +634,15 @@ laten komen zonder het logo zelf te herhalen.
 
 De aangeleverde bestanden staan in `public/images/`:
 
-| Bestand                    | Wat het is                                           |
-| -------------------------- | ---------------------------------------------------- |
-| `logo-vierkant.png`        | Vierkant, met transparantie                          |
-| `logo-breed.png`           | Liggend, met transparantie                           |
-| `logo-volledig-1/2/3.png`  | Varianten met achtergrond                            |
-| `achtergrond-oog-3840.png` | Het sfeerbeeld met het oog in 4K -- de hero          |
-| `achtergrond-met-logo.png` | Dezelfde compositie in 1672 px; niet meer in gebruik |
-| `persoon-met-logo.png`     | Nog niet gebruikt                                    |
-| `vulling-1.png`            | Nog niet gebruikt                                    |
+| Bestand                    | Wat het is                                                                                        |
+| -------------------------- | ------------------------------------------------------------------------------------------------- |
+| `logo-vierkant.png`        | Vierkant, met transparantie                                                                       |
+| `logo-breed.png`           | Liggend, met transparantie                                                                        |
+| `logo-volledig-1/2/3.png`  | Varianten met achtergrond                                                                         |
+| `achtergrond-oog-3840.png` | De 4K-bron van het oog; de hero en de voettekst tonen de WebP-varianten `hero-achtergrond-*.webp` |
+| `achtergrond-met-logo.png` | Dezelfde compositie in 1672 px; niet meer in gebruik                                              |
+| `persoon-met-logo.png`     | Nog niet gebruikt                                                                                 |
+| `vulling-1.png`            | Nog niet gebruikt                                                                                 |
 
 Voor gebruik in de applicatie staan er twee lichte varianten klaar. De
 bronbestanden zijn 0,8 tot 0,9 MB en horen nooit rechtstreeks op een pagina:

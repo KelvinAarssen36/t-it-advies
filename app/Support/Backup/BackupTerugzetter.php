@@ -2,6 +2,7 @@
 
 namespace App\Support\Backup;
 
+use App\Enums\PageSectionKey;
 use App\Models\Backup;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -80,6 +81,8 @@ class BackupTerugzetter
 
         $werk = function () use ($data, &$meldingen): void {
             Model::withoutEvents(function () use ($data, &$meldingen): void {
+                $koppen = $this->bewaarKoppenVanNa(array_keys($data));
+
                 foreach ($this->register->bestaandeTabellen() as $tabel) {
                     if (! array_key_exists($tabel, $data)) {
                         /*
@@ -99,6 +102,10 @@ class BackupTerugzetter
                     foreach ($this->zetTabelTerug($tabel, $data[$tabel]) as $melding) {
                         $meldingen[] = $melding;
                     }
+                }
+
+                foreach ($this->zetKoppenTerug($koppen) as $melding) {
+                    $meldingen[] = $melding;
                 }
             });
         };
@@ -209,6 +216,75 @@ class BackupTerugzetter
                     'velden' => implode(', ', $erbij),
                 ]);
             }
+        }
+
+        return $meldingen;
+    }
+
+    /**
+     * Koppen opzijzetten die deze back-up niet kan kennen.
+     *
+     * Een back-up van vóór het LinkedIn-beheer heeft geen kop voor dat
+     * blok; zijn tekst stond toen in de code. De gewone vergelijking in
+     * `zetTabelTerug()` zou de kop die de eigenaar sindsdien schreef dan
+     * als "erbij gekomen" verwijderen. Dat is precies wat er met een hele
+     * tabel van na de back-up níet gebeurt, dus hier ook niet: de rij gaat
+     * opzij en komt na het terugzetten weer terug. Zie
+     * `Inhoudsregister::kopVanVoorDeBackup()`.
+     *
+     * @param  array<int, string>  $tabellenInDeBackup
+     * @return array<int, array<string, mixed>>
+     */
+    private function bewaarKoppenVanNa(array $tabellenInDeBackup): array
+    {
+        if (! in_array('section_headings', $this->register->bestaandeTabellen(), true)) {
+            return [];
+        }
+
+        $secties = $this->register->kopVanVoorDeBackup($tabellenInDeBackup);
+
+        if ($secties === []) {
+            return [];
+        }
+
+        return DB::table('section_headings')
+            ->whereIn('section', $secties)
+            ->get()
+            ->map(static fn (object $rij): array => (array) $rij)
+            ->all();
+    }
+
+    /**
+     * De opzijgezette koppen terugzetten.
+     *
+     * **Zonder hun oude `id`.** Die kan inmiddels door een rij uit de
+     * back-up bezet zijn; de sleutel die telt is `section`, en die is
+     * uniek. Staat er na het terugzetten al een kop voor dat onderdeel --
+     * de back-up had er toch een -- dan wint de back-up.
+     *
+     * @param  array<int, array<string, mixed>>  $koppen
+     * @return array<int, string>
+     */
+    private function zetKoppenTerug(array $koppen): array
+    {
+        $meldingen = [];
+
+        foreach ($koppen as $kop) {
+            $bestaat = DB::table('section_headings')
+                ->where('section', $kop['section'])
+                ->exists();
+
+            if ($bestaat) {
+                continue;
+            }
+
+            unset($kop['id']);
+
+            DB::table('section_headings')->insert($kop);
+
+            $meldingen[] = __('De kop van :onderdeel stond nog niet in deze back-up, en is gebleven zoals hij was.', [
+                'onderdeel' => PageSectionKey::tryFrom((string) $kop['section'])?->label() ?? (string) $kop['section'],
+            ]);
         }
 
         return $meldingen;

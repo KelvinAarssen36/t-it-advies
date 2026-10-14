@@ -77,6 +77,29 @@ class Inhoudsregister
         'contact_settings',
 
         'footer_settings',
+
+        'linkedin_settings',
+    ];
+
+    /**
+     * Koppen die bij een tabel horen die later is gebouwd.
+     *
+     * De kop van het LinkedIn-blok staat in `section_headings`, net als die
+     * van elk ander onderdeel. Maar voordat het blok te beheren werd, stond
+     * zijn tekst in de code: een back-up van toen heeft voor LinkedIn dus
+     * geen kop, en de gewone vergelijking zou de kop die de eigenaar nu
+     * heeft geschreven als "erbij gekomen" weggooien.
+     *
+     * Dat is dezelfde regel als voor een hele tabel die er toen nog niet
+     * was: **ongemoeid laten**. Of de back-up van vóór die tijd is, lees je
+     * af aan de tabel ernaast: staat `linkedin_settings` er niet in, dan
+     * bestond het beheer van dit blok toen nog niet, en blijft de kop zoals
+     * hij nu is. Zie BackupTerugzetter en docs/operations/back-ups.md.
+     *
+     * @var array<string, string> tabel => waarde van `section_headings.section`
+     */
+    private const KOP_BIJ_TABEL = [
+        'linkedin_settings' => 'linkedin',
     ];
 
     /**
@@ -169,6 +192,26 @@ class Inhoudsregister
             self::TABELLEN,
             static fn (string $tabel): bool => Schema::hasTable($tabel),
         ));
+    }
+
+    /**
+     * De koppen die een back-up niet mag aanraken omdat hij van vóór hun
+     * module is.
+     *
+     * @param  array<int, string>  $tabellenInDeBackup
+     * @return array<int, string> waarden van `section_headings.section`
+     */
+    public function kopVanVoorDeBackup(array $tabellenInDeBackup): array
+    {
+        $koppen = [];
+
+        foreach (self::KOP_BIJ_TABEL as $tabel => $sectie) {
+            if (! in_array($tabel, $tabellenInDeBackup, true) && Schema::hasTable($tabel)) {
+                $koppen[] = $sectie;
+            }
+        }
+
+        return $koppen;
     }
 
     public function kentTabel(string $tabel): bool

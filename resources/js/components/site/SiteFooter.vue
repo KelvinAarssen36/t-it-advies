@@ -3,7 +3,13 @@ import { Link, usePage } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, onMounted, useTemplateRef } from 'vue';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import LinkedinMerk from '@/components/site/LinkedinMerk.vue';
-import { groeiLijn, scrollNaar } from '@/lib/motion';
+import {
+    groeiLijn,
+    gsap,
+    prefersReducedMotion,
+    scrollNaar,
+    stapelBinnen,
+} from '@/lib/motion';
 import { useSectieLink } from '@/lib/sectielink';
 import { privacy } from '@/routes';
 import type { VoetOpDeSite } from '@/types/voettekst';
@@ -39,6 +45,12 @@ import type { VoetOpDeSite } from '@/types/voettekst';
  * wachten op een waarde die nooit komt.
  *
  * **De credit onderaan ligt vast en is geen instelling.** Zie daar.
+ *
+ * **Het slotbeeld.** Achter de kolommen ligt, groot en sterk gedempt, het
+ * oog uit de hero: de pagina begint en eindigt bij hetzelfde beeld. Het is
+ * een sfeerbeeld met een lege `alt`, en het laadt pas als je in de buurt
+ * komt. De naam staat er groot boven: de vaste naam van het bedrijf, geen
+ * tekst die iemand hoeft te beheren.
  *
  * Zie docs/architecture/modules/voettekst.md.
  */
@@ -93,46 +105,134 @@ const kies = (sleutel: string, gebeurtenis: MouseEvent): void => {
 
 const year = new Date().getFullYear();
 
+/** Het oog uit de hero, in twee maten; zie HeroSection. */
+const oogSrcset = [
+    '/images/hero-achtergrond-960.webp 960w',
+    '/images/hero-achtergrond-1600.webp 1600w',
+].join(', ');
+
 const voetElement = useTemplateRef<HTMLElement>('voetElement');
 
-let stop: (() => void) | undefined;
+const oog = useTemplateRef<HTMLElement>('oog');
+const naam = useTemplateRef<HTMLElement>('naam');
 
+const opruimers: Array<() => void> = [];
+
+/**
+ * De voet als slotbeeld, ook in beweging.
+ *
+ * - **De lijn bovenin** groeit vanuit het midden open (`groeiLijn`).
+ * - **De drie blokken komen gestaffeld op**, merk eerst, dan de twee
+ *   lijstjes (`stapelBinnen`). Gebundeld: wat tegelijk in beeld komt,
+ *   komt ook samen binnen.
+ * - **Het oog en het woordmerk schuiven langzaam omhoog** terwijl de voet
+ *   binnenkomt, het oog trager dan de naam. Dat is positie en geen waarde
+ *   (`scrub`), en alleen op een breed scherm: op een telefoon kost een
+ *   meebewegende laag met een foto erin vooral scherpte.
+ *
+ * De voet blijft bij een navigatie staan, dus dit draait één keer; bij een
+ * andere pagina rekent ScrollTrigger de posities opnieuw uit
+ * (`hermeetScroll` in PublicLayout).
+ */
 onMounted(() => {
-    stop = groeiLijn('[data-groeilijn]', voetElement.value);
+    opruimers.push(groeiLijn('[data-groeilijn]', voetElement.value));
+
+    const blokken =
+        voetElement.value?.querySelectorAll<HTMLElement>('[data-voet-blok]') ??
+        [];
+
+    opruimers.push(
+        stapelBinnen([...blokken], {
+            van: { opacity: 0, y: 32 },
+            stagger: 0.09,
+        }),
+    );
+
+    if (prefersReducedMotion() || voetElement.value === null) {
+        return;
+    }
+
+    const voet = voetElement.value;
+    const mm = gsap.matchMedia();
+
+    mm.add('(min-width: 50rem)', () => {
+        const diepte = gsap.timeline({
+            defaults: { ease: 'none' },
+            scrollTrigger: {
+                trigger: voet,
+                start: 'top bottom',
+                end: 'bottom bottom',
+                scrub: true,
+                invalidateOnRefresh: true,
+            },
+        });
+
+        if (oog.value !== null) {
+            diepte.fromTo(oog.value, { yPercent: 18 }, { yPercent: 0 }, 0);
+        }
+
+        if (naam.value !== null) {
+            diepte.fromTo(naam.value, { y: 40 }, { y: 0 }, 0);
+        }
+
+        return () => {
+            diepte.scrollTrigger?.kill();
+            diepte.kill();
+        };
+    });
+
+    opruimers.push(() => mm.revert());
 });
 
-onBeforeUnmount(() => stop?.());
+onBeforeUnmount(() => opruimers.forEach((opruimen) => opruimen()));
 </script>
 
 <template>
-    <footer ref="voetElement" class="brand-footer">
+    <footer ref="voetElement" class="brand-site-voet">
         <!--
             De accentlijn trekt zich open vanuit het midden zodra je de voet
             bereikt. Een eigen klasse en niet `brand-rule`: die wordt ook
             door de foutpagina en het welkomstvenster gebruikt, en daar
-            hoort niets te bewegen.
+            hoort niets te bewegen. Zie `groeiLijn()` in motion.ts.
         -->
-        <div data-groeilijn class="brand-footer-lijn" />
+        <div data-groeilijn class="brand-site-voet-lijn" />
 
-        <div class="brand-footer-binnen">
-            <div class="brand-footer-kolommen">
+        <!--
+            Het oog uit de hero, als slotbeeld. Sfeer en geen inhoud, dus
+            een lege `alt` en `aria-hidden`; `lazy`, want je ziet het pas
+            onderaan de pagina.
+        -->
+        <div ref="oog" class="brand-site-voet-oog" aria-hidden="true">
+            <img
+                src="/images/hero-achtergrond-960.webp"
+                :srcset="oogSrcset"
+                sizes="(min-width: 50rem) 70vw, 140vw"
+                alt=""
+                width="1600"
+                height="900"
+                loading="lazy"
+                decoding="async"
+            />
+        </div>
+
+        <div class="brand-site-raam brand-site-voet-binnen">
+            <div class="brand-site-voet-raster">
                 <!-- Het merk. De naam ligt vast, de zin eronder niet. -->
-                <div data-reveal class="brand-footer-merk opacity-0">
+                <div data-voet-blok class="brand-site-voet-merk">
                     <!--
                         Hetzelfde merkteken als in de kop, via hetzelfde
-                        component. Het draagt een lege `alt`: de naam staat
-                        er direct naast, en die twee keer voorlezen helpt
-                        niemand.
+                        component. De naam staat er direct naast en wordt
+                        één keer voorgelezen.
                     -->
-                    <p class="brand-footer-naam">
-                        <AppLogoIcon class="brand-footer-teken" />
+                    <p ref="naam" class="brand-site-voet-naam">
+                        <AppLogoIcon class="brand-site-voet-teken" />
                         <span>
                             <span class="brand-text-gradient">@T</span>
-                            <span class="text-white"> IT Advies</span>
+                            <span> IT Advies</span>
                         </span>
                     </p>
 
-                    <p v-if="voet.tagline" class="brand-footer-zin">
+                    <p v-if="voet.tagline" class="brand-site-voet-zin">
                         {{ voet.tagline }}
                     </p>
 
@@ -141,9 +241,9 @@ onBeforeUnmount(() => stop?.());
                         :href="linkedin"
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="brand-footer-linkedin"
+                        class="brand-site-voet-linkedin"
                     >
-                        <LinkedinMerk class="brand-footer-linkedin-teken" />
+                        <LinkedinMerk class="brand-site-voet-linkedin-teken" />
                         <span>{{ $t('Volg op LinkedIn') }}</span>
                     </a>
                 </div>
@@ -152,33 +252,30 @@ onBeforeUnmount(() => stop?.());
                     Niets tonen als er geen onderdelen zijn. Dat is het
                     geval op een foutpagina: de voet staat er wel, maar de
                     ankers hebben daar niets om heen te wijzen.
-                -->
-                <!--
+
                     `aria-label` omdat dit de tweede navigatie op de pagina
                     is. Zonder naam kondigt een schermlezer er twee aan die
-                    allebei "navigatie" heten, en dan weet je pas waar je
-                    zit als je erdoorheen bent gelopen.
+                    allebei "navigatie" heten.
                 -->
                 <nav
                     v-if="items.length > 0"
-                    data-reveal
-                    class="brand-footer-kolom opacity-0"
+                    data-voet-blok
+                    class="brand-site-voet-kolom"
                     :aria-label="$t('Onderdelen van de site')"
                 >
-                    <p class="brand-footer-kop">{{ $t('Op de site') }}</p>
+                    <p class="brand-site-voet-kop">{{ $t('Op de site') }}</p>
 
                     <!--
-                        Een eigen omhulsel om de links, want de lijst loopt
-                        op een breed scherm in twee kolommen en het kopje
-                        erboven niet. Zie `.brand-footer-lijst` in app.css.
+                        Een eigen omhulsel om de links: de lijst loopt in
+                        twee kolommen en het kopje erboven niet.
                     -->
-                    <div class="brand-footer-lijst">
+                    <div class="brand-site-voet-lijst">
                         <component
                             :is="tag"
                             v-for="item in items"
                             :key="item.key"
                             :href="anker(item.key)"
-                            class="brand-footer-link"
+                            class="brand-site-voet-link"
                             @click="kies(item.key, $event)"
                         >
                             {{ item.label }}
@@ -186,13 +283,13 @@ onBeforeUnmount(() => stop?.());
                     </div>
                 </nav>
 
-                <div data-reveal class="brand-footer-kolom opacity-0">
-                    <p class="brand-footer-kop">{{ $t('Contact') }}</p>
+                <div data-voet-blok class="brand-site-voet-kolom">
+                    <p class="brand-site-voet-kop">{{ $t('Contact') }}</p>
 
                     <a
                         v-if="email"
                         :href="`mailto:${email}`"
-                        class="brand-footer-link"
+                        class="brand-site-voet-link brand-site-voet-mail"
                     >
                         {{ email }}
                     </a>
@@ -200,7 +297,7 @@ onBeforeUnmount(() => stop?.());
                     <a
                         v-if="voet.telefoon"
                         :href="`tel:${voet.telefoon.link}`"
-                        class="brand-footer-link"
+                        class="brand-site-voet-link brand-site-data"
                     >
                         {{ voet.telefoon.tekst }}
                     </a>
@@ -209,7 +306,7 @@ onBeforeUnmount(() => stop?.());
                         Geen link: een werkgebied is geen adres, en een
                         kaartlink naar "Noord-Brabant" helpt niemand.
                     -->
-                    <p v-if="voet.plaats" class="brand-footer-regel">
+                    <p v-if="voet.plaats" class="brand-site-voet-regel">
                         {{ voet.plaats }}
                     </p>
                 </div>
@@ -220,23 +317,24 @@ onBeforeUnmount(() => stop?.());
                 hier en niet in de navigatie erboven: die gaat over de
                 onderdelen van de pagina, en dit is een eigen pagina.
                 Onderaan is ook waar bezoekers hem zoeken.
+
+                Geen puntjes tussen de onderdelen maar ruimte: de regel
+                breekt op een telefoon toch, en dan blijft er anders een
+                puntje aan het begin van een regel hangen.
             -->
-            <div class="brand-footer-balk">
-                <p class="brand-footer-zakelijk">
+            <div class="brand-site-voet-balk">
+                <p class="brand-site-voet-zakelijk">
                     <span>&copy; {{ year }} @T IT Advies</span>
 
-                    <template v-if="voet.kvk">
-                        <span aria-hidden="true">·</span>
-                        <span>{{ $t('KvK') }} {{ voet.kvk }}</span>
-                    </template>
+                    <span v-if="voet.kvk" class="brand-site-data">
+                        {{ $t('KvK') }} {{ voet.kvk }}
+                    </span>
 
-                    <template v-if="voet.btw">
-                        <span aria-hidden="true">·</span>
-                        <span>{{ $t('btw') }} {{ voet.btw }}</span>
-                    </template>
+                    <span v-if="voet.btw" class="brand-site-data">
+                        {{ $t('btw') }} {{ voet.btw }}
+                    </span>
 
-                    <span aria-hidden="true">·</span>
-                    <Link :href="privacy()" class="brand-footer-link">
+                    <Link :href="privacy()" class="brand-site-voet-link">
                         {{ $t('Privacyverklaring') }}
                     </Link>
                 </p>
@@ -258,7 +356,7 @@ onBeforeUnmount(() => stop?.());
                     Alleen het label gaat door `$t()`: een naam vertaal je
                     niet.
                 -->
-                <p class="brand-footer-credit">
+                <p class="brand-site-voet-credit">
                     {{ $t('Gemaakt door') }} Kelvin Aarssen
                 </p>
             </div>

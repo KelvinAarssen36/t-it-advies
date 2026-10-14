@@ -3,6 +3,7 @@ import { DrawSVGPlugin } from 'gsap/DrawSVGPlugin';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
 import Lenis from 'lenis';
+import { formatteerGetal } from '@/lib/getallen';
 
 /**
  * De animatielaag van de site: GSAP voor de animaties zelf, Lenis voor
@@ -436,6 +437,37 @@ export function revealCards(
 }
 
 /**
+ * Een getal dat oploopt in beeld zetten, zonder de hele pagina te laten
+ * herberekenen.
+ *
+ * **`textContent =` was hier de duurste regel van de site.** Dat vervangt
+ * bij elk beeldje de tekstknoop door een nieuwe -- voor de browser een
+ * wijziging in de boom (`childList`), en die liet bij elke tik de stijl van
+ * een groot deel van de pagina opnieuw berekenen. In de browser gemeten,
+ * scrollend door de ervaring terwijl de cijfers optelden: 768 ms aan
+ * stijlwerk en 43% beeldjes te laat. Met de waarde van de bestaande
+ * tekstknoop aanpassen, en alleen als het getal echt verandert: 87 ms en
+ * 17%. Hetzelfde gold voor de statistieken.
+ */
+function schrijfGetal(element: HTMLElement, tekst: string): void {
+    const knoop = element.firstChild;
+
+    if (
+        knoop !== null &&
+        knoop === element.lastChild &&
+        knoop.nodeType === Node.TEXT_NODE
+    ) {
+        if (knoop.nodeValue !== tekst) {
+            knoop.nodeValue = tekst;
+        }
+
+        return;
+    }
+
+    element.textContent = tekst;
+}
+
+/**
  * Laat getallen omhoogtellen zodra ze in beeld komen.
  *
  * Bedoeld voor de cijfers boven een lijst: "35 jaar ervaring". Een getal
@@ -458,7 +490,7 @@ export function countUp(tellers: HTMLElement[]): () => void {
     }
 
     const schrijf = (element: HTMLElement, waarde: number): void => {
-        element.textContent = String(Math.round(waarde));
+        schrijfGetal(element, String(Math.round(waarde)));
     };
 
     const eind = (element: HTMLElement): number =>
@@ -548,96 +580,6 @@ export function followYears(groepen: HTMLElement[]): () => void {
     );
 
     return () => triggers.forEach((trigger) => trigger.kill());
-}
-
-/**
- * Laat de bezoeker met zijn muiswiel door een reeks bladeren, maar alleen
- * binnen één vak.
- *
- * Dit is de tegenhanger van een blok dat vastzit terwijl de pagina
- * doorloopt. Hier blijft de pagina staan waar hij staat: zolang je muis
- * **in het vak** hangt gaat je scroll naar de reeks, en zodra die op is
- * neemt de pagina het weer over. Dat is precies zo gebouwd omdat het vak
- * dan ook is wat het lijkt -- je ziet een omlijnd gebied, en dat gebied is
- * ook waar het gebeurt.
- *
- * `onVerplaats` krijgt de verschuiving en geeft terug of hij hem heeft
- * gebruikt. Zo niet -- je bent aan het begin of het eind van de reeks --
- * dan laten we de gebeurtenis los en scrolt de pagina gewoon door. Zonder
- * die uitweg zit de bezoeker vast in het vak, en dat is het ergste wat een
- * onderdeel als dit kan doen.
- *
- * **Drie dingen die hier bewust zo zijn:**
- *
- * - **Het vak moet het midden van het scherm beslaan** voordat er iets
- *   gebeurt. Anders pakt het je scroll af terwijl je er alleen maar
- *   langsschuift, en dat voelt als een pagina die tegenwerkt.
- * - **`data-lenis-prevent` hoort op het element.** Zonder dat neemt Lenis
- *   het wiel als eerste af en komt onze afhandeling nooit aan de beurt.
- * - **Een vinger telt dubbel.** Een veegbeweging legt minder afstand af
- *   dan een muiswiel, en zonder die factor voelt het op een telefoon alsof
- *   er niets beweegt.
- *
- * Geeft een opruimfunctie terug; roep die aan in onBeforeUnmount.
- */
-export function scrollThrough(
-    vak: HTMLElement,
-    { onVerplaats }: { onVerplaats: (verschuiving: number) => boolean },
-): () => void {
-    /** Hoeveel van het vak in beeld moet staan voor we de scroll pakken. */
-    const inBeeld = (): boolean => {
-        const vlak = vak.getBoundingClientRect();
-        const midden = window.innerHeight / 2;
-
-        return vlak.top < midden && vlak.bottom > midden;
-    };
-
-    const opWiel = (gebeurtenis: WheelEvent): void => {
-        if (!inBeeld() || !onVerplaats(gebeurtenis.deltaY)) {
-            return;
-        }
-
-        gebeurtenis.preventDefault();
-    };
-
-    let vorigeY: number | null = null;
-
-    const opAanraking = (gebeurtenis: TouchEvent): void => {
-        vorigeY = gebeurtenis.touches[0]?.clientY ?? null;
-    };
-
-    const opVeeg = (gebeurtenis: TouchEvent): void => {
-        const y = gebeurtenis.touches[0]?.clientY;
-
-        if (y === undefined || vorigeY === null) {
-            return;
-        }
-
-        // Vinger omhoog betekent vooruit, net als bij scrollen.
-        const verschuiving = (vorigeY - y) * 2.2;
-
-        vorigeY = y;
-
-        if (!inBeeld() || !onVerplaats(verschuiving)) {
-            return;
-        }
-
-        gebeurtenis.preventDefault();
-    };
-
-    vak.setAttribute('data-lenis-prevent', '');
-
-    // `passive: false`, anders mag je de gebeurtenis niet tegenhouden.
-    vak.addEventListener('wheel', opWiel, { passive: false });
-    vak.addEventListener('touchstart', opAanraking, { passive: true });
-    vak.addEventListener('touchmove', opVeeg, { passive: false });
-
-    return () => {
-        vak.removeAttribute('data-lenis-prevent');
-        vak.removeEventListener('wheel', opWiel);
-        vak.removeEventListener('touchstart', opAanraking);
-        vak.removeEventListener('touchmove', opVeeg);
-    };
 }
 
 /**
@@ -785,6 +727,7 @@ export function splitReveal(
          */
         const { vanaf, duur } = beweging();
         const koprand = vanaf === 0.85 ? 0.88 : vanaf;
+        const scherpstellen = opEenBreedScherm();
 
         return SplitText.create(target, {
             type: 'lines',
@@ -793,6 +736,18 @@ export function splitReveal(
             onSplit: (self) =>
                 gsap.from(self.lines, {
                     yPercent: 115,
+                    /*
+                     * Scherpstellen: de regel komt op van een lichte waas
+                     * naar scherp, als een lens die zijn focus vindt.
+                     * Alleen op een breed scherm, en alleen op koppen --
+                     * `filter` is duurder dan een transform, en op een
+                     * paar regels tekst valt dat weg; op een telefoon
+                     * niet. `clearProps` haalt hem er na afloop af, zodat
+                     * de tekst daarna niet in een eigen laag blijft staan.
+                     */
+                    ...(scherpstellen
+                        ? { filter: 'blur(10px)', clearProps: 'filter' }
+                        : {}),
                     duration: duur * 1.1,
                     stagger: duur * 0.11,
                     ease: 'power3.out',
@@ -813,54 +768,6 @@ export function splitReveal(
     });
 
     return () => splits.forEach((split) => split.revert());
-}
-
-/**
- * Laat een element trager of sneller meelopen dan de pagina.
- *
- * Dit is wat diepte geeft: blijft de achtergrond achter terwijl de tekst
- * wegschuift, dan lijkt hij verder weg te liggen. Meer is het niet, en meer
- * moet het ook niet worden -- parallax die opvalt is parallax die misselijk
- * maakt.
- *
- * `afstand` is in beeldpunten. Het element begint op de helft ervan omhoog
- * en eindigt op de helft omlaag, zodat hij halverwege het scherm op zijn
- * eigen plek staat en de opmaak niet verschuift.
- *
- * We animeren `y` en niet `top` of `background-position`, zodat het op de
- * GPU blijft en de browser de pagina niet bij elke scrollstap opnieuw hoeft
- * door te rekenen.
- *
- * Geeft een opruimfunctie terug; roep die aan in onBeforeUnmount.
- */
-export function parallax(
-    element: HTMLElement,
-    { afstand = 80, vanaf = 'top bottom', tot = 'bottom top' } = {},
-): () => void {
-    if (prefersReducedMotion()) {
-        return () => {};
-    }
-
-    const tween = gsap.fromTo(
-        element,
-        { y: -afstand / 2 },
-        {
-            y: afstand / 2,
-            ease: 'none',
-            scrollTrigger: {
-                trigger: element,
-                start: vanaf,
-                end: tot,
-                scrub: true,
-                invalidateOnRefresh: true,
-            },
-        },
-    );
-
-    return () => {
-        tween.scrollTrigger?.kill();
-        tween.kill();
-    };
 }
 
 /**
@@ -1572,98 +1479,6 @@ export function kaartenBinnen(
 }
 
 /**
- * Tikt een kop letter voor letter in beeld, met een cursor die meeloopt.
- *
- * **De cursor is wat het typen typen maakt.** Zonder hem zie je letters
- * verschijnen, en dat kan van alles zijn. Met een knipperend streepje dat
- * telkens één plek opschuift, kijk je naar iemand die typt. Dat was de
- * eerste versie hier: losse tekens die aansprongen, veel te snel, en
- * zonder cursor -- en dat las als "er verschijnt tekst" in plaats van als
- * typen.
- *
- * **De letters staan er al, onzichtbaar.** Dat is het verschil met de
- * voor de hand liggende aanpak, waarbij je steeds een teken aan de inhoud
- * plakt (GSAP heeft daar TextPlugin voor). Die laat de kop bij elk woord
- * opnieuw afbreken, en dan springt alles eronder mee. Met SplitText staat
- * de ruimte er vanaf het begin en verandert alleen de doorzichtigheid.
- *
- * **Het ritme is niet gelijkmatig.** Een mens typt niet als een metronoom,
- * en precies gelijke tussenpozen zijn wat een typeanimatie machinaal laat
- * aanvoelen. Elke aanslag krijgt hier een kleine willekeurige afwijking,
- * en na een spatie of een punt valt er een korte adempauze.
- *
- * `autoSplit` staat bewust uit. Hersplitsen midden in het typen zou de
- * animatie opnieuw laten beginnen, en een kop die twee keer wordt ingetikt
- * lijkt kapot. De prijs is dat de regelafbreking blijft staan zoals hij
- * bij het laden was; voor één kop van een paar woorden is dat de betere
- * ruil.
- *
- * Geeft een opruimfunctie terug; roep die aan in onBeforeUnmount.
- */
-export function typMachine(
-    kop: HTMLElement,
-    { wachten = 0, perTeken = 0.09 } = {},
-): () => void {
-    gsap.set(kop, { opacity: 1 });
-
-    if (prefersReducedMotion()) {
-        return () => {};
-    }
-
-    const split = SplitText.create(kop, { type: 'chars,lines' });
-
-    /*
-     * De cursor is een los element dat door de tekst wandelt: na elke
-     * aanslag wordt hij achter het zojuist getikte teken gezet. Dat is
-     * een DOM-verplaatsing per letter -- een paar tientallen keer, en
-     * daar merkt niemand iets van.
-     *
-     * Hij staat in de tekst en niet los eroverheen. Zou hij zweven, dan
-     * moet je zijn plek uitrekenen, en dan klopt hij niet meer zodra de
-     * regel anders afbreekt.
-     */
-    const cursor = document.createElement('span');
-
-    cursor.className = 'brand-typcursor';
-    cursor.setAttribute('aria-hidden', 'true');
-
-    const eersteRegel = split.lines[0];
-
-    if (eersteRegel !== undefined) {
-        eersteRegel.prepend(cursor);
-    }
-
-    gsap.set(split.chars, { opacity: 0 });
-
-    const tijdlijn = gsap.timeline({ delay: wachten });
-
-    let moment = 0;
-
-    split.chars.forEach((teken) => {
-        tijdlijn.set(teken, { opacity: 1 }, moment);
-        tijdlijn.add(() => teken.after(cursor), moment);
-
-        // Een kleine afwijking per aanslag, en een adempauze na het eind
-        // van een woord of een zin.
-        const tekst = teken.textContent ?? '';
-        const pauze = /[.,!?]/.test(tekst) ? 4 : /\s/.test(tekst) ? 1.6 : 1;
-
-        moment += perTeken * pauze * (0.75 + Math.random() * 0.5);
-    });
-
-    // De cursor knippert nog even door en verdwijnt dan. Meteen weghalen
-    // op de laatste letter voelt afgekapt; eeuwig laten staan trekt de
-    // aandacht van de tekst weg.
-    tijdlijn.to(cursor, { opacity: 0, duration: 0.3 }, moment + 1.2);
-
-    return () => {
-        tijdlijn.kill();
-        cursor.remove();
-        split.revert();
-    };
-}
-
-/**
  * De ring om het ronde portret: hij tekent zichzelf, en daarna blijft er
  * een lichtboog omheen draaien.
  *
@@ -1745,7 +1560,23 @@ export function tekenRing(
             ease: 'none',
         });
 
-        return () => draaien.kill();
+        /*
+         * Stil zolang de ring niet in beeld is. Een eindeloze tijdlijn op
+         * iets dat drie schermen hoger staat kost accu en levert niets op;
+         * dezelfde afspraak als de rustanimatie van de statistieken.
+         */
+        const zicht = ScrollTrigger.create({
+            trigger: ring,
+            start: 'top bottom',
+            end: 'bottom top',
+            onToggle: (zelf) =>
+                zelf.isActive ? draaien.resume() : draaien.pause(),
+        });
+
+        return () => {
+            zicht.kill();
+            draaien.kill();
+        };
     });
 
     return () => {
@@ -1967,176 +1798,6 @@ export function volgSecties(
 }
 
 /**
- * Een signaal dat uitgaat: de inhoud komt op, en er gaan ringen vanaf.
- *
- * Gemaakt voor het LinkedIn-blok. Hier stond eerst een netwerkje van
- * lijnen die zichzelf tekenden -- mooi bedacht, maar je zag het niet:
- * het lag achter de kaart, de lijnen waren haarfijn en de helft stond
- * buiten beeld. Een animatie die je moet zoeken is geen animatie.
- *
- * Dit is het tegenovergestelde: het gebeurt precies waar je al kijkt,
- * op het merkteken bovenaan de kaart.
- *
- * **Twee bewegingen, en ze horen bij elkaar.**
- *
- * 1. Bij binnenkomst komt de inhoud regel voor regel op, en gaat er
- *    tegelijk één ring vanaf het merkteken naar buiten. Dat leest als
- *    "hier wordt iets uitgezonden" en niet als "er verschijnt tekst".
- * 2. Daarna blijven de ringen met lange tussenpozen uitgaan, als een
- *    baken. Traag en zwak: het staat naast een knop die gelezen moet
- *    worden.
- *
- * Dat doorgaan staat achter een breedtegrens, om dezelfde reden als de
- * ring om het portret: een animatie die nooit ophoudt houdt zijn laag
- * eeuwig in beweging, en dat kost op een telefoon scherpte en accu.
- *
- * Geeft een opruimfunctie terug; roep die aan in onBeforeUnmount.
- */
-export function zendSignaal(
-    onderdelen: HTMLElement[],
-    ringen: HTMLElement[],
-): () => void {
-    if (onderdelen.length === 0) {
-        return () => {};
-    }
-
-    if (prefersReducedMotion()) {
-        gsap.set(onderdelen, { opacity: 1, y: 0 });
-        gsap.set(ringen, { opacity: 0 });
-
-        return () => {};
-    }
-
-    gsap.set(onderdelen, { opacity: 0, y: 18 });
-    gsap.set(ringen, { opacity: 0, scale: 0.6 });
-
-    const tijdlijn = gsap.timeline(
-        alInBeeld(onderdelen[0])
-            ? {}
-            : {
-                  scrollTrigger: {
-                      trigger: onderdelen[0],
-                      start: 'top 80%',
-                      once: true,
-                  },
-              },
-    );
-
-    tijdlijn.to(onderdelen, {
-        opacity: 1,
-        y: 0,
-        duration: 0.7,
-        stagger: 0.09,
-        ease: 'power3.out',
-    });
-
-    /*
-     * De eerste ring vertrekt terwijl het merkteken nog opkomt. Erna
-     * laten vertrekken is netter geordend en een stuk doder: dan is het
-     * een los trucje achteraf in plaats van één beweging.
-     */
-    if (ringen[0] !== undefined) {
-        tijdlijn.fromTo(
-            ringen[0],
-            { opacity: 0.55, scale: 0.6 },
-            { opacity: 0, scale: 2.6, duration: 1.6, ease: 'power2.out' },
-            0.15,
-        );
-    }
-
-    const mm = gsap.matchMedia();
-
-    mm.add('(min-width: 50rem)', () => {
-        /*
-         * De ringen vertrekken om beurten, met een vaste tussenpoos.
-         * Twee ringen en een pauze van vier seconden: vaker wordt het
-         * een knipperlicht, minder vaak en je hebt het nooit gezien.
-         */
-        const banen = ringen.map((ring, index) =>
-            gsap.fromTo(
-                ring,
-                { opacity: 0.45, scale: 0.6 },
-                {
-                    opacity: 0,
-                    scale: 2.6,
-                    duration: 2.4,
-                    ease: 'power2.out',
-                    repeat: -1,
-                    repeatDelay: 1.6,
-                    delay: 2.2 + index * 2,
-                },
-            ),
-        );
-
-        return () => banen.forEach((baan) => baan.kill());
-    });
-
-    return () => {
-        mm.revert();
-        tijdlijn.scrollTrigger?.kill();
-        tijdlijn.kill();
-    };
-}
-
-/**
- * Een radarveeg die achter de kaart rondgaat.
- *
- * De tegenhanger van `zendSignaal`: daar gaat er iets uit, hier wordt er
- * gekeken. Samen is het één gedachte, en dat is waarom het een veeg is
- * geworden en geen zwevende deeltjes of een raster -- die zeggen iets
- * anders dan de ringen die er al staan.
- *
- * **Het is met opzet nauwelijks te zien.** De bundel zelf is een
- * `conic-gradient` in CSS; hier draait alleen de laag rond. Achttien
- * seconden voor een hele slag: zo traag dat je de beweging niet betrapt,
- * alleen merkt dat het licht verschoven is. Sneller en het gaat vechten
- * met de knop die gelezen moet worden.
- *
- * **Alleen op een breed scherm.** Om dezelfde reden als de ringpuls en de
- * ring om het portret: iets wat nooit ophoudt houdt zijn laag eeuwig in
- * beweging, en dat kost op een telefoon scherpte en accu. Daar is ook
- * geen ruimte naast de kaart, dus er zou toch niets van te zien zijn.
- * `matchMedia` zet hem weer stil zodra het venster smaller wordt.
- *
- * Geeft een opruimfunctie terug; roep die aan in onBeforeUnmount.
- */
-export function draaiRadar(veeg: HTMLElement): () => void {
-    if (prefersReducedMotion()) {
-        return () => {};
-    }
-
-    const mm = gsap.matchMedia();
-
-    mm.add('(min-width: 50rem)', () => {
-        /*
-         * Opkomen en dan pas draaien. Een veeg die er in één klap staat
-         * valt op als een lamp die aangaat, en dat is precies wat dit
-         * niet moet zijn.
-         */
-        const opkomen = gsap.fromTo(
-            veeg,
-            { opacity: 0 },
-            { opacity: 1, duration: 1.8, ease: 'power2.out' },
-        );
-
-        const draaien = gsap.to(veeg, {
-            rotation: 360,
-            duration: 18,
-            ease: 'none',
-            repeat: -1,
-        });
-
-        return () => {
-            opkomen.kill();
-            draaien.kill();
-            gsap.set(veeg, { opacity: 0, rotation: 0 });
-        };
-    });
-
-    return () => mm.revert();
-}
-
-/**
  * Eén statistiek zoals `vulStatistieken` hem nodig heeft.
  *
  * Alleen wat er moet bewegen, en dat is verrassend weinig: **deze helper
@@ -2163,24 +1824,6 @@ export type TeVullenStatistiek = {
     /** Waar hij naartoe telt. */
     waarde: number;
 };
-
-/**
- * "1250" wordt "1.250".
- *
- * De duizendtalscheiding verschilt per taal -- een punt in het
- * Nederlands, een komma in het Engels -- dus het teken komt van de
- * aanroeper. Die weet welke taal het portaal heeft; deze functie niet.
- *
- * Hij staat hier en niet in een eigen bestandje omdat hij bij
- * `vulStatistieken` hoort: die schrijft de tussenstanden, de componenten
- * schrijven de beginwaarde, en die twee moeten er hetzelfde uitzien.
- */
-export function formatteerGetal(waarde: number, scheiding = '.'): string {
-    return String(Math.round(waarde)).replace(
-        /\B(?=(\d{3})+(?!\d))/g,
-        scheiding,
-    );
-}
 
 /**
  * De statistieken vullen zich als een golf, één keer.
@@ -2238,7 +1881,7 @@ export function vulStatistieken(
 
     const schrijf = (element: HTMLElement | null, waarde: number): void => {
         if (element !== null) {
-            element.textContent = formatteerGetal(waarde, scheiding);
+            schrijfGetal(element, formatteerGetal(waarde, scheiding));
         }
     };
 
@@ -2555,16 +2198,35 @@ export function rolbord(selector: string, scope?: Element | null): () => void {
         const tekst = (target.textContent ?? '').trim();
 
         /*
-         * Dezelfde regel als `revealOnScroll` (85%) en niet eerder. Op 90%
-         * ging de waarde rollen vóórdat de strook zelf was opgekomen, en
-         * dan speelt het effect zich af in een vak dat je nog niet ziet.
+         * Dezelfde regel als `revealOnScroll`, en niet eerder: eerder ging de
+         * waarde rollen vóórdat de strook zelf was opgekomen.
+         *
+         * **En ook niet later, en dat was een fout.** Hier stond vast 85%,
+         * terwijl de strook op een telefoon al op 115% opkomt (zie
+         * `beweging()`). Een waarde in de onderste strook van het scherm
+         * stond dan zichtbaar leeg -- het vak was er, de tekst wachtte nog
+         * op een trigger die pas bij verder scrollen kwam. Spring je naar
+         * `#kerngegevens`, dan kwam hij zelfs helemaal niet.
          */
-        const start = alInBeeld(target, 0.85)
+        const { vanaf } = beweging();
+
+        /*
+         * **De strook is de trigger, niet de waarde.** Elke waarde wachtte
+         * eerst op zijn eigen plek, en de strook kwam als geheel op: een
+         * tweede rij die net onder de grens begon, stond dan zichtbaar in
+         * een opgekomen strook -- maar leeg. Nu rollen alle waarden zodra
+         * hun strook binnenkomt: één mededeling, één beweging.
+         */
+        const strook =
+            target.closest<HTMLElement>(
+                '[data-rolbord-strook], [data-reveal]',
+            ) ?? target;
+        const start = alInBeeld(strook, vanaf)
             ? {}
             : {
                   scrollTrigger: {
-                      trigger: target,
-                      start: 'top 85%',
+                      trigger: strook,
+                      start: `top ${vanaf * 100}%`,
                       once: true,
                   },
               };
@@ -2717,6 +2379,413 @@ export function groeiLijn(
             tween.kill();
         });
     };
+}
+
+/* -------------------------------------------------------------------------
+ * "Helder zicht": de taal van de publieke site.
+ *
+ * Het merk is een oog, en alles hieronder speelt daarop: een diafragma dat
+ * opengaat, een beeld dat scherp wordt, licht dat met je meeloopt. Elk
+ * effect betekent "dit komt in focus" en is geen versiering.
+ *
+ * Dezelfde drie afspraken als de rest van dit bestand: JavaScript zet alleen
+ * eigenschappen en variabelen (de opmaak staat in resources/css/site/), elk
+ * effect geeft een opruimfunctie terug, en onder reduced motion staat alles
+ * meteen in zijn eindtoestand.
+ *
+ * Zie docs/architecture/frontend-en-animatie.md, "De landing als scène".
+ * ---------------------------------------------------------------------- */
+
+/**
+ * Een breed scherm, waar de zwaardere effecten mogen.
+ *
+ * Dezelfde grens als `tablet:` in de CSS (50rem). Blur en parallax kosten
+ * op een telefoon scherpte en accu en leveren op dat formaat weinig op.
+ */
+export function opEenBreedScherm(): boolean {
+    return (
+        typeof window !== 'undefined' &&
+        window.matchMedia('(min-width: 50rem)').matches
+    );
+}
+
+/** Begin met een scroll-trigger, of meteen als het al in beeld staat. */
+function wanneerInBeeld(
+    element: Element,
+    vanaf: number,
+): gsap.TweenVars['scrollTrigger'] | undefined {
+    return alInBeeld(element, vanaf)
+        ? undefined
+        : { trigger: element, start: `top ${vanaf * 100}%`, once: true };
+}
+
+/**
+ * Een diafragma dat opengaat: van een stip in het midden naar het hele vlak.
+ *
+ * Een `clip-path` en geen schaal, want een schaal vervormt wat erin staat --
+ * een gezicht dat groeit oogt als een zoom, een gezicht dat onthuld wordt
+ * als een oog dat opengaat. Na afloop gaat de `clip-path` er weer af, zodat
+ * er niets blijft knippen als het vlak later van maat verandert.
+ *
+ * `direct` speelt hem meteen, voor wat bij binnenkomst al in beeld staat
+ * (de hero). Anders wacht hij tot het element in beeld scrolt.
+ */
+export function irisOpen(
+    element: HTMLElement,
+    {
+        wachten = 0,
+        duur = 1.4,
+        direct = false,
+        midden = '50% 50%',
+    }: {
+        wachten?: number;
+        duur?: number;
+        direct?: boolean;
+        midden?: string;
+    } = {},
+): () => void {
+    if (prefersReducedMotion()) {
+        gsap.set(element, { clearProps: 'clipPath', opacity: 1 });
+
+        return () => {};
+    }
+
+    const { vanaf } = beweging();
+    const tween = gsap.fromTo(
+        element,
+        { clipPath: `circle(0% at ${midden})`, opacity: 1 },
+        {
+            clipPath: `circle(75% at ${midden})`,
+            duration: opEenTelefoon() ? duur * 0.7 : duur,
+            delay: wachten,
+            ease: 'expo.inOut',
+            clearProps: 'clipPath',
+            scrollTrigger: direct ? undefined : wanneerInBeeld(element, vanaf),
+        },
+    );
+
+    return () => {
+        tween.scrollTrigger?.kill();
+        tween.kill();
+    };
+}
+
+/**
+ * Een spotlicht dat de cursor volgt, voor de rand van een plaat.
+ *
+ * Alleen de plek, als `--glans-x` en `--glans-y`; wat er met die plek
+ * gebeurt (een lichtere rand, een zachte gloed) staat in de CSS. Dezelfde
+ * variabelen als `kantelKaarten`, zodat een kaart die allebei krijgt niet
+ * twee keer gemeten wordt -- gebruik dan alleen `kantelKaarten`.
+ *
+ * Alleen met een muis. Op een aanraakscherm is er geen cursor om te volgen,
+ * en een lichtvlek die blijft staan waar je tikte oogt als een vlek.
+ */
+export function spotlicht(elementen: HTMLElement[]): () => void {
+    if (elementen.length === 0 || prefersReducedMotion() || !heeftMuis()) {
+        return () => {};
+    }
+
+    const opruimers = elementen.map((element) => {
+        const opBeweging = (gebeurtenis: PointerEvent): void => {
+            const vlak = element.getBoundingClientRect();
+
+            element.style.setProperty(
+                '--glans-x',
+                `${(gebeurtenis.clientX - vlak.left).toFixed(0)}px`,
+            );
+            element.style.setProperty(
+                '--glans-y',
+                `${(gebeurtenis.clientY - vlak.top).toFixed(0)}px`,
+            );
+        };
+
+        element.addEventListener('pointermove', opBeweging, { passive: true });
+
+        return () => element.removeEventListener('pointermove', opBeweging);
+    });
+
+    return () => opruimers.forEach((opruimen) => opruimen());
+}
+
+/**
+ * Het omgevingslicht dat met de bezoeker meeloopt.
+ *
+ * Eén vast element achter de hele pagina (zie PublicLayout), met twee
+ * zachte lichtvlekken erin. Per onderdeel schuift het licht naar links of
+ * naar rechts, en dat volgt de **plek in de rij** en niet de naam van het
+ * onderdeel: na een verplaatsing door de klant wisselt het licht dus nog
+ * steeds netjes af, net als de achtergrond van de secties.
+ *
+ * JavaScript zet alleen `--veld-kant` (-1, 0 of 1); de verschuiving zelf is
+ * een CSS-overgang op `transform`. In de hero staat het licht in het
+ * midden.
+ *
+ * Onder reduced motion blijft het licht stil in het midden staan: het is
+ * sfeer, geen informatie.
+ */
+export function lichtVeld(
+    veld: HTMLElement,
+    scope?: Element | null,
+): () => void {
+    veld.style.setProperty('--veld-kant', '0');
+
+    if (prefersReducedMotion()) {
+        return () => {};
+    }
+
+    const secties = gsap.utils.toArray<HTMLElement>(
+        'main section[id]',
+        scope ?? undefined,
+    );
+
+    const triggers = secties.map((sectie, plek) =>
+        ScrollTrigger.create({
+            trigger: sectie,
+            start: 'top 55%',
+            end: 'bottom 55%',
+            onToggle: (zelf) => {
+                if (zelf.isActive) {
+                    veld.style.setProperty(
+                        '--veld-kant',
+                        plek % 2 === 0 ? '1' : '-1',
+                    );
+                } else if (plek === 0 && zelf.direction < 0) {
+                    // Terug omhoog de hero in: licht weer in het midden.
+                    veld.style.setProperty('--veld-kant', '0');
+                }
+            },
+        }),
+    );
+
+    return () => triggers.forEach((trigger) => trigger.kill());
+}
+
+/**
+ * De kop van de hero komt op: regel voor regel achter een masker, en scherp.
+ *
+ * Hetzelfde als `splitReveal`, maar zonder scroll-trigger en met een
+ * wachttijd: de hero staat er al als je aankomt, en wacht alleen op de
+ * merkintro. Hij verving de typmachine, die halve titels liet zien -- bij
+ * een kop van tachtig tekens las je drie seconden lang "Advies over inr".
+ *
+ * Geeft een opruimfunctie terug die de splitsing terugdraait; doe dat
+ * vóórdat iemand anders in de kop schrijft.
+ */
+export function kopOpkomst(
+    kop: HTMLElement,
+    { wachten = 0 }: { wachten?: number } = {},
+): () => void {
+    if (prefersReducedMotion()) {
+        gsap.set(kop, { opacity: 1 });
+
+        return () => {};
+    }
+
+    gsap.set(kop, { opacity: 1 });
+
+    const scherp = opEenBreedScherm();
+    const split = SplitText.create(kop, {
+        type: 'lines',
+        mask: 'lines',
+        autoSplit: true,
+        onSplit: (self) =>
+            gsap.from(self.lines, {
+                yPercent: 110,
+                ...(scherp
+                    ? { filter: 'blur(12px)', clearProps: 'filter' }
+                    : {}),
+                duration: opEenTelefoon() ? 0.8 : 1.15,
+                stagger: 0.09,
+                delay: wachten,
+                ease: 'expo.out',
+            }),
+    });
+
+    return () => split.revert();
+}
+
+/* -------------------------------------------------------------------------
+ * Ronde twee: beweging tijdens het scrollen, niet alleen bij binnenkomst.
+ *
+ * De eerste versie had één entree bovenaan en daarna vooral fade-ins. Deze
+ * hulpen maken de beweging onderdeel van het lezen: een plaat die uit de
+ * diepte omhoogkomt, een groep die zich samen opbouwt, en een voortgang die
+ * de CSS zelf kan gebruiken. Alles hier hangt aan de **positie** van de
+ * bezoeker (`scrub`) of speelt één keer (`once`) -- nooit een waarde die
+ * terugloopt als je omhoog scrolt (zie de les over `scrub` in
+ * docs/architecture/frontend-en-animatie.md).
+ * ---------------------------------------------------------------------- */
+
+/**
+ * Een plaat komt omhoog uit de diepte terwijl je hem binnenscrolt.
+ *
+ * Van iets lager naar zijn plek, gekoppeld aan de scroll:
+ * je duwt hem zelf in beeld. Alleen `transform`, op één groot element, dus
+ * de browser schuift een laag en tekent niets opnieuw. Op een telefoon en
+ * onder reduced motion niets: daar staat de plaat er gewoon.
+ *
+ * **De transform gaat er weer af zodra de plaat op zijn plek staat.** Een
+ * blijvende `transform` maakt van de plaat het kader voor alles wat erin
+ * `position: fixed` staat, en een plaat hoort nergens het kader van te zijn.
+ */
+export function plaatOpkomst(plaat: HTMLElement): () => void {
+    if (prefersReducedMotion()) {
+        return () => {};
+    }
+
+    const mm = gsap.matchMedia();
+
+    mm.add('(min-width: 50rem)', () => {
+        /*
+         * **Alleen verschuiven, niet schalen.** Hier stond eerst ook een
+         * schaal van 0,965 naar 1, en die kostte meer dan hij opleverde: een
+         * schaal die elk beeldje verandert laat de browser een plaat vol
+         * tekst steeds opnieuw rasteren, terwijl een verschuiving de laag
+         * alleen verplaatst. Gemeten: het blok onder zo'n plaat ging van
+         * een vijfde trage beeldjes naar vrijwel nul.
+         */
+        const tween = gsap.fromTo(
+            plaat,
+            { y: 72 },
+            {
+                y: 0,
+                ease: 'none',
+                scrollTrigger: {
+                    trigger: plaat,
+                    start: 'top bottom',
+                    end: 'top 62%',
+                    scrub: true,
+                    invalidateOnRefresh: true,
+                    onUpdate: (zelf) => {
+                        if (zelf.progress >= 1) {
+                            plaat.style.transform = '';
+                        }
+                    },
+                },
+            },
+        );
+
+        return () => {
+            tween.scrollTrigger?.kill();
+            tween.kill();
+            gsap.set(plaat, { clearProps: 'transform' });
+        };
+    });
+
+    return () => mm.revert();
+}
+
+/**
+ * Een groep komt samen binnen, gebundeld.
+ *
+ * `ScrollTrigger.batch` en niet een trigger per element: wat tegelijk in
+ * beeld komt, komt ook tegelijk op, met een kleine stagger ertussen. Een
+ * raster van acht tegels dat per tegel op zijn eigen trigger wacht, komt
+ * in brokken binnen en leest als laden.
+ *
+ * `van` is de begintoestand (alleen transform en opacity). Wat al in beeld
+ * staat, speelt meteen. Onder reduced motion staat alles meteen op zijn
+ * plek, en elk element krijgt `data-gezien` zodat een herscan het laat staan.
+ */
+export function stapelBinnen(
+    elementen: HTMLElement[],
+    {
+        van = { opacity: 0, y: 28 },
+        stagger = 0.06,
+        duur,
+    }: { van?: gsap.TweenVars; stagger?: number; duur?: number } = {},
+): () => void {
+    const nieuw = elementen.filter((e) => e.dataset.gezien === undefined);
+
+    if (nieuw.length === 0) {
+        return () => {};
+    }
+
+    const eind: gsap.TweenVars = {
+        opacity: 1,
+        x: 0,
+        y: 0,
+        // Ook de procentversies: een begin met `yPercent` bleef anders tot
+        // de `clearProps` staan en sprong dan pas in beeld.
+        xPercent: 0,
+        yPercent: 0,
+        scale: 1,
+        rotation: 0,
+        rotationX: 0,
+        rotationY: 0,
+        clearProps: 'transform',
+    };
+
+    if (prefersReducedMotion()) {
+        gsap.set(nieuw, eind);
+        nieuw.forEach((e) => (e.dataset.gezien = ''));
+
+        return () => {};
+    }
+
+    const { vanaf, duur: standaard } = beweging();
+    gsap.set(nieuw, van);
+
+    const triggers = ScrollTrigger.batch(nieuw, {
+        start: `top ${vanaf * 100}%`,
+        once: true,
+        onEnter: (groep) =>
+            gsap.to(groep, {
+                ...eind,
+                duration: (duur ?? standaard) * 1.2,
+                stagger,
+                ease: 'expo.out',
+                overwrite: true,
+                onComplete: () =>
+                    (groep as HTMLElement[]).forEach(
+                        (e) => (e.dataset.gezien = ''),
+                    ),
+            }),
+    });
+
+    return () => {
+        triggers.forEach((t) => t.kill());
+        gsap.killTweensOf(nieuw);
+    };
+}
+
+/**
+ * De voortgang door een element, als CSS-variabele `--voortgang` (0 tot 1).
+ *
+ * Voor effecten die in de CSS horen: een lijn die meeloopt, een beeld dat
+ * openvouwt. JavaScript zet alleen het getal. **Zet hem op een klein
+ * element**, niet op een sectie vol tekst: een CSS-variabele erft, en elke
+ * wijziging laat de browser de stijl van alle kinderen opnieuw berekenen.
+ *
+ * Onder reduced motion staat hij vast op 1: de eindtoestand.
+ */
+export function scrollVoortgang(
+    element: HTMLElement,
+    {
+        trigger = element,
+        start = 'top 85%',
+        eind = 'bottom 40%',
+    }: { trigger?: HTMLElement; start?: string; eind?: string } = {},
+): () => void {
+    if (prefersReducedMotion()) {
+        element.style.setProperty('--voortgang', '1');
+
+        return () => {};
+    }
+
+    const st = ScrollTrigger.create({
+        trigger,
+        start,
+        end: eind,
+        invalidateOnRefresh: true,
+        onUpdate: (zelf) =>
+            element.style.setProperty('--voortgang', zelf.progress.toFixed(4)),
+        onRefresh: (zelf) =>
+            element.style.setProperty('--voortgang', zelf.progress.toFixed(4)),
+    });
+
+    return () => st.kill();
 }
 
 export { gsap, ScrollTrigger };

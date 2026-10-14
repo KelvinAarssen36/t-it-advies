@@ -12,6 +12,7 @@ use App\Models\Education;
 use App\Models\Experience;
 use App\Models\FaqItem;
 use App\Models\FooterSetting;
+use App\Models\LinkedinSetting;
 use App\Models\Project;
 use App\Models\SectionHeading;
 use App\Models\Service;
@@ -358,6 +359,19 @@ class HomeController extends Controller
 
             'faqHeading' => in_array(PageSectionKey::Faq->value, $secties, true)
                 ? SectionHeading::voor(PageSectionKey::Faq)->voorDeSite()
+                : null,
+
+            /*
+             * Het LinkedIn-blok: de kop en de tekst op de knop. Het adres
+             * gaat niet mee; dat is de gedeelde prop `linkedin`, zodat de
+             * knop in de hero en die in dit blok uit één bron komen. Zie
+             * docs/architecture/modules/linkedin.md.
+             */
+            'linkedinBlock' => in_array(PageSectionKey::Linkedin->value, $secties, true)
+                ? [
+                    'kop' => SectionHeading::voor(PageSectionKey::Linkedin)->voorDeSite(),
+                    'knop' => LinkedinSetting::huidige()->knop((string) config('security.portal_account.name')),
+                ]
                 : null,
 
             /*

@@ -17,7 +17,12 @@ import type { SectieKop, SectieProps } from '@/types/secties';
 import type { StatistiekGroep, Weergave } from '@/types/statistieken';
 
 /**
- * De statistieken: vaardigheden en kengetallen.
+ * De statistieken: vaardigheden en kengetallen, als instrumenten.
+ *
+ * **Het beeld is een meetpaneel.** Ringen zijn wijzers met een schaal van
+ * maatstreepjes, tellers zijn grote mono-cijfers, balken zijn een dunne
+ * lijn over een schaalverdeling. Geen gevulde grijze banen: op een
+ * instrument zie je de schaal en de naald, niet een balk die half leeg is.
  *
  * **Dit blok is gebouwd rond één animatie.** De ringen tekenen zich, de
  * balken lopen vol en de getallen tellen op, als een golf van boven naar
@@ -64,9 +69,9 @@ const VORMEN: Record<Weergave, Component> = {
 };
 
 const RASTER: Record<Weergave, string> = {
-    ring: 'brand-statistiek-ringen',
-    teller: 'brand-statistiek-tellers',
-    balk: 'brand-statistiek-balken',
+    ring: 'brand-site-statistiek-ringen',
+    teller: 'brand-site-statistiek-tellers',
+    balk: 'brand-site-statistiek-balken',
 };
 
 const page = usePage();
@@ -99,22 +104,46 @@ onMounted(() => {
     }
 
     /*
-     * De onderdelen in de volgorde waarin ze op het scherm staan, want
-     * die volgorde bepaalt het golfje: het eerste item begint als
-     * eerste. `querySelectorAll` geeft ze in documentvolgorde terug, en
-     * dat is precies wat we willen.
+     * **Per band een eigen golf, en niet één voor het hele blok.** Eerst
+     * hing alles aan de bovenkant van de sectie: die komt binnen, en het
+     * hele blok van anderhalve schermhoogte begon tegelijk te vullen. De
+     * rijen onderaan waren dan al klaar voordat je erbij was, en wie snel
+     * scrolde zag alleen nog stilstaande meters. Nu vult een band pas als
+     * hij zelf in beeld komt: je ziet elke golf gebeuren, en er lopen
+     * nooit meer tweens tegelijk dan er op het scherm staan.
+     *
+     * Binnen een band de volgorde waarin ze op het scherm staan, want die
+     * bepaalt het golfje; `querySelectorAll` geeft documentvolgorde.
      */
-    const onderdelen: TeVullenStatistiek[] = Array.from(
-        blok.value.querySelectorAll<HTMLElement>('[data-vul]'),
-    ).map((vak) => ({
-        vak,
-        getal: vak.querySelector<HTMLElement>('[data-getal]'),
-        waarde: Number(vak.dataset.waarde ?? 0),
-    }));
+    const banden = Array.from(
+        blok.value.querySelectorAll<HTMLElement>('[data-bundel]'),
+    );
 
-    opruimen = vulStatistieken(blok.value, onderdelen, {
-        scheiding: scheiding.value,
+    const stoppers = banden.map((band) => {
+        const onderdelen: TeVullenStatistiek[] = Array.from(
+            band.querySelectorAll<HTMLElement>('[data-vul]'),
+        ).map((vak) => ({
+            vak,
+            getal: vak.querySelector<HTMLElement>('[data-getal]'),
+            waarde: Number(vak.dataset.waarde ?? 0),
+        }));
+
+        /*
+         * Het anker en niet de band zelf als trigger. `vulStatistieken`
+         * begint als zijn blok op 80% van het scherm staat; een rij balken
+         * die daaronder in beeld kwam, stond dan zichtbaar leeg. Het anker
+         * begint een stukje boven de band (zie
+         * `.brand-site-statistiek-wacht`), dus de golf start zodra de band
+         * onderaan in beeld komt.
+         */
+        const anker = band.querySelector<HTMLElement>('[data-wacht]') ?? band;
+
+        return vulStatistieken(anker, onderdelen, {
+            scheiding: scheiding.value,
+        });
     });
+
+    opruimen = () => stoppers.forEach((stop) => stop());
 });
 
 onBeforeUnmount(() => opruimen?.());
@@ -122,7 +151,7 @@ onBeforeUnmount(() => opruimen?.());
 
 <template>
     <SiteSection id="statistieken" :tone="tone" :divided="divided">
-        <div ref="blok" class="brand-statistieken">
+        <div ref="blok" class="brand-site-statistieken">
             <SectionHeading
                 v-if="kop"
                 :eyebrow="kop.opschrift ?? undefined"
@@ -133,28 +162,32 @@ onBeforeUnmount(() => opruimen?.());
             <div
                 v-for="groep in groepen"
                 :key="groep.sleutel"
-                class="brand-statistiek-groep"
+                class="brand-site-statistiek-groep"
             >
                 <!--
-                    De naamloze groep heeft geen kopje. Die staat
-                    vooraan; daar horen de losse cijfers die nergens bij
-                    horen.
+                    De naamloze groep heeft geen kopje. Die staat vooraan;
+                    daar horen de losse cijfers die nergens bij horen.
                 -->
-                <h3 v-if="groep.naam" class="brand-statistiek-groepkop">
+                <h3 v-if="groep.naam" class="brand-site-statistiek-groepkop">
                     {{ groep.naam }}
                 </h3>
 
                 <!--
-                    De banden, in de volgorde die de klant heeft
-                    gesleept. Elke band bevat opeenvolgende statistieken
-                    van dezelfde vorm; die verdeling komt van de server.
-                    Zie de docblock hierboven.
+                    De banden, in de volgorde die de klant heeft gesleept.
+                    Elke band bevat opeenvolgende statistieken van dezelfde
+                    vorm; die verdeling komt van de server.
                 -->
                 <div
                     v-for="(bundel, index) in groep.bundels"
                     :key="`${groep.sleutel}-${index}`"
+                    data-bundel
                     :class="RASTER[bundel.weergave]"
                 >
+                    <span
+                        data-wacht
+                        class="brand-site-statistiek-wacht"
+                        aria-hidden="true"
+                    />
                     <component
                         :is="VORMEN[bundel.weergave]"
                         v-for="item in bundel.items"

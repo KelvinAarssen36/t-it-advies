@@ -1,0 +1,293 @@
+/*
+  Veelgestelde vragen.
+
+  Op een breed scherm twee kolommen: links de kop die blijft staan terwijl
+  je door de vragen gaat, rechts de vragen groot gezet. Op een telefoon
+  onder elkaar.
+
+  **Het antwoord klapt open met `grid-template-rows`.** De inhoud staat
+  altijd in de pagina (`force-mount` in FaqSection.vue); dicht is een rij
+  van `0fr`, open een rij van `1fr`, en daar kan de browser zelf vloeiend
+  tussen overgaan zonder dat er een hoogte gemeten wordt. Een dichte vraag
+  is bovendien `visibility: hidden`, met een vertraging zo lang als het
+  dichtklappen, zodat een schermlezer hem overslaat zodra hij dicht is.
+*/
+
+.brand-site-faq {
+    display: grid;
+    gap: clamp(0.5rem, 2vw, 1.5rem);
+}
+
+@media (min-width: 64rem) {
+    .brand-site-faq {
+        grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+        gap: 3rem;
+        align-items: start;
+    }
+
+    /*
+      De kop blijft staan terwijl de vragen langsschuiven. `top` houdt
+      rekening met de zwevende kop van de site.
+    */
+    .brand-site-faq-zij {
+        position: sticky;
+        top: 6rem;
+    }
+}
+
+.brand-site-faq-zij {
+    min-width: 0;
+}
+
+.brand-site-faq-verder {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    margin-top: -0.75rem;
+    font-size: var(--site-maat-klein, 0.875rem);
+    color: var(--site-tekst-zacht);
+}
+
+.brand-site-faq-vragen {
+    min-width: 0;
+}
+
+.brand-site-faq-lijst {
+    border-top: 1px solid var(--site-plaat-rand);
+}
+
+.brand-site-faq-item {
+    position: relative;
+    border-bottom: 1px solid var(--site-plaat-rand);
+}
+
+/*
+  Een lichtlijn langs de onderrand van de vraag die open staat: het oog
+  ziet meteen welke het is, ook als het antwoord lang is.
+*/
+.brand-site-faq-item::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -1px;
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(
+        90deg,
+        var(--brand-cyan),
+        color-mix(in oklab, var(--brand-cyan) 0%, transparent)
+    );
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 0.7s var(--site-ease);
+}
+
+.brand-site-faq-item[data-state='open']::after {
+    transform: scaleX(1);
+}
+
+.brand-site-faq-kop {
+    margin: 0;
+}
+
+.brand-site-faq-knop {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-block: clamp(0.875rem, 1.6vw, 1.125rem);
+    text-align: left;
+    cursor: pointer;
+    color: var(--site-tekst);
+    transition: color 0.3s var(--site-ease);
+}
+
+.brand-site-faq-knop[data-state='open'] {
+    color: var(--site-kop);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-faq-knop:hover {
+        color: var(--site-kop);
+    }
+}
+
+.brand-site-faq-knop:focus-visible {
+    outline: 2px solid var(--brand-cyan);
+    outline-offset: 4px;
+    border-radius: 0.5rem;
+}
+
+.brand-site-faq-vraag {
+    min-width: 0;
+    font-size: var(--site-maat-kop, 1.0625rem);
+    font-weight: 500;
+    line-height: 1.4;
+    letter-spacing: -0.015em;
+    text-wrap: pretty;
+    overflow-wrap: anywhere;
+}
+
+.brand-site-faq-teken {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 1px solid var(--site-plaat-rand);
+    border-radius: 999px;
+    color: var(--brand-cyan);
+    transition:
+        transform 0.5s var(--site-ease),
+        border-color 0.3s var(--site-ease),
+        background-color 0.3s var(--site-ease);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-faq-knop:hover .brand-site-faq-teken {
+        border-color: var(--site-plaat-rand-sterk);
+    }
+}
+
+.brand-site-faq-knop[data-state='open'] .brand-site-faq-teken {
+    transform: rotate(45deg);
+    border-color: var(--site-plaat-rand-sterk);
+    background-color: var(--site-licht);
+}
+
+.brand-site-faq-antwoord {
+    display: grid;
+    grid-template-rows: 0fr;
+    visibility: hidden;
+    transition:
+        grid-template-rows 0.5s var(--site-ease),
+        visibility 0s linear 0.5s;
+}
+
+.brand-site-faq-antwoord[data-state='open'] {
+    grid-template-rows: 1fr;
+    visibility: visible;
+    transition:
+        grid-template-rows 0.5s var(--site-ease),
+        visibility 0s linear 0s;
+}
+
+.brand-site-faq-binnen {
+    min-height: 0;
+    overflow: hidden;
+}
+
+.brand-site-faq-tekst {
+    max-width: 42rem;
+    padding: 0 3.25rem clamp(1rem, 2vw, 1.375rem) 0;
+    font-size: var(--site-maat-tekst, 0.9375rem);
+    line-height: 1.7;
+    white-space: pre-line;
+    text-wrap: pretty;
+    overflow-wrap: anywhere;
+    color: var(--site-tekst-zacht);
+    opacity: 0;
+    transform: translateY(-0.5rem);
+    transition:
+        opacity 0.4s var(--site-ease),
+        transform 0.5s var(--site-ease);
+}
+
+.brand-site-faq-antwoord[data-state='open'] .brand-site-faq-tekst {
+    opacity: 1;
+    transform: none;
+    transition-delay: 0.08s;
+}
+
+@media (max-width: 39.99rem) {
+    .brand-site-faq-tekst {
+        padding-right: 0;
+    }
+}
+
+/* --- Bladeren -------------------------------------------------------- */
+
+.brand-site-faq-bladeren {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+}
+
+.brand-site-faq-stap,
+.brand-site-faq-nummer {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.75rem;
+    height: 2.75rem;
+    padding-inline: 0.75rem;
+    border: 1px solid var(--site-plaat-rand);
+    border-radius: 999px;
+    font-size: 0.875rem;
+    color: var(--site-tekst);
+    transition:
+        border-color 0.3s var(--site-ease),
+        background-color 0.3s var(--site-ease),
+        color 0.3s var(--site-ease);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-faq-stap:not(:disabled):hover,
+    .brand-site-faq-nummer:hover {
+        border-color: var(--site-plaat-rand-sterk);
+        color: var(--site-kop);
+    }
+}
+
+.brand-site-faq-stap:disabled {
+    cursor: default;
+    opacity: 0.35;
+}
+
+.brand-site-faq-nummer[data-hier] {
+    border-color: transparent;
+    background-color: var(--brand-blue);
+    color: var(--site-kop);
+}
+
+.brand-site-faq-stap:focus-visible,
+.brand-site-faq-nummer:focus-visible {
+    outline: 2px solid var(--brand-cyan);
+    outline-offset: 2px;
+}
+
+.brand-site-faq-stap-pijl {
+    width: 1rem;
+    height: 1rem;
+}
+
+.brand-site-faq-stap-pijl.is-vorige {
+    transform: rotate(90deg);
+}
+
+.brand-site-faq-stap-pijl.is-volgende {
+    transform: rotate(-90deg);
+}
+
+.brand-site-faq-gat {
+    padding-inline: 0.25rem;
+    color: var(--site-tekst-zacht);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .brand-site-faq-item::after,
+    .brand-site-faq-knop,
+    .brand-site-faq-teken,
+    .brand-site-faq-antwoord,
+    .brand-site-faq-antwoord[data-state='open'],
+    .brand-site-faq-tekst,
+    .brand-site-faq-stap,
+    .brand-site-faq-nummer {
+        transition: none;
+    }
+}

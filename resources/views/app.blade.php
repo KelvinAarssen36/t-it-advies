@@ -104,7 +104,13 @@
             <meta name="twitter:description" content="{{ $meta['omschrijving'] }}">
         @endif
 
-        @fonts
+        {{--
+            De publieke site heeft zijn eigen lettertypen (Geist en Geist
+            Mono); het portaal blijft op Instrument Sans. Zonder deze
+            filter zou elke portaalpagina ook de Geist-bestanden vooraf
+            laden, en die gebruikt hij nergens.
+        --}}
+        @fonts($isPublicPage ? null : 'instrument-sans')
 
         @vite(['resources/css/app.css', 'resources/js/app.ts', "resources/js/pages/{$page['component']}.vue"])
         {{--

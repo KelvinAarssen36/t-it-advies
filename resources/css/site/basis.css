@@ -1,0 +1,585 @@
+/*
+  De basis van de publieke site: lettertype, het veld, de secties en de
+  koppen.
+
+  **Alles hangt aan `.brand-site`**, de klasse op de wortel van
+  PublicLayout. Niet aan `.brand-dark-page`: die draagt het inlogscherm
+  ook, en dat hoort er niet op te veranderen.
+*/
+
+.brand-site {
+    --site-font:
+        var(--font-geist, 'Instrument Sans'), 'Instrument Sans', ui-sans-serif,
+        system-ui, sans-serif;
+    --site-font-data:
+        var(--font-geist-mono, ui-monospace), ui-monospace, SFMono-Regular,
+        Menlo, monospace;
+    --site-ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --site-raam: 75rem;
+    --site-goot: clamp(1.25rem, 3.5vw, 2.5rem);
+
+    /*
+      Een eigen stapelcontext, zodat het lichtveld met `z-index: -1` vóór
+      de achtergrond van deze wortel valt en niet erachter. Zie
+      `.brand-site-lichtveld`.
+    */
+    isolation: isolate;
+    font-family: var(--site-font);
+    font-feature-settings: 'ss01', 'cv11';
+    color: var(--site-tekst);
+    background-color: var(--site-veld);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+}
+
+.brand-site ::selection {
+    background-color: var(--site-licht-blauw);
+    color: var(--site-kop);
+}
+
+/*
+  Op `.brand-site` én op de vensters (`.brand-blad`, `.brand-blad-waas`):
+  een venster staat in een portaal aan het eind van `<body>`, buiten de
+  site, en zou deze maten anders niet kennen. Zie
+  docs/development/valkuilen.md, "Een venster staat niet in .brand-site".
+*/
+.brand-site,
+.brand-blad {
+    --site-ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --site-font-data:
+        var(--font-geist-mono, ui-monospace), ui-monospace, SFMono-Regular,
+        Menlo, monospace;
+    /*
+      De schaal van de site, in rollen en niet in maten.
+
+      **Dit is de tweede ronde, en de reden staat hier zodat niemand hem
+      terugdraait.** De eerste versie van "Helder zicht" zette alles een
+      maat te groot: sectiekoppen van 60 pixels, 136 pixels lucht boven en
+      onder elke sectie, een raam van 80rem. De pagina werd daardoor dertig
+      procent langer dan vóór het ontwerp, en op een laptop stond er per
+      scherm nog maar één gedachte. Nu staan de koppen tussen de oude 36 en
+      die 60 in, en de ruimte rond een sectie onder de oude 112.
+
+      Gebruik in een module altijd deze rollen en geen eigen lettermaat.
+      Een kop die net iets groter moet, is een kop die een andere rol heeft.
+    */
+    --site-maat-titel-kort: clamp(1.875rem, 1.3rem + 1.9vw, 3rem);
+    --site-maat-titel: clamp(1.625rem, 1.2rem + 1.4vw, 2.5rem);
+    --site-maat-titel-lang: clamp(1.375rem, 1.15rem + 0.9vw, 2rem);
+    --site-maat-kop: clamp(1.0625rem, 0.98rem + 0.35vw, 1.3125rem);
+    --site-maat-lead: clamp(1rem, 0.96rem + 0.2vw, 1.125rem);
+    --site-maat-tekst: 0.9375rem;
+    --site-maat-klein: 0.8125rem;
+    --site-maat-label: 0.75rem;
+
+    --site-ruimte-sectie: clamp(3.5rem, 6.5vw, 6rem);
+    --site-ruimte-plaat: clamp(3rem, 5.5vw, 5rem);
+    --site-ruimte-kop: clamp(1.75rem, 3vw, 2.75rem);
+    --site-ruimte-groep: clamp(0.875rem, 1.6vw, 1.25rem);
+}
+
+/* Het lettertype voor alles wat maat, tijd of telling is. */
+.brand-site .brand-site-data,
+.brand-site-data {
+    font-family: var(--site-font-data);
+    font-feature-settings: 'zero', 'tnum';
+    letter-spacing: 0;
+}
+
+/* Het raam: de breedte en de zijruimte die elk onderdeel deelt. */
+.brand-site-raam {
+    width: 100%;
+    max-width: var(--site-raam);
+    margin-inline: auto;
+    padding-inline: var(--site-goot);
+}
+
+/* ---------------------------------------------------------------------
+   Het lichtveld
+
+   Eén vast vlak achter de hele pagina, met twee zachte lichtvlekken. Het
+   schuift per onderdeel naar links of rechts (`--veld-kant`, gezet door
+   `lichtVeld()` in motion.ts). Alleen `transform`, dus het kost de browser
+   niets om te tekenen: het verloop zelf blijft staan, alleen de laag
+   schuift.
+
+   Er lag eerst een korrel van `feTurbulence` overheen. Die is weg: ruis
+   als textuur leest als een filter uit een app, niet als iets uit dit
+   merk, en het licht doet het werk zonder.
+   --------------------------------------------------------------------- */
+.brand-site-lichtveld {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+/*
+  Het licht zelf is groter dan het scherm, zodat er bij het verschuiven
+  geen rand in beeld komt. Het vaste vlak eromheen knipt het af: een vast
+  element dat buiten het scherm uitsteekt, laat een telefoon de pagina
+  breder maken dan hij is.
+*/
+.brand-site-lichtveld::before {
+    content: '';
+    position: absolute;
+    inset: -20vmax;
+    background:
+        radial-gradient(
+            38vmax 30vmax at 50% 18%,
+            var(--site-licht-blauw),
+            transparent 70%
+        ),
+        radial-gradient(
+            30vmax 26vmax at 50% 72%,
+            color-mix(in oklab, var(--brand-cyan) 9%, transparent),
+            transparent 70%
+        );
+    transform: translate3d(calc(var(--veld-kant, 0) * 22vw), 0, 0);
+    transition: transform 2.4s var(--site-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .brand-site-lichtveld::before {
+        transition: none;
+        transform: none;
+    }
+}
+
+/* ---------------------------------------------------------------------
+   Een sectie: open veld of plaat
+
+   De toon komt van Welcome.vue en volgt de plek in de rij: even is
+   `base`, oneven `raised`. Een open veld ligt rechtstreeks op het donker;
+   een plaat is een iets ingesprongen vlak van Deep Navy met een glazen
+   rand. Doordat het op plek gaat en niet op naam, liggen er nooit twee
+   platen tegen elkaar, hoe de klant ook schuift.
+   --------------------------------------------------------------------- */
+.brand-site-sectie {
+    position: relative;
+    scroll-margin-top: 4.5rem;
+    padding-block: var(--site-ruimte-sectie);
+}
+
+.brand-site-sectie[data-toon='raised'] {
+    padding-block: clamp(0.5rem, 1.2vw, 1rem);
+}
+
+.brand-site-sectie[data-toon='raised'] > .brand-site-sectie-plaat {
+    position: relative;
+    margin-inline: clamp(0.5rem, 1.4vw, 1.25rem);
+    padding-block: var(--site-ruimte-plaat);
+    border: 1px solid var(--site-plaat-rand);
+    border-radius: 1rem;
+    background:
+        radial-gradient(
+            120% 80% at 50% 0%,
+            color-mix(in oklab, var(--brand-navy-raised) 55%, transparent),
+            transparent 70%
+        ),
+        var(--site-plaat);
+    box-shadow:
+        inset 0 1px 0 color-mix(in oklab, var(--brand-platinum) 7%, transparent),
+        0 40px 120px -60px var(--site-schaduw);
+}
+
+/*
+  De horizonlijn boven een open veld. Hij tekent zich van het midden uit
+  zodra de sectie binnenkomt, met een scroll-animatie van de browser zelf;
+  een browser die dat niet kent toont de lijn gewoon.
+*/
+.brand-site-sectie[data-lijn][data-toon='base']::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    inset-inline: 0;
+    width: min(var(--site-raam), calc(100% - 2 * var(--site-goot)));
+    height: 1px;
+    margin-inline: auto;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        var(--site-plaat-rand-sterk) 30%,
+        color-mix(in oklab, var(--brand-ice) 55%, transparent) 50%,
+        var(--site-plaat-rand-sterk) 70%,
+        transparent
+    );
+}
+
+@supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+        .brand-site-sectie[data-lijn][data-toon='base']::before {
+            animation: brand-site-horizon linear both;
+            animation-timeline: view();
+            animation-range: entry 10% entry 70%;
+        }
+    }
+}
+
+@keyframes brand-site-horizon {
+    from {
+        opacity: 0;
+        transform: scaleX(0);
+    }
+
+    to {
+        opacity: 1;
+        transform: scaleX(1);
+    }
+}
+
+/* ---------------------------------------------------------------------
+   De kop van een sectie: opschrift, titel en inleiding
+
+   De titel kiest zijn maat op lengte (`data-lengte`, berekend in
+   SectionHeading.vue). De klant typt zelf de koppen, en een maat die bij
+   "Diensten" past maakt van een kop van zeventig tekens vijf regels.
+   --------------------------------------------------------------------- */
+.brand-site-kop {
+    max-width: 44rem;
+    min-width: 0;
+    margin-bottom: var(--site-ruimte-kop);
+}
+
+.brand-site-kop[data-uitlijning='midden'] {
+    margin-inline: auto;
+    text-align: center;
+}
+
+/*
+  Het opschrift: het sectielabel boven een titel.
+
+  **Typografie en geen versiering.** Hier stond een kort blauw lijntje
+  voor het label, en dat zei niets: het herhaalde alleen dat er een label
+  stond. Nu draagt het label zichzelf -- halfvet, in cyaan, dicht op de
+  titel -- zodat label en titel samen één kop vormen in plaats van twee
+  losse regels met een streepje ertussen.
+
+  Een blok en geen flexrij: de klant typt het zelf, en één lang woord
+  ("Bedrijfsinformatievoorzieningsbeheerder") in een flexrij breekt niet
+  af. Dan wordt de hele pagina op een telefoon breder dan het scherm.
+*/
+.brand-site-opschrift {
+    display: block;
+    max-width: 100%;
+    margin-bottom: 0.5rem;
+    font-size: var(--site-maat-klein);
+    font-weight: 600;
+    line-height: 1.45;
+    letter-spacing: 0.005em;
+    color: var(--brand-cyan);
+    overflow-wrap: anywhere;
+}
+
+/* ---------------------------------------------------------------------
+   De meting: een getal met zijn label
+
+   Eén vorm voor alle cijfers op de site: de cijfers van de loopbaan, de
+   tellers van de statistieken. Het getal bovenaan, groot en halfvet; het
+   label eronder, klein en zilver. Tussen de metingen een haarlijn: die
+   ordent echte inhoud -- waar de ene meting ophoudt en de volgende
+   begint -- en is daarmee geen versiering.
+
+   In de HTML staat het label (`dt`) vóór het getal (`dd`), zoals een
+   definitielijst het voorschrijft; `column-reverse` zet het getal op het
+   scherm bovenaan zonder dat de volgorde voor een schermlezer verandert.
+   --------------------------------------------------------------------- */
+.brand-site-metingen {
+    display: grid;
+    gap: 1.25rem 0;
+    margin: 0;
+}
+
+.brand-site-meting {
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: flex-end;
+    gap: 0.375rem;
+    min-width: 0;
+    padding-inline: clamp(0.875rem, 1.6vw, 1.25rem);
+    border-left: 1px solid var(--site-plaat-rand-sterk);
+}
+
+.brand-site-meting-waarde {
+    margin: 0;
+    font-size: clamp(1.75rem, 1.35rem + 1.3vw, 2.5rem);
+    font-weight: 600;
+    font-feature-settings: 'tnum';
+    line-height: 1;
+    letter-spacing: -0.035em;
+    color: var(--site-kop);
+}
+
+.brand-site-meting-label {
+    max-width: 18rem;
+    font-size: var(--site-maat-klein);
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--site-tekst-zacht);
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+}
+
+.brand-site-kop-titel {
+    font-family: var(--site-font);
+    font-weight: 600;
+    color: var(--site-kop);
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+    font-size: var(--site-maat-titel);
+    line-height: 1.08;
+}
+
+.brand-site-kop-titel[data-lengte='kort'] {
+    font-size: var(--site-maat-titel-kort);
+    line-height: 1.04;
+}
+
+.brand-site-kop-titel[data-lengte='lang'] {
+    font-size: var(--site-maat-titel-lang);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    overflow-wrap: anywhere;
+}
+
+.brand-site-kop-inleiding {
+    margin-top: 1rem;
+    max-width: 38rem;
+    font-size: var(--site-maat-lead);
+    line-height: 1.6;
+    color: var(--site-tekst-zacht);
+    text-wrap: pretty;
+}
+
+.brand-site-kop[data-uitlijning='midden'] .brand-site-kop-inleiding {
+    margin-inline: auto;
+}
+
+/* ---------------------------------------------------------------------
+   Glazen platen en knoppen
+
+   `brand-site-glas` is het vlak waar kaarten, panelen en het formulier op
+   liggen. Een `@utility` en geen gewone klasse, zodat `hover:` en
+   `tablet:` er gewoon voor kunnen.
+   --------------------------------------------------------------------- */
+@utility brand-site-glas {
+    border: 1px solid var(--site-plaat-rand);
+    border-radius: 1rem;
+    background: var(--site-plaat-hoog);
+    box-shadow:
+        inset 0 1px 0 color-mix(in oklab, var(--brand-platinum) 8%, transparent),
+        0 30px 80px -48px var(--site-schaduw);
+}
+
+/*
+  Het spotlicht: een lichte rand en een zachte gloed op de plek van de
+  cursor. `--glans-x/y` komen van `spotlicht()` of `kantelKaarten()`;
+  zonder muis staan ze nergens en is er dus ook geen gloed.
+*/
+.brand-site-spot {
+    position: relative;
+    isolation: isolate;
+}
+
+.brand-site-spot::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    background: radial-gradient(
+        22rem circle at var(--glans-x, 50%) var(--glans-y, 0%),
+        var(--site-licht),
+        transparent 60%
+    );
+    transition: opacity 0.4s var(--site-ease);
+}
+
+@media (hover: hover) {
+    .brand-site-spot:hover::after {
+        opacity: 1;
+    }
+}
+
+/* ---------------------------------------------------------------------
+   Eén taal voor alles wat je kunt aanraken
+
+   Knoppen, tekstlinks, pijlen, kaarten en menu-items reageren op dezelfde
+   manier en in hetzelfde tempo. Daarvoor staan hier drie afspraken, en
+   een module die er zelf een maakt, hoort er een van deze te gebruiken:
+
+   - **Hover** duurt `--site-duur-hover` en bestaat alleen voor een muis
+     (`@media (hover: hover) and (pointer: fine)`). Op een telefoon blijft
+     een hover na een tik hangen tot je ergens anders tikt: dan staat er
+     een kaart opgelicht die je allang hebt losgelaten.
+   - **Indrukken** (`:active`) is sneller, `--site-duur-druk`: het moet
+     voelen als een knop die meegeeft, niet als een animatie die je
+     afwacht. Wel op elk toestel.
+   - **Focus** is een cyaan rand van twee pixels met twee pixels lucht,
+     overal dezelfde, en nooit alleen een kleurverschil. Wie met het
+     toetsenbord werkt, ziet zo even duidelijk waar hij is als iemand die
+     met de muis wijst.
+
+   Wat niet klikbaar is -- een badge, een label, een jaartal -- krijgt geen
+   van drieën. Een element dat oplicht onder de muis belooft dat je er iets
+   mee kunt.
+
+   Geen vetter lettertype of extra opvulling op hover: dan verschuift alles
+   ernaast een paar pixels, en zo voelt een site goedkoop.
+   --------------------------------------------------------------------- */
+.brand-site,
+.brand-blad {
+    --site-duur-hover: 200ms;
+    --site-duur-druk: 120ms;
+}
+
+/*
+  `:where()` houdt de specificiteit op nul: een module die een eigen
+  focusvorm nodig heeft (een invoerveld met een gloed, een kaart met een
+  ronde hoek), wint gewoon. Zie valkuilen.md over `:where`.
+*/
+:where(.brand-site, .brand-blad)
+    :where(
+        a,
+        button,
+        summary,
+        [role='button'],
+        [role='tab'],
+        [tabindex]
+    ):focus-visible {
+    outline: 2px solid var(--brand-cyan);
+    outline-offset: 2px;
+}
+
+/*
+  Knoppen op de publieke site zijn pillen, en geven mee als je erop drukt.
+  Gescoped op `.brand-site`, zodat het portaal er niets van merkt: daar
+  is dezelfde knop een gewone rechthoek.
+*/
+.brand-site [data-slot='button'] {
+    border-radius: 999px;
+    transition:
+        transform var(--site-duur-druk) var(--site-ease),
+        filter var(--site-duur-hover) var(--site-ease),
+        background-color var(--site-duur-hover) var(--site-ease),
+        border-color var(--site-duur-hover) var(--site-ease),
+        color var(--site-duur-hover) var(--site-ease);
+}
+
+/*
+  Een pijl in een knop schuift een stapje in de richting waar hij heen
+  wijst. Alleen het teken, de knop zelf blijft staan.
+*/
+.brand-site [data-slot='button'] svg {
+    transition: transform var(--site-duur-hover) var(--site-ease);
+}
+
+/*
+  Op een aanraakscherm minstens 44 pixels hoog: de standaardknop is 36,
+  en dat is voor een muis prima en voor een duim te krap.
+*/
+@media (max-width: 49.999rem) {
+    .brand-site [data-slot='button'] {
+        min-height: 2.75rem;
+    }
+}
+
+.brand-site [data-slot='button']:active {
+    transform: translateY(1px) scale(0.98);
+}
+
+.brand-site [data-slot='button'].border-brand-line {
+    border-color: var(--site-plaat-rand-sterk);
+    background-color: color-mix(
+        in oklab,
+        var(--brand-navy-deep) 55%,
+        transparent
+    );
+    backdrop-filter: blur(8px);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site [data-slot='button']:hover svg.lucide-arrow-right {
+        transform: translateX(3px);
+    }
+
+    .brand-site [data-slot='button']:hover svg.lucide-arrow-up-right {
+        transform: translate(2px, -2px);
+    }
+
+    .brand-site [data-slot='button']:hover svg.lucide-arrow-left {
+        transform: translateX(-3px);
+    }
+
+    .brand-site [data-slot='button'].border-brand-line:hover {
+        border-color: color-mix(in oklab, var(--brand-cyan) 60%, transparent);
+        background-color: var(--site-plaat-hoog);
+        color: var(--brand-ice);
+    }
+}
+
+/*
+  Een tekstlink met een pijl: "Lees meer", "Bekijk project". De streep
+  eronder groeit van links bij hover, en de pijl schuift een stapje mee.
+  Bij toetsenbordfocus gebeurt hetzelfde, plus de focusrand.
+*/
+.brand-site-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    color: var(--brand-cyan);
+    background-image: linear-gradient(currentColor, currentColor);
+    background-size: 0% 1px;
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    border-radius: 0.125rem;
+    transition:
+        background-size 0.4s var(--site-ease),
+        color var(--site-duur-hover) var(--site-ease);
+}
+
+.brand-site-link svg {
+    flex: none;
+    transition: transform var(--site-duur-hover) var(--site-ease);
+}
+
+.brand-site-link:focus-visible {
+    color: var(--brand-ice);
+    background-size: 100% 1px;
+}
+
+.brand-site-link:focus-visible svg {
+    transform: translateX(3px);
+}
+
+.brand-site-link:active {
+    color: var(--brand-ice);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-link:hover {
+        color: var(--brand-ice);
+        background-size: 100% 1px;
+    }
+
+    .brand-site-link:hover svg {
+        transform: translateX(3px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .brand-site [data-slot='button'],
+    .brand-site [data-slot='button'] svg,
+    .brand-site-link,
+    .brand-site-link svg {
+        transition: none;
+    }
+
+    .brand-site [data-slot='button']:active {
+        transform: none;
+    }
+}

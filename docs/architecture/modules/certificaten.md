@@ -1,10 +1,10 @@
 # De certificaten
 
-Wat de eigenaar heeft gehaald en bij wie, als een raster van tegels op de
-landingspagina: het logo van de uitgever groot bovenaan, de naam
+Wat de eigenaar heeft gehaald en bij wie, als een wand van glazen platen
+op de landingspagina: het logo van de uitgever groot bovenaan, de naam
 eronder. Klik je erop, dan opent er een venster met het
-certificaatnummer en de toelichting. Daaronder staat optioneel een kort
-lijstje met zijn opleiding.
+certificaatnummer en de toelichting. Daaronder staat optioneel een
+tijdstrook met zijn opleiding.
 
 > **Waarom dit een module is.** De tijdlijn vertelt wát hij heeft
 > gedaan; dit is het bewijs erbij. Voor een IT-adviseur is dat geen
@@ -153,32 +153,56 @@ regel erbij.
 
 ## Hoe het eruitziet op de landingspagina
 
-De sectiekop zoals overal (opschrift, titel, zin), daaronder het raster.
+De sectiekop zoals overal (opschrift, titel, zin), daaronder de
+**credentialwand**: een raster van glazen platen in de taal van de hele
+site ("Helder zicht", zie
+[frontend en animatie](../frontend-en-animatie.md#de-landing-als-scène)).
+De opmaak staat in
+[`resources/css/site/certificaten.css`](../../../resources/css/site/certificaten.css),
+onder het voorvoegsel `brand-site-certificaten-`.
 
-**De tegel**: het logo in een lichte plaat bovenaan, daaronder de naam
-van het certificaat, en klein eronder de uitgever met het jaar. Is er een
-toelichting of een certificaatnummer, dan is de tegel een echte
+**De plaat**: het logo in een eigen vlak linksboven, daaronder de naam
+van het certificaat, en onderaan de uitgever met het jaar in mono. Is er
+een toelichting of een certificaatnummer, dan is de tegel een echte
 `<button>` -- dus ook met het toetsenbord te bereiken -- en opent hij
-`CertificaatVenster.vue`. Is er geen van beide, dan is het een `div` en
-doet hij niets. Dezelfde regel als bij een dienst zonder lang verhaal:
-een venster dat opengaat met niets erin is erger dan geen venster.
+`CertificaatVenster.vue`; rechtsboven staat dan een klein pijltje. Is er
+geen van beide, dan is het een `div`, zonder pijltje, en doet hij niets.
+Dezelfde regel als bij een dienst zonder lang verhaal: een venster dat
+opengaat met niets erin is erger dan geen venster.
 
-De tekst staat **gecentreerd**. Een raster van vier smalle tegels met
-links uitgelijnde tekst leest als een tabel die scheef staat;
-gecentreerd hangt alles aan het logo erboven.
+De tekst staat **links**, met de uitgever en het jaar onderaan de plaat
+(`margin-top: auto`). In een wand lijnen de namen en de jaartallen dan op
+één lijn uit, en lees je hem als een rij bewijsstukken. Eerder stond alles
+gecentreerd onder het logo; dat paste bij losse badges, niet bij platen
+die naast elkaar een wand vormen.
 
-**Bewegen** met wat er al ligt: `kaartenBinnen()` voor het opkomen en
-`kantelKaarten()` voor het aanwijzen. Bij het aanwijzen licht **de plaat
-met het logo** op en niet de hele tegel -- het logo is waar je naar
-kijkt, en acht tegels die allemaal iets doen is een kermis.
+**De wand zet zich in elkaar terwijl hij binnenkomt.** De tegels komen
+gekanteld en iets verder weg binnen -- de linkerhelft naar rechts, de
+rechterhelft naar links -- en klikken langs het raster op hun plek. Dat is
+een gebundelde trigger (`ScrollTrigger.batch`, eenmalig): wat samen in
+beeld komt, komt samen op. Op een nieuwe bladzijde speelt hij meteen.
+
+**Eigen code en niet `stapelBinnen()`**, en dat is de val om te kennen. Die
+helper haalt na afloop de transform weg, en daarmee het perspectief dat
+`kantelKaarten()` nodig heeft: de tegel zou daarna plat kantelen. Hier
+eindigt de entree op `transformPerspective: 800`, het perspectief van het
+kantelen. Zie `tegelsBinnen()` in
+[`CertificatenSection.vue`](../../../resources/js/components/site/sections/CertificatenSection.vue).
+Zonder JavaScript of onder reduced motion staan de tegels er gewoon.
+
+`kantelKaarten()` (drie graden) voor het aanwijzen zet ook `--glans-x/y`,
+en daarmee volgt een **spotlicht** de cursor over de rand van de plaat
+(`brand-site-spot` uit `basis.css`). Daarnaast licht de plaat met het logo
+zacht op. Alleen met een muis; op een aanraakscherm is er geen cursor om
+te volgen.
 
 **Elke tegel reageert op aanwijzen, ook die zonder venster erachter.**
 Dat was eerst niet zo: alleen een klikbare tegel kwam op. In een raster
 van negen zag je dan vier tegels bewegen en vijf niet, en dat leest als
 kapot in plaats van als een verschil met betekenis. Wat er wél alleen
-bij een klikbare tegel hoort is het handje en de focusrand -- die twee
-zeggen "hier gebeurt iets als je klikt"; het oplichten zegt alleen "ik
-zie je".
+bij een klikbare tegel hoort is het handje, de focusrand en het pijltje --
+die zeggen "hier gebeurt iets als je klikt"; het oplichten zegt alleen
+"ik zie je".
 
 ### Bladeren
 
@@ -188,21 +212,31 @@ naar de bovenkant van het blok.
 
 Meer dan de vier bij de diensten omdat een tegel hier een logo met twee
 regels eronder is en geen kaart met een alinea: er passen twee rijen van
-vier in dezelfde ruimte. Het raster staat op **twee kolommen onder de
-40rem en vier daarboven**, dus allebei de keren is een volle pagina twee
-rijen. Die getallen en dat raster horen bij elkaar; verander je `BREED`
-of `SMAL` in `CertificatenSection.vue`, verander dan ook
-`.brand-certificaten` in `app.css`.
+vier in dezelfde ruimte. De wand staat op **twee kolommen onder de 40rem
+en vier daarboven**, dus allebei de keren is een volle pagina twee rijen.
+Die getallen en dat raster horen bij elkaar; verander je `BREED` of
+`SMAL` in `CertificatenSection.vue`, verander dan ook
+`.brand-site-certificaten-wand` in `resources/css/site/certificaten.css`.
 
 ### De opleidingen eronder
 
-Een streep, een klein opschrift, en per regel de opleiding met de
-instelling eronder en rechts het niveau met de periode. Zijn er geen, dan
-staat de streep er ook niet.
+Een **tijdstrook**: een klein opschrift, en per opleiding een punt op een
+lijn met daarnaast de periode (mono, cyaan), de opleiding, de instelling en
+het niveau. Op een breed scherm staan ze naast elkaar langs een lijn
+bovenaan -- zoveel als de breedte toelaat, de rest loopt door op een
+volgende strook -- en op een telefoon onder elkaar langs een lijn aan de
+linkerkant. Zijn er geen, dan staat de strook er ook niet.
 
-Het is een `grid` en geen `flex` met `justify-between`, zodat de periodes
-van meerdere regels onder elkaar uitgelijnd staan in plaats van elk op
-hun eigen plek.
+**Over die lijn loopt licht dat met je scroll meetekent**: van het eerste
+jaar naar het laatste, en terug als je omhoog scrolt. Dat drukt een plek
+uit en geen waarde, dus `scrub` mag hier. `scrollVoortgang()` zet
+`--voortgang` op de strook zelf (een klein blok, niet de sectie), en de CSS
+schaalt er een `::after` mee. Op een breed scherm loopt hij over de
+bovenste rij, op een telefoon langs de linkerkant. Zonder JavaScript staat
+de variabele niet en is de lijn vol.
+
+Het is een `<ol>`: de volgorde (laatst afgeronde eerst) is betekenis, en
+die komt van de server.
 
 ## Het beheerscherm
 

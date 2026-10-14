@@ -49,6 +49,28 @@ const props = withDefaults(
  * onderdeel nog aanstaat. Kwam je van de lijst, dan is die lijst het
  * antwoord en zeggen we het hier.
  */
+/**
+ * Een lange titel krijgt een kleinere maat, net als in de casus op de
+ * voorpagina; de eigenaar typt hem zelf.
+ */
+const lengte = computed(() =>
+    props.project.titel.trim().length > 60 ? 'lang' : 'gewoon',
+);
+
+/**
+ * De feiten onder de kop. Alle vier in dezelfde letter: in de mono werden
+ * periode en duur twee keer zo zwaar als de naam ernaast, terwijl ze niet
+ * belangrijker zijn.
+ */
+const feiten = computed(() =>
+    [
+        { label: t('Organisatie'), waarde: props.project.organisatie },
+        { label: t('Rol'), waarde: props.project.rol },
+        { label: t('Periode'), waarde: props.project.periode },
+        { label: t('Duur'), waarde: props.project.duur },
+    ].filter((feit) => feit.waarde.trim() !== ''),
+);
+
 const terug = computed(() =>
     props.van === 'start'
         ? null
@@ -59,16 +81,22 @@ const terug = computed(() =>
 <template>
     <Head :title="props.project.titel" />
 
-    <div class="mx-auto max-w-5xl px-6 py-16 sm:py-24">
+    <div class="brand-site-projectpagina mx-auto max-w-5xl px-6 py-16 sm:py-24">
         <SiteKruimels :titel="'Projecten'" />
 
+        <!--
+            De kop: het beeld (of de letter van de organisatie, net als in
+            de casus op de voorpagina) naast het soort werk, de titel en de
+            samenvatting. De kolom van het beeld is dezelfde als die van de
+            kopjes verderop, zodat de pagina één lijn heeft.
+        -->
         <header
-            class="brand-projectpagina-kop"
+            class="brand-site-projectpagina-kop"
             :data-zonder-beeld="props.project.beeld ? undefined : ''"
         >
             <figure
                 v-if="props.project.beeld"
-                class="brand-projectpagina-beeld"
+                class="brand-site-projectpagina-beeld"
             >
                 <img
                     :src="props.project.beeld"
@@ -81,51 +109,76 @@ const terug = computed(() =>
                 />
             </figure>
 
-            <div class="min-w-0">
-                <p class="brand-projectbadge">{{ props.project.type }}</p>
+            <figure
+                v-else
+                class="brand-site-projectpagina-beeld brand-site-projectpagina-letter brand-site-data"
+                aria-hidden="true"
+            >
+                {{ props.project.letter }}
+            </figure>
 
-                <h1 class="brand-projectpagina-titel">
+            <div class="min-w-0">
+                <p class="brand-site-project-badge">{{ props.project.type }}</p>
+
+                <h1
+                    class="brand-site-projectpagina-titel"
+                    :data-lengte="lengte"
+                >
                     {{ props.project.titel }}
                 </h1>
 
-                <!--
-                    De puntjes tussen de delen zet de CSS, zodat er geen
-                    losse punt overblijft als een deel ooit wegvalt.
-                -->
-                <p class="brand-projectpagina-meta">
-                    <span>{{ props.project.organisatie }}</span>
-                    <span>{{ props.project.rol }}</span>
-                </p>
-
-                <p class="brand-projectpagina-periode">
-                    <span>{{ props.project.periode }}</span>
-                    <span>{{ props.project.duur }}</span>
-                </p>
-
                 <p
                     v-if="props.project.samenvatting"
-                    class="brand-projectpagina-inleiding"
+                    class="brand-site-projectpagina-inleiding"
                 >
                     {{ props.project.samenvatting }}
                 </p>
             </div>
         </header>
 
-        <div class="brand-projectpagina-blad">
-            <section v-if="props.project.omschrijving">
-                <h2 class="brand-projectpagina-kopje">
+        <!--
+            De feiten in één strook: voor wie, als wat, wanneer en hoe
+            lang. Een label boven elke waarde, zodat je niet hoeft te raden
+            wat "9 maanden" betekent. Een leeg feit valt weg in plaats van
+            een streepje te tonen.
+        -->
+        <dl data-reveal class="brand-site-projectpagina-feiten opacity-0">
+            <div v-for="feit in feiten" :key="feit.label">
+                <dt>{{ feit.label }}</dt>
+                <dd>{{ feit.waarde }}</dd>
+            </div>
+        </dl>
+
+        <!--
+            De twee lange teksten, elk met zijn kopje in de kolom van het
+            beeld erboven. Staat er geen van beide, dan staat hier niets.
+        -->
+        <div
+            v-if="props.project.omschrijving || props.project.resultaat"
+            class="brand-site-projectpagina-blad"
+        >
+            <section
+                v-if="props.project.omschrijving"
+                data-reveal
+                class="brand-site-projectpagina-deel opacity-0"
+            >
+                <h2 class="brand-site-projectpagina-kopje">
                     {{ $t('Wat ik heb gedaan') }}
                 </h2>
-                <p class="brand-projectpagina-tekst">
+                <p class="brand-site-projectpagina-tekst">
                     {{ props.project.omschrijving }}
                 </p>
             </section>
 
-            <section v-if="props.project.resultaat">
-                <h2 class="brand-projectpagina-kopje">
+            <section
+                v-if="props.project.resultaat"
+                data-reveal
+                class="brand-site-projectpagina-deel opacity-0"
+            >
+                <h2 class="brand-site-projectpagina-kopje">
                     {{ $t('Wat het opleverde') }}
                 </h2>
-                <p class="brand-projectpagina-tekst">
+                <p class="brand-site-projectpagina-tekst">
                     {{ props.project.resultaat }}
                 </p>
             </section>

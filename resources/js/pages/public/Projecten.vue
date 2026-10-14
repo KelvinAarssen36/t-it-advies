@@ -62,14 +62,22 @@ const props = defineProps<{
     <div class="mx-auto max-w-5xl px-6 py-16 sm:py-24">
         <SiteKruimels :titel="'Projecten'" />
 
-        <header class="max-w-2xl">
-            <p v-if="props.kop.opschrift" class="brand-projectpagina-opschrift">
+        <header class="max-w-3xl">
+            <p
+                v-if="props.kop.opschrift"
+                class="brand-site-projectpagina-opschrift"
+            >
                 {{ props.kop.opschrift }}
             </p>
 
-            <h1 class="brand-projectpagina-titel">{{ props.kop.titel }}</h1>
+            <h1 class="brand-site-projectpagina-titel">
+                {{ props.kop.titel }}
+            </h1>
 
-            <p v-if="props.kop.inleiding" class="brand-projectpagina-inleiding">
+            <p
+                v-if="props.kop.inleiding"
+                class="brand-site-projectpagina-inleiding"
+            >
                 {{ props.kop.inleiding }}
             </p>
         </header>
@@ -81,7 +89,7 @@ const props = defineProps<{
         <div
             v-if="props.featured.length > 0"
             data-reveal
-            class="mt-12 opacity-0"
+            class="brand-site-projectpagina-uitgelicht opacity-0"
         >
             <ProjectSlideshow :items="props.featured" />
         </div>
@@ -90,7 +98,7 @@ const props = defineProps<{
             <!-- Onder elkaar: de overzichtelijke vorm. -->
             <div
                 v-if="props.weergave === 'lijst'"
-                class="brand-projectlijst mt-14"
+                class="brand-site-projectlijst brand-site-projectpagina-overig"
             >
                 <ProjectBreed
                     v-for="item in props.projects"
@@ -100,7 +108,10 @@ const props = defineProps<{
             </div>
 
             <!-- Of naast elkaar als kaarten. -->
-            <div v-else class="brand-projectraster mt-14">
+            <div
+                v-else
+                class="brand-site-projecten-raster brand-site-projectpagina-overig"
+            >
                 <ProjectKaart
                     v-for="item in props.projects"
                     :key="item.slug"

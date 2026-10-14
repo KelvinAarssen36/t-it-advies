@@ -1,0 +1,335 @@
+/*
+  Over mij: een editoriaal portret.
+
+  Groot de foto, in een ronde uitsnede met een schaal van maatstreepjes
+  eromheen (dezelfde taal als de wijzers bij de statistieken), en ernaast
+  de kop met de samenvatting als grote leestekst. De foto gaat open als
+  een diafragma; dat doet `irisOpen()` op `.brand-site-overmij-lens`.
+
+  Onderaan ook de opmaak van de aparte pagina /over-mij
+  (`brand-site-overmijpagina-*`): dezelfde foto en dezelfde letters, zodat
+  het blok en de pagina bij elkaar horen.
+*/
+
+.brand-site-overmij {
+    display: grid;
+    gap: clamp(2rem, 4.5vw, 3rem);
+    align-items: center;
+}
+
+@media (min-width: 50rem) {
+    .brand-site-overmij {
+        grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+        gap: clamp(2.5rem, 5vw, 4.5rem);
+    }
+}
+
+.brand-site-overmij-beeld {
+    position: relative;
+    width: min(100%, 12rem);
+    margin: 0;
+    aspect-ratio: 1;
+}
+
+@media (min-width: 50rem) {
+    .brand-site-overmij-beeld {
+        width: min(100%, 18rem);
+        justify-self: center;
+    }
+}
+
+/* De schaal: zestig maatstreepjes op een cirkel net buiten de foto. */
+.brand-site-overmij-schaal {
+    position: absolute;
+    inset: -7%;
+    width: 114%;
+    height: 114%;
+    overflow: visible;
+    pointer-events: none;
+}
+
+.brand-site-overmij-schaal circle {
+    fill: none;
+    stroke: color-mix(in oklab, var(--brand-cyan) 45%, transparent);
+    stroke-width: 1.5;
+    stroke-dasharray: 0.25 1.4167;
+}
+
+.brand-site-overmij-lens {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: 999px;
+    border: 1px solid var(--site-plaat-rand-sterk);
+    background: radial-gradient(
+        circle at 50% 35%,
+        var(--brand-navy-raised),
+        var(--site-plaat-vol)
+    );
+    box-shadow:
+        0 0 0 8px color-mix(in oklab, var(--brand-navy-deep) 65%, transparent),
+        0 30px 90px -36px var(--site-licht-blauw);
+}
+
+.brand-site-overmij-lens img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.brand-site-overmij-tekst {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.25rem;
+}
+
+/* De ruimte onder de kop komt hier van de flex-gap, niet dubbel. */
+.brand-site-overmij-tekst > .brand-site-kop {
+    margin-bottom: 0.25rem;
+}
+
+.brand-site-overmij-samenvatting {
+    max-width: 38rem;
+    font-size: clamp(1.0625rem, 0.98rem + 0.4vw, 1.3125rem);
+    font-weight: 400;
+    line-height: 1.55;
+    letter-spacing: -0.015em;
+    text-wrap: pretty;
+    overflow-wrap: anywhere;
+    color: var(--site-tekst);
+}
+
+.brand-site-overmij-samenvatting[data-lengte='kort'] {
+    font-size: clamp(1.1875rem, 1.02rem + 0.65vw, 1.5rem);
+    line-height: 1.45;
+    letter-spacing: -0.02em;
+    color: var(--site-kop);
+}
+
+.brand-site-overmij-samenvatting[data-lengte='lang'] {
+    font-size: var(--site-maat-lead, 1.0625rem);
+    line-height: 1.65;
+}
+
+/* --- De pagina /over-mij -------------------------------------------- */
+
+.brand-site-overmijpagina-kop {
+    display: grid;
+    gap: 2rem;
+    align-items: center;
+}
+
+@media (min-width: 48rem) {
+    .brand-site-overmijpagina-kop {
+        grid-template-columns: 11rem minmax(0, 1fr);
+        gap: 2.5rem;
+    }
+}
+
+.brand-site-overmijpagina-beeld {
+    width: 8rem;
+    margin: 0;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 999px;
+    border: 1px solid var(--site-plaat-rand-sterk);
+    box-shadow: 0 0 0 8px
+        color-mix(in oklab, var(--brand-navy-deep) 65%, transparent);
+}
+
+@media (min-width: 48rem) {
+    .brand-site-overmijpagina-beeld {
+        width: 11rem;
+    }
+}
+
+.brand-site-overmijpagina-beeld img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.brand-site-overmijpagina-titel {
+    font-size: var(--site-maat-titel-kort, 2.25rem);
+    font-weight: 600;
+    line-height: 1.06;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+    color: var(--site-kop);
+}
+
+.brand-site-overmijpagina-inleiding {
+    margin-top: 1rem;
+    max-width: 40rem;
+    font-size: var(--site-maat-lead, 1.0625rem);
+    line-height: 1.6;
+    text-wrap: pretty;
+    color: var(--site-tekst-zacht);
+}
+
+.brand-site-overmijpagina-naam {
+    margin-top: 1rem;
+    font-size: var(--site-maat-klein, 0.8125rem);
+    font-weight: 500;
+    color: var(--brand-cyan);
+}
+
+.brand-site-overmijpagina-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.brand-site-overmijpagina-kaartje {
+    display: inline-flex;
+    min-height: 2.75rem;
+    max-width: 100%;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1.125rem;
+    border: 1px solid var(--site-plaat-rand);
+    border-radius: 999px;
+    background-color: var(--site-plaat-hoog);
+    font-size: 0.9375rem;
+    overflow-wrap: anywhere;
+    color: var(--site-tekst);
+    transition:
+        border-color var(--site-duur-hover) var(--site-ease),
+        color var(--site-duur-hover) var(--site-ease),
+        background-color var(--site-duur-hover) var(--site-ease),
+        transform var(--site-duur-druk) var(--site-ease);
+}
+
+.brand-site-overmijpagina-kaartje:active {
+    transform: translateY(1px) scale(0.98);
+}
+
+.brand-site-overmijpagina-kaartje svg {
+    flex: none;
+    color: var(--brand-cyan);
+}
+
+.brand-site-overmijpagina-kaartje:focus-visible {
+    border-color: var(--site-plaat-rand-sterk);
+    color: var(--site-kop);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-overmijpagina-kaartje:hover {
+        border-color: var(--site-plaat-rand-sterk);
+        color: var(--site-kop);
+    }
+}
+
+/*
+  Het blad: het verhaal en de punten.
+
+  **Op een breed scherm staan de punten naast het verhaal**, als een kolom
+  met een haarlijn ervoor. Onder het verhaal kwamen ze pas na drie
+  alinea's in beeld, terwijl ze juist samenvatten waar het verhaal over
+  gaat; en het verhaal zelf liep over de hele plaat, met regels van ruim
+  honderd tekens.
+*/
+.brand-site-overmijpagina-blad {
+    display: grid;
+    gap: 2rem;
+    margin-top: clamp(2rem, 4.5vw, 3rem);
+    padding: clamp(1.25rem, 3.5vw, 2.5rem);
+}
+
+@media (min-width: 64rem) {
+    .brand-site-overmijpagina-blad:has(.brand-site-overmijpagina-punten) {
+        grid-template-columns: minmax(0, 1fr) minmax(14rem, 17rem);
+        gap: clamp(2rem, 4vw, 3.5rem);
+    }
+}
+
+/*
+  Rond de 70 tekens per regel: zo vind je het begin van de volgende regel
+  terug zonder te zoeken. Iets groter dan de tekst in een kaart, omdat
+  dit het enige is wat er op deze pagina te lezen valt.
+*/
+.brand-site-overmijpagina-verhaal {
+    max-width: 40rem;
+    font-size: var(--site-maat-lead);
+    line-height: 1.75;
+    white-space: pre-line;
+    text-wrap: pretty;
+    overflow-wrap: anywhere;
+    color: var(--site-tekst);
+}
+
+.brand-site-overmijpagina-punten {
+    display: grid;
+    align-content: start;
+    gap: 0.875rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--site-plaat-rand);
+}
+
+@media (min-width: 40rem) and (max-width: 63.999rem) {
+    .brand-site-overmijpagina-punten {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 2rem;
+    }
+}
+
+@media (min-width: 64rem) {
+    .brand-site-overmijpagina-punten {
+        padding-top: 0.25rem;
+        padding-left: clamp(1.5rem, 3vw, 2.5rem);
+        border-top: 0;
+        border-left: 1px solid var(--site-plaat-rand);
+    }
+}
+
+.brand-site-overmijpagina-punten li {
+    display: flex;
+    gap: 0.75rem;
+    min-width: 0;
+    font-size: var(--site-maat-tekst);
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+    color: var(--site-tekst);
+}
+
+.brand-site-overmijpagina-punten svg {
+    margin-top: 0.2rem;
+    color: var(--brand-cyan);
+}
+
+/*
+  Bij binnenkomst gaat het portret één keer open als een diafragma, net als
+  de foto op de voorpagina -- maar korter en zonder scroll: dit is het
+  begin van de pagina, er valt niets naartoe te scrollen. Alleen
+  `clip-path` op de foto; de ring eromheen staat er meteen.
+*/
+@media (prefers-reduced-motion: no-preference) {
+    .brand-site-overmijpagina-beeld img {
+        animation: brand-site-overmijpagina-iris 0.9s var(--site-ease) 0.1s both;
+    }
+}
+
+@keyframes brand-site-overmijpagina-iris {
+    from {
+        clip-path: circle(0% at 50% 45%);
+        scale: 1.08;
+    }
+
+    to {
+        clip-path: circle(75% at 50% 45%);
+        scale: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .brand-site-overmijpagina-kaartje {
+        transition: none;
+    }
+}

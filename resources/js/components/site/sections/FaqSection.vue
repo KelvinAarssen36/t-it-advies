@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { usePage } from '@inertiajs/vue3';
-import { ChevronDown } from '@lucide/vue';
+import { ArrowRight, ChevronDown, Plus } from '@lucide/vue';
 import {
     AccordionContent,
     AccordionHeader,
@@ -11,6 +11,8 @@ import {
 import { computed, ref, watch } from 'vue';
 import SectionHeading from '@/components/site/SectionHeading.vue';
 import SiteSection from '@/components/site/SiteSection.vue';
+import { scrollNaar } from '@/lib/motion';
+import { useSectieLink } from '@/lib/sectielink';
 import type { VraagOpDeSite } from '@/types/faq';
 import type { SectieKop, SectieProps } from '@/types/secties';
 
@@ -50,6 +52,18 @@ import type { SectieKop, SectieProps } from '@/types/secties';
  * niet weggelaten. Voor een voorleesprogramma is dat ook juist: wat niet
  * in beeld staat hoort niet meegelezen te worden.
  *
+ * **Twee kolommen op een breed scherm.** Links staat de kop stil terwijl je
+ * door de vragen gaat, met daaronder de weg naar het contactformulier voor
+ * wie zijn vraag niet vindt; rechts de vragen zelf, groot gezet. Op een
+ * telefoon staat het gewoon onder elkaar.
+ *
+ * **Het antwoord klapt open met `grid-template-rows`, en daarom staat het
+ * altijd in de pagina** (`force-mount`). Een rij van `0fr` naar `1fr` kan
+ * de browser zelf vloeiend overgaan, zonder een hoogte te meten. Een
+ * dichte vraag is daarbij `visibility: hidden`, zodat een schermlezer hem
+ * net zo overslaat als toen hij er niet stond. Zie
+ * resources/css/site/faq.css.
+ *
  * Zie docs/architecture/modules/faq.md.
  */
 defineProps<SectieProps>();
@@ -63,6 +77,45 @@ const vragen = computed<VraagOpDeSite[]>(
 const kop = computed<SectieKop | null>(
     () => (page.props.faqHeading as SectieKop | undefined) ?? null,
 );
+
+/* --- De weg naar contact ---------------------------------------------- */
+
+/**
+ * Alleen als het contactblok er ook staat.
+ *
+ * Zet de klant het uit, dan zou deze link naar een anker springen dat niet
+ * bestaat. Het menu van de server zegt welke onderdelen er zijn; dezelfde
+ * bron als de kop gebruikt.
+ */
+const { anker, opDeVoorpagina, secties } = useSectieLink();
+
+const heeftContact = computed(() =>
+    secties.value.some((item) => item.key === 'contact'),
+);
+
+/**
+ * Naar het contactblok, met dezelfde glijbeweging als het menu.
+ *
+ * Een klik met Ctrl of de middelste knop gaat gewoon door: wie hem in een
+ * nieuw tabblad wil openen, krijgt dat. Bestaat het doel niet, dan doet
+ * de browser zijn eigen sprong.
+ */
+const naarContact = (gebeurtenis: MouseEvent): void => {
+    if (
+        !opDeVoorpagina.value ||
+        gebeurtenis.metaKey ||
+        gebeurtenis.ctrlKey ||
+        gebeurtenis.shiftKey ||
+        gebeurtenis.button !== 0
+    ) {
+        return;
+    }
+
+    if (scrollNaar('contact')) {
+        gebeurtenis.preventDefault();
+        history.replaceState(history.state, '', '#contact');
+    }
+};
 
 /* --- Bladeren ---------------------------------------------------------- */
 
@@ -168,120 +221,143 @@ watch(bladzijden, () => {
 
 <template>
     <SiteSection id="faq" :tone="tone" :divided="divided">
-        <div class="brand-faq">
-            <SectionHeading
-                v-if="kop"
-                :eyebrow="kop.opschrift ?? undefined"
-                :title="kop.titel"
-                :intro="kop.inleiding ?? undefined"
-            />
+        <div class="brand-site-faq">
+            <div class="brand-site-faq-zij">
+                <SectionHeading
+                    v-if="kop"
+                    :eyebrow="kop.opschrift ?? undefined"
+                    :title="kop.titel"
+                    :intro="kop.inleiding ?? undefined"
+                />
 
-            <AccordionRoot
-                v-model="open"
-                type="single"
-                collapsible
-                class="brand-faq-lijst"
-            >
-                <AccordionItem
-                    v-for="(vraag, index) in vragen"
-                    :key="vraag.id"
-                    :value="String(vraag.id)"
-                    class="brand-faq-item"
-                    :hidden="!staatErNu(index)"
-                    :disabled="!staatErNu(index)"
+                <!--
+                    Alleen de link, zonder zin ervoor: de inleiding die de
+                    klant boven de vragen zet zegt vaak al "staat je vraag
+                    er niet bij?", en dan stond het er twee keer.
+                -->
+                <p
+                    v-if="heeftContact"
+                    data-reveal
+                    class="brand-site-faq-verder opacity-0"
                 >
-                    <AccordionHeader class="brand-faq-kop">
-                        <!--
-                            **Geen `brand-glans` hier, en dat is een
-                            correctie.** Die utility is gemaakt voor de
-                            actieknop: 35% van de breedte aan 55% wit, in
-                            een lus van zeven seconden. Op een knop is dat
-                            een glinstering; op een regel van de volle
-                            sectiebreedte is 35% een witte baan, en zes
-                            regels die dat in een lus doen zien eruit als
-                            een laadanimatie.
-
-                            Erger nog: hem overrulen lukte niet, want
-                            `brand-glans` staat in een andere cascadelaag
-                            dan deze module -- dus de lus liep gewoon door.
-                            Vandaar een eigen veeg in `brand-faq-knop`:
-                            vaste maat, veel lichter, en één keer bij het
-                            openklappen. Zie app.css.
-                        -->
-                        <AccordionTrigger class="brand-faq-knop">
-                            <span class="brand-faq-vraag">
-                                {{ vraag.vraag }}
-                            </span>
-                            <ChevronDown
-                                class="brand-faq-pijl"
-                                aria-hidden="true"
-                            />
-                        </AccordionTrigger>
-                    </AccordionHeader>
-
-                    <AccordionContent class="brand-faq-antwoord">
-                        <!--
-                            Eigen klasse en niet `brand-blad-tekst`, al
-                            doet die het alineawerk ook: die is gemaakt
-                            voor een venster en krijgt op een breed scherm
-                            een eigen schuifgebied. Zie app.css.
-                        -->
-                        <p class="brand-faq-tekst">{{ vraag.antwoord }}</p>
-                    </AccordionContent>
-                </AccordionItem>
-            </AccordionRoot>
-
-            <!--
-                De knopjes om te bladeren. Pas vanaf twee bladzijden: met
-                één staat er een rij van één knop die niets doet.
-            -->
-            <nav
-                v-if="bladzijden > 1"
-                class="brand-faq-bladeren"
-                :aria-label="$t('Bladzijden met vragen')"
-            >
-                <button
-                    type="button"
-                    class="brand-faq-stap"
-                    :disabled="bladzijde === 1"
-                    :aria-label="$t('Vorige bladzijde')"
-                    @click="ga(bladzijde - 1)"
-                >
-                    <ChevronDown class="brand-faq-stap-pijl is-vorige" />
-                </button>
-
-                <template
-                    v-for="(nummer, i) in nummers"
-                    :key="`${nummer}-${i}`"
-                >
-                    <span v-if="nummer === 'gat'" class="brand-faq-gat">
-                        &hellip;
-                    </span>
-                    <button
-                        v-else
-                        type="button"
-                        class="brand-faq-nummer"
-                        :data-hier="nummer === bladzijde ? '' : undefined"
-                        :aria-current="
-                            nummer === bladzijde ? 'true' : undefined
-                        "
-                        :aria-label="$t('Bladzijde :nummer', { nummer })"
-                        @click="ga(nummer)"
+                    <a
+                        :href="anker('contact')"
+                        class="brand-site-link"
+                        @click="naarContact"
                     >
-                        {{ nummer }}
-                    </button>
-                </template>
+                        {{ $t('Neem contact op') }}
+                        <ArrowRight class="size-4" aria-hidden="true" />
+                    </a>
+                </p>
+            </div>
 
-                <button
-                    type="button"
-                    class="brand-faq-stap"
-                    :disabled="bladzijde === bladzijden"
-                    :aria-label="$t('Volgende bladzijde')"
-                    @click="ga(bladzijde + 1)"
+            <div class="brand-site-faq-vragen">
+                <AccordionRoot
+                    v-model="open"
+                    type="single"
+                    collapsible
+                    class="brand-site-faq-lijst"
                 >
-                    <ChevronDown class="brand-faq-stap-pijl is-volgende" />
-                </button>
-            </nav>
+                    <AccordionItem
+                        v-for="(vraag, index) in vragen"
+                        :key="vraag.id"
+                        :value="String(vraag.id)"
+                        class="brand-site-faq-item"
+                        :hidden="!staatErNu(index)"
+                        :disabled="!staatErNu(index)"
+                    >
+                        <AccordionHeader class="brand-site-faq-kop">
+                            <AccordionTrigger class="brand-site-faq-knop">
+                                <span class="brand-site-faq-vraag">
+                                    {{ vraag.vraag }}
+                                </span>
+                                <!--
+                                    Een plus die een kruisje wordt. Hij
+                                    staat in een eigen rondje, zodat het
+                                    aanraakvlak ook op een telefoon groot
+                                    genoeg is om te raken.
+                                -->
+                                <span
+                                    class="brand-site-faq-teken"
+                                    aria-hidden="true"
+                                >
+                                    <Plus class="size-4" />
+                                </span>
+                            </AccordionTrigger>
+                        </AccordionHeader>
+
+                        <AccordionContent
+                            force-mount
+                            class="brand-site-faq-antwoord"
+                        >
+                            <div class="brand-site-faq-binnen">
+                                <p class="brand-site-faq-tekst">
+                                    {{ vraag.antwoord }}
+                                </p>
+                            </div>
+                        </AccordionContent>
+                    </AccordionItem>
+                </AccordionRoot>
+
+                <!--
+                    De knopjes om te bladeren. Pas vanaf twee bladzijden:
+                    met één staat er een rij van één knop die niets doet.
+                -->
+                <nav
+                    v-if="bladzijden > 1"
+                    class="brand-site-faq-bladeren"
+                    :aria-label="$t('Bladzijden met vragen')"
+                >
+                    <button
+                        type="button"
+                        class="brand-site-faq-stap"
+                        :disabled="bladzijde === 1"
+                        :aria-label="$t('Vorige bladzijde')"
+                        @click="ga(bladzijde - 1)"
+                    >
+                        <ChevronDown
+                            class="brand-site-faq-stap-pijl is-vorige"
+                        />
+                    </button>
+
+                    <template
+                        v-for="(nummer, i) in nummers"
+                        :key="`${nummer}-${i}`"
+                    >
+                        <span
+                            v-if="nummer === 'gat'"
+                            class="brand-site-faq-gat"
+                        >
+                            &hellip;
+                        </span>
+                        <button
+                            v-else
+                            type="button"
+                            class="brand-site-faq-nummer font-data"
+                            :data-hier="nummer === bladzijde ? '' : undefined"
+                            :aria-current="
+                                nummer === bladzijde ? 'true' : undefined
+                            "
+                            :aria-label="$t('Bladzijde :nummer', { nummer })"
+                            @click="ga(nummer)"
+                        >
+                            {{ nummer }}
+                        </button>
+                    </template>
+
+                    <button
+                        type="button"
+                        class="brand-site-faq-stap"
+                        :disabled="bladzijde === bladzijden"
+                        :aria-label="$t('Volgende bladzijde')"
+                        @click="ga(bladzijde + 1)"
+                    >
+                        <ChevronDown
+                            class="brand-site-faq-stap-pijl is-volgende"
+                        />
+                    </button>
+                </nav>
+            </div>
         </div>
     </SiteSection>
 </template>

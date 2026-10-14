@@ -127,6 +127,7 @@ class Verschilrapport
             'contact_fields' => __('Velden van je contactformulier'),
             'contact_settings' => __('Instellingen van je contactformulier'),
             'footer_settings' => __('Voettekst'),
+            'linkedin_settings' => __('Knoptekst van je LinkedIn-blok'),
 
             /*
              * Een tabel die hier niet staat krijgt zijn eigen naam te zien

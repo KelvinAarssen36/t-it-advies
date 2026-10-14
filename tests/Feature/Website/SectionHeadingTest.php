@@ -54,6 +54,10 @@ class SectionHeadingTest extends TestCase
          * enige onderdeel met een kop die de klant niet kon wijzigen.
          */
         PageSectionKey::Contact,
+
+        // En LinkedIn, sinds de teksten van dat blok te beheren zijn. De
+        // tekst die in LinkedinSection.vue stond is de standaard geworden.
+        PageSectionKey::Linkedin,
     ];
 
     public function test_seeding_gives_every_section_exactly_one_row(): void

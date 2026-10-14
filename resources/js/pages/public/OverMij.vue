@@ -64,8 +64,8 @@ const linkedin = computed(
         -->
         <SiteKruimels class="mb-10" :titel="'Over mij'" />
 
-        <header class="brand-overmijpagina-kop">
-            <figure class="brand-overmijpagina-beeld">
+        <header class="brand-site-overmijpagina-kop">
+            <figure class="brand-site-overmijpagina-beeld">
                 <img
                     :src="props.foto.src"
                     :srcset="props.foto.srcset ?? undefined"
@@ -82,9 +82,14 @@ const linkedin = computed(
             </figure>
 
             <div class="min-w-0">
-                <h1 class="brand-overmijpagina-titel">{{ props.titel }}</h1>
+                <h1 class="brand-site-overmijpagina-titel">
+                    {{ props.titel }}
+                </h1>
 
-                <p v-if="props.inleiding" class="brand-overmijpagina-inleiding">
+                <p
+                    v-if="props.inleiding"
+                    class="brand-site-overmijpagina-inleiding"
+                >
                     {{ props.inleiding }}
                 </p>
 
@@ -93,7 +98,7 @@ const linkedin = computed(
                     deze pagina leest wil weten met wie hij te maken heeft,
                     en dat is de reden dat hij hier is.
                 -->
-                <p v-if="eigenaar" class="brand-overmijpagina-naam">
+                <p v-if="eigenaar" class="brand-site-overmijpagina-naam">
                     {{ eigenaar }}
                 </p>
 
@@ -107,10 +112,10 @@ const linkedin = computed(
                     regel. Zie `brand-sitemail` in app.css, waar dat nu ook
                     voor de contactpagina is gerepareerd.
                 -->
-                <div class="brand-overmijpagina-links">
+                <div class="brand-site-overmijpagina-links">
                     <a
                         :href="`mailto:${props.email}`"
-                        class="brand-overmijpagina-kaartje"
+                        class="brand-site-overmijpagina-kaartje"
                     >
                         <Mail class="size-4" aria-hidden="true" />
                         {{ props.email }}
@@ -125,7 +130,7 @@ const linkedin = computed(
                         :href="linkedin"
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="brand-overmijpagina-kaartje"
+                        class="brand-site-overmijpagina-kaartje"
                     >
                         <ArrowUpRight class="size-4" aria-hidden="true" />
                         {{ $t('LinkedIn') }}
@@ -135,16 +140,16 @@ const linkedin = computed(
         </header>
 
         <!--
-            `brand-overmijpagina-verhaal` zet de witregels om in alinea's,
+            `brand-site-overmijpagina-verhaal` zet de witregels om in alinea's,
             met `white-space: pre-line`. Geen opmaakbalkje in het portaal,
             dus hier ook niets dat scheef kan staan.
         -->
-        <div class="brand-overmijpagina-blad">
-            <p class="brand-overmijpagina-verhaal">{{ props.verhaal }}</p>
+        <div class="brand-site-overmijpagina-blad brand-site-glas">
+            <p class="brand-site-overmijpagina-verhaal">{{ props.verhaal }}</p>
 
             <ul
                 v-if="props.punten.length > 0"
-                class="brand-overmijpagina-punten"
+                class="brand-site-overmijpagina-punten"
             >
                 <li v-for="punt in props.punten" :key="punt">
                     <Check class="size-4 shrink-0" aria-hidden="true" />

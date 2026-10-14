@@ -9,6 +9,7 @@ use App\Http\Requests\Website\ProjectRequest;
 use App\Http\Requests\Website\WorkStepRequest;
 use App\Models\AboutSetting;
 use App\Models\FooterSetting;
+use App\Models\LinkedinSetting;
 use App\Models\Service;
 use App\Support\Toast;
 use App\Support\Translation\VertaalFout;
@@ -246,6 +247,10 @@ class TranslateController extends Controller
              */
             'tagline_nl' => ['nullable', 'string', 'max:'.FooterSetting::TAGLINE_MAX],
             'region_nl' => ['nullable', 'string', 'max:'.FooterSetting::PLAATS_MAX],
+
+            // De knop van het LinkedIn-blok. De kop erboven gebruikt de
+            // velden van elke andere kop (eyebrow, title, intro).
+            'button_nl' => ['nullable', 'string', 'max:'.LinkedinSetting::KNOP_MAX],
         ]);
 
         /** @var array<int, string|null> $punten */

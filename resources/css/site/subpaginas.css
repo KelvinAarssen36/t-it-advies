@@ -1,0 +1,211 @@
+/*
+  De subpagina's: wat ze delen met de landing.
+
+  De subpagina's houden hun eigen opbouw; ze krijgen alleen de gedeelde
+  onderdelen (kop, voettekst, lettertype) en een kop die past bij de rest.
+  De stijl van een eigen subpagina staat bij zijn module: projecten in
+  projecten.css, over mij in over-mij.css, contact in contact.css.
+*/
+
+.brand-site-subpagina-titel {
+    margin-top: 1.5rem;
+    font-size: var(--site-maat-titel-kort);
+    font-weight: 600;
+    line-height: 1.06;
+    letter-spacing: -0.035em;
+    color: var(--site-kop);
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+}
+
+/* Het kruimelpad: rustig, in de taal van de metadata. */
+.brand-site .brand-sitekruimels {
+    font-size: 0.875rem;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site .brand-sitekruimels a:hover {
+        color: var(--brand-cyan);
+    }
+}
+
+/*
+  De weg terug onderaan: dezelfde pillen als de rest van de site. De
+  eerste keus is de volle knop; de tweede een glazen knop ernaast.
+*/
+.brand-site .brand-siteterug [data-slot='button']:not(.brand-siteterug-eerst) {
+    border-color: var(--site-plaat-rand-sterk);
+    background: color-mix(in oklab, var(--brand-navy-deep) 55%, transparent);
+    color: var(--site-kop);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site
+        .brand-siteterug
+        [data-slot='button']:not(.brand-siteterug-eerst):hover {
+        background: var(--site-plaat-hoog);
+    }
+}
+
+/* ---------------------------------------------------------------------
+   De privacyverklaring
+
+   Een tekst om te lezen, dus: een leesbare regel (rond de zeventig
+   tekens), lucht tussen de hoofdstukken en een inhoudsopgave die laat
+   zien waar je bent. Geen beweging behalve het oplichten in die opgave;
+   het is een juridische tekst en geen etalage.
+
+   De tekstregels zelf (`.brand-privacy`) staan nog in app.css, omdat de
+   tekst één doorlopend blok is zonder klasse per alinea. Hier staat alleen
+   wat erbij komt op de publieke site.
+   --------------------------------------------------------------------- */
+.brand-site-privacy {
+    padding-block: clamp(1.5rem, 4vw, 3rem) var(--site-ruimte-sectie);
+}
+
+.brand-site-privacy-inleiding {
+    max-width: 40rem;
+    margin-top: 1rem;
+    font-size: var(--site-maat-lead);
+    line-height: 1.6;
+    text-wrap: pretty;
+    color: var(--site-tekst-zacht);
+}
+
+.brand-site-privacy-raster {
+    display: grid;
+    gap: 2rem;
+    margin-top: clamp(2rem, 4vw, 3rem);
+}
+
+@media (min-width: 64rem) {
+    .brand-site-privacy-raster {
+        grid-template-columns: 14rem minmax(0, 42rem);
+        gap: clamp(3rem, 6vw, 5.5rem);
+        align-items: start;
+    }
+}
+
+/*
+  De inhoudsopgave. Op een telefoon een korte genummerde lijst boven de
+  tekst; op een breed scherm een kolom die blijft staan terwijl je leest,
+  net onder de zwevende kop.
+*/
+.brand-site-privacy-inhoud {
+    padding: 1rem 1.125rem;
+    border: 1px solid var(--site-plaat-rand);
+    border-radius: 1rem;
+    background: var(--site-plaat-hoog);
+}
+
+@media (min-width: 64rem) {
+    .brand-site-privacy-inhoud {
+        position: sticky;
+        top: 5.5rem;
+        padding: 0;
+        border: 0;
+        background: none;
+    }
+}
+
+.brand-site-privacy-inhoud-kop {
+    margin-bottom: 0.5rem;
+    font-size: var(--site-maat-klein);
+    font-weight: 600;
+    color: var(--brand-cyan);
+}
+
+.brand-site-privacy-inhoud ol {
+    display: grid;
+    gap: 0.125rem;
+    counter-reset: brand-site-privacy;
+}
+
+/*
+  Elke regel is een link met een streep links ervan: gedimd, en cyaan
+  voor het hoofdstuk waar je nu leest. De streep is er altijd, zodat er
+  bij het oplichten niets verschuift.
+*/
+.brand-site-privacy-inhoud a {
+    display: flex;
+    gap: 0.625rem;
+    min-height: 2.5rem;
+    align-items: center;
+    padding-left: 0.75rem;
+    border-left: 1px solid var(--site-plaat-rand);
+    border-radius: 0 0.375rem 0.375rem 0;
+    font-size: var(--site-maat-klein);
+    line-height: 1.35;
+    color: var(--site-tekst-zacht);
+    transition:
+        color var(--site-duur-hover) var(--site-ease),
+        border-color var(--site-duur-hover) var(--site-ease);
+}
+
+.brand-site-privacy-inhoud a::before {
+    counter-increment: brand-site-privacy;
+    content: counter(brand-site-privacy, decimal-leading-zero);
+    flex: none;
+    font-family: var(--site-font-data);
+    font-size: var(--site-maat-label);
+    color: var(--site-tekst-zacht);
+}
+
+@media (min-width: 64rem) {
+    .brand-site-privacy-inhoud a {
+        min-height: 2.25rem;
+    }
+}
+
+.brand-site-privacy-inhoud a[aria-current] {
+    border-left-color: var(--brand-cyan);
+    color: var(--site-kop);
+}
+
+.brand-site-privacy-inhoud a[aria-current]::before {
+    color: var(--brand-cyan);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-privacy-inhoud a:hover {
+        color: var(--site-kop);
+        border-left-color: var(--site-plaat-rand-sterk);
+    }
+}
+
+/* De tekst zelf, in de maten van de site. */
+.brand-site .brand-site-privacy .brand-privacy {
+    margin-top: 0;
+    gap: 1rem;
+    font-size: var(--site-maat-tekst);
+    line-height: 1.75;
+    color: var(--site-tekst);
+}
+
+.brand-site .brand-site-privacy .brand-privacy h2 {
+    margin-top: 2rem;
+    scroll-margin-top: 5.5rem;
+    font-size: var(--site-maat-kop);
+    letter-spacing: -0.015em;
+    color: var(--site-kop);
+}
+
+.brand-site .brand-site-privacy .brand-privacy h2:first-child {
+    margin-top: 0;
+}
+
+/*
+  Het bolletje voor elke bewaartermijn pulseerde, één voor één, eindeloos.
+  Op de landing mag iets leven; in een tekst die je leest om te weten wat
+  er met je gegevens gebeurt, trekt een knipperend punt aan je oog
+  terwijl je bij de volgende zin bent. Hier staat het stil.
+*/
+.brand-site .brand-site-privacy .brand-privacy li::before {
+    animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .brand-site-privacy-inhoud a {
+        transition: none;
+    }
+}

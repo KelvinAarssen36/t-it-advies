@@ -2,6 +2,7 @@
 import { ChevronLeft, ChevronRight } from '@lucide/vue';
 import {
     computed,
+    nextTick,
     onBeforeUnmount,
     onMounted,
     ref,
@@ -9,7 +10,7 @@ import {
     watch,
 } from 'vue';
 import ProjectUitgelicht from '@/components/site/ProjectUitgelicht.vue';
-import { prefersReducedMotion } from '@/lib/motion';
+import { gsap, prefersReducedMotion } from '@/lib/motion';
 import type { ProjectHerkomst, ProjectOpDeSite } from '@/types/projecten';
 
 /**
@@ -25,41 +26,33 @@ import type { ProjectHerkomst, ProjectOpDeSite } from '@/types/projecten';
  * de bolletjes vanzelf en blijft er één blok staan. Pijlen bij één dia zijn
  * een belofte die niet wordt waargemaakt.
  *
- * ## Wat het soepel maakt
+ * ## Hoe hij wisselt
  *
- * **Het spoor volgt je vinger.** Niet pas springen bij het loslaten maar
- * meebewegen terwijl je sleept, en aan de uiteinden stroever worden zodat
- * je voelt dat er niets meer komt. Dat is het verschil tussen "er gebeurt
- * iets als ik klaar ben" en "ik schuif het zelf".
+ * **De dia's liggen op elkaar en de nieuwe veegt open.** Niet meer een
+ * spoor dat opzij schuift, maar een diafragma: de nieuwe dia wordt met een
+ * `clip-path` van de ene rand naar de andere onthuld, over de vorige heen,
+ * en het beeld erin zakt van iets te groot naar zijn eigen maat. Vooruit
+ * veegt hij van rechts, terug van links, zodat de richting klopt met de
+ * pijl waar je op drukte. Dat is dezelfde taal als de rest van de site:
+ * dingen komen in beeld, ze schuiven niet langs.
+ *
+ * **De dia volgt nog steeds je vinger.** Tijdens het slepen schuift de dia
+ * in beeld mee en dimt hij een beetje. Bij het loslaten veegt de volgende
+ * open. Net als de pijlen loopt een veeg rond: voorbij de laatste dia komt
+ * de eerste. Eerst was de veeg aan de uiteinden stroever en liep hij niet
+ * rond; met twee projecten deed een veeg dan de helft van de keren niets,
+ * terwijl de pijl ernaast gewoon doorging.
  *
  * **Een sleep is geen klik.** De dia's zijn links, dus zonder dit opent een
  * veeg het project in plaats van door te schuiven. Na een beweging van meer
  * dan een paar beeldpunten vangen we de eerstvolgende klik weg.
  *
- * **Wat wegschuift dimt en krimpt een beetje.** Zonder dat verschil ziet
- * een dia die halverwege het beeld uit loopt eruit als dezelfde dia die
- * scheef staat. Met diepte lees je het als iets dat vertrekt.
- *
  * **Alle dia's zijn even hoog, en er wordt niets aan hoogte geanimeerd.**
- * Daar zijn twee pogingen aan voorafgegaan en allebei waren ze fout.
- *
- * De eerste maakte de dia's gelijk zónder iets aan het hoogteverschil te
- * doen: een dia zonder afbeelding werd uitgerekt tot de hoogte van een dia
- * mét afbeelding, met een half blok leegte onder de knop.
- *
- * De tweede liet het venster meebewegen naar de hoogte van de dia in
- * beeld. Dat zag er op papier goed uit, maar `height` is een eigenschap
- * die de browser dwingt om elke frame de hele pagina eronder opnieuw door
- * te rekenen -- en dat is precies waar het hakkelen vandaan kwam.
- *
- * De oorzaak zat ergens anders: op een telefoon was de beeldkolom
- * volledige breedte met een vierkante verhouding, dus op een scherm van
- * 370 beeldpunten werd dat een afbeelding van 370 hoog, tegenover zo'n 300
- * voor een dia zonder beeld. Dat verschil is nu bij de bron weggehaald
- * (zie `.brand-projectuitgelicht-beeld img` in app.css), en wat er
- * overblijft vullen we op door de inhoud verticaal te centreren. Geen
- * animatie op een eigenschap die de pagina herberekent, dus ook geen
- * hapering.
+ * Ze liggen in één rastercel op elkaar, dus het venster is vanzelf zo hoog
+ * als de hoogste dia; een kortere dia centreert zijn inhoud. Een venster
+ * dat meegroeit met de dia in beeld is hier al eens geprobeerd: `height`
+ * animeren laat de browser elke frame de pagina eronder herberekenen, en
+ * dat hakkelde.
  *
  * **Het doorschuiven stopt zodra iemand kijkt**: bij de muis erop, bij
  * toetsenbordfocus in het blok, tijdens het slepen, zodra het tabblad naar
@@ -68,11 +61,11 @@ import type { ProjectHerkomst, ProjectOpDeSite } from '@/types/projecten';
  * met rust, maar een slideshow die onderaan de pagina staat te draaien
  * terwijl de bezoeker bovenaan leest, is net zo goed werk voor niemand --
  * en hij zou bij terugkomst op een willekeurige dia staan. Tekst die wegschuift terwijl je hem leest is
- * het ergste wat een slideshow kan doen. Het bolletje laat met een ring
- * zien hoeveel tijd er nog staat, zodat het doorschuiven niet uit het niets
- * komt.
+ * het ergste wat een slideshow kan doen. De lijn van de huidige dia loopt
+ * vol met de tijd die er nog staat, zodat het doorschuiven niet uit het
+ * niets komt.
  *
- * **Bij `prefers-reduced-motion` schuift er niets en draait er niets.** Dan
+ * **Bij `prefers-reduced-motion` veegt er niets en draait er niets.** Dan
  * is het een stapel waar je met de pijlen doorheen klikt.
  *
  * De dia's die niet in beeld staan krijgen `inert`: anders loopt de
@@ -88,8 +81,15 @@ const props = withDefaults(
          * dia's. Op de voorpagina `'start'`, op `/projecten` niets.
          */
         herkomst?: ProjectHerkomst;
+        /**
+         * Of het venster zich opbouwt terwijl je ernaar scrolt. Op de
+         * voorpagina wel: daar is dit de casus van de sectie, en die gaat
+         * open als een lens (zie `ProjectUitgelicht`). Op `/projecten`
+         * niet: daar staat hij bovenaan en ben je er al.
+         */
+        opbouw?: boolean;
     }>(),
-    { herkomst: null },
+    { herkomst: null, opbouw: false },
 );
 
 /** Hoe lang een dia blijft staan voordat hij doorschuift. */
@@ -102,11 +102,141 @@ const VEEG_DREMPEL = 56;
 const KLIK_SPELING = 6;
 
 const huidig = ref(0);
-const stilgezet = ref(false);
+/**
+ * Waarom het doorschuiven stilstaat: muis, focus, slepen of tabblad.
+ *
+ * Een reden per bron en geen enkel aan/uit. Met één schakelaar zette de
+ * muis die het blok verliet het doorschuiven weer aan terwijl de
+ * toetsenbordfocus er nog in stond, en dan schoof de dia onder de knop
+ * vandaan waar je net op stond.
+ */
+type Reden = 'muis' | 'focus' | 'slepen' | 'tabblad';
+
+const redenen = ref(new Set<Reden>());
+const stilgezet = computed(() => redenen.value.size > 0);
+
+/**
+ * De dia die net weg is. Hij blijft onder de nieuwe liggen terwijl die
+ * openveegt; zonder hem zag je tijdens het vegen de lege plaat erachter.
+ */
+const vorig = ref<number | null>(null);
+
+/** Van welke kant de nieuwe dia binnenveegt. */
+const richting = ref<'vooruit' | 'terug'>('vooruit');
 
 /** Staat het blok in beeld? Tot de eerste meting nemen we aan van wel. */
 const inBeeld = ref(true);
 const blok = useTemplateRef<HTMLElement>('blok');
+const venster = useTemplateRef<HTMLElement>('venster');
+
+/**
+ * De beelden in de dia's gaan open terwijl je scrolt: van een kleiner,
+ * ronder venster naar hun volle kader, op de positie van de bezoeker.
+ * Dezelfde opening als de losse casus in `ProjectUitgelicht`.
+ *
+ * **Op de beelden en niet op het hele venster.** Eerst ging het venster als
+ * geheel open, en dan knipte de opening halverwege ook de titel af: je las
+ * "migratie v" en dacht dat er iets stuk was. Nu staat de tekst er meteen
+ * en gaat alleen het beeld open. De `clip-path` zit op het kader; het beeld
+ * erin heeft zijn eigen overgang (`transform`) bij het wisselen van dia, en
+ * die twee raken elkaar niet.
+ *
+ * Alleen `clip-path`; onder reduced motion staan de beelden gewoon open.
+ */
+let stopOpbouw: (() => void) | undefined;
+
+function bouwOp(): () => void {
+    if (
+        prefersReducedMotion() ||
+        blok.value === null ||
+        venster.value === null
+    ) {
+        return () => {};
+    }
+
+    const vlak = blok.value;
+    const kaders = [
+        ...venster.value.querySelectorAll<HTMLElement>(
+            '.brand-site-casus-beeld',
+        ),
+    ];
+
+    if (kaders.length === 0) {
+        return () => {};
+    }
+
+    const mm = gsap.matchMedia();
+
+    mm.add(
+        { breed: '(min-width: 50rem)', smal: '(max-width: 49.999rem)' },
+        (context) => {
+            const { breed } = context.conditions as { breed: boolean };
+
+            const opening = gsap.timeline({
+                defaults: { ease: 'none' },
+                scrollTrigger: {
+                    trigger: vlak,
+                    start: 'top 92%',
+                    end: breed ? 'top 35%' : 'top 50%',
+                    scrub: true,
+                    invalidateOnRefresh: true,
+                },
+            });
+
+            opening.fromTo(
+                kaders,
+                {
+                    clipPath: breed
+                        ? 'inset(10% 16% 10% 16% round 2.5rem)'
+                        : 'inset(7% 9% 7% 9% round 1.5rem)',
+                },
+                { clipPath: 'inset(0% 0% 0% 0% round 0.75rem)' },
+                0,
+            );
+
+            /*
+             * Beeld en tekst komen uit twee richtingen samen, net als bij
+             * een losse casus (zie ProjectUitgelicht.vue): de beeldkaders
+             * van links, de tekstblokken van rechts, op dezelfde scroll als
+             * de opening. Op het kader en het tekstblok zelf -- de dia
+             * eromheen heeft zijn eigen transform voor het slepen, het beeld
+             * erin zijn eigen schaal. Alleen op een breed scherm.
+             */
+            const teksten = [
+                ...(venster.value?.querySelectorAll<HTMLElement>(
+                    '.brand-site-casus-tekst',
+                ) ?? []),
+            ];
+
+            if (breed) {
+                const afstand = (): number =>
+                    Math.min(vlak.clientWidth * 0.12, 170);
+
+                opening.fromTo(
+                    kaders,
+                    { x: () => -afstand() },
+                    { x: 0, ease: 'power2.out' },
+                    0,
+                );
+                opening.fromTo(
+                    teksten,
+                    { x: () => afstand() * 0.8 },
+                    { x: 0, ease: 'power2.out' },
+                    0,
+                );
+            }
+
+            return () => {
+                opening.scrollTrigger?.kill();
+                opening.kill();
+                gsap.set(kaders, { clearProps: 'clipPath,transform' });
+                gsap.set(teksten, { clearProps: 'transform' });
+            };
+        },
+    );
+
+    return () => mm.revert();
+}
 
 const meerdere = computed(() => props.items.length > 1);
 const rustig = computed(() => prefersReducedMotion());
@@ -126,23 +256,200 @@ let beeldKijker: IntersectionObserver | undefined;
  */
 const beurt = ref(0);
 
-function naar(index: number): void {
+/**
+ * De veeg die nu loopt, als die er is.
+ *
+ * **De veeg is een tijdlijn en geen CSS-overgang, en dat is de reparatie
+ * van een echte fout.** Eerst deed een `transition` op `clip-path` het
+ * werk: een dia die niet aan de beurt was stond weggeknipt, en werd hij de
+ * huidige, dan liep de knip naar nul. Maar de dia die net weg was bleef
+ * open onder de nieuwe liggen (`data-vorig`), en met twee projecten is dat
+ * precies de dia die je bij de volgende klik weer nodig hebt. Die ging van
+ * "open" naar "open": geen verschil, dus geen overgang. Alleen de eerste
+ * wissel veegde; elke wissel daarna stond er ineens. Bij drie of meer
+ * gebeurde hetzelfde zodra je terugklikte. Gemeten: de eerste wissel
+ * doorliep 58 tussenstanden van de knip, elke volgende één.
+ *
+ * Nu zet elke wissel zijn eigen beginstand (`fromTo`), dus wat er daarvoor
+ * met die dia gebeurde doet er niet meer toe.
+ *
+ * **Een klik tijdens een veeg gaat niet verloren.** De lopende veeg springt
+ * naar zijn eind en de nieuwe begint meteen; zo kun je snel doorklikken
+ * zonder dat er iets vastloopt of een klik wordt ingeslikt.
+ */
+let veeg: gsap.core.Timeline | null = null;
+
+function rondVeegAf(): void {
+    veeg?.progress(1);
+    veeg = null;
+}
+
+function blad(index: number): HTMLElement | undefined {
+    return (
+        venster.value?.querySelectorAll<HTMLElement>('.brand-site-dia-blad')[
+            index
+        ] ?? undefined
+    );
+}
+
+/**
+ * Hoe een wissel eruitziet: de nieuwe dia veegt open van de kant waar je
+ * heen bladert, het beeld erin zakt van iets te dichtbij naar zijn maat en
+ * de tekst schuift het laatste stukje mee. De vorige wijkt een fractie
+ * naar de andere kant uit en dimt, zodat je ziet dat hij onder de nieuwe
+ * verdwijnt en niet gewoon wordt overgeschilderd.
+ *
+ * Alleen `clip-path`, `transform` en `opacity`, op de dia's zelf, hun
+ * beeld en de regels van hun tekst -- niet op het beeldkader en het
+ * tekstblok, want die stuurt de opbouw bij het scrollen (`bouwOp()`).
+ *
+ * `vanaf`: waar de vorige dia stond als je hem met je vinger wegsleepte,
+ * zodat hij van daaruit verder gaat in plaats van eerst terug te springen.
+ */
+function speelVeeg(
+    nieuw: HTMLElement,
+    oud: HTMLElement | undefined,
+    kant: 'vooruit' | 'terug',
+    vanaf: number,
+): void {
+    const teken = kant === 'vooruit' ? 1 : -1;
+    const foto = nieuw.querySelector<HTMLElement>(
+        '.brand-site-casus-beeld img',
+    );
+    const regels = [
+        ...nieuw.querySelectorAll<HTMLElement>('.brand-site-casus-tekst > *'),
+    ];
+
+    veeg = gsap.timeline({
+        defaults: { overwrite: 'auto' },
+        onComplete: () => {
+            gsap.set(nieuw, { clearProps: 'clipPath' });
+            gsap.set(regels, { clearProps: 'transform,opacity' });
+
+            if (foto !== null) {
+                gsap.set(foto, { clearProps: 'transform' });
+            }
+
+            if (oud !== undefined) {
+                gsap.set(oud, { clearProps: 'transform,opacity' });
+            }
+
+            veeg = null;
+            vorig.value = null;
+        },
+    });
+
+    veeg.fromTo(
+        nieuw,
+        {
+            clipPath:
+                teken > 0 ? 'inset(0% 0% 0% 100%)' : 'inset(0% 100% 0% 0%)',
+        },
+        {
+            clipPath: 'inset(0% 0% 0% 0%)',
+            duration: 0.9,
+            ease: 'power3.inOut',
+        },
+        0,
+    );
+
+    if (foto !== null) {
+        veeg.fromTo(
+            foto,
+            { scale: 1.12 },
+            { scale: 1, duration: 1.3, ease: 'power2.out' },
+            0,
+        );
+    }
+
+    if (regels.length > 0) {
+        veeg.fromTo(
+            regels,
+            { x: 48 * teken, opacity: 0 },
+            {
+                x: 0,
+                opacity: 1,
+                duration: 0.7,
+                ease: 'power3.out',
+                stagger: 0.05,
+            },
+            0.3,
+        );
+    }
+
+    if (oud !== undefined) {
+        veeg.fromTo(
+            oud,
+            { x: vanaf, opacity: 1 },
+            {
+                x: vanaf - 64 * teken,
+                opacity: 0.45,
+                duration: 0.9,
+                ease: 'power3.inOut',
+            },
+            0,
+        );
+    }
+}
+
+/**
+ * Naar een dia, vanaf een bepaalde kant.
+ *
+ * Eerst de stand (welke dia aan is, welke net weg), dan laat Vue de
+ * attributen schrijven, en pas dan begint de veeg -- nog vóór de browser
+ * tekent, dus de nieuwe dia staat nooit een beeldje open voordat hij
+ * openveegt.
+ */
+async function naar(
+    index: number,
+    kant?: 'vooruit' | 'terug',
+    vanaf = 0,
+): Promise<void> {
     const aantal = props.items.length;
 
     if (aantal === 0) {
         return;
     }
 
-    huidig.value = ((index % aantal) + aantal) % aantal;
+    const doel = ((index % aantal) + aantal) % aantal;
+
+    if (doel === huidig.value) {
+        return;
+    }
+
+    rondVeegAf();
+
+    const van = huidig.value;
+
+    richting.value = kant ?? (doel > van ? 'vooruit' : 'terug');
+    vorig.value = rustig.value ? null : van;
+    huidig.value = doel;
     beurt.value += 1;
+
+    if (rustig.value) {
+        return;
+    }
+
+    await nextTick();
+
+    // Is er intussen alweer verder geklikt, dan is die wissel aan zet.
+    if (huidig.value !== doel) {
+        return;
+    }
+
+    const nieuw = blad(doel);
+
+    if (nieuw !== undefined) {
+        speelVeeg(nieuw, blad(van), richting.value, vanaf);
+    }
 }
 
-function vorige(): void {
-    naar(huidig.value - 1);
+function vorige(vanaf = 0): void {
+    void naar(huidig.value - 1, 'terug', vanaf);
 }
 
-function volgende(): void {
-    naar(huidig.value + 1);
+function volgende(vanaf = 0): void {
+    void naar(huidig.value + 1, 'vooruit', vanaf);
 }
 
 function startDoorschuiven(): void {
@@ -152,7 +459,7 @@ function startDoorschuiven(): void {
         return;
     }
 
-    tikker = setInterval(volgende, WACHTTIJD);
+    tikker = setInterval(() => volgende(), WACHTTIJD);
 }
 
 function stopDoorschuiven(): void {
@@ -162,20 +469,31 @@ function stopDoorschuiven(): void {
     }
 }
 
-function pauzeer(): void {
-    stilgezet.value = true;
+function pauzeer(reden: Reden): void {
+    redenen.value.add(reden);
 }
 
-function hervat(): void {
-    stilgezet.value = false;
+function hervat(reden: Reden): void {
+    redenen.value.delete(reden);
+}
+
+/** Focus die naar een andere knop in het blok gaat, blijft binnen. */
+function bijFocusWeg(gebeurtenis: FocusEvent): void {
+    const naar = gebeurtenis.relatedTarget;
+
+    if (naar instanceof Node && blok.value?.contains(naar)) {
+        return;
+    }
+
+    hervat('focus');
 }
 
 /** Een tabblad op de achtergrond hoeft niet door te schuiven. */
 function bijZichtbaarheid(): void {
     if (document.visibilityState === 'hidden') {
-        pauzeer();
+        pauzeer('tabblad');
     } else {
-        hervat();
+        hervat('tabblad');
     }
 }
 
@@ -187,6 +505,10 @@ function bijZichtbaarheid(): void {
 watch([stilgezet, meerdere, huidig, inBeeld], startDoorschuiven);
 
 onMounted(() => {
+    if (props.opbouw) {
+        stopOpbouw = bouwOp();
+    }
+
     startDoorschuiven();
     document.addEventListener('visibilitychange', bijZichtbaarheid);
 
@@ -213,6 +535,8 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+    stopOpbouw?.();
+    veeg?.kill();
     stopDoorschuiven();
     document.removeEventListener('visibilitychange', bijZichtbaarheid);
     window.removeEventListener('pointerup', bijLoslaten);
@@ -222,37 +546,24 @@ onBeforeUnmount(() => {
 
 /* --- Slepen ------------------------------------------------------------ */
 
-/** Hoeveel beeldpunten het spoor nu mee is met de vinger. */
+/** Hoeveel beeldpunten de dia nu mee is met de vinger. */
 const sleep = ref(0);
 const sleept = ref(false);
 
 let startX = 0;
 let verplaatst = false;
 
-/**
- * Aan de uiteinden stroever.
- *
- * Voorbij de eerste of de laatste dia is er niets meer, en dan hoort het
- * spoor niet gewoon door te lopen: je zou het beeld leeg trekken. Een
- * derde van de afstand is genoeg om te voelen dat het meegeeft en dat het
- * ophoudt.
- */
-function metWeerstand(afstand: number): number {
-    const aanBegin = huidig.value === 0 && afstand > 0;
-    const aanEind = huidig.value === props.items.length - 1 && afstand < 0;
-
-    return aanBegin || aanEind ? afstand / 3 : afstand;
-}
-
 function bijNeerzetten(gebeurtenis: PointerEvent): void {
     if (!meerdere.value || gebeurtenis.button !== 0) {
         return;
     }
 
+    // Wie vastpakt tijdens een veeg, pakt de dia zoals hij straks staat.
+    rondVeegAf();
     startX = gebeurtenis.clientX;
     verplaatst = false;
     sleept.value = true;
-    pauzeer();
+    pauzeer('slepen');
 }
 
 /**
@@ -283,7 +594,7 @@ function bijBewegen(gebeurtenis: PointerEvent): void {
         }
     }
 
-    sleep.value = metWeerstand(afstand);
+    sleep.value = afstand;
 }
 
 function bijLoslaten(): void {
@@ -295,16 +606,16 @@ function bijLoslaten(): void {
 
     sleept.value = false;
     sleep.value = 0;
-    hervat();
+    hervat('slepen');
 
     if (Math.abs(afstand) < VEEG_DREMPEL) {
         return;
     }
 
     if (afstand < 0) {
-        volgende();
+        volgende(afstand);
     } else {
-        vorige();
+        vorige(afstand);
     }
 }
 
@@ -324,29 +635,39 @@ function bijKlikken(gebeurtenis: MouseEvent): void {
     verplaatst = false;
 }
 
-/** Waar het spoor staat: hele dia's plus wat de vinger eraan trekt. */
-const spoorStijl = computed(() => ({
-    translate: `calc(${huidig.value * -100}% + ${sleep.value}px) 0`,
-}));
+/**
+ * Hoe de dia in beeld met de vinger meegaat: hij schuift mee en dimt een
+ * beetje, zodat je ziet dat er iets gaat gebeuren als je loslaat.
+ */
+const sleepStijl = computed(() =>
+    sleep.value === 0
+        ? undefined
+        : {
+              transform: `translate3d(${sleep.value}px, 0, 0)`,
+              opacity: String(1 - Math.min(Math.abs(sleep.value) / 900, 0.35)),
+          },
+);
 </script>
 
 <template>
     <section
         v-if="items.length > 0"
         ref="blok"
-        class="brand-projectdia"
+        class="brand-site-dia"
         :aria-roledescription="meerdere ? $t('Slideshow') : undefined"
         :aria-label="meerdere ? $t('Uitgelichte projecten') : undefined"
-        @pointerenter="pauzeer"
-        @pointerleave="hervat"
-        @focusin="pauzeer"
-        @focusout="hervat"
-        @keydown.left="vorige"
-        @keydown.right="volgende"
+        @pointerenter="pauzeer('muis')"
+        @pointerleave="hervat('muis')"
+        @focusin="pauzeer('focus')"
+        @focusout="bijFocusWeg"
+        @keydown.left="vorige()"
+        @keydown.right="volgende()"
     >
         <div
-            class="brand-projectdia-venster"
+            ref="venster"
+            class="brand-site-dia-venster"
             :data-sleept="sleept ? '' : undefined"
+            :aria-live="meerdere && stilgezet ? 'polite' : 'off'"
             @pointerdown="bijNeerzetten"
             @pointermove="bijBewegen"
             @pointerup="bijLoslaten"
@@ -354,25 +675,31 @@ const spoorStijl = computed(() => ({
             @click.capture="bijKlikken"
         >
             <div
-                class="brand-projectdia-spoor"
-                :data-stil="rustig || sleept ? '' : undefined"
-                :style="spoorStijl"
+                v-for="(item, index) in items"
+                :key="item.slug"
+                class="brand-site-dia-blad"
+                :data-aan="index === huidig ? '' : undefined"
+                :data-vorig="index === vorig ? '' : undefined"
+                :inert="index !== huidig ? true : undefined"
+                :aria-hidden="index !== huidig ? 'true' : undefined"
+                :role="meerdere ? 'group' : undefined"
+                :aria-roledescription="meerdere ? $t('Dia') : undefined"
+                :aria-label="
+                    meerdere
+                        ? $t(':nummer van :aantal', {
+                              nummer: String(index + 1),
+                              aantal: String(items.length),
+                          })
+                        : undefined
+                "
+                :style="index === huidig ? sleepStijl : undefined"
             >
-                <div
-                    v-for="(item, index) in items"
-                    :key="item.slug"
-                    class="brand-projectdia-blad"
-                    :data-aan="index === huidig ? '' : undefined"
-                    :inert="index !== huidig ? true : undefined"
-                    :aria-hidden="index !== huidig ? 'true' : undefined"
-                >
-                    <ProjectUitgelicht
-                        :item="item"
-                        :animeren="false"
-                        :meteen="index === 0"
-                        :herkomst="props.herkomst"
-                    />
-                </div>
+                <ProjectUitgelicht
+                    :item="item"
+                    :animeren="false"
+                    :meteen="index === 0"
+                    :herkomst="props.herkomst"
+                />
             </div>
         </div>
 
@@ -381,31 +708,36 @@ const spoorStijl = computed(() => ({
             het beeld dekken juist het beeld af, en op een telefoon staan
             ze dan ook nog eens boven de tekst.
         -->
-        <div v-if="meerdere" class="brand-projectdia-bediening">
+        <div v-if="meerdere" class="brand-site-dia-bediening">
             <button
                 type="button"
-                class="brand-projectdia-pijl"
+                class="brand-site-dia-pijl"
+                data-kant="terug"
                 :aria-label="$t('Vorige project')"
-                @click="vorige"
+                @click="vorige()"
             >
                 <ChevronLeft class="size-5" aria-hidden="true" />
             </button>
 
-            <div class="brand-projectdia-bolletjes">
+            <!--
+                Eén lijn per dia. Het aanraakvlak is de volle hoogte van de
+                knop (44 pixels); de lijn zelf is maar twee pixels dik.
+            -->
+            <div class="brand-site-dia-lijnen">
                 <button
                     v-for="(item, index) in items"
                     :key="item.slug"
                     type="button"
-                    class="brand-projectdia-bolletje"
+                    class="brand-site-dia-lijn"
                     :data-aan="index === huidig ? '' : undefined"
                     :aria-current="index === huidig ? 'true' : undefined"
                     :aria-label="$t('Ga naar :titel', { titel: item.titel })"
-                    @click="naar(index)"
+                    @click="void naar(index)"
                 >
                     <!--
                         De voortgang van het doorschuiven, als vulling in
-                        het streepje. `:key` loopt mee met de beurt zodat
-                        de animatie opnieuw begint bij elke wissel, en de
+                        de lijn. `:key` loopt mee met de beurt zodat de
+                        animatie opnieuw begint bij elke wissel, en de
                         CSS-variabele houdt hem gelijk aan de wachttijd
                         hierboven -- zo kunnen die twee niet uit elkaar
                         lopen.
@@ -413,7 +745,7 @@ const spoorStijl = computed(() => ({
                     <span
                         v-if="index === huidig && !rustig"
                         :key="beurt"
-                        class="brand-projectdia-voortgang"
+                        class="brand-site-dia-voortgang"
                         :data-stil="stilgezet || !inBeeld ? '' : undefined"
                         :style="{ '--dia-wachttijd': `${WACHTTIJD}ms` }"
                         aria-hidden="true"
@@ -423,12 +755,24 @@ const spoorStijl = computed(() => ({
 
             <button
                 type="button"
-                class="brand-projectdia-pijl"
+                class="brand-site-dia-pijl"
+                data-kant="vooruit"
                 :aria-label="$t('Volgende project')"
-                @click="volgende"
+                @click="volgende()"
             >
                 <ChevronRight class="size-5" aria-hidden="true" />
             </button>
+
+            <!--
+                Waar je bent, in cijfers. Verborgen voor een schermlezer:
+                die hoort het al bij de dia zelf ("1 van 3").
+            -->
+            <span
+                class="brand-site-dia-teller brand-site-data"
+                aria-hidden="true"
+            >
+                {{ huidig + 1 }} / {{ items.length }}
+            </span>
         </div>
     </section>
 </template>

@@ -39,6 +39,13 @@ onMounted(() => {
         return;
     }
 
+    /*
+     * De selectors binnen deze laag, en niet over de hele pagina: zo kan
+     * niets anders met hetzelfde attribuut per ongeluk meebewegen.
+     */
+    const gloed = laag.value.querySelector('[data-intro-gloed]');
+    const merk = laag.value.querySelector('[data-intro-merk]');
+
     tijdlijn = gsap
         .timeline({
             // Uit de DOM halen en niet alleen onzichtbaar maken. Een laag
@@ -49,13 +56,13 @@ onMounted(() => {
             },
         })
         .fromTo(
-            '[data-intro-gloed]',
+            gloed,
             { opacity: 0, scale: 0.8 },
             { opacity: 1, scale: 1, duration: 0.45, ease: 'power2.out' },
             0,
         )
         .fromTo(
-            '[data-intro-merk]',
+            merk,
             { opacity: 0, scale: 0.9, filter: 'blur(6px)' },
             {
                 opacity: 1,
@@ -66,15 +73,27 @@ onMounted(() => {
             },
             0.12,
         )
-        .to(
+        /*
+         * En dan gaat het oog open. De laag krijgt een gat in het midden
+         * dat groeit tot voorbij de hoeken van het scherm -- een diafragma
+         * dat opengaat, met de hero erachter. Het gat is een CSS-variabele
+         * in een `mask` (zie hero.css); JavaScript schuift alleen die maat.
+         * Het merkteken vliegt ondertussen naar je toe en lost op.
+         */
+        .fromTo(
             laag.value,
+            { '--gat': '0px' },
             {
-                opacity: 0,
-                yPercent: -8,
-                duration: 0.35,
-                ease: 'power2.in',
+                '--gat': `${Math.hypot(window.innerWidth, window.innerHeight) / 2 + 40}px`,
+                duration: 0.42,
+                ease: 'power3.in',
             },
-            INTRO_DUUR - 0.35,
+            INTRO_DUUR - 0.42,
+        )
+        .to(
+            merk,
+            { scale: 1.6, opacity: 0, duration: 0.3, ease: 'power2.in' },
+            INTRO_DUUR - 0.42,
         );
 });
 

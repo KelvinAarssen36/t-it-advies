@@ -64,22 +64,27 @@ const linkedin = computed(
 <template>
     <Head :title="props.kop.titel" />
 
-    <section class="mx-auto max-w-6xl px-6 py-16 sm:py-24">
+    <!--
+        Hetzelfde raam als de secties van de voorpagina, zodat de kop en
+        de voet op dezelfde lijn staan als hier de inhoud. De eigen opbouw
+        van deze pagina blijft: kop, formulier met het visitekaartje
+        ernaast, en de terugregel.
+    -->
+    <section class="brand-site-raam brand-site-contact-pagina">
         <!--
             Waar je bent. Waar je heen kunt staat in de kop: die toont op
             deze pagina gewoon het menu van de voorpagina.
         -->
         <SiteKruimels :titel="'Contact'" />
 
-        <header class="mt-8 max-w-2xl space-y-3 opacity-0" data-reveal>
-            <p v-if="props.kop.opschrift" class="brand-contactpagina-opschrift">
+        <header class="mt-8 max-w-2xl opacity-0" data-reveal>
+            <p v-if="props.kop.opschrift" class="brand-site-opschrift">
                 {{ props.kop.opschrift }}
             </p>
-            <h1 class="brand-contactpagina-titel">{{ props.kop.titel }}</h1>
-            <p
-                v-if="props.kop.inleiding"
-                class="text-pretty text-muted-foreground"
-            >
+            <h1 class="brand-site-contact-pagina-titel">
+                {{ props.kop.titel }}
+            </h1>
+            <p v-if="props.kop.inleiding" class="brand-site-kop-inleiding">
                 {{ props.kop.inleiding }}
             </p>
         </header>
@@ -94,7 +99,7 @@ const linkedin = computed(
         <div
             class="mt-10 grid gap-8 lg:mt-12 lg:grid-cols-[1fr_20rem] lg:gap-12"
         >
-            <div class="brand-contactpagina-formulier opacity-0" data-reveal>
+            <div class="brand-site-contact-plaat opacity-0" data-reveal>
                 <ContactFormulier
                     :velden="props.velden"
                     :onderwerpen="props.onderwerpen"
@@ -104,14 +109,14 @@ const linkedin = computed(
                 />
             </div>
 
-            <aside class="brand-contactkaart opacity-0" data-reveal>
+            <aside class="brand-site-contact-kaart opacity-0" data-reveal>
                 <!--
                     Dezelfde foto als het medaillon in de kop van de site,
                     in dezelfde maten. Eén beeld voor beide plekken: dat
                     scheelt een download en het is hetzelfde gezicht.
                 -->
                 <img
-                    class="brand-contactkaart-foto"
+                    class="brand-site-contact-kaart-foto"
                     src="/images/persoon-medaillon-320.webp"
                     srcset="
                         /images/persoon-medaillon-320.webp 320w,
@@ -125,16 +130,16 @@ const linkedin = computed(
                     decoding="async"
                 />
 
-                <p v-if="eigenaar" class="brand-contactkaart-naam">
+                <p v-if="eigenaar" class="brand-site-contact-kaart-naam">
                     {{ eigenaar }}
                 </p>
-                <p class="brand-contactkaart-rol">
+                <p class="brand-site-contact-kaart-rol">
                     {{ $t('IT-advies en realisatie') }}
                 </p>
 
-                <hr class="brand-contactkaart-streep" />
+                <hr class="brand-site-contact-kaart-streep" />
 
-                <ul class="brand-contactkaart-lijst">
+                <ul class="brand-site-contact-kaart-lijst">
                     <li>
                         <Mail class="size-4 shrink-0" aria-hidden="true" />
                         <a

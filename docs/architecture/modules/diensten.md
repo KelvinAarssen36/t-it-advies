@@ -43,15 +43,17 @@ Anders dan bij de cijfers boven de tijdlijn, waar vier een harde grens is.
 De klant mag er zoveel neerzetten als hij wil; wat begrensd is, is
 hoeveel er **tegelijk** te zien zijn.
 
-**Vier op een breed scherm, drie op een telefoon**, en daarna blader je
+**Zes op een breed scherm, drie op een telefoon**, en daarna blader je
 verder. Zelfde afweging als bij de tijdlijn: een blok dat met elke dienst
 langer wordt duwt de rest van de pagina onder de vouw, en dan leest
-niemand meer waar het contactformulier staat. Elke pagina is even hoog,
-dus de pagina eronder blijft op zijn plek staan.
+niemand meer waar het contactformulier staat.
 
-Op een telefoon drie en niet vier omdat de kaarten daar onder elkaar
-staan: vier zou betekenen dat je moet scrollen om de knopjes te vinden
-waarmee je verder bladert.
+Zes en niet meer, omdat een dienst op een breed scherm één regel in een
+index is en geen kaart (zie hieronder): zes namen onder elkaar overzie je
+nog in één blik, acht wordt een lijst die je moet lezen. Op een telefoon
+drie, want daar staan ze als kaarten onder elkaar en horen de knopjes om
+verder te bladeren nog in beeld te komen. De getallen staan als `BREED`
+en `SMAL` in `DienstenSection.vue`.
 
 **Wel hoogstens acht expertisepunten per dienst.** Acht korte labels
 vullen ongeveer drie regels onder de tekst; daarboven lopen de kaarten in
@@ -81,94 +83,146 @@ of laat half Nederlands op een Engelse pagina.
 
 ## Hoe het op de landingspagina staat
 
-Een sectiekop, en daaronder een raster met kaarten.
+Een sectiekop, en daaronder de **lens-index** ("Helder zicht", zie
+[frontend en animatie](../frontend-en-animatie.md#de-landing-als-scène)).
 
-**Zolang alles op één pagina past volgt het aantal kolommen het aantal
-diensten**, zodat de rij vol staat:
+### Breed: een index met een paneel ernaast
 
-| Diensten | Kolommen op desktop    |
-| -------- | ---------------------- |
-| 1        | 1, in een smalle kolom |
-| 2        | 2                      |
-| 3        | 3                      |
-| 4        | 4                      |
+Vanaf de `tablet:`-grens (50rem) staan links de namen van de diensten
+onder elkaar, elk met zijn pictogram in een ringetje. Rechts ligt
+één glazen paneel met het verhaal van de dienst onder de lens: het
+pictogram in een klein diafragma, de titel, de samenvatting, de
+expertisepunten en -- alleen als er een heel verhaal is -- de knop "Lees
+meer", die `DienstVenster` opent.
 
-Vier worden er **twee bij twee** en niet vier naast elkaar: vier kaarten
-op één rij zijn zo smal dat de tekst erin op zes regels valt.
+Waarom zo en niet als raster kaarten: zes gelijke tegels lezen als een
+sjabloon, en je ziet pas wát er is als je ze allemaal hebt gelezen. Een
+index laat in één oogopslag het aanbod zien; het paneel vertelt daarna
+hoe.
 
-Zodra er gebladerd wordt ligt het raster vast op twee kolommen. Anders
-zou de laatste pagina met één overgebleven dienst een kaart van de volle
-breedte tonen, en springt de maat van de kaarten bij elke klik — dat
-leest als een andere sectie in plaats van als de volgende pagina.
+- **Het paneel volgt de dienst die je aanwijst, aantikt of met de
+  tabtoets bereikt**; standaard de eerste van de pagina. Aanwijzen met de
+  muis heeft een drempel van 90 ms, zodat een muis die schuin over de
+  lijst trekt het paneel niet laat flakkeren.
+- **Een lichte rail links schuift naar de actieve naam** (de "lens").
+  Gemeten met `offsetTop` van de rij, als `--lens-y` en een schaal
+  `--lens-schaal`, zodat er alleen een transform verandert.
+- **De namen zijn echte knoppen** met `aria-controls` naar het paneel en
+  `aria-current` op de actieve. Ze openen niets; ze kiezen wat het paneel
+  toont. Het venster opent alleen met de knop in het paneel, en die staat
+  er alleen als er een verhaal is -- dezelfde regel als bij de kaart.
+- **Alle panelen van de pagina liggen op elkaar** in één rastercel;
+  alleen het actieve is zichtbaar, de andere zijn `inert` en
+  `aria-hidden`. Daardoor is het blok zo hoog als het langste verhaal en
+  verspringt de pagina eronder niet als je wisselt. Het paneel plakt
+  (`sticky`) onder de kopbalk, zodat het bij een lange index in beeld
+  blijft.
+- **Eén dienst in totaal**: dan geen index, want een inhoudsopgave van één
+  regel is geen inhoudsopgave. Het paneel krijgt de breedte alleen.
+- Met een muis volgt een zacht spotlicht de cursor over de rand van het
+  paneel (`spotlicht()` en `.brand-site-spot`).
 
-Op een telefoon altijd 1 kolom.
+### De maat: compact, uit de rollen
+
+In de eerste ronde stonden de namen op 30 pixels en de titel in het paneel
+op 36; het blok nam op een laptop een heel scherm voor zes woorden. Nu
+komen alle maten uit de rollen in `basis.css`: de namen op `--site-maat-kop`
+(17 tot 21 pixels), de paneeltitel op `--site-maat-titel-lang`, de tekst op
+`--site-maat-lead`. Op 1440 breed ging het blok van 1202 naar 952 pixels,
+op een telefoon van 1605 naar 1357.
+
+### Het scrollmoment: de index bouwt zich op
+
+Dit is de beweging van deze sectie, en ze hoort bij de inhoud: een
+inhoudsopgave die zich opbouwt terwijl je hem binnenkomt.
+
+- **De namen schuiven per regel uit een masker omhoog**, gestaffeld: wat
+  samen in beeld komt, komt samen op (`ScrollTrigger.batch`, eenmalig). Het
+  masker is `.brand-site-diensten-naam-tekst`, de regel erin
+  `.brand-site-diensten-naam-regel`; een kleine marge onderaan houdt de
+  staart van een g of j binnen beeld. Het pictogram ernaast zet zich neer
+  (`stapelBinnen`, van iets kleiner).
+- **Het spoor vult zich met je scroll** (`scrollVoortgang` op
+  `.brand-site-diensten-spoor`, van 80% tot 45% van het scherm): een lichte
+  lijn langs de index die met je meeloopt -- een positie, geen waarde. De
+  variabele staat op dat ene smalle element en niet op de index, want een
+  CSS-variabele erft en zou anders bij elke scrollstap alle namen opnieuw
+  laten opmaken.
+- **Het paneel gaat de eerste keer open als een diafragma** (`irisOpen`).
+  Bij bladeren niet opnieuw: dan bouwt alleen de index zich op, want het
+  paneel stond al open.
+
+**De namen hebben hun eigen batch en gebruiken niet `stapelBinnen`.** Die
+hulp zette bij de eerste versie aan het eind wel `x` en `y` terug maar
+niet `yPercent`; een regel die met een procent onder zijn masker begon,
+bleef daar de hele duur staan en sprong bij het opruimen ineens in beeld
+-- in de browser gemeten ruim een seconde te laat. Een procent is nodig:
+een naam is één of drie regels hoog.
+
+**Wisselen tussen diensten is kort**: een kruisovergang met een kleine stap
+omhoog, onder de 220 milliseconden, met CSS-overgangen zodat snel langs de
+namen gaan de lopende overgang ombuigt. Dit gebeurt bij elke beweging van
+de muis over de index; het hoort te voelen als een paneel dat volgt, niet
+als een animatie waarop je wacht. De lens schuift in 0,3 seconde.
+
+### Smal: kaarten onder elkaar
+
+Onder 50rem bestaat aanwijzen niet en past een paneel naast een lijst
+niet. Dan staat elke dienst als glazen kaart onder de vorige
+(`FeatureCard`), met de samenvatting altijd zichtbaar (geklemd op vijf
+regels) en "Lees meer" eronder als er een verhaal is.
+
+**De kaart is een `<button>` zodra er een venster achter zit**, en anders
+een `<article>`. Zo is hij met de tabtoets bereikbaar en met Enter te
+bedienen, en is er geen knop die niets doet.
+
+Breed of smal wordt met een `matchMedia`-luisteraar bepaald, en er staat
+altijd maar één van de twee in de pagina: geen dubbele tekst voor een
+schermlezer of een zoekmachine.
 
 ### Bladeren springt naar de kop van het onderdeel
 
 Een nieuwe pagina is korter of langer dan de vorige, dus alles eronder
 verschuift. Doe je daar niets aan, dan druk je op "volgende" en kijk je
-ineens naar de tijdlijn — en op een telefoon, waar de kaarten onder
-elkaar staan, begin je zelfs midden in de tweede kaart. Erger nog: de
-knopjes schuiven weg onder je muis, dus je volgende klik landt op de
-pager van het onderdeel eronder.
+ineens naar het onderdeel eronder -- en de knopjes schuiven weg onder je
+muis, dus je volgende klik landt op de pager daarvan.
 
-**Er is eerst geprobeerd het blok een vaste hoogte te geven** — de
-hoogte van de grootste pagina die het had gehad. Dat loste het
-verschuiven op en leverde iets ergers op: op een telefoon is een volle
-pagina drie kaarten hoog, dus onder de laatste pagina met één kaart gaapte
-een gat van bijna twee schermen.
+**Er is eerst geprobeerd het blok een vaste hoogte te geven.** Dat leverde
+op een telefoon een gat van bijna twee schermen op onder de laatste
+pagina. Nu springt de pagina naar de kop van dit onderdeel, met
+`scrollNaar`. Bij een nieuwe pagina staat de lens weer op de eerste
+dienst.
 
-Nu springt de pagina naar de kop van dit onderdeel, met `scrollNaar`.
-Dat is wat je van bladeren verwacht, het werkt op elke schermbreedte, en
-de knopjes staan een scherm lager gewoon weer op hun plek. De tijdlijn
-doet hetzelfde, om dezelfde reden.
+### Nieuwe rijen moeten zichtbaar gemaakt worden
 
-### Nieuwe kaarten moeten zichtbaar gemaakt worden
+Een kaart (smal) begint op doorzichtigheid nul en wordt pas zichtbaar
+doordat `kaartenBinnen()` hem ophaalt (op elementen met `data-kaart`); een
+naam in de index (breed) begint onder zijn masker. Verschijnt er iets
+zonder dat de binnenkomst draait, dan blijft het weg.
 
-Een kaart begint op doorzichtigheid nul — die klasse zit in
-`FeatureCard` — en wordt pas zichtbaar doordat `kaartenBinnen()` hem
-ophaalt. Verschijnt er een kaart zonder dat die functie draait, dan
-blijft hij onzichtbaar.
+Dat is één keer misgegaan bij het overgaan van een **breedtegrens**. Nu
+draait `herstel()` (de index of de kaarten opnieuw opbouwen) na élke
+wisseling van de inhoud: bij het bladeren én bij het overgaan van de grens
+-- waar de hele opbouw wisselt van index naar kaarten, en ook het paneel
+opnieuw begint (`bouwPaneel()`). Wat al in beeld staat speelt meteen; de
+rest wacht op de scroll.
 
-Dat is één keer misgegaan bij het overgaan van een **breedtegrens**: op
-een telefoon staan er drie kaarten, op een breed scherm vier. Ging je van
-smal naar breed, dan kwam die vierde er wel bij te staan maar zag je hem
-niet — pas na het verversen van de pagina stond hij er.
+### De expertisepunten
 
-Vandaar `herstelKaarten()`, dat na élke wisseling van de inhoud draait:
-bij het bladeren én bij het overgaan van de grens. Bij het opstarten
-juist niet, want daar hoort de binnenkomst aan de scroll te hangen.
+Kleine pillen in de gewone letter -- het zijn steekwoorden en geen maat,
+dus Geist Mono was hier een kostuum --, op de kaart, in het paneel en in
+`DienstVenster` dezelfde (`.brand-site-diensten-punten`). Wordt een dienst
+actief, dan lichten ze **van links naar rechts** op, één voor één, in
+0,3 seconde met 30 milliseconden ertussen (`--punt` is het nummer in de
+rij, na de zesde niet langer). Achter elkaar leest als een
+lijn die zich vult; allemaal tegelijk als een blok dat van kleur wisselt.
 
-### De hover
+Wie om minder beweging heeft gevraagd krijgt het paneel en de lens zonder
+overgang: de inhoud wisselt meteen, de namen staan er al, het spoor is vol
+en het paneel staat open. Niets schuift.
 
-Kom je met de muis op een kaart, dan gebeuren er vier dingen tegelijk:
-de kaart kantelt licht mee met de cursor en er loopt een glans overheen
-(dat deed hij al), hij komt drie pixels naar je toe, het pictogram wordt
-iets groter met een gloed eromheen, en de expertisepunten lichten **van
-links naar rechts** op.
-
-Die laatste vertraging is wat het effect maakt. Allemaal tegelijk is één
-blok dat van kleur wisselt; achter elkaar leest als een lijn die zich
-vult, en je oog loopt er vanzelf langs. Bij het weggaan van de muis
-doven ze wél in één keer — een uitdovende golf voelt traag, want je kijkt
-dan al ergens anders.
-
-Wie in zijn systeeminstellingen om minder beweging heeft gevraagd krijgt
-de kleuren wel en het verschuiven niet.
-
-De klassen staan voluit in die tabel en worden niet in elkaar gezet.
-Tailwind leest de broncode om te weten welke klassen bestaan; een naam die
-pas tijdens het draaien ontstaat vindt hij niet, en dan mist die klasse in
-de gebouwde stylesheet.
-
-**De kaart is een `<button>` zodra er een venster achter zit**, en anders
-een `<article>`. Zo is hij met de tabtoets bereikbaar en met Enter te
-bedienen, en is er geen knop die niets doet. "Lees meer" verschijnt pas bij
-hover of toetsenbordfocus; op een aanraakscherm staat hij altijd, want daar
-is geen hover.
-
-De animaties zijn die van eerder: `kaartenBinnen()` en `kantelKaarten()`
-uit `motion.ts`, op elementen met `data-kaart`.
+De opmaak staat in
+[`resources/css/site/diensten.css`](../../../resources/css/site/diensten.css).
 
 ## Het beheerscherm
 
@@ -265,6 +319,8 @@ dezelfde drie teksten. Wat eronder anders werkt staat in
 | [`VolgordeDialoog.vue`](../../../resources/js/components/website/VolgordeDialoog.vue)       | De volgorde slepen.                                               |
 | [`DienstenSection.vue`](../../../resources/js/components/site/sections/DienstenSection.vue) | Wat de bezoeker ziet.                                             |
 | [`DienstVenster.vue`](../../../resources/js/components/site/DienstVenster.vue)              | Het hele verhaal achter één dienst.                               |
+| [`FeatureCard.vue`](../../../resources/js/components/site/FeatureCard.vue)                  | Eén dienst als kaart, op een smal scherm.                         |
+| [`diensten.css`](../../../resources/css/site/diensten.css)                                  | De opmaak van de index, het paneel en de kaarten.                 |
 | [`DienstIcoon.vue`](../../../resources/js/components/site/DienstIcoon.vue)                  | De enige koppeling naar de iconenbibliotheek.                     |
 | [`ServiceCrudTest`](../../../tests/Feature/Website/ServiceCrudTest.php)                     | Rechten, aanmaken, wijzigen, verwijderen, validatie, het logboek. |
 | [`ServicePointsTest`](../../../tests/Feature/Website/ServicePointsTest.php)                 | Het maximum, de volgorde, het gelijktrekken en de terugval.       |

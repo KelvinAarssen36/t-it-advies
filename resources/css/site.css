@@ -1,0 +1,33 @@
+/*
+  De publieke site: "Helder zicht".
+
+  Elk onderdeel van de landing heeft hier zijn eigen bestand, met klassen
+  onder het voorvoegsel `brand-site-`. Dat voorvoegsel is er om de
+  valkuil uit AGENTS.md: alle klassen staan in één ruimte zonder
+  naamruimte, en een tweede regel met dezelfde naam overschrijft de
+  eerste zonder foutmelding. Alles wat hier staat hoort bij de publieke
+  site en bij niets anders.
+
+  Gebruik de tokens `--site-*` uit app.css (:root en .dark) en de
+  merkkleuren; nooit een losse hexwaarde.
+
+  Zie docs/architecture/huisstijl-en-kleuren.md en
+  docs/architecture/frontend-en-animatie.md.
+*/
+@import './site/basis.css';
+@import './site/kop.css';
+@import './site/hero.css';
+@import './site/voettekst.css';
+@import './site/diensten.css';
+@import './site/werkwijze.css';
+@import './site/projecten.css';
+@import './site/ervaring.css';
+@import './site/certificaten.css';
+@import './site/statistieken.css';
+@import './site/kerngegevens.css';
+@import './site/faq.css';
+@import './site/over-mij.css';
+@import './site/linkedin.css';
+@import './site/contact.css';
+@import './site/subpaginas.css';
+@import './site/vensters.css';

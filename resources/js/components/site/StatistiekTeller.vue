@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import { formatteerGetal } from '@/lib/motion';
+import { formatteerGetal } from '@/lib/getallen';
 import type { StatistiekOpDeSite } from '@/types/statistieken';
 
 /**
@@ -40,20 +40,20 @@ const getal = computed(() =>
 </script>
 
 <template>
-    <div data-vul class="brand-statistiek-teller">
-        <span class="brand-statistiek-teller-getal">
-            <span v-if="props.item.voor" class="brand-statistiek-teken">
+    <div data-vul class="brand-site-statistiek-teller">
+        <span class="brand-site-statistiek-teller-getal">
+            <span v-if="props.item.voor" class="brand-site-statistiek-teken">
                 {{ props.item.voor }}
             </span>
             <span data-getal>{{ getal }}</span>
-            <span v-if="props.item.na" class="brand-statistiek-teken">
+            <span v-if="props.item.na" class="brand-site-statistiek-teken">
                 {{ props.item.na }}
             </span>
         </span>
 
-        <span class="brand-statistiek-naam">{{ props.item.naam }}</span>
+        <span class="brand-site-statistiek-naam">{{ props.item.naam }}</span>
 
-        <p v-if="props.item.notitie" class="brand-statistiek-notitie">
+        <p v-if="props.item.notitie" class="brand-site-statistiek-notitie">
             {{ props.item.notitie }}
         </p>
     </div>

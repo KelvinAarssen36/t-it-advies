@@ -22,6 +22,7 @@ import {
     Milestone,
     Route,
     Scale,
+    Share2,
     ShieldAlert,
     UserRound,
     Users,
@@ -60,6 +61,7 @@ import ervaring from '@/routes/website/ervaring';
 import faq from '@/routes/website/faq';
 import footer from '@/routes/website/footer';
 import kerngegevens from '@/routes/website/kerngegevens';
+import linkedin from '@/routes/website/linkedin';
 import statistieken from '@/routes/website/statistieken';
 import kop from '@/routes/website/kop';
 import overMij from '@/routes/website/over-mij';
@@ -198,6 +200,15 @@ const websiteItems = computed<NavItem[]>(() => [
         title: t('Contact'),
         href: contact.index(),
         icon: MessageSquare,
+    },
+    /*
+     * Na het contact, net als op de site. Stond er lang niet: er was één
+     * link en die ligt vast. Sinds de teksten eromheen te beheren zijn wel.
+     */
+    {
+        title: t('LinkedIn'),
+        href: linkedin.index(),
+        icon: Share2,
     },
     /*
      * De voettekst sluit de rij, net als op de site zelf. Hij stond hier

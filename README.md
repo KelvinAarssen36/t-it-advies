@@ -48,7 +48,7 @@ Inloggen: er is één account, dat van de eigenaar. Zet
 ```bash
 composer dev            # server, queue, logs en Vite tegelijk
 php artisan test        # tests
-composer ci:check       # pint + phpstan + vue-tsc + tests
+composer ci:check       # vp check (lint en opmaak) + vue-tsc + pint + phpstan + tests
 npm run build           # productiebuild
 ```
 

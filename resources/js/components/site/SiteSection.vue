@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onBeforeUnmount, onMounted, useTemplateRef } from 'vue';
+import { plaatOpkomst } from '@/lib/motion';
 
 /**
  * Een sectie op de publieke site.
@@ -9,17 +10,24 @@ import { computed } from 'vue';
  * kiest, staat niets meer op één lijn en is dat achteraf niet meer recht te
  * trekken.
  *
- * `tone` bepaalt op welk niveau de sectie ligt. Zie de drie niveaus in
- * docs/architecture/huisstijl-en-kleuren.md: pagina, sectie, verhoogd.
+ * `tone` bepaalt op welk niveau de sectie ligt, en komt van Welcome.vue op
+ * **plek in de rij**: `base` is een open veld op het donker, `raised` een
+ * iets ingesprongen plaat van Deep Navy met een glazen rand. Doordat het op
+ * plek gaat en niet op naam, liggen er nooit twee platen tegen elkaar --
+ * hoe de klant de onderdelen ook schuift. `divided` zet de horizonlijn
+ * boven een open veld.
  *
  * Met `image` krijgt de sectie een foto als achtergrond. Er komt dan altijd
  * een afdeklaag overheen: witte tekst haalt op de lichte plekken van een
  * foto het contrast niet, en welke plekken dat zijn verschilt per foto.
+ * Geef `imageSrcset` mee met meerdere breedtes; de browser kiest zelf op
+ * schermbreedte en pixeldichtheid.
  *
- * Geef `imageSrcset` mee met meerdere breedtes. De browser kiest dan zelf,
- * op basis van de schermbreedte én de pixeldichtheid -- een telefoon hoeft
- * geen bestand voor een 4K-scherm te downloaden, en een scherm met dubbele
- * pixeldichtheid hoeft geen opgerekte kleine versie te tonen.
+ * **Een plaat komt uit de diepte omhoog terwijl je hem binnenscrolt**
+ * (`plaatOpkomst`), alleen op een breed scherm. Het open veld beweegt
+ * niet: zo wisselen rust en beweging elkaar af, net als de tonen.
+ *
+ * Zie docs/architecture/pagina-indeling.md, "Veld en plaat".
  */
 const props = withDefaults(
     defineProps<{
@@ -48,28 +56,31 @@ const props = withDefaults(
     },
 );
 
-const toneClass = computed(
-    () =>
-        ({
-            base: 'bg-background',
-            raised: 'bg-card',
-            gradient: 'brand-surface-dark',
-        })[props.tone],
-);
+const plaat = useTemplateRef<HTMLElement>('plaat');
+let stopOpkomst: (() => void) | undefined;
+
+onMounted(() => {
+    if (props.tone === 'raised' && plaat.value !== null) {
+        stopOpkomst = plaatOpkomst(plaat.value);
+    }
+});
+
+onBeforeUnmount(() => stopOpkomst?.());
 
 const widthClass = computed(() =>
-    props.width === 'narrow' ? 'max-w-2xl' : 'max-w-6xl',
+    props.width === 'narrow' ? 'max-w-3xl' : '',
 );
 </script>
 
 <template>
     <section
+        class="brand-site-sectie"
         :class="[
-            toneClass,
-            divided ? 'border-t border-border' : '',
-            image ? 'relative isolate overflow-hidden' : '',
+            tone === 'gradient' ? 'brand-surface-dark' : '',
+            image ? 'isolate overflow-hidden' : '',
         ]"
-        class="scroll-mt-16"
+        :data-toon="tone"
+        :data-lijn="divided ? '' : undefined"
     >
         <template v-if="image">
             <img
@@ -89,8 +100,15 @@ const widthClass = computed(() =>
             />
         </template>
 
-        <div :class="widthClass" class="mx-auto px-6 py-20 sm:py-28">
-            <slot />
+        <!--
+            De plaat is er altijd, ook bij een open veld: dan is hij
+            onzichtbaar. Zo heeft elke sectie dezelfde opbouw en hoeft een
+            onderdeel niet te weten op welke plek het staat.
+        -->
+        <div ref="plaat" class="brand-site-sectie-plaat">
+            <div :class="widthClass" class="brand-site-raam">
+                <slot />
+            </div>
         </div>
     </section>
 </template>

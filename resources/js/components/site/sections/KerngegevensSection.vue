@@ -4,36 +4,36 @@ import { computed, onBeforeUnmount, onMounted, useTemplateRef } from 'vue';
 import KerngegevenIcoon from '@/components/site/KerngegevenIcoon.vue';
 import SectionHeading from '@/components/site/SectionHeading.vue';
 import SiteSection from '@/components/site/SiteSection.vue';
-import { rolbord } from '@/lib/motion';
+import {
+    gsap,
+    prefersReducedMotion,
+    rolbord,
+    stapelBinnen,
+} from '@/lib/motion';
 import type { KerngegevenOpDeSite } from '@/types/kerngegevens';
 import type { SectieKop, SectieProps } from '@/types/secties';
 
 /**
- * De feitenstrook: beschikbaarheid, werkgebied, reactietijd.
+ * De kerngegevens: de praktische feiten in één overzicht.
  *
- * **De waarde is groot en het label klein**, en dat is precies andersom
- * dan bij de statistieken ernaast. Daar draagt de meter de boodschap en is
- * het label het bijschrift; hier ís de waarde het antwoord. "Vanaf
- * januari" is wat de bezoeker zoekt, "Beschikbaar" zegt alleen waar hij
- * kijkt.
+ * **Een lijst in twee kolommen, en geen strook met gelijke vakken.** De
+ * strook die hier stond gaf elk vak de hoogte van het langste in zijn rij:
+ * één lange waarde, en de drie buren kregen een leeg vlak onder hun tekst.
+ * Nu is elke rij zo hoog als zijn eigen inhoud. Per feit staat het teken in
+ * een vak links, het label klein erboven en de waarde in de maat van een
+ * kopje -- de waarde is waar het om gaat.
  *
- * **Eén omlijnd blok met scheidingslijntjes, geen losse tegels.** Tegels
- * zijn er al bij de statistieken en kaarten bij de diensten. Een strook
- * leest als één mededeling in plaats van als acht losse, en dat is wat
- * deze gegevens zijn: samen vormen ze het antwoord op "kan ik met deze
- * man in zee".
+ * Eén feit staat alleen. Bij een oneven aantal krijgt het laatste de hele
+ * breedte, zodat er geen half lege rij overblijft. Het blijft een `<dl>`:
+ * termen met hun omschrijving.
  *
- * **De laatste rij vult zichzelf.** Zeven gegevens worden vier plus drie
- * en niet vier plus drie plus een leeg vak; zie
- * `.brand-kerngegevens-strook` in app.css voor waarom dat flex is en geen
- * raster.
- *
- * **De animatie is tweeledig.** De strook komt als één blok op met de
- * gedeelde `revealOnScroll` uit PublicLayout, en daarná zetten de waarden
- * zich vast als een rolbord -- letter voor letter, of per woord als de
- * waarde daar te lang voor is. Zie `rolbord()` in
- * resources/js/lib/motion.ts voor waarom dat zo werkt en wat er met een
- * schermlezer gebeurt.
+ * **De beweging komt van twee kanten.** Op een breed scherm schuift de
+ * linkerkolom van links en de rechterkolom van rechts naar zijn plek,
+ * gekoppeld aan de scroll: je schuift de feiten zelf in elkaar, en
+ * omhoogscrollen haalt ze weer uiteen. Ze staan stil voordat de strook het
+ * midden van het scherm bereikt, dus je leest nooit iets wat beweegt. Dan
+ * rollen de waarden zich vast als een rolbord. Op een telefoon komen ze
+ * gewoon één voor één op; onder reduced motion staat alles er meteen.
  *
  * Zie docs/architecture/modules/kerngegevens.md.
  */
@@ -49,97 +49,148 @@ const kop = computed<SectieKop | null>(
     () => (page.props.coreFactsHeading as SectieKop | undefined) ?? null,
 );
 
-/**
- * Hoeveel vakken er op een breed scherm naast elkaar staan.
- *
- * Vier is het maximum, maar bij vijf of zes staan drie kolommen rustiger:
- * drie plus twee en drie plus drie lezen als twee volle rijen, waar vier
- * plus een eruitziet alsof er iets is weggevallen. De laatste rij vult
- * zichzelf sowieso, dus dit gaat over de rust en niet over gaten.
- */
-const kolommen = computed(() => {
-    const aantal = gegevens.value.length;
+const lijst = useTemplateRef<HTMLElement>('lijst');
+const opruimers: Array<() => void> = [];
 
-    if (aantal <= 4) {
-        return Math.max(aantal, 1);
+/**
+ * De twee kolommen schuiven in elkaar, met de scroll mee.
+ *
+ * De kant komt uit de plek in de lijst (even links, oneven rechts) -- dat
+ * is ook de kolom waarin het feit staat. De afstand is een deel van de
+ * breedte van de lijst zelf, en wordt bij elke verversing opnieuw gemeten
+ * (`invalidateOnRefresh`): na een andere taal of een andere schermbreedte
+ * klopt hij nog steeds.
+ */
+const schuifInElkaar = (): (() => void) => {
+    const vlak = lijst.value;
+
+    if (vlak === null || prefersReducedMotion()) {
+        return () => {};
     }
 
-    return aantal <= 6 ? 3 : 4;
-});
+    const mm = gsap.matchMedia();
 
-const strook = useTemplateRef<HTMLElement>('strook');
+    mm.add('(min-width: 50rem)', () => {
+        const feiten = Array.from(
+            vlak.querySelectorAll<HTMLElement>('.brand-site-kern-feit'),
+        );
+        const afstand = (): number => Math.min(vlak.clientWidth * 0.12, 140);
 
-let stop: (() => void) | undefined;
+        const tijdlijn = gsap.timeline({
+            defaults: { ease: 'power2.out' },
+            scrollTrigger: {
+                trigger: vlak,
+                start: 'top 95%',
+                end: 'top 52%',
+                scrub: 0.6,
+                invalidateOnRefresh: true,
+            },
+        });
+
+        tijdlijn.fromTo(
+            feiten,
+            {
+                x: (i: number) =>
+                    (i % 2 === 0 ? -1 : 1) *
+                    afstand() *
+                    (1 + Math.floor(i / 2) * 0.25),
+                opacity: 0,
+            },
+            /*
+             * Geen `stagger`: in een scrub met afstanden die bij een
+             * verversing opnieuw worden berekend, tekent GSAP de beginstand
+             * van een later element pas als zijn beurt komt -- de
+             * rechterkolom stond dan eerst op zijn plek en schoot daarna weg.
+             * De volgorde zit nu in de afstand: elke rij lager begint een
+             * stukje verder weg.
+             */
+            { x: 0, opacity: 1, duration: 1 },
+        );
+
+        return () => {
+            tijdlijn.scrollTrigger?.kill();
+            tijdlijn.kill();
+            gsap.set(feiten, { clearProps: 'transform,opacity' });
+        };
+    });
+
+    /*
+     * Op een telefoon is er één kolom, dus geen twee kanten: daar komen
+     * de feiten één voor één op.
+     */
+    mm.add('(max-width: 49.999rem)', () =>
+        stapelBinnen(
+            Array.from(
+                vlak.querySelectorAll<HTMLElement>('.brand-site-kern-feit'),
+            ),
+            { van: { opacity: 0, y: 18 }, stagger: 0.05 },
+        ),
+    );
+
+    return () => mm.revert();
+};
 
 onMounted(() => {
-    stop = rolbord('[data-rolbord]', strook.value);
+    opruimers.push(schuifInElkaar());
+    opruimers.push(rolbord('[data-rolbord]', lijst.value));
 });
 
-onBeforeUnmount(() => stop?.());
+onBeforeUnmount(() => opruimers.forEach((opruimen) => opruimen()));
 </script>
-
 <template>
     <SiteSection id="kerngegevens" :tone="tone" :divided="divided">
-        <div class="brand-kerngegevens">
-            <SectionHeading
-                v-if="kop"
-                :eyebrow="kop.opschrift ?? undefined"
-                :title="kop.titel"
-                :intro="kop.inleiding ?? undefined"
-            />
+        <SectionHeading
+            v-if="kop"
+            :eyebrow="kop.opschrift ?? undefined"
+            :title="kop.titel"
+            :intro="kop.inleiding ?? undefined"
+        />
 
-            <!--
-                Een `dl` en geen `ul`: dit zijn termen met hun omschrijving,
-                en dat is precies wat een definitielijst is. Een
-                schermlezer kondigt hem dan ook zo aan.
-            -->
-            <!--
-                `data-reveal` zet hem in de rij van de gedeelde reveal in
-                PublicLayout, net als de projectkaarten: de strook komt als
-                één blok op. Op de vakken afzonderlijk zouden het acht
-                losse fades worden, en dan is het geen strook meer maar een
-                rij tegels.
-            -->
-            <dl
-                ref="strook"
-                data-reveal
-                class="brand-kerngegevens-strook opacity-0"
-                :style="{ '--kolommen-breed': kolommen }"
+        <!--
+            `data-rolbord-strook`: de waarden rollen zodra deze lijst
+            binnenkomt, allemaal tegelijk, en niet elk op zijn eigen
+            moment. Anders staat een feit onderaan het scherm zichtbaar
+            leeg. Zie `rolbord()` in motion.ts.
+        -->
+        <dl
+            ref="lijst"
+            data-rolbord-strook
+            class="brand-site-kern-lijst"
+            :data-aantal="gegevens.length"
+        >
+            <div
+                v-for="gegeven in gegevens"
+                :key="gegeven.id"
+                class="brand-site-kern-feit"
             >
-                <div
-                    v-for="gegeven in gegevens"
-                    :key="gegeven.id"
-                    class="brand-kerngegevens-vak"
-                >
-                    <dt class="brand-kerngegevens-label">
-                        <KerngegevenIcoon
-                            :icoon="gegeven.soort"
-                            class="brand-kerngegevens-icoon"
-                            aria-hidden="true"
-                        />
+                <span class="brand-site-kern-teken" aria-hidden="true">
+                    <KerngegevenIcoon :icoon="gegeven.soort" />
+                </span>
+
+                <div class="brand-site-kern-tekst">
+                    <dt class="brand-site-kern-label">
                         {{ gegeven.label }}
                     </dt>
-
-                    <dd class="brand-kerngegevens-waarde">
+                    <dd class="brand-site-kern-waarde">
                         <!--
-                            `opacity-0` tot de animatie hem zichtbaar zet,
-                            net als bij de andere reveals. Staat er geen
-                            JavaScript, dan zet `rolbord()` hem meteen goed
-                            -- en bij `prefers-reduced-motion` ook.
+                            `opacity-0` tot het rolbord hem zichtbaar zet;
+                            onder reduced motion staat hij meteen goed.
                         -->
-                        <span data-rolbord class="opacity-0">
+                        <span
+                            data-rolbord
+                            class="brand-site-kern-cijfer opacity-0"
+                        >
                             {{ gegeven.waarde }}
                         </span>
-
                         <span
                             v-if="gegeven.notitie"
-                            class="brand-kerngegevens-notitie"
+                            class="brand-site-kern-notitie"
                         >
                             {{ gegeven.notitie }}
                         </span>
                     </dd>
                 </div>
-            </dl>
-        </div>
+            </div>
+        </dl>
     </SiteSection>
 </template>

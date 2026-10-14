@@ -274,13 +274,14 @@ class LayoutController extends Controller
              * vast (altijd), aangezet, en gevuld.
              */
             'live' => $sectie->vast() || ($aangezet && $gevuld),
-            'manageUrl' => $route === null ? null : route($route),
+            'manageUrl' => route($route),
 
             /*
-             * Of er überhaupt iets te beheren valt. Zonder dit verschil
-             * zegt het scherm bij LinkedIn "Nog niet te beheren", en dat
-             * is een belofte die we niet gaan waarmaken: daar is één
-             * link en die ligt bewust vast. Zie PageSectionKey::teBeheren().
+             * Of er überhaupt iets te beheren valt. Op dit moment overal;
+             * LinkedIn was de laatste uitzondering, tot de teksten van dat
+             * blok te beheren werden. Het veld blijft, zodat een onderdeel
+             * zonder iets in te vullen niet "Nog niet te beheren" krijgt.
+             * Zie PageSectionKey::teBeheren().
              */
             'manageable' => $sectie->teBeheren(),
         ];

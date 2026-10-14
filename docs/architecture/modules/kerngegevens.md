@@ -20,7 +20,8 @@ beheerd, vertaalbaar en versleepbaar.
 | Controller   | `App\Http\Controllers\Website\CoreFactController`                                        |
 | Beheerscherm | `website/Kerngegevens.vue` + `KerngegevenDialoog.vue` + `KerngegevenVolgordeDialoog.vue` |
 | Op de site   | `site/sections/KerngegevensSection.vue` + `site/KerngegevenIcoon.vue`                    |
-| Animatie     | `rolbord()` in `resources/js/lib/motion.ts`                                              |
+| Opmaak       | `resources/css/site/kerngegevens.css` (`brand-site-kern-*`)                              |
+| Animatie     | `rolbord()` in `resources/js/lib/motion.ts`, het in elkaar schuiven in de sectie zelf    |
 | Tests        | `CoreFactCrudTest`, `CoreFactPublishingTest`, `CoreFactTranslationTest`                  |
 
 ## De grens met Statistieken
@@ -93,8 +94,11 @@ hergebruikt -- dezelfde betekenis, dezelfde lengte.
 
 ## De animatie: een rolbord
 
-Komt de strook in beeld, dan **zetten de waarden zich letter voor letter
-vast**, door elkaar en met een kleine terugstuit -- als een vertrekbord op
+De waarden staan in de gewone letter (Geist): het zijn zinnen als "Eén
+werkdag" en "Op locatie, op afstand of allebei", geen maten. Ze stonden
+eerst in Geist Mono, en dat is een kostuum: mono is op deze site voor
+maat, tijd en telling. Komt de strook in beeld, dan
+**zetten de waarden zich letter voor letter vast**, door elkaar en met een kleine terugstuit -- als een vertrekbord op
 een station dat gaat staan.
 
 Dat past bij wat er staat: een kerngegeven is een feit dat vastligt, en
@@ -126,11 +130,19 @@ opbouw mee. Vijf dingen die er bewust zo in zitten:
 
 Bij `prefers-reduced-motion` staat alles meteen goed.
 
-### Twee bewegingen, in volgorde
+### Drie bewegingen, in volgorde
 
 De strook komt eerst als geheel op met de gedeelde `revealOnScroll` uit
-`PublicLayout` -- dezelfde beweging als de projectkaarten en de
-werkwijze -- en daarna pas zetten de waarden zich vast.
+`PublicLayout`, dan zetten de vakken zich één voor één in de strook
+(een kleine schaal en `opacity`, met een stagger van 0,05 seconde in
+leesvolgorde), en daarna zetten de waarden zich vast. Zo bouwt de strook
+zich op: eerst het vlak met zijn naden, dan de vakken, dan de feiten.
+
+**Eén trigger voor alle vakken, op de strook.** Met een trigger per vak
+wacht een vak in de tweede rij op zijn eigen plek terwijl de strook al in
+beeld staat, en dan zie je een leeg vak met alleen de naadkleur.
+`rolbord()` hangt om dezelfde reden aan de strook en niet aan de losse
+waarde. Zie `bouwOp()` in KerngegevensSection.vue.
 
 Die volgorde is er niet vanzelf. `rolbord()` stond op `top 90%` en de
 reveal op `top 85%`, en 90% ligt lager in beeld: de letters rolden dus
@@ -151,111 +163,103 @@ de strook staan waar hij staat -- onzichtbaar, want de markup draagt
 `opacity-0`. Dat is dezelfde valkuil als bij elke andere reveal in
 `motion.ts` en daarom staat hij daar overal.
 
-## In rust: stroom door het bord
+## Beweging: twee kolommen die in elkaar schuiven
 
-De binnenkomst speelt één keer, en daarna stond de strook stil. Nu trekt
-er elke negen seconden een smalle cyaan baan achter de vakken langs.
+Op een breed scherm schuift de linkerkolom van links en de rechterkolom
+van rechts naar zijn plek, **gekoppeld aan de scroll** (`scrub`): je schuift
+de feiten zelf in elkaar, en omhoogscrollen haalt ze weer uiteen. Elke rij
+lager begint een stukje verder weg, zodat het als één waaier dichtgaat.
+Alles staat stil voordat de lijst het midden van het scherm bereikt (van
+`top 95%` tot `top 52%`), dus je leest nooit iets wat beweegt. Daarna rollen
+de waarden zich vast.
 
-De vakken zijn ondoorzichtig, dus je ziet die baan alleen in de **naden
-van 1px ertussen**: de scheidingslijntjes lichten één voor één op, als
-stroom die door het bord loopt. Die naden zijn precies wat deze strook
-onderscheidt van elke andere vorm op de site, en dit is het enige effect
-dat ze gebruikt.
+De afstand is een deel van de breedte van de lijst zelf (12%, hoogstens
+140 pixels) en wordt bij elke verversing opnieuw gemeten. De lijst knipt
+horizontaal af (`overflow-x: clip`), zodat de pagina tijdens het schuiven
+niet breder wordt dan het scherm.
 
-**Waarom er niet af en toe een letter omklapt**, wat voor een vertrekbord
-voor de hand had gelegen: tekst die uit zichzelf verspringt trekt het oog
-weg van de regel die je net aan het lezen bent, en een bezoeker leest dat
-als een storing en niet als een bord. Beweging in rust mag opvallen zodra
-je ernaar kijkt, niet terwijl je iets anders leest.
+**Geen `stagger` in die scrub, en dat is een les.** Met een stagger in een
+scrub-tween waarvan de afstand bij elke verversing opnieuw wordt berekend,
+tekent GSAP de beginstand van een later element pas als zijn beurt komt:
+de rechterkolom stond eerst op zijn plek en schoot dan weg. De volgorde zit
+daarom in de afstand en niet in de tijd. Zie de valkuilen.
 
-**En geen `brand-glans`.** Die klasse staat buiten `@layer components` en
-hoort bij het formaat van de actieknop; de uitleg erbij zegt met zoveel
-woorden dat je er een eigen moet schrijven, nadat hij één keer op de
-veelgestelde vragen is geplakt en daar een wit vlak voorbij liet razen.
-`brand-kerngegevens-stroom` is die eigen.
+Op een telefoon is er één kolom en dus geen twee kanten; daar komen de
+feiten één voor één op (`stapelBinnen`). Onder reduced motion staat alles
+er meteen.
 
-De baan is een `::before` over de volle strook met alleen `translate` in
-de keyframes -- compositor-only, geen herberekening van de opmaak per
-frame. Hij steekt in 45% van de negen seconden over en wacht de rest:
-zonder die pauze is het geen bord dat af en toe overklikt maar een lampje
-dat staat te knipperen.
+### Wat er niet meer is
+
+De strook had een licht dat elke tien seconden door de naden tussen de
+vakken trok. Met de naden is ook dat licht weg: een lijst met regels heeft
+geen naden om door te schijnen, en het was het enige effect in rust op een
+blok dat juist rustig hoort te zijn.
 
 ## Hover
 
-Het vak reageert, maar nodigt niet uit tot klikken: het pictogram licht
-op en groeit een fractie, het label komt uit zijn gedempte grijs en het
-vak krijgt een zweem cyaan. Dezelfde taal als elke andere hover op de
-site.
+Het vak met het teken licht op als je over een rij gaat; dat zegt dat
+label, waarde en notitie bij elkaar horen. Er valt niets te klikken, dus er
+is geen lift en geen pijltje. Onder reduced motion zonder overgang.
 
-**Geen lift van 2px** zoals bij de project- en dienstkaarten. Die kaarten
-staan los; dit vak zit vast in een strook. Til je er één op, dan trek je
-de naad met zijn buren open en zie je de achtergrond staan waar het
-scheidingslijntje hoort. En een lift belooft dat er iets te klikken valt,
-terwijl hier niets te klikken valt.
+## Lange tekst: afbreken, nooit afknippen
 
-Bij `prefers-reduced-motion` blijven de baan en het groeien weg. De kleur
-bij hover blijft: dat is geen beweging.
+Label en waarde staan er allebei helemaal: in een lijst met eigen
+rijhoogtes is daar ruimte voor, en de klant typt ze zelf. **Een waarde
+had eerst een afkapping**: die
+had eerst ook een afkapping op drie regels, maar het beletselteken van
+`line-clamp` viel dan tussen de inline-blokken van het rolbord, als een
+los puntje midden in de regel. De klant typt de waarde zelf; dan hoort hij
+er ook te staan. Een woord van veertig tekens
+breekt af (`overflow-wrap: anywhere`) in plaats van uit het vak te
+steken.
+
+**Hier ging het eerst mis.** Het label stond op één regel met
+`overflow: hidden`, zonder beletselteken: een lange naam werd halverwege
+een letter afgesneden en je zag niet dat er meer stond. En de maskers die
+het rolbord om een woord zet zijn inline-blokken; een woord dat langer is
+dan het vak paste als één masker nooit op de regel. Die maskers krijgen
+nu `max-width: 100%`, zodat het woord erin kan afbreken.
 
 ## De vorm op de pagina
 
-Eén omlijnd blok met scheidingslijntjes, hoogstens vier kolommen vanaf
-`64rem`, twee vanaf `40rem`, daaronder één. De lijntjes zijn de
-achtergrond die door de naden schijnt (`gap: 1px` plus een
-achtergrondkleur): met een rand per vak krijg je op elke naad twee lijnen
-op elkaar, en die zijn zichtbaar dikker dan de buitenrand.
+**Een lijst in twee kolommen, en geen strook met gelijke vakken.** De strook
+die hier eerst stond (vakken met naden van één pixel, vier kolommen breed)
+gaf elk vak de hoogte van het langste in zijn rij. Eén lange waarde, en de
+drie buren kregen een leeg vlak onder hun tekst; op de echte gegevens was
+de helft van het blok lucht. Nu heeft elke rij zijn eigen hoogte.
 
-### Waarom het flex is en geen raster
+Per feit:
 
-Dat achtergrondtrucje is meteen de reden dat een raster hier niet kan.
-Vier vaste kolommen houden bij zeven vakken een lege plek over, en door
-die plek schijnt de achtergrond van de strook: een grijs blok in de hoek
-waar niets staat. Dat gebeurt bij elk aantal dat geen veelvoud is van het
-aantal kolommen -- bij vijf, zes en zeven van de acht die er kunnen zijn,
-en op twee kolommen bij elk oneven aantal.
+- links het **teken** in een eigen vak van 2,5rem, groot genoeg om als teken
+  te lezen en klein genoeg om de waarde niet weg te drukken;
+- het **label** klein en zilver erboven, in dezelfde vorm als een
+  cijferlabel elders op de site;
+- de **waarde** in de maat van een kopje (`--site-maat-kop`), halfvet: dat
+  is het antwoord;
+- de **notitie** klein eronder.
 
-Flex met `flex-grow` kent dat gat niet: wat er op de laatste rij
-overblijft verdeelt de breedte onder elkaar. Zeven vakken worden vier
-plus drie, en die drie zijn samen even breed als de vier erboven.
-
-De breedte van een vak is `calc((100% - var(--kolommen) * 1px) /
-var(--kolommen))`: een kolombreedte min de naden ertussen, met een naad
-extra als speling. Valt die berekening ook maar een fractie te breed uit,
-dan klapt het laatste vak naar de volgende rij en staat er een rij van
-drie waar vier hoort. `flex-grow` haalt die speling er meteen weer bij.
+Tussen de rijen een haarlijn en geen omlijning eromheen: de lijn zegt waar
+het ene feit ophoudt en het volgende begint.
 
 ### Hoeveel kolommen
 
-Op een breed scherm hangt het aantal kolommen af van hoeveel gegevens er
-staan. `KerngegevensSection.vue` geeft dat mee als `--kolommen-breed`,
-want alleen daar is het bekend:
-
-| Aantal  | Kolommen | Rijen         |
-| ------- | -------- | ------------- |
-| 1 t/m 4 | evenveel | één volle rij |
-| 5       | 3        | 3 + 2         |
-| 6       | 3        | 3 + 3         |
-| 7       | 4        | 4 + 3         |
-| 8       | 4        | 4 + 4         |
-
-Vier plus één ziet eruit alsof er iets is weggevallen; drie plus twee
-leest als twee volle rijen. Gaten zijn het niet -- die vangt `flex-grow`
-hoe dan ook af -- dit gaat puur over de rust.
+Vanaf `50rem` twee kolommen, daaronder één. Bij een oneven aantal krijgt
+het laatste feit de hele breedte (`:last-child:nth-child(odd)`), zodat er
+geen halve rij leeg blijft. Eén feit staat altijd alleen, over de volle
+breedte. Het aantal komt mee als `data-aantal` op de lijst.
 
 ### Op een telefoon
 
-Onder `40rem` staat alles onder elkaar, met minder ruimte in het vak en
-de waarde een maat kleiner (1,125rem in plaats van 1,25rem). Op volle
-grootte breekt "Op locatie, op afstand of allebei" daar over drie regels
-en wordt het vak hoger dan breed.
+Eén kolom, met dezelfde opbouw per rij. De waarden rollen zodra de lijst
+binnenkomt, allemaal tegelijk: `data-rolbord-strook` op de lijst zegt
+`rolbord()` dat de lijst de trigger is, en niet elke waarde apart.
 
-Acht gegevens onder elkaar is een lange strook op een telefoon, en dat is
-hier geen bezwaar: elke waarde heeft zijn eigen scroll-trigger, dus elk
-vak zet zich vast op het moment dat je het bereikt. Zou de hele strook in
-één keer afgaan, dan miste je er zeven.
-
-**Geen losse tegels.** Die staan al bij de statistieken, en kaarten bij de
-diensten. Een strook leest als één mededeling in plaats van als acht
-losse -- en dat is wat deze gegevens samen zijn.
+**Daar ging het eerst mis.** `rolbord()` begon vast op 85% van de
+vensterhoogte, terwijl de lijst zelf op een telefoon al op 115% opkomt
+(`beweging()` in motion.ts). Een waarde in de onderste strook van het
+scherm stond dan zichtbaar leeg tot je verder scrolde. Nu gebruikt het
+rolbord dezelfde grens als `revealOnScroll`, en de lijst als geheel als
+trigger.
 
 Op de pagina is het een `<dl>`: dit zijn termen met hun omschrijving, en
 een schermlezer kondigt hem dan ook zo aan.

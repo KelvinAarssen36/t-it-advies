@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Award } from '@lucide/vue';
+import { ArrowUpRight, Award } from '@lucide/vue';
 import type { CertificaatOpDeSite } from '@/types/certificaten';
 
 /**
@@ -35,37 +35,54 @@ defineEmits<{ openen: [] }>();
 </script>
 
 <template>
+    <!--
+        Een glazen plaat in de credentialwand. `brand-site-spot` geeft de
+        rand een licht dat de cursor volgt; de plek komt van
+        `kantelKaarten` in CertificatenSection.
+    -->
     <component
         :is="props.item.details ? 'button' : 'div'"
         data-kaart
-        class="brand-certificaat"
-        :class="{ 'is-klikbaar': props.item.details }"
+        class="brand-site-certificaten-tegel brand-site-spot"
+        :data-klikbaar="props.item.details ? '' : undefined"
         :type="props.item.details ? 'button' : undefined"
         @click="props.item.details ? $emit('openen') : undefined"
     >
         <!--
-            Het logo in een lichte plaat, zodat een donker merkteken op
+            Het logo in een eigen plaat, zodat een donker merkteken op
             een donkere achtergrond niet verdwijnt. Dezelfde behandeling
             als de logo's in de tijdlijn.
         -->
-        <span class="brand-certificaat-plaat" aria-hidden="true">
+        <span class="brand-site-certificaten-plaat" aria-hidden="true">
             <img
                 v-if="props.item.logo"
                 :src="props.item.logo"
                 alt=""
                 loading="lazy"
                 decoding="async"
-                class="brand-certificaat-logo"
+                class="brand-site-certificaten-logo"
             />
-            <Award v-else class="brand-certificaat-teken" />
+            <Award v-else class="brand-site-certificaten-teken" />
         </span>
 
-        <span class="brand-certificaat-naam">{{ props.item.naam }}</span>
+        <!--
+            Alleen op een tegel met iets te lezen: het teken dat er een
+            venster achter zit. Een tegel zonder details krijgt het niet,
+            want dan belooft hij iets wat er niet is.
+        -->
+        <ArrowUpRight
+            v-if="props.item.details"
+            class="brand-site-certificaten-meer"
+            aria-hidden="true"
+        />
 
-        <span class="brand-certificaat-uitgever">
-            {{ props.item.uitgever }}
-            <span aria-hidden="true">·</span>
-            {{ props.item.jaar }}
+        <span class="brand-site-certificaten-naam">{{ props.item.naam }}</span>
+
+        <span class="brand-site-certificaten-uitgever">
+            <span class="brand-site-certificaten-uitgever-naam">
+                {{ props.item.uitgever }}
+            </span>
+            <span class="brand-site-data">{{ props.item.jaar }}</span>
         </span>
     </component>
 </template>

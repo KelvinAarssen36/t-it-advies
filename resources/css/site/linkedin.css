@@ -1,0 +1,271 @@
+/*
+  LinkedIn: het rustmoment.
+
+  Eén brede glazen plaat: links de uitnodiging (opschrift, titel, zin,
+  knop en het adres eronder), rechts het merkteken in een baan. Twee vaste
+  cirkels, twee ringen die er langzaam vandaan gaan, en een stip op de
+  buitenste cirkel die met de scroll meedraait (LinkedinSection.vue,
+  vanaf 50rem). Op een telefoon staat het merkteken klein boven de tekst,
+  zonder baan; dan is het gewoon een blok met een knop.
+
+  De teksten beheert de eigenaar; zie docs/architecture/modules/linkedin.md.
+*/
+
+.brand-site-linkedin-plaat {
+    display: grid;
+    gap: 1.5rem;
+    padding: clamp(1.5rem, 3.5vw, 2.75rem);
+    overflow: hidden;
+}
+
+@media (min-width: 50rem) {
+    .brand-site-linkedin-plaat {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 3rem;
+    }
+}
+
+.brand-site-linkedin-tekst {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.brand-site-linkedin-titel {
+    font-size: var(--site-maat-titel, 2rem);
+    font-weight: 600;
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+    /* De eigenaar typt dit zelf; één lang woord breekt liever af dan dat
+       het de plaat breder maakt dan een telefoon. */
+    overflow-wrap: anywhere;
+    color: var(--site-kop);
+}
+
+/*
+  Een lange titel -- de eigenaar typt hem zelf -- krijgt de kleinere maat,
+  net als een lange sectiekop elders. Anders wordt het op een telefoon een
+  muur van zes regels in de grootste letter van de pagina.
+*/
+.brand-site-linkedin-titel[data-lang] {
+    font-size: var(--site-maat-titel-lang, 1.5rem);
+    line-height: 1.15;
+}
+
+.brand-site-linkedin-zin {
+    max-width: 34rem;
+    margin-top: 0.875rem;
+    font-size: var(--site-maat-lead, 1.0625rem);
+    line-height: 1.6;
+    text-wrap: pretty;
+    overflow-wrap: anywhere;
+    color: var(--site-tekst-zacht);
+}
+
+/*
+  De knop en het adres eronder. De knop is een pil met de merkkleur van
+  het blok: Electric Blue als vulling met lichte tekst, zoals de huisstijl
+  het wil; nooit als tekstkleur op donker. Het adres staat klein en in de
+  dataletter eronder: zo zie je vóór het klikken waar je heen gaat.
+*/
+.brand-site-linkedin-actie {
+    display: flex;
+    max-width: 100%;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.625rem 1rem;
+    margin-top: 1.5rem;
+}
+
+.brand-site-linkedin-knop {
+    display: inline-flex;
+    min-height: 2.75rem;
+    max-width: 100%;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1.125rem;
+    border-radius: 999px;
+    background-color: var(--brand-blue);
+    font-size: var(--site-maat-klein, 0.875rem);
+    font-weight: 500;
+    color: var(--site-kop);
+    box-shadow: 0 10px 30px -14px var(--site-licht-blauw);
+    transition:
+        background-color var(--site-duur-hover, 200ms) var(--site-ease),
+        transform var(--site-duur-druk, 120ms) var(--site-ease);
+}
+
+.brand-site-linkedin-knop span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.brand-site-linkedin-knop svg {
+    transition: transform var(--site-duur-hover, 200ms) var(--site-ease);
+}
+
+.brand-site-linkedin-knop:focus-visible {
+    outline: 2px solid var(--brand-cyan);
+    outline-offset: 2px;
+    background-color: var(--brand-blue-hover);
+}
+
+.brand-site-linkedin-knop:focus-visible svg {
+    transform: translate(2px, -2px);
+}
+
+.brand-site-linkedin-knop:active {
+    transform: translateY(1px) scale(0.98);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-linkedin-knop:hover {
+        background-color: var(--brand-blue-hover);
+    }
+
+    .brand-site-linkedin-knop:hover svg {
+        transform: translate(2px, -2px);
+    }
+}
+
+.brand-site-linkedin-adres {
+    min-width: 0;
+    font-size: var(--site-maat-label);
+    line-height: 1.4;
+    color: var(--site-tekst-zacht);
+    overflow-wrap: anywhere;
+}
+
+/* --- De zender ------------------------------------------------------- */
+
+.brand-site-linkedin-zender {
+    position: relative;
+    display: grid;
+    order: -1;
+    width: 3.75rem;
+    aspect-ratio: 1;
+    place-items: center;
+}
+
+@media (min-width: 50rem) {
+    .brand-site-linkedin-zender {
+        order: 0;
+        width: clamp(10rem, 15vw, 13rem);
+        margin-inline: 1.5rem;
+    }
+}
+
+/* Twee vaste cirkels: de schaal waar het signaal doorheen gaat. */
+.brand-site-linkedin-cirkel {
+    position: absolute;
+    inset: 0;
+    display: none;
+    border: 1px solid var(--site-plaat-rand);
+    border-radius: 999px;
+}
+
+.brand-site-linkedin-cirkel + .brand-site-linkedin-cirkel {
+    inset: 22%;
+    border-color: color-mix(in oklab, var(--brand-cyan) 18%, transparent);
+}
+
+@media (min-width: 50rem) {
+    .brand-site-linkedin-cirkel {
+        display: block;
+    }
+}
+
+/*
+  De baan: alles rond het merkteken in één laag, zodat de scroll hem als
+  geheel een fractie kan laten zakken zonder dat de ringen van het teken
+  af schuiven. Daarin de draaier: een vlak zo groot als de buitenste
+  cirkel met één stip op de rand, die met de scroll meedraait.
+*/
+.brand-site-linkedin-baan {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+}
+
+.brand-site-linkedin-draai {
+    position: absolute;
+    inset: 0;
+    display: none;
+    border-radius: 999px;
+}
+
+.brand-site-linkedin-stip {
+    position: absolute;
+    top: -0.25rem;
+    left: 50%;
+    width: 0.5rem;
+    height: 0.5rem;
+    margin-left: -0.25rem;
+    border-radius: 999px;
+    background: var(--brand-cyan);
+    box-shadow: 0 0 0 4px
+        color-mix(in oklab, var(--brand-cyan) 18%, transparent);
+}
+
+@media (min-width: 50rem) {
+    .brand-site-linkedin-draai {
+        display: block;
+        will-change: transform;
+    }
+}
+
+/* De ringen die uitzenden; `zend()` schaalt ze en laat ze uitdoven. */
+.brand-site-linkedin-ring {
+    position: absolute;
+    inset: 32%;
+    border: 1px solid color-mix(in oklab, var(--brand-cyan) 60%, transparent);
+    border-radius: 999px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.brand-site-linkedin-merk {
+    position: relative;
+    display: grid;
+    width: 3.75rem;
+    aspect-ratio: 1;
+    place-items: center;
+    padding: 0.95rem;
+    border: 1px solid var(--site-plaat-rand-sterk);
+    border-radius: 1rem;
+    background: linear-gradient(
+        160deg,
+        var(--brand-navy-raised),
+        var(--site-plaat-vol)
+    );
+    box-shadow: 0 24px 60px -24px var(--site-licht-blauw);
+    color: var(--site-kop);
+}
+
+@media (min-width: 50rem) {
+    .brand-site-linkedin-merk {
+        width: 4.5rem;
+        padding: 1.125rem;
+        border-radius: 1rem;
+    }
+}
+
+.brand-site-linkedin-merk svg {
+    width: 100%;
+    height: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .brand-site-linkedin-knop,
+    .brand-site-linkedin-knop svg {
+        transition: none;
+    }
+
+    .brand-site-linkedin-draai {
+        will-change: auto;
+    }
+}

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowUpRight, MouseIcon } from '@lucide/vue';
+import { ArrowUpRight, ChevronDown, ChevronUp } from '@lucide/vue';
 import {
     computed,
     nextTick,
@@ -9,42 +9,40 @@ import {
     watch,
 } from 'vue';
 import ErvaringIcoon from '@/components/site/ErvaringIcoon.vue';
-import { gsap, prefersReducedMotion, scrollThrough } from '@/lib/motion';
+import {
+    alInBeeld,
+    gsap,
+    opEenTelefoon,
+    prefersReducedMotion,
+} from '@/lib/motion';
 import type { ErvaringOpDeSite } from '@/types/ervaring';
 
 /**
- * De loopbaan als stapel kaarten waar je met je muiswiel doorheen gaat.
+ * De loopbaan als stapel kaarten waar je doorheen bladert.
  *
- * **Het vak is de zone, en dat is letterlijk zo.** Hang je met je muis in
- * het omlijnde vak, dan gaat je scroll naar de loopbaan; hang je ernaast,
- * dan scrolt de pagina gewoon door. De pagina blijft ondertussen staan
- * waar hij staat. Dat is een bewuste keuze boven het alternatief -- het
- * blok vastzetten en de pagina eronder laten doorlopen -- omdat het vak
- * dan ook is wat het lijkt: je ziet een gebied, en dat gebied is waar het
- * gebeurt.
+ * **Het muiswiel is van de pagina, niet van de stapel.** Hier nam het vak
+ * eerst je scroll over zodra het het midden van het scherm besloeg, en
+ * bladerde je met het wiel door de functies. Met een loopbaan van zevenentwintig
+ * regels stond de pagina dan achtentwintig wielstappen stil: voor wie
+ * gewoon verder wilde lezen voelde dat als een site die vastloopt. Nu scrolt
+ * de pagina altijd door, en blader je met de knoppen onderaan, de
+ * jaartallen in de rail, een klik op een kaart of de pijltjestoetsen.
  *
  * De functie waar je bent staat vooraan op een eigen kaart; die ervóór en
  * die erna staan kleiner erboven en eronder, **leesbaar** -- je ziet dus
  * niet alleen dát er iets voor en na komt, maar ook wát.
  *
- * **Vijf dingen die hier bewust zo zijn:**
+ * **Drie dingen die hier bewust zo zijn:**
  *
- * 1. **Je komt er altijd uit.** Ben je aan het begin of het eind van de
- *    loopbaan, dan houden we de scroll niet meer tegen en gaat de pagina
- *    gewoon verder. Zonder die uitweg zit de bezoeker vast in het vak, en
- *    dat is het ergste wat een onderdeel als dit kan doen.
- * 2. **Het vak moet het midden van het scherm beslaan** voordat het je
- *    scroll pakt. Anders werkt het tegen terwijl je er alleen maar
- *    langsschuift. Zie `scrollThrough` in motion.ts.
- * 3. **Met het toetsenbord werkt het ook**: het vak is aan te wijzen met
+ * 1. **Met het toetsenbord werkt het ook**: het vak is aan te wijzen met
  *    Tab, en dan bladeren de pijltjes, Home en End erdoorheen. Een
  *    onderdeel dat alleen met een muis te bedienen is, is stuk voor wie
  *    geen muis gebruikt.
- * 4. **De kaarten worden rechtstreeks verplaatst, buiten Vue om.** Dat
- *    loopt met elke scrollstap mee; zou Vue elke kaart opnieuw moeten
- *    tekenen, dan gaat het haperen. Wat Vue wél bijhoudt is welke ervaring
- *    vooraan staat.
- * 5. **Alleen de voorste kaart draagt zijn beschrijving.** De buren tonen
+ * 2. **De kaarten worden rechtstreeks verplaatst, buiten Vue om.** Elk
+ *    beeldje van een overgang verschuift ze; zou Vue elke kaart opnieuw
+ *    moeten tekenen, dan gaat het haperen. Wat Vue wél bijhoudt is welke
+ *    ervaring vooraan staat.
+ * 3. **Alleen de voorste kaart draagt zijn beschrijving.** De buren tonen
  *    periode, functie en organisatie; dat is wat je wilt weten over wat er
  *    aankomt. Zouden ze hun hele tekst meedragen, dan is er niets meer dat
  *    de voorste kaart onderscheidt.
@@ -61,13 +59,10 @@ const laatste = computed(() => Math.max(props.items.length - 1, 0));
  * Waar je bent in de rij, als kommagetal.
  *
  * Er zijn er **twee**, en dat is de kern van hoe soepel dit voelt.
- * `doel` is waar je scroll je heen stuurt; `positie` is waar de stapel
- * op dit moment staat, en die kruipt er elk beeldje een stukje naartoe.
- *
- * Zonder dat tussenstation springt de stapel per scrollgebeurtenis, en
- * die komen bij een muiswiel in schokken van honderd tegelijk binnen. Met
- * dat tussenstation loopt de beweging door nadat je bent gestopt, en
- * voelt het als iets wat glijdt in plaats van hapert.
+ * `doel` is waar een klik of toets je heen stuurt; `positie` is waar de
+ * stapel op dit moment staat, en die kruipt er elk beeldje een stukje
+ * naartoe. Zo glijdt de stapel naar een verre jaartal in plaats van te
+ * springen.
  */
 let doel = 0;
 let positie = 0;
@@ -119,7 +114,6 @@ const BUREN = 2;
  * één klik per functie. Lager en je vliegt eroverheen; hoger en een lange
  * loopbaan wordt een karwei.
  */
-const PER_ERVARING = 120;
 
 /**
  * De ruimte tussen de voorste kaart en zijn eerste buur, en die tussen de
@@ -169,6 +163,15 @@ const kaarten = (): HTMLElement[] =>
     Array.from(stapel.value?.children ?? []) as HTMLElement[];
 
 /** Elke kaart op zijn plek zetten voor de huidige positie in de rij. */
+/**
+ * Hoe ver de stapel openstaat: 0 is een dicht pak, 1 is de scherptediepte.
+ *
+ * Bij binnenkomst waaiert de stapel één keer open: je ziet dat het een
+ * stapel ís, en dus dat er meer onder ligt dan de voorste kaart. Daarna
+ * blijft hij op 1. Onder reduced motion begint hij open.
+ */
+let waaier = 1;
+
 const plaats = (): void => {
     const { gat, stap } = maten.value;
 
@@ -194,14 +197,29 @@ const plaats = (): void => {
         }
 
         // Tot de eerste buur het grote gat, daarna de kleinere stap.
+        /*
+         * `waaier` is 0 zolang de stapel nog dicht zit (zie `waaierOpen`):
+         * dan liggen de buren vlak achter de voorste kaart, als een pak
+         * kaarten. Bij 1 staan ze op hun plek.
+         */
         const y =
+            waaier *
             Math.sign(verschil) *
             (Math.min(ver, 1) * gat + Math.max(0, ver - 1) * stap);
 
-        const schaal = 1 - Math.min(ver, BUREN) * 0.1;
+        /*
+         * Scherptediepte zonder blur: wat niet vooraan staat wordt kleiner
+         * en zakt terug in het donker, zoals een lens die op één ding
+         * scherpstelt. Blur op tekst zou de buren onleesbaar maken -- en
+         * die moeten juist te lezen zijn -- en kost op elke scrollstap een
+         * filter per kaart.
+         */
+        const schaal = 1 - Math.min(ver, BUREN) * 0.09;
 
         kaart.style.visibility = 'visible';
-        kaart.style.opacity = String(Math.max(0, 1 - ver * 0.4));
+        kaart.style.opacity = String(
+            Math.max(0, 1 - ver * (0.42 + (1 - waaier) * 0.35)),
+        );
         kaart.style.transform = `translateY(calc(-50% + ${y.toFixed(1)}px)) scale(${schaal.toFixed(3)})`;
         kaart.style.zIndex = String(100 - Math.round(ver * 10));
     });
@@ -279,23 +297,6 @@ const stopLus = (): void => {
  * Zit je al aan het begin of het eind, dan gebruiken we hem niet en
  * scrolt de pagina verder. Dat is de uitweg uit het vak.
  */
-const verplaats = (verschuiving: number): boolean => {
-    const nieuw = Math.min(
-        Math.max(doel + verschuiving / PER_ERVARING, 0),
-        laatste.value,
-    );
-
-    if (nieuw === doel) {
-        return false;
-    }
-
-    doel = nieuw;
-    startLus();
-
-    return true;
-};
-
-/** Naar één ervaring springen: met het toetsenbord of via een jaartal. */
 const ga = (naar: number): void => {
     doel = Math.min(Math.max(naar, 0), laatste.value);
     startLus();
@@ -370,8 +371,10 @@ const opToets = (gebeurtenis: KeyboardEvent): void => {
 
     const sprong: Record<string, number> = {
         ArrowDown: doel + 1,
+        ArrowRight: doel + 1,
         PageDown: doel + 3,
         ArrowUp: doel - 1,
+        ArrowLeft: doel - 1,
         PageUp: doel - 3,
         Home: 0,
         End: laatste.value,
@@ -389,18 +392,49 @@ const opToets = (gebeurtenis: KeyboardEvent): void => {
     ga(Math.round(naar));
 };
 
-let stopScroll: (() => void) | undefined;
 let toezicht: ResizeObserver | undefined;
+let openen: gsap.core.Tween | undefined;
+
+/**
+ * Het openwaaieren bij binnenkomst, één keer.
+ *
+ * Een tween op een los getal en niet op de kaarten zelf: de kaarten krijgen
+ * hun transform al van `plaats()`, en twee systemen die om beurten in
+ * dezelfde transform schrijven is precies hoe een kaart gaat springen.
+ * Staat de stapel al in beeld (terug van een subpagina, een anker), dan
+ * meteen open.
+ */
+const waaierOpen = (): void => {
+    if (prefersReducedMotion() || vak.value === null || alInBeeld(vak.value)) {
+        return;
+    }
+
+    const stand = { waarde: 0 };
+
+    waaier = 0;
+    plaats();
+
+    openen = gsap.to(stand, {
+        waarde: 1,
+        duration: opEenTelefoon() ? 0.9 : 1.4,
+        ease: 'expo.out',
+        onUpdate: () => {
+            waaier = stand.waarde;
+            plaats();
+        },
+        scrollTrigger: {
+            trigger: vak.value,
+            start: 'top 78%',
+            once: true,
+        },
+    });
+};
 
 onMounted(() => {
     meet();
     plaats();
 
-    if (vak.value === null) {
-        return;
-    }
-
-    stopScroll = scrollThrough(vak.value, { onVerplaats: verplaats });
+    waaierOpen();
 
     /*
      * De maten hangen aan de hoogte van het vak, en die verandert bij het
@@ -432,7 +466,8 @@ watch(huidig, () => {
 });
 
 onBeforeUnmount(() => {
-    stopScroll?.();
+    openen?.scrollTrigger?.kill();
+    openen?.kill();
     stopLus();
     toezicht?.disconnect();
 });
@@ -479,9 +514,8 @@ const jaarMerken = computed(() => {
 
 <template>
     <!--
-        Het vak is de zone: hier gaat je scroll naar de loopbaan in plaats
-        van naar de pagina. De rand licht op zodra je muis erin hangt, dus
-        wat je ziet klopt met wat er gebeurt.
+        Het vak: de rand licht op zodra je muis erin hangt of het de focus
+        heeft. Het neemt je scroll niet over; zie het commentaar bovenaan.
 
         `tabindex` en de toetsafhandeling zijn geen bijzaak: zonder dat is
         dit onderdeel alleen met een muis te bedienen.
@@ -489,7 +523,7 @@ const jaarMerken = computed(() => {
     <div
         v-if="actief"
         ref="vak"
-        class="brand-loopbaan-vak"
+        class="brand-site-ervaring-vak"
         :data-binnen="binnenVak ? '' : undefined"
         tabindex="0"
         role="group"
@@ -500,20 +534,20 @@ const jaarMerken = computed(() => {
         @focusout="binnenVak = false"
         @keydown="opToets"
     >
-        <div class="brand-loopbaan-binnen">
+        <div class="brand-site-ervaring-binnen">
             <!-- De rail met de jaartallen, als oriëntatiepunt. -->
-            <div class="brand-loopbaan-rail">
-                <div class="brand-loopbaan-spoor" aria-hidden="true">
-                    <div ref="bereik" class="brand-loopbaan-bereik" />
+            <div class="brand-site-ervaring-rail">
+                <div class="brand-site-ervaring-spoor" aria-hidden="true">
+                    <div ref="bereik" class="brand-site-ervaring-bereik" />
                 </div>
 
-                <div class="brand-loopbaan-jaren">
+                <div class="brand-site-ervaring-jaren">
                     <button
                         v-for="merk in jaarMerken"
                         :key="merk.jaar"
                         type="button"
                         tabindex="-1"
-                        class="brand-loopbaan-jaar"
+                        class="brand-site-ervaring-jaar"
                         :style="{ top: `${merk.positie}%` }"
                         :data-actief="
                             actief.jaar === merk.jaar ? '' : undefined
@@ -531,11 +565,11 @@ const jaarMerken = computed(() => {
                 loopbaan leest. Wat niet vooraan staat draagt `inert` en
                 zit dus niet in de tab- of voorleesvolgorde.
             -->
-            <div ref="stapel" class="brand-loopbaan-stapel">
+            <div ref="stapel" class="brand-site-ervaring-stapel">
                 <article
                     v-for="(item, index) in items"
                     :key="item.id"
-                    class="brand-loopbaan-kaart"
+                    class="brand-site-ervaring-kaart"
                     :data-actief="index === huidig ? '' : undefined"
                     :inert="index === huidig ? undefined : true"
                     @pointerdown="opNeer"
@@ -548,7 +582,7 @@ const jaarMerken = computed(() => {
                         voor een logo of een foto nodig is. Zie
                         App\Support\Media\Logo.
                     -->
-                    <span class="brand-loopbaan-bel" aria-hidden="true">
+                    <span class="brand-site-ervaring-bel" aria-hidden="true">
                         <img v-if="item.logo" :src="item.logo" alt="" />
                         <ErvaringIcoon v-else :icoon="item.icon" />
                     </span>
@@ -557,20 +591,23 @@ const jaarMerken = computed(() => {
                         <div
                             class="flex flex-wrap items-center gap-x-3 gap-y-1"
                         >
-                            <span class="brand-loopbaan-periode">
+                            <span class="brand-site-ervaring-periode">
                                 {{ item.periode }}
                             </span>
-                            <span v-if="item.loopt" class="brand-tijdlijn-nu">
+                            <span
+                                v-if="item.loopt"
+                                class="brand-site-ervaring-nu"
+                            >
                                 {{ $t('Nu') }}
                             </span>
                         </div>
 
-                        <h3 class="brand-loopbaan-functie">
+                        <h3 class="brand-site-ervaring-functie">
                             {{ item.functie }}
                         </h3>
 
-                        <p class="brand-tijdlijn-meta mt-1.5">
-                            <span class="brand-tijdlijn-org">
+                        <p class="brand-site-ervaring-meta mt-1.5">
+                            <span class="brand-site-ervaring-org">
                                 <a
                                     v-if="item.website"
                                     :href="item.website"
@@ -603,7 +640,7 @@ const jaarMerken = computed(() => {
                         -->
                         <p
                             v-if="index === huidig && item.beschrijving"
-                            class="brand-loopbaan-tekst"
+                            class="brand-site-ervaring-tekst"
                         >
                             {{ item.beschrijving }}
                         </p>
@@ -616,17 +653,48 @@ const jaarMerken = computed(() => {
             De voet: waar je bent, en hoe je verder komt. Het muisje wordt
             duidelijker zodra je erin hangt -- dan is het ook waar.
         -->
-        <div class="brand-loopbaan-voet">
-            <span class="tabular-nums">
+        <div class="brand-site-ervaring-voet">
+            <span class="brand-site-data">
                 {{ huidig + 1 }} / {{ items.length }}
             </span>
 
-            <span class="brand-loopbaan-hint">
-                <MouseIcon class="size-3.5" />
-                {{ $t('Scroll hier om te bladeren, klik om te lezen') }}
+            <span class="brand-site-ervaring-hint">
+                {{
+                    $t(
+                        'Blader met de pijlen of de jaartallen, klik om te lezen',
+                    )
+                }}
+            </span>
+
+            <!--
+                Vorige en volgende. Hier nam de stapel eerst het muiswiel
+                over, en met tientallen functies stond de pagina dan
+                tientallen wielstappen stil: dat voelde als vastlopen. Nu
+                scrolt de pagina gewoon door en blader je hier, met de
+                jaartallen, of met de pijltjestoetsen.
+            -->
+            <span class="brand-site-ervaring-pijlen">
+                <button
+                    type="button"
+                    class="brand-site-ervaring-stapknop"
+                    :disabled="huidig === 0"
+                    :aria-label="$t('Vorige ervaring')"
+                    @click="ga(huidig - 1)"
+                >
+                    <ChevronUp class="size-4" />
+                </button>
+                <button
+                    type="button"
+                    class="brand-site-ervaring-stapknop"
+                    :disabled="huidig === laatste"
+                    :aria-label="$t('Volgende ervaring')"
+                    @click="ga(huidig + 1)"
+                >
+                    <ChevronDown class="size-4" />
+                </button>
             </span>
         </div>
 
-        <div ref="balk" class="brand-loopbaan-balk" aria-hidden="true" />
+        <div ref="balk" class="brand-site-ervaring-balk" aria-hidden="true" />
     </div>
 </template>

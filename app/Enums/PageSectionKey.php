@@ -66,6 +66,29 @@ enum PageSectionKey: string
         };
     }
 
+    /**
+     * Het woord in het menu van de site.
+     *
+     * Meestal hetzelfde als `label()`, maar korter waar dat in een balk van
+     * vijf of zes items het verschil maakt. Het beheer houdt de volle naam:
+     * de eigenaar zoekt "Kerngegevens" in zijn zijbalk, de bezoeker leest
+     * "Feiten" in het menu. "Werkwijze" is in het Nederlands al kort, maar
+     * "How we work" was het langste woord in het Engelse menu; vandaar een
+     * eigen sleutel die in beide talen kort is.
+     *
+     * Zie docs/architecture/pagina-indeling.md, "Het menu staat ook op de
+     * subpagina's".
+     */
+    public function menuLabel(): string
+    {
+        return match ($this) {
+            self::Kerngegevens => __('Feiten'),
+            self::Werkwijze => __('Aanpak'),
+            self::Statistieken => __('Cijfers'),
+            default => $this->label(),
+        };
+    }
+
     /** Eén regel die zegt wat er in dit onderdeel staat. */
     public function omschrijving(): string
     {
@@ -89,33 +112,27 @@ enum PageSectionKey: string
     /**
      * Valt er aan dit onderdeel iets te beheren?
      *
-     * **Dit is niet hetzelfde als `beheerRoute() === null`.** Dat zegt
-     * "er is nog geen scherm voor", en het indelingsscherm zet er dan
-     * "Nog niet te beheren" bij -- een belofte dat het er ooit komt.
+     * **Dit is niet hetzelfde als `beheerRoute()`.** Die zegt of er al een
+     * scherm _is_; zonder scherm zet het indelingsscherm er "Nog niet te
+     * beheren" bij -- een belofte dat het er ooit komt. Dit zegt of er
+     * überhaupt iets te beheren _valt_; is het antwoord nee,
+     * dan zou "nog niet" een verkeerde mededeling zijn.
      *
-     * Bij LinkedIn is er precies één ding -- de link -- die bewust
-     * vastligt. Daar valt niets te beheren, nu niet en later niet, en dan
-     * is "nog niet" een verkeerde mededeling.
+     * **Op dit moment valt overal iets te beheren.** LinkedIn stond hier
+     * als laatste op `false`: daar was één link en die ligt bewust vast.
+     * Sinds de teksten van het blok (opschrift, titel, zin en knop) te
+     * beheren zijn, geldt dat niet meer -- de link ligt nog steeds vast,
+     * maar wat eromheen staat is van de eigenaar. De voettekst ging
+     * eerder dezelfde weg, toen er een telefoonnummer en een KvK-nummer in
+     * kwamen. Zie docs/architecture/modules/linkedin.md.
      *
-     * **De voettekst stond hier ook, en staat er niet meer.** Daar hoorde
-     * bij: "bij de kop en de voettekst staat de tekst in de code". Dat was
-     * waar zolang er in de voet niets stond dat alleen de eigenaar kan
-     * weten. Sinds er een telefoonnummer, een werkgebied en een
-     * KvK-nummer in staan is het dat niet meer: dat zijn zijn gegevens,
-     * geen ontwerpkeuzes van ons. De indeling, de kleuren, het jaartal en
-     * de sitemap liggen nog steeds vast -- zie FooterController voor waar
-     * die grens nu loopt.
-     *
-     * De kop blijft hier weg om een andere reden dan je zou denken: die
-     * heeft wél een scherm (`website.kop.index`), dus `beheerRoute()`
-     * wijst ergens heen.
+     * De methode blijft bestaan omdat het indelingsscherm drie toestanden
+     * kent en niet twee; een volgend onderdeel zonder iets in te vullen
+     * hoort hier dan op `false` te komen.
      */
     public function teBeheren(): bool
     {
-        return match ($this) {
-            self::Linkedin => false,
-            default => true,
-        };
+        return true;
     }
 
     /**
@@ -227,13 +244,16 @@ enum PageSectionKey: string
 
     /**
      * De route naar het scherm waar de inhoud van dit onderdeel wordt
-     * beheerd, of null zolang dat scherm er nog niet is.
+     * beheerd.
      *
-     * Zolang hij null is, zet het indelingsscherm er "Nog niet te beheren"
-     * bij in plaats van een link die nergens heen gaat. De onderdelen die
-     * hier nog niet staan hebben hun tekst dus nog in een Vue-component.
+     * **Sinds LinkedIn erbij staat heeft elk onderdeel een scherm**, en
+     * staat hier dus geen `default` meer en geen `null`: komt er een
+     * onderdeel bij, dan dwingt de `match` je hier een keuze te maken.
+     * Krijgt een nieuw onderdeel (nog) geen scherm, zet het returntype dan
+     * terug op `?string`; het indelingsscherm toont bij `null` nog steeds
+     * "Nog niet te beheren" in plaats van een link die nergens heen gaat.
      */
-    public function beheerRoute(): ?string
+    public function beheerRoute(): string
     {
         return match ($this) {
             self::Hero => 'website.kop.index',
@@ -247,8 +267,8 @@ enum PageSectionKey: string
             self::Statistieken => 'website.statistieken.index',
             self::Faq => 'website.faq.index',
             self::Contact => 'website.contact.index',
+            self::Linkedin => 'website.linkedin.index',
             self::Footer => 'website.footer.index',
-            default => null,
         };
     }
 

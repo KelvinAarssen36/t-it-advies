@@ -15,6 +15,7 @@ import SiteIntro from '@/components/site/SiteIntro.vue';
 import {
     alInBeeld,
     hermeetScroll,
+    lichtVeld,
     revealOnScroll,
     scrollNaar,
     splitReveal,
@@ -37,6 +38,7 @@ import {
  */
 
 const root = ref<HTMLElement | null>(null);
+const veld = ref<HTMLElement | null>(null);
 
 /**
  * De taal is de sleutel van `<main>`, en dat is geen detail.
@@ -70,6 +72,7 @@ let stopScroll: (() => void) | undefined;
 let stopReveal: (() => void) | undefined;
 let stopSplit: (() => void) | undefined;
 let stopListening: (() => void) | undefined;
+let stopVeld: (() => void) | undefined;
 
 /**
  * Is er alleen van taal gewisseld, en waar stond de bezoeker toen?
@@ -116,6 +119,38 @@ type Houvast = { id: string; afstand: number };
 
 let houvast: Houvast | null = null;
 
+/**
+ * Kwam deze navigatie van de terug- of vooruitknop?
+ *
+ * Dan hoort de bezoeker terug te komen waar hij was, en niet bovenaan.
+ * **Inertia doet dat zelf wel, maar te vroeg voor ons.** Het zet de
+ * bewaarde positie één beeldje na het wisselen terug; met de overgang van
+ * `<main>` (`out-in`) staat de nieuwe pagina dan nog niet in de DOM, dus de
+ * pagina is te kort om daarheen te scrollen -- en daarna zette
+ * `voorBinnenkomst` hem op nul. Van een project terug naar de voorpagina
+ * begon je dus weer bij de hero.
+ *
+ * De positie zelf bewaart Inertia per geschiedenisitem in `history.state`
+ * (`documentScrollPosition`). **Lees hem uit de gebeurtenis, op het moment
+ * zelf.** Een paar beeldjes later heeft Inertia hem al overschreven: de
+ * pagina is tijdens de overgang even kort, de browser schuift de positie
+ * daarbinnen, en die nieuwe positie bewaart Inertia als de echte. In de
+ * browser gemeten: 4800 bij de popstate, 342 bij binnenkomst.
+ */
+let viaGeschiedenis = false;
+let bewaardePositie: number | null = null;
+
+const onthoudGeschiedenis = (gebeurtenis: PopStateEvent): void => {
+    const top = (
+        gebeurtenis.state as {
+            documentScrollPosition?: { top?: number };
+        } | null
+    )?.documentScrollPosition?.top;
+
+    viaGeschiedenis = true;
+    bewaardePositie = typeof top === 'number' ? top : null;
+};
+
 const pakHouvast = (): Houvast | null => {
     let gevonden: Houvast | null = null;
 
@@ -134,6 +169,20 @@ const pakHouvast = (): Houvast | null => {
 
     return gevonden;
 };
+
+/**
+ * De taal van het document, na een wissel.
+ *
+ * De server zet `<html lang>` alleen bij het eerste laden; een taalwissel
+ * is een Inertia-bezoek dat de pagina niet herlaadt. Zonder dit las een
+ * schermlezer de Engelse tekst met een Nederlandse stem voor, en zag een
+ * vertaalknop van de browser een Nederlandse pagina.
+ */
+watch(taal, (nieuw) => {
+    if (typeof nieuw === 'string' && nieuw !== '') {
+        document.documentElement.lang = nieuw;
+    }
+});
 
 watch(paginaSleutel, () => {
     alleenDeTaal = pagina.value === vorigePagina;
@@ -157,6 +206,14 @@ const scanReveals = () => {
 
     stopReveal = revealOnScroll('[data-reveal]', root.value);
     stopSplit = splitReveal('[data-split]', root.value);
+
+    /*
+     * Het lichtveld volgt de secties die er nú staan; na een navigatie of
+     * een andere volgorde zijn dat er andere. Zie `lichtVeld` in motion.ts.
+     */
+    stopVeld?.();
+    stopVeld =
+        veld.value === null ? undefined : lichtVeld(veld.value, root.value);
 
     /*
      * En dan pas opmeten. De pagina is net een paar schermen langer of
@@ -233,6 +290,32 @@ const voorBinnenkomst = (): void => {
         );
 
         return;
+    }
+
+    if (viaGeschiedenis) {
+        const bewaard = bewaardePositie;
+
+        viaGeschiedenis = false;
+        bewaardePositie = null;
+
+        if (bewaard !== null && bewaard > 0) {
+            /*
+             * Drie beeldjes en niet twee: `Welcome.vue` springt na twee
+             * beeldjes naar het anker in het adres, en de bewaarde plek is
+             * preciezer dan de bovenkant van dat onderdeel.
+             */
+            requestAnimationFrame(() =>
+                requestAnimationFrame(() =>
+                    requestAnimationFrame(() => {
+                        scrollNaar(bewaard, { direct: true });
+
+                        naHetScrollen();
+                    }),
+                ),
+            );
+
+            return;
+        }
     }
 
     if (window.location.hash === '') {
@@ -379,6 +462,7 @@ const naBinnenkomst = (): void => {
 };
 
 onMounted(() => {
+    window.addEventListener('popstate', onthoudGeschiedenis);
     stopScroll = startSmoothScroll();
     scanReveals();
 
@@ -410,6 +494,8 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+    window.removeEventListener('popstate', onthoudGeschiedenis);
+    stopVeld?.();
     stopListening?.();
     stopSplit?.();
     stopReveal?.();
@@ -421,8 +507,15 @@ onBeforeUnmount(() => {
     <div
         id="top"
         ref="root"
-        class="brand-dark-page dark min-h-screen bg-background text-foreground"
+        class="brand-site brand-dark-page dark min-h-screen text-foreground"
     >
+        <!--
+            Het omgevingslicht achter de hele pagina. Eén vast vlak dat
+            alleen schuift; zie `.brand-site-lichtveld` in
+            resources/css/site/basis.css.
+        -->
+        <div ref="veld" class="brand-site-lichtveld" aria-hidden="true" />
+
         <!--
             De intro ligt over alles heen en haalt zichzelf weg. Hij staat
             als eerste in de boom, zodat hij er ook echt bovenop valt

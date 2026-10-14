@@ -24,23 +24,24 @@ ophaalt.
 
 ## De publieke site
 
-| Onderdeel                            | Waarvoor                                                |
-| ------------------------------------ | ------------------------------------------------------- |
-| `layouts/PublicLayout.vue`           | Kop, voet, smooth scrolling en de scroll-reveals.       |
-| `components/site/SiteHeader.vue`     | Navigatie. Krijgt pas een achtergrond zodra je scrollt. |
-| `components/site/SiteFooter.vue`     | Voet: drie kolommen, de balk eronder en de credit.      |
-| `components/site/SiteSection.vue`    | Eén breedte en één verticale ruimte voor alle secties.  |
-| `components/site/SectionHeading.vue` | Bovenschrift, titel en inleiding.                       |
-| `components/site/FeatureCard.vue`    | Kaart op donker, met glow op hover.                     |
-| `components/site/ScrollProgress.vue` | De voortgangsbalk bovenaan.                             |
-| `components/site/sections/`          | De onderdelen zelf: kop, diensten, werkwijze, contact.  |
+| Onderdeel                            | Waarvoor                                                                                    |
+| ------------------------------------ | ------------------------------------------------------------------------------------------- |
+| `layouts/PublicLayout.vue`           | Kop, voet, lichtveld, smooth scrolling en de scroll-reveals. Zet `brand-site` op de wortel. |
+| `components/site/SiteHeader.vue`     | Navigatie: een zwevende glazen balk met een lichtmarkering; mobiel een menu als diafragma.  |
+| `components/site/SiteFooter.vue`     | De voettekst: de afsluitende compositie van elke publieke pagina.                           |
+| `components/site/SiteSection.vue`    | Eén breedte en één verticale ruimte voor alle secties; open veld of plaat.                  |
+| `components/site/SectionHeading.vue` | Opschrift, titel en inleiding; de titel kiest zijn maat op lengte.                          |
+| `components/site/SiteIntro.vue`      | De merkintro: het oog stelt scherp en gaat open als een diafragma.                          |
+| `components/site/ScrollProgress.vue` | De voortgangsbalk bovenaan.                                                                 |
+| `components/site/sections/`          | De onderdelen zelf, één component per `PageSectionKey`, plus hun deelcomponenten.           |
+| `resources/css/site.css`             | De stijl van de publieke site, één bestand per onderdeel onder `resources/css/site/`.       |
 
 **De landingspagina bepaalt niet meer welke onderdelen er staan.** Dat doet
 de klant, in het portaal. `Welcome.vue` is een `v-for` over de sleutels die
 de server meegeeft, met een getypte kaart van sleutel naar component; de kop
 staat er los boven omdat die niet te verslepen is. Wil je er een onderdeel
 bij, lees dan [pagina-indeling](pagina-indeling.md) -- een component
-toevoegen zonder de vier stappen daar levert een sectie op die nergens
+toevoegen zonder de stappen daar levert een sectie op die nergens
 verschijnt.
 
 Daarnaast zijn er componenten die op beide helften worden gebruikt, zoals
@@ -320,10 +321,33 @@ Bij `prefers-reduced-motion` springt het gewoon open en dicht.
 
 ## Het lettertype
 
-Instrument Sans, in drie diktes (400, 500, 600). Het wordt **niet** bij een
-externe dienst opgehaald: `laravel-vite-plugin/fonts` haalt de bestanden bij
-de build op en zet ze in `public/build/`, zodat er in productie geen verzoek
-naar een ander domein gaat.
+**Twee helften, twee lettertypen.** Het portaal en de inlogschermen staan
+in Instrument Sans (400, 500, 600). De publieke site staat in **Geist**
+(400 tot 700) voor alle tekst en **Geist Mono** (400, 500) voor alles wat
+maat, tijd of telling is: jaartallen, perioden, stapnummers, statistiek en
+kerngegevens. Waarom de site een eigen letter kreeg staat in
+[besluit 021](../decisions/README.md).
+
+Geen van drieën wordt bij een externe dienst opgehaald:
+`laravel-vite-plugin/fonts` haalt de bestanden bij de build op en zet ze in
+`public/build/`, zodat er in productie geen verzoek naar een ander domein
+gaat.
+
+**Welke pagina welke letter laadt staat in `app.blade.php`**, bij
+`@fonts($isPublicPage ? null : 'instrument-sans')`. Zonder die filter laadt
+elke portaalpagina ook de Geist-bestanden vooraf, en die gebruikt hij
+nergens. Van Geist worden alleen 400 en 600 vooraf geladen (de lopende
+tekst en de koppen boven de vouw); Geist Mono komt pas als hij nodig is.
+
+De plugin zet de families klaar als `--font-geist` en `--font-geist-mono`.
+Op de site lees je ze via `.brand-site` (de klasse op de wortel van
+PublicLayout), of met de Tailwind-klassen `font-display` en `font-data`.
+Die vallen terug op Instrument Sans en de systeem-mono, zodat een
+component dat ook in het portaal staat daar niet zonder letter komt.
+
+**Let op bij een venster.** Een dialoog van reka-ui staat in een portaal
+aan het eind van `<body>`, buiten `.brand-site`. Daar erft hij de letter
+dus niet; `resources/css/site/vensters.css` zet hem op `.brand-blad` zelf.
 
 Daarnaast staat `fontaine` in de dev-dependencies. Dat pakket meet het echte
 lettertype door en schrijft een `@font-face` met dezelfde metriek op basis
@@ -840,27 +864,54 @@ plek, dus de knippering die deze overgang afdekt bestaat er niet.
 De animatielaag zit in [`resources/js/lib/motion.ts`](../../resources/js/lib/motion.ts):
 
 ```ts
+// Waar ben je, wat kan het apparaat
 prefersReducedMotion(): boolean
+heeftMuis(): boolean
+opEenTelefoon(): boolean                        // < 48rem, voor de duur
+opEenBreedScherm(): boolean                     // >= 50rem, voor blur en diepte
+alInBeeld(element, deel):         boolean
+
+// Scrollen
 startSmoothScroll():              () => void   // geeft een opruimfunctie terug
+scrollNaar(doel, opties):         boolean
+hermeetScroll():                  void
+volgSecties(sleutels, opActief):  () => void
+trackScrollProgress(element):     () => void
+lichtVeld(veld, scope):           () => void
+
+// Opkomen
 revealOnScroll(selector, scope):  () => void
+splitReveal(selector, scope):     () => void   // koppen, met scherpstellen
+kopOpkomst(kop, opties):          () => void   // de kop van de hero
+irisOpen(element, opties):        () => void   // diafragma
+kaartenBinnen(kaarten):           () => void
 revealCards(kaarten, opties):     () => void
+
+// Per onderdeel
 drawTimeline(rail, punten):       () => void
 followYears(groepen):             () => void
 countUp(tellers):                 () => void
-scrollThrough(vak, opties):       () => void
-trackScrollProgress(element):     () => void
-heeftMuis(): boolean
-splitReveal(selector, scope):     () => void
-typMachine(kop, opties):          () => void
-tekenRing(ring, opties):          () => void
-kaartenBinnen(kaarten):           () => void
-scrollNaar(doel, opties):         boolean
-volgSecties(sleutels, opActief):  () => void
-parallax(element, opties):        () => void
+tekenRing(ring, baan, opties):    () => void
+tekenPad(pad, punt, stappen):     () => void
+rolbord(selector, scope):         () => void
+vulStatistieken(blok, delen):     () => void
+groeiLijn(selector, scope):       () => void
+
+// Tijdens het scrollen (ronde twee)
+plaatOpkomst(plaat):              () => void   // een plaat komt uit de diepte
+stapelBinnen(elementen, opties):  () => void   // een groep komt samen binnen
+scrollVoortgang(el, opties):      () => void   // --voortgang 0..1 voor CSS
+
+// Op de muis
 volgDeMuis(element):              () => void
 kantelKaarten(kaarten, opties):   () => void
-tekenPad(pad, punt, stappen):     () => void
+spotlicht(elementen):             () => void
 ```
+
+`formatteerGetal` staat niet hier maar in
+[`lib/getallen.ts`](../../resources/js/lib/getallen.ts): de
+statistiekcomponenten worden ook in het portaal getoond, en een import uit
+dit bestand trok daar de hele animatiechunk mee.
 
 Ze delen drie afspraken, en die gelden ook voor wat je er zelf bij zet:
 
@@ -879,26 +930,11 @@ JavaScript iets goeds staat. `followYears` markeert het jaartal van de
 groep waar je doorheen scrolt. Allebei worden ze gebruikt door de
 [tijdlijn met ervaringen](modules/ervaring.md#de-tijdlijn-op-de-site).
 
-`scrollThrough` laat de bezoeker met zijn muiswiel door een reeks
-bladeren, maar **alleen binnen één vak**. De pagina blijft ondertussen
-staan waar hij staat. Dat is iets anders dan een blok vastzetten terwijl
-de pagina eronder doorloopt, en de reden is de afbakening: bij deze vorm
-is het vak ook precies het gebied waar het gebeurt, en niet een lijst die
-meebeweegt terwijl je er ver vandaan scrolt.
+Hier stond `scrollThrough`, dat het muiswiel binnen één vak overnam om
+door een reeks te bladeren. Het is weg, en waarom staat bij
+[Het wiel is van de pagina](#het-wiel-is-van-de-pagina).
 
-Vier dingen die daarbij makkelijk stukgaan:
-
-- **Je moet eruit kunnen.** `onVerplaats` geeft terug of hij de beweging
-  heeft gebruikt; zo niet -- je bent aan het begin of het eind -- dan
-  laten we de gebeurtenis los en scrolt de pagina verder. Zonder die
-  uitweg zit de bezoeker vast in het vak.
-- **Het vak moet het midden van het scherm beslaan** voordat er iets
-  gebeurt. Anders pakt het je scroll af terwijl je er alleen maar
-  langsschuift.
-- **`data-lenis-prevent` hoort op het element**, anders neemt Lenis het
-  wiel als eerste af.
-
-Dat laatste geldt breder dan deze helper: **alles op de publieke site dat
+Wat wel bleef: **alles op de publieke site dat
 zelf moet kunnen schuiven, heeft `data-lenis-prevent` nodig.** Lenis vangt
 het muiswiel af om de pagina soepel te laten lopen, ook als je muis boven
 een venster of een eigen schuifgebied hangt -- en dan scrolt de pagina
@@ -1045,104 +1081,67 @@ puntje scheef van de lijn af, erger naarmate het scherm breder is.
 `getPointAtLength` op het pad zelf geeft een punt in dezelfde coördinaten
 als de lijn, en die rekt dus precies mee.
 
-### De hero is een scène van drie lagen
+### De hero: "Iris"
 
 [`HeroSection.vue`](../../resources/js/components/site/sections/HeroSection.vue)
-bestaat uit een achtergrond, een rond portret en een tekstblok, en die drie
-bewegen los van elkaar. Bij het scrollen loopt de tekst het hardst weg en
-blijft de achtergrond het meest achter; daardoor lijkt er diepte te zitten
-tussen dingen die allemaal even plat zijn.
+is een scène van drie lagen: de **diepte** (de achtergrond, een waas die de
+tekst zijn contrast geeft, en een gloed die de cursor volgt), de **tekst**,
+en de **iris**: het portret in een stelsel van ringen, met een vaste schaal
+van maatstreepjes, een ring die zich tekent en een lichtboog die blijft
+rondgaan. Het merk is een oog, en deze scène speelt daarop; zie
+[besluit 019](../decisions/README.md).
 
-**Op een telefoon staat de titel bovenaan en het portret eronder.** Dat
-was eerst andersom -- gezicht eerst, want dat herken je het snelst. In de
-praktijk duwde die cirkel de kop naar beneden en viel hij half buiten
-beeld, en dan is het eerste wat je leest een afgekapte zin. De titel is
-waarvoor iemand komt; het portret staat er een schermlengte later nog
-steeds.
+**Bij binnenkomst gaat het oog open.** De achtergrond stelt scherp (van
+`blur(14px)` en iets te dichtbij naar scherp), het portret wordt onthuld
+door een diafragma (`irisOpen()`), de ring tekent zich (`tekenRing()`) en
+de kop komt regel voor regel op en stelt daarbij scherp (`kopOpkomst()`).
 
-**De twee kolommen beginnen bij 48rem en niet bij 64rem.** Daar zat een
-gat: op een tablet toonde de kop al zijn volledige menu terwijl de hero
-nog in de smalle stand stond, met een cirkel over de volle breedte. Dat
-leest als een vergrote telefoon in plaats van een eigen ontwerp.
+**Bij het scrollen zakt de scène in drie lagen weg**: de achtergrond het
+langzaamst, de tekst het snelst, en de iris trekt iets samen alsof het oog
+scherpstelt op wat eronder komt. Dat is één tijdlijn met `scrub` op de
+hero, van `top top` tot `bottom top`. **`scrub` mag hier**, want het
+drukt een positie uit en geen waarde -- zie de les over `scrub` verderop.
+Er zit geen `pin` op: de hero is `min-height: 100svh` en groeit gewoon mee
+met een lange kop of inleiding.
 
-**Houd het verschil klein.** Negentig pixels voor het portret en zestig de
-andere kant op voor de tekst is genoeg. Parallax die opvalt is parallax die
-misselijk maakt, en op een lange pagina merk je dat pas als je hem echt
-doorscrolt.
+**De kop kiest zijn maat op lengte** (`data-lengte`: kort tot 42 tekens,
+middel tot 80, daarboven lang), en een inleiding van meer dan 180 tekens
+krijgt een kleinere letter. De klant typt deze teksten zelf, en een maat die
+bij vijf woorden indrukwekkend is, maakt van tachtig tekens een muur die de
+knoppen onder de vouw duwt.
 
-#### De kop wordt ingetikt
+**De hero heeft geen `id`.** Het houvast bij een taalwissel zoekt
+`main section[id]`, en in de hero valt niets vast te houden.
 
-`typMachine()` splitst de kop in losse tekens en laat die één voor één
-aanspringen. **Niet door de tekst te laten groeien**, wat de voor de hand
-liggende manier is: bij elk woord dat erbij komt breekt de regel opnieuw en
-verschuift alles eronder. Met SplitText staat de ruimte er al en verandert
-alleen de doorzichtigheid.
+#### De typmachine is weg
 
-De tekens springen aan (`duration: 0.01`) in plaats van te vervagen. Een
-letter die in twee tienden vervaagt leest als "er verschijnt tekst"; een
-letter die er ineens staat leest als getypt.
+Hier werd de kop letter voor letter ingetikt. Dat oogde levendig bij een
+kop van vijf woorden, en het is eruit gehaald om wat er bij een beheerde
+kop gebeurde: bij tachtig tekens las je drie seconden lang "Advies over
+inr", en een bezoeker die op dat moment een schermafdruk maakt of wegklikt
+heeft een halve zin gezien. `kopOpkomst()` toont de hele zin meteen in zijn
+regels, en laat alleen de regels opkomen.
 
-`autoSplit` staat hier bewust **uit**. Hersplitsen midden in het typen zou
-de animatie opnieuw laten beginnen, en een kop die twee keer wordt ingetikt
-lijkt kapot. De prijs is dat de regelafbreking blijft staan zoals hij bij
-het laden was; voor één kop van een paar woorden is dat de betere ruil.
+#### Op een telefoon een visitekaartje, geen iris
 
-#### Het ronde portret
-
-Het medaillon is **één samengesteld beeld**: het oog-embleem uit de
-huisstijl met het uitgeknipte portret erop, vierkant uitgesneden en als
-`persoon-medaillon-{320,480,640,960}.webp` weggeschreven. Twee losse lagen
-in CSS zou ook kunnen, maar dan verschuift de uitlijning per schermbreedte
-en staat het hoofd de ene keer wel en de andere keer niet voor het oog.
-
-De ring eromheen is een SVG-cirkel en geen `border`, want een rand kun je
-niet laten tekenen. `tekenRing()` trekt hem in ruim een seconde rond met
-DrawSVG.
-
-Het medaillon is vierkant, dus zijn breedte is meteen zijn hoogte. De maat
-is daarom `min(22rem, 46vh)`: op een laptop met weinig verticale ruimte zou
-een cirkel van 22 rem de knoppen onder de vouw duwen, en dat is precies
-waarvoor iemand op deze pagina komt.
-
-De bronbestanden (`PersoonFoto.png` met doorzichtige achtergrond en
-`achtergrond-oog-3840.png`) blijven in de map staan, maar komen niet op de
-website.
-
-#### Op een telefoon een visitekaartje, geen cirkel
-
-De grote cirkel stond daar onder de knoppen en kostte een kwart
-schermhoogte voor iets wat je pas zag als je er al voorbij was. Onder de
-tabletgrens staat er nu een strook: het portret klein en rond links, de
-naam en de functie ernaast.
-
-Dat scheelt niet alleen hoogte. **De foto krijgt er een reden door om er
-te staan**: als losse cirkel was het een plaatje, naast een naam is het
-wie het werk doet -- en dat is precies wat een eenmanszaak onderscheidt
-van een anoniem bureau.
+Onder de tabletgrens staat er een glazen strook: het portret klein en rond,
+met een dunne ring, en de naam en de functie ernaast. De naam komt uit de
+gedeelde prop `eigenaar` (`config/security.php`), dezelfde als bij het
+LinkedIn-blok; hij stond hier eerst hardgecodeerd. Is hij leeg, dan toont
+het kaartje alleen de foto en de functie.
 
 Het opschrift boven de titel verdwijnt op die breedte, want de functie
-staat dan in het kaartje; anders staat hetzelfde er twee keer.
+staat dan in het kaartje.
 
-`NAAM` in
-[`HeroSection`](../../resources/js/components/site/sections/HeroSection.vue)
-staat leeg tot de klant hem doorgeeft. Een naam bij de foto van een echt
-persoon verzin je niet, en met een lege naam toont het kaartje netjes
-alleen de foto en de functie. Zodra de kop een module wordt komen allebei
-uit de database.
+#### Waarom er op een telefoon geen parallax, blur en draaiende boog is
 
-#### Waarom er op een telefoon geen parallax en geen draaiende ring is
-
-Allebei uit, en om dezelfde reden. **Een element dat permanent beweegt
-staat permanent in een bewegende compositielaag, en die rastert de
-browser in lagere resolutie**; de scherpte komt pas terug als hij
-stilstaat. De ring draait eindeloos en de parallax loopt met elke scroll
-mee, dus de laag kwam nooit tot rust -- en omdat het portret in diezelfde
-laag zit, zag je een foto die de hele tijd wazig was.
-
-Op een desktop-GPU valt dat weg. Op een telefoon niet, en daar levert de
-parallax op dat formaat ook nauwelijks diepte op. Allebei staan ze nu in
-een `gsap.matchMedia` vanaf 50rem, zodat het meegaat als je je telefoon
-draait.
+**Een element dat permanent beweegt staat permanent in een bewegende
+compositielaag, en die rastert de browser in lagere resolutie**; de
+scherpte komt pas terug als hij stilstaat. Bij het portret zag je dat als
+een foto die de hele tijd wazig is. Een `filter: blur()` over een heel
+scherm kost op een telefoon bovendien meer dan hij oplevert. De diepte, de
+blur en de draaiende boog staan daarom in een `gsap.matchMedia` vanaf 50rem;
+op een telefoon komt de achtergrond alleen op.
 
 **Dit is een val die terugkomt.** Zet je ooit een animatie zonder einde
 op iets waar een foto of scherpe tekst in zit, reken er dan op dat het
@@ -1153,6 +1152,13 @@ op een telefoon zachter wordt.
 Een navy laag met de merkgloed en het logo, acht tienden van een seconde,
 één keer per bezoek. Zie
 [`SiteIntro.vue`](../../resources/js/components/site/SiteIntro.vue).
+
+**Het merkteken stelt scherp, en dan gaat het oog open.** De laag krijgt
+een gat in het midden dat groeit tot voorbij de hoeken van het scherm: een
+diafragma dat opengaat, met de hero erachter. Dat gat is een `mask` met een
+radiaal verloop op de CSS-variabele `--gat` (`resources/css/site/hero.css`);
+JavaScript schuift alleen die maat. Het logo vliegt ondertussen naar je toe
+en lost op.
 
 **Het is geen laadscherm en dat verschil is het hele punt.** De hero staat
 er al volledig onder; dit is een gordijn dat opengaat voor iets wat er al
@@ -1173,27 +1179,140 @@ en krijgen gegarandeerd hetzelfde antwoord.
 #### Op een telefoon gaat dezelfde entree sneller
 
 Niet korter in stappen maar korter in tijd: je ziet hetzelfde gebeuren, het
-is alleen eerder klaar. Drie plekken, en samen schelen ze ongeveer een halve
-seconde tot de tekst er staat.
+is alleen eerder klaar.
 
-|                       | Breed            | Smal (`< 48rem`)  |
-| --------------------- | ---------------- | ----------------- |
-| Intro overslaan vanaf | 2000 ms laadtijd | 1100 ms laadtijd  |
-| Hero begint na        | 0,55 s           | 0,275 s           |
-| Tijdlijn van de hero  | 1×               | 1,5×              |
-| Tikken van de kop     | 0,09 s per teken | 0,055 s per teken |
-
-**Waarom dit alleen smal geldt.** Daar telt elke tiende seconde zwaarder:
-het scherm is kleiner, dus wat nog moet opkomen is meteen de hele pagina
-en er staat niets anders om naar te kijken. En je staat er vaker op een
-trage verbinding, dus de animatie begint sowieso al later dan op een
-laptop. Op een breed scherm is de lange versie juist prettig, en die blijft
-dus precies zoals hij was.
+|                       | Breed            | Smal (`< 48rem`) |
+| --------------------- | ---------------- | ---------------- |
+| Intro overslaan vanaf | 2000 ms laadtijd | 1100 ms laadtijd |
+| Hero begint na        | 0,5 s            | 0,25 s           |
+| Tijdlijn van de hero  | 1×               | 1,4×             |
+| Diafragma, kop        | volle duur       | 0,7× de duur     |
 
 De grens is `47.9375rem` in
 [`motion.ts`](../../resources/js/lib/motion.ts) (`opEenTelefoon`) --
-hetzelfde getal als `@media (min-width: 48rem)` in `app.css`, zodat de
-animaties en de opmaak niet uit elkaar kunnen lopen.
+hetzelfde getal als `@media (min-width: 48rem)` in de CSS, zodat de
+animaties en de opmaak niet uit elkaar kunnen lopen. De zwaardere effecten
+(blur, diepte) gebruiken de tabletgrens van 50rem (`opEenBreedScherm`).
+
+### Beweging tijdens het scrollen, niet alleen bij binnenkomst
+
+De eerste versie van "Helder zicht" had één entree bovenaan en daarna
+vooral reveals. De eigenaar vond dat terecht te weinig: de beweging hoort
+bij het lezen en niet alleen bij het binnenkomen. Daarom heeft elk
+onderdeel nu een eigen moment dat bij zijn inhoud hoort (zie de
+moduledocs), en zijn er drie gedeelde hulpen:
+
+- **`plaatOpkomst(plaat)`**: een plaat (een sectie op oneven plek) komt
+  bij het binnenscrollen omhoog uit de diepte, van iets lager en iets
+  kleiner naar zijn plek, gekoppeld aan de scroll. `SiteSection` doet dit
+  zelf; een onderdeel hoeft er niets voor te doen. De transform gaat eraf
+  zodra de plaat op zijn plek staat, want een blijvende transform maakt de
+  plaat het kader voor alles wat erin `position: fixed` staat.
+- **`stapelBinnen(elementen, { van })`**: een groep die samen binnenkomt,
+  via `ScrollTrigger.batch`. Wat tegelijk in beeld komt, komt ook tegelijk
+  op; een raster dat per tegel op zijn eigen trigger wacht, komt in brokken
+  binnen en leest als laden.
+- **`scrollVoortgang(element)`**: de voortgang door een element als
+  `--voortgang` (0 tot 1), voor effecten die in de CSS horen. **Zet hem op
+  een klein element**: een CSS-variabele erft, en elke wijziging laat de
+  browser de stijl van alle kinderen opnieuw berekenen.
+
+Wat voor alle drie geldt, en voor wat je erbij zet:
+
+- `scrub` alleen voor iets wat een positie uitdrukt; een waarde die
+  terugloopt als je omhoog scrolt blijft eenmalig (`once`).
+- **Geen `pin` van ScrollTrigger.** Een korte vaste scène mag alleen met CSS
+  `position: sticky`, binnen de sectie, met hoogstens een halve
+  schermhoogte extra scroll, en uit op een telefoon en onder reduced
+  motion.
+- Geen wachttijd die inhoud tegenhoudt: wie snel scrolt ziet nooit een
+  leeg vak.
+
+#### Het wiel is van de pagina
+
+De carrousel van de ervaring nam het muiswiel over zolang hij in beeld
+stond (`scrollThrough`), om door de functies te bladeren. Met 27 functies
+stond de pagina daardoor 28 wielstappen stil: vanaf de pagina gezien voelde
+dat als vastlopen. Dat is eruit; bladeren in de carrousel gaat met de
+jaartallen, de knoppen, de toetsen en een klik. Zie
+[ervaring](modules/ervaring.md). **Neem het scrollen van de bezoeker niet
+over** voor iets wat ook met een knop kan.
+
+### Labels zonder lijntjes
+
+Op de eerste versie stond voor elk sectielabel een kort blauw lijntje, en
+ook boven de cijfers van de loopbaan, achter de groepskoppen van de
+statistieken, boven het mailadres bij contact en voor de kopjes op een
+projectpagina. De eigenaar vond die terecht weinig zeggend: ze herhaalden
+alleen dat er een label stond. Ze zijn overal weg, en er is één vorm voor
+in de plaats gekomen, met twee varianten.
+
+- **Het sectielabel** (`.brand-site-opschrift` in `resources/css/site/basis.css`):
+  klein, halfvet, in cyaan, dicht op de titel. Label en titel vormen samen
+  één kop. Dezelfde vorm voor de kolomkoppen in de voettekst, het kopje
+  van de opleidingen, de groepskoppen van de statistieken en het opschrift
+  van /projecten en een project.
+- **De meting** (`.brand-site-metingen`, `.brand-site-meting-*`): een getal
+  met zijn label. Het getal bovenaan, groot en halfvet; het label eronder,
+  klein en zilver; een haarlijn links die de metingen van elkaar scheidt.
+  Die lijn ordent echte inhoud, en is daarmee geen versiering. De cijfers
+  van de loopbaan en de tellers van de statistieken zijn zo gebouwd. Het
+  label van een kerngegeven heeft dezelfde letter, maar staat boven de
+  waarde, omdat je een lijst van boven naar beneden leest.
+
+**Er komen geen badges, stipjes of iconen voor in de plaats.** Een label dat
+zichzelf draagt heeft geen accent nodig.
+
+### Horizontaal met de scroll mee
+
+Op een paar plekken beweegt een blok zijwaarts terwijl je verticaal scrolt,
+gekoppeld aan de positie (`scrub`): terugscrollen draait het om.
+
+| Waar                  | Wat er beweegt                                                         | Wanneer stil                      |
+| --------------------- | ---------------------------------------------------------------------- | --------------------------------- |
+| Kerngegevens          | De linkerkolom van links, de rechterkolom van rechts                   | voor het midden van het scherm    |
+| Projecten, de casus   | Het beeld van links, de tekst van rechts, met de opening van het beeld | als het beeld open is             |
+| Projecten, de kaarten | De rij van rechts naar links, elke kaart iets verder weg               | ruim een derde van het scherm in  |
+| Ervaring, de jaarband | De jaartallen van links naar rechts, terug in de tijd                  | loopt door zolang hij in beeld is |
+
+Drie afspraken, die bij elke nieuwe zijwaartse beweging horen:
+
+- **Wat je leest of aanklikt, staat stil.** Een beweging eindigt voordat de
+  tekst het midden van het scherm haalt; een kaart is daarna een gewone
+  link. Alleen de jaarband loopt door, en die is een beeld (`aria-hidden`).
+- **De afstand komt uit de maten zelf**, als functie met
+  `invalidateOnRefresh`, en is begrensd: een spoor van zesduizend pixels in
+  één schermhoogte is een veeg en geen beweging.
+- **De container knipt horizontaal af** (`overflow-x: clip`, met een kleine
+  `overflow-clip-margin` voor gloed en randen), zodat de pagina tijdens de
+  beweging niet breder wordt dan het scherm. `clip` en geen `hidden`: dat
+  maakt geen schuifvlak en laat `sticky` heel.
+
+En de les die het kostte: **geen `stagger` in een scrub met afstanden die
+opnieuw worden berekend**. Zie de valkuilen.
+
+### Het lichtveld en de horizonlijn
+
+Twee dingen die de secties met elkaar verbinden, en die allebei op **plek
+in de rij** werken en niet op naam -- zodat een andere volgorde ze niet
+kapotmaakt.
+
+- **Het lichtveld** is één vast vlak achter de hele pagina, in
+  `PublicLayout`. Er liggen twee zachte lichtvlekken in, en `lichtVeld()`
+  schuift ze per actieve sectie naar links of rechts (`--veld-kant`, even
+  of oneven plek). Alleen `transform`, en het verloop zelf blijft staan,
+  dus het kost de browser niets om te tekenen. De korrel die er overheen
+  ligt zit op dit vaste vlak en nooit op iets dat meescrollt.
+  **Het vlak knipt zichzelf af** (`overflow: hidden`, het licht staat in
+  een `::before` die groter is): een vast element dat buiten het scherm
+  uitsteekt, laat een telefoon de pagina breder maken dan hij is.
+- **De horizonlijn** staat boven elk open veld (`base`) en tekent zich van
+  het midden uit zodra de sectie binnenkomt. Dat doet de browser zelf, met
+  `animation-timeline: view()`; een browser die dat niet kent toont de lijn
+  gewoon. Geen JavaScript, dus ook niets op te ruimen.
+
+`lichtVeld()` wordt bij elke scan opnieuw opgebouwd, net als de reveals:
+na een navigatie of een taalwissel staan er andere secties.
 
 ### Twee soorten reveals
 
@@ -1205,6 +1324,12 @@ opnieuw na een Inertia-navigatie.
 Gebruik `data-split` alleen op een kop. SplitText moet meten, en bij elke
 maatverandering en elk later geladen lettertype opnieuw; dat is werk dat je
 op drie woorden doet en niet op elke alinea.
+
+**Een kop stelt daarbij scherp**: op een breed scherm komen de regels op
+van een lichte waas (`blur(10px)`) naar scherp, als een lens die zijn focus
+vindt. Alleen op koppen en alleen vanaf 50rem; `filter` is duurder dan een
+transform, en `clearProps` haalt hem er na afloop weer af zodat de tekst
+niet in een eigen laag blijft staan.
 
 Drie dingen bij SplitText:
 
@@ -1222,6 +1347,11 @@ zijn klassen.** Buiten `PublicLayout` wordt daar niets op gescand, en dan
 blijft het dus onzichtbaar. Gebruik ze alleen binnen de publieke site.
 
 ### De dienstenkaarten komen één voor één binnen
+
+**Sinds de nieuwe vormgeving geldt dit alleen nog op een telefoon.** Op een
+breed scherm zijn de diensten een index met een meelopend paneel; zie
+[diensten](modules/diensten.md). De kaarten onder elkaar op een telefoon,
+en de certificaattegels, komen nog steeds zo binnen.
 
 `kaartenBinnen()` laat ze van onderen opkomen, iets te klein en licht van
 je af gekanteld, en dan zetten ze zich recht. Die kanteling is wat het meer
@@ -1280,24 +1410,26 @@ niet bestaat, is een link die niets doet.
 
 #### Wat als er tien modules zijn
 
-De balk toont er hoogstens vijf los; de rest gaat achter **"Meer"**. Nu
-zijn het er vier, dus dat lijstje bestaat niet eens -- het staat er voor
-straks, want elke module die de klant erbij krijgt komt vanzelf in dit
-menu, en bij acht loopt de balk over de taalknop en de contactknop heen.
+De balk zet er zoveel los als er passen, gemeten, en de rest gaat achter
+**"Meer"** (hoogstens zeven los). Het menu gebruikt ook kortere namen dan
+het beheer ("Feiten", "Aanpak", "Cijfers"). Hoe dat werkt en wat er op welke
+breedte staat: zie "Korte namen in het menu, en zoveel als er passen" in
+[pagina-indeling](pagina-indeling.md).
 
-Vijf en niet drie: onder de vijf is een uitklaplijstje meer werk voor de
-bezoeker dan een link, en boven de zes wordt de balk te vol. Staat er iets
-uit dat lijstje aan, dan kleurt de knop "Meer" mee; de schuivende
-markering blijft eronder weg, want die hoort bij een onderdeel en "Meer"
-is er geen.
+De balk zelf heeft `flex: 1` tussen het merk en de knoppen: zijn breedte
+hangt dan niet af van wat erin staat, en de meting kan niet heen en weer
+springen. Tot de eerste meting zijn de items onzichtbaar, zodat er bij het
+laden niets verschijnt en weer verdwijnt. Staat er iets uit "Meer" aan, dan
+kleurt de knop mee; de schuivende markering blijft eronder weg, want die
+hoort bij een onderdeel en "Meer" is er geen.
 
 Op mobiel is dit geen vraag: daar is het een kolom, en die kan gewoon
 doorlopen.
 
-Het merkteken staat links naast de naam, en op een scherm smaller dan
-26 rem blijft alleen dat teken over. Daar heeft het menu de ruimte nodig,
-en het teken alleen is herkenbaar genoeg -- het is hetzelfde beeldmerk als
-de favicon.
+Het merkteken staat links naast de naam. Op een scherm smaller dan 26 rem,
+en tussen 50 en 64 rem, blijft alleen dat teken over; daar heeft het menu
+de ruimte nodig, en het teken alleen is herkenbaar genoeg -- het is
+hetzelfde beeldmerk als de favicon.
 
 #### Soepel naar een onderdeel
 
@@ -1321,18 +1453,25 @@ Drie dingen die hier bewust zo zijn:
 - **Ctrl- en middelklik gaan er niet doorheen.** Die horen een nieuw
   tabblad te openen, en dat is niet aan ons.
 
-#### Waarom de kop altijd een vervaging draagt
+#### Een zwevende glazen balk
 
-De achtergrondvervaging van de kop staat er **altijd** op, ook bovenaan de
-pagina waar je hem niet ziet. Dat lijkt verspilling en is het niet.
+De kop is een pil van glas die boven de pagina zweeft (`brand-site-kopbalk`
+in `resources/css/site/kop.css`). Op de voorpagina ligt hij over de hero
+heen; op een subpagina neemt hij gewoon zijn plek in, zodat de inhoud er
+niet onder verdwijnt. Dat onderscheid is één regel CSS:
+`.brand-site:has(.brand-site-hero)` geeft de balk een negatieve marge.
 
-`backdrop-filter` laat de browser een eigen compositielaag maken. Zat die
-in de klasse die bij het scrollen omklapt -- en dat zat hij -- dan wordt
-die laag telkens opgebouwd en weer weggegooid, en dat ziet eruit als
-trillende tekst in het menu. Hetzelfde geldt voor de onderrand: een rand
-die verschijnt is een pixel die erbij komt, en dan verschuift alles
-eronder. Nu staan allebei er vanaf het begin en verandert alleen hun
-kleur.
+**De vervaging staat er altijd op**, ook bovenaan de pagina, en alleen haar
+kleur en de schaduw veranderen bij het scrollen. `backdrop-filter` laat de
+browser een eigen compositielaag maken; zat die in de klasse die bij het
+scrollen omklapt -- en dat zat hij ooit -- dan wordt die laag telkens
+opgebouwd en weer weggegooid, en dat ziet eruit als trillende tekst in het
+menu.
+
+**De vervaging zit op de pil en niet op `<header>`.** Een `backdrop-filter`
+maakt van zijn element het kader voor alles wat erin `position: fixed`
+staat. Op de header zou het mobiele menu, dat het hele scherm hoort te
+vullen, gevangen zitten in een balk van vier rem.
 
 Daar komt bij dat de omslag **twee grenzen** heeft: aan boven de twaalf
 pixels, uit onder de vier. Met één grens klapt hij heen en weer zodra je
@@ -1350,8 +1489,8 @@ krijgt de bredere vorm.
 
 De grens staat als `--breakpoint-tablet` in het thema, dus gebruik
 `tablet:` in plaats van `md:` voor alles op de publieke site dat met die
-omslag te maken heeft. Er zijn twee plekken waar hij óók als mediaquery
-staat -- de hero in `app.css` en de `matchMedia` in
+omslag te maken heeft. Hij staat óók als mediaquery in de bestanden onder
+`resources/css/site/` en als `matchMedia` in `opEenBreedScherm()` en in
 [`ErvaringLijst`](../../resources/js/components/site/sections/ErvaringLijst.vue).
 Verander je er één, verander dan allebei: anders krijgt één schermbreedte
 het menu van de ene vorm en de inhoud van de andere.
@@ -1434,41 +1573,49 @@ leeg terwijl je midden in een onderdeel zit.
 oude reeks wijst naar elementen die er niet meer zijn, en dan licht er
 nooit meer iets op. De kop kijkt daarop met een `watch`.
 
-#### Het uitklapmenu op mobiel
+#### Het menu op mobiel gaat open als een diafragma
 
-Vouwt open met GSAP (`height: 'auto'`, dus zonder zelf te meten) en de
-regels komen er met een stagger achteraan. Verder drie dingen die er eerst
-niet waren: het gaat dicht met Escape, het gaat dicht bij **elke** link --
-ook Dashboard, dat eerder alleen bleef staan -- en de pagina eronder staat
-stil zolang het open is. Zonder dat laatste scrol je achter een menu dat
-het hele scherm vult, en sta je na het sluiten ergens anders dan waar je
-was.
+Het menu vult het hele scherm en gaat open vanuit de knop waar je op tikte:
+een cirkel die vanaf die plek groeit (`clip-path: circle()`), dezelfde
+beweging als de iris in de hero. De regels komen er met een stagger
+achteraan, groot, zodat elke regel een duim-doel van minstens 52 pixels is.
+Kan het niet allemaal op het scherm, dan schuift het menu zelf
+(`data-lenis-prevent`).
 
-Op mobiel is er geen schuivende markering maar een streepje links van de
-actieve regel. Een glijdende onderstreping werkt niet in een kolom, en een
-tweede mechaniek bouwen voor hetzelfde idee is meer code dan het waard is.
+Verder drie dingen die er eerst niet waren: het gaat dicht met Escape, het
+gaat dicht bij **elke** link -- ook Dashboard, dat eerder alleen bleef
+staan -- en de pagina eronder staat stil zolang het open is. Zonder dat
+laatste scrol je achter een menu dat het hele scherm vult, en sta je na het
+sluiten ergens anders dan waar je was.
+
+Op mobiel is er geen schuivende markering maar een lichtstreepje links van
+de actieve regel. Een glijdende onderstreping werkt niet in een kolom, en
+een tweede mechaniek bouwen voor hetzelfde idee is meer code dan het waard
+is.
 
 ### De lijn boven de werkwijze
 
-Een SVG-pad dat zich tekent terwijl je scrolt, met een lichtpuntje dat
-erlangs reist en stappen die oplichten zodra het punt ze passeert. Zie
-`tekenPad()`.
+Een lichtpad dat zich door de stappen tekent terwijl je scrolt, met stappen
+die oplichten zodra het licht ze passeert. Zie `tekenPad()` en
+[werkwijze](modules/werkwijze.md) voor de vormen per aantal stappen.
 
-Twee dingen:
-
-- **De stappen worden gemeten, niet geteld.** Waar stap drie oplicht hangt
-  af van waar hij staat. Zou je delen door het aantal, dan klopt het alleen
-  bij gelijke afstanden -- en bij een laatste stap met een langere tekst al
-  niet meer.
-- **De lijn staat alleen vanaf 64rem.** Daaronder staan de stappen onder
-  elkaar en zou een horizontale lijn nergens meer langs lopen.
+**De stappen worden gemeten, niet geteld.** Waar stap drie oplicht hangt
+af van waar hij staat. Zou je delen door het aantal, dan klopt het alleen
+bij gelijke afstanden -- en bij een laatste stap met een langere tekst al
+niet meer.
 
 ### Wat op de muis reageert
 
-Twee dingen, allebei alleen op een apparaat met een fijne aanwijzer
-(`heeftMuis()`): de gloed achter de hero verschuift met de cursor mee, en
-de dienstenkaarten kantelen maximaal vier graden met een glans die
-meeloopt.
+Alles hieronder alleen op een apparaat met een fijne aanwijzer
+(`heeftMuis()`), en nooit onder reduced motion:
+
+- de gloed achter de hero verschuift met de cursor mee (`volgDeMuis()`);
+- de certificaattegels kantelen een paar graden met een glans die meeloopt
+  (`kantelKaarten()`);
+- het paneel van de diensten, de projectkaarten en het LinkedIn-blok krijgen
+  een spotlicht op hun rand (`spotlicht()`, `.brand-site-spot`);
+- een projectkaart met een beeld toont een kleine preview die de cursor
+  volgt.
 
 **JavaScript zet alleen variabelen**, `--muis-x`, `--muis-y`, `--glans-x`
 en `--glans-y`. Wat daarmee gebeurt staat in CSS, zodat de huisstijl op één
@@ -1486,6 +1633,59 @@ symptoom -- "ik zie niks bij mijn cursor":
   geblurd is en het halve scherm beslaat, is letterlijk niet te zien. Het
   staat nu op zestig. Bij een effect dat over zo'n groot vlak loopt is
   "subtiel" al snel "afwezig".
+
+### Eén taal voor alles wat je aanraakt
+
+Knoppen, tekstlinks, pijlen, kaarten, menu-items en de regels in een lijst
+reageren op dezelfde manier en in hetzelfde tempo. De afspraken staan in
+`basis.css` en gelden voor elke module:
+
+| Wat       | Hoe                                                                                | Waarom                                      |
+| --------- | ---------------------------------------------------------------------------------- | ------------------------------------------- |
+| Hover     | `--site-duur-hover` (200ms), alleen in `@media (hover: hover) and (pointer: fine)` | Op touch blijft een hover na een tik hangen |
+| Indrukken | `--site-duur-druk` (120ms), `translateY(1px) scale(.98)` of een lichter vlak       | Moet voelen als meegeven, niet als animatie |
+| Focus     | 2px cyaan, 2px lucht, voor elk `a`/`button`/`[tabindex]` via `:where()`            | Toetsenbord even duidelijk als de muis      |
+| Pijl      | Schuift 3px in zijn eigen richting (↗ schuin)                                      | Zegt waar je heen gaat                      |
+| Maat      | Nooit vetter of meer opvulling op hover                                            | Anders verschuift alles ernaast             |
+
+**Wat niet klikbaar is, krijgt geen knopuitstraling.** Een badge, jaartal
+of label licht niet op en krijgt geen handje. Eén uitzondering, bewust: de
+onderdelen van een dienst in het dienstenpaneel (Monitoring, Back-ups, ...)
+krijgen onder de muis een **kijkreactie** -- een lichtpunt dat aangaat, de
+buren een tint zachter -- maar geen lift, geen indrukken en geen cursor.
+Het zegt "dit hoort bij de dienst", niet "klik hier".
+
+Wat er per plek gebeurt:
+
+- **Menu in de kop:** een zacht vlak achter het woord onder de muis, iets
+  lichter bij indrukken; de lichtstreep blijft voor het onderdeel waar je
+  bent.
+- **Knoppen:** de pijl erin schuift mee; de glazen knop krijgt een cyaan
+  rand.
+- **Tekstlinks (`.brand-site-link`):** de streep groeit van links, de pijl
+  schuift; bij focus hetzelfde plus de rand.
+- **Projectkaarten en lijstregels:** zie [projecten](modules/projecten.md).
+- **Inhoudsopgave op /privacy:** het hoofdstuk waar je leest licht op
+  (IntersectionObserver, geen scrollluisteraar); een klik scrollt via Lenis
+  en zet het anker met `replaceState(history.state, ...)`.
+
+Bestaande `:hover`-regels in de site-bestanden zijn in één keer in die
+mediaquery gezet; een losse `:hover` op het hoogste niveau hoort er niet
+meer bij te komen (zie [valkuilen](../development/valkuilen.md)).
+
+### De vervolgpagina's
+
+Rustig, met één klein moment per pagina, en geen hero-entree: je komt er
+met een klik, niet van de straat.
+
+- **/over-mij:** het portret gaat bij binnenkomst één keer open als een
+  diafragma (CSS, 0,9 s); het verhaal staat op een leesbare regel (40rem),
+  met de punten op een breed scherm als kolom ernaast.
+- **/contact:** het visitekaartje blijft naast het formulier staan terwijl
+  je invult (sticky vanaf 64rem).
+- **/privacy:** een inhoudsopgave die op een breed scherm naast de tekst
+  blijft staan; de pulserende bolletjes staan daar stil.
+- **/werkwijze**, **/projecten** en een projectpagina: zie de moduledocs.
 
 ### Reduced motion, en waarom het hier geen bijzaak is
 
@@ -1588,6 +1788,6 @@ Blijkt er echt 3D nodig te zijn, dan:
 npm run dev           # ontwikkelserver met hot reload
 npm run build         # productiebuild
 npm run types:check   # vue-tsc, moet schoon zijn
-npm run lint          # eslint
-npm run format        # prettier
+npm run check         # vp check: lint en opmaak (oxlint en oxfmt)
+npm run check:fix     # hetzelfde, en meteen repareren
 ```

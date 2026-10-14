@@ -1,0 +1,326 @@
+/*
+  De voettekst: het slotbeeld.
+
+  Een groot, sterk gedempt oog uit de hero onder de kolommen, de naam van
+  het bedrijf groot erboven, en onder de streep het zakelijke. De pagina
+  begint en eindigt bij hetzelfde beeld.
+
+  Hij staat op elke publieke pagina; zie PublicLayout.vue en
+  docs/architecture/modules/voettekst.md.
+*/
+
+.brand-site-voet {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    overflow: clip;
+    /*
+      Geen eigen marge erboven: de laatste sectie heeft al zijn eigen ruimte
+      onderaan, en de lijn hieronder is de scheiding. Met een marge
+      erbovenop stond er een lege strook van bijna tweehonderd pixels.
+    */
+    background: linear-gradient(
+        180deg,
+        transparent,
+        color-mix(in oklab, var(--brand-navy-deep) 70%, transparent) 55%,
+        var(--brand-navy-deep)
+    );
+}
+
+/*
+  De accentlijn bovenin. Groeit vanuit het midden; `transform-origin`
+  staat hier, want waar een lijn vandaan groeit is opmaak.
+*/
+.brand-site-voet-lijn {
+    height: 1px;
+    transform-origin: center;
+    background-image: linear-gradient(
+        90deg,
+        transparent 0%,
+        var(--site-plaat-rand-sterk) 25%,
+        var(--brand-cyan) 50%,
+        var(--site-plaat-rand-sterk) 75%,
+        transparent 100%
+    );
+}
+
+/*
+  Het oog. Rechtsonder, uitgevaagd naar de randen met een masker, en zo
+  gedempt dat de tekst erboven overal zijn contrast houdt: het is sfeer,
+  en sfeer hoort nooit de leesbaarheid te kosten.
+*/
+.brand-site-voet-oog {
+    position: absolute;
+    right: 0;
+    bottom: -12%;
+    z-index: -1;
+    /*
+      Binnen de breedte van het scherm, ook op een telefoon. De voet knipt
+      wel af (`overflow: clip`), maar een element dat buiten de pagina
+      steekt laat een mobiele browser toch zijwaarts schuiven.
+    */
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    pointer-events: none;
+    opacity: 0.2;
+    mask-image: radial-gradient(
+        closest-side,
+        var(--brand-navy) 30%,
+        transparent 100%
+    );
+}
+
+/*
+  Het oog en het woordmerk bewegen langzaam omhoog terwijl de voet
+  binnenkomt (zie SiteFooter.vue): het oog trager dan de naam, zodat er
+  diepte tussen zit. Alleen `transform`, alleen op een breed scherm.
+*/
+.brand-site-voet-oog img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+@media (min-width: 50rem) {
+    .brand-site-voet-oog {
+        width: min(56rem, 70%);
+        bottom: -38%;
+        opacity: 0.24;
+    }
+}
+
+.brand-site-voet-binnen {
+    padding-block: clamp(2.5rem, 5.5vw, 4rem) 1.5rem;
+}
+
+.brand-site-voet-raster {
+    display: grid;
+    gap: 2rem;
+}
+
+@media (min-width: 50rem) {
+    .brand-site-voet-raster {
+        /* Het merk krijgt de helft; de twee lijstjes delen de rest. */
+        grid-template-columns: minmax(0, 5fr) minmax(0, 4fr) minmax(0, 3fr);
+        gap: clamp(1.75rem, 3.5vw, 3.5rem);
+    }
+}
+
+.brand-site-voet-merk {
+    min-width: 0;
+}
+
+.brand-site-voet-naam {
+    display: flex;
+    align-items: center;
+    gap: clamp(0.625rem, 1.2vw, 0.875rem);
+    font-size: clamp(1.75rem, 1.25rem + 1.6vw, 2.75rem);
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.035em;
+    color: var(--site-kop);
+}
+
+.brand-site-voet-teken {
+    width: clamp(2rem, 1.5rem + 1.4vw, 2.875rem);
+    height: auto;
+    flex: none;
+}
+
+.brand-site-voet-zin {
+    margin-top: 1rem;
+    max-width: 28rem;
+    font-size: var(--site-maat-tekst);
+    line-height: 1.6;
+    color: var(--site-tekst-zacht);
+    text-wrap: pretty;
+}
+
+.brand-site-voet-linkedin {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-height: 2.75rem;
+    margin-top: 1.25rem;
+    padding: 0 1rem 0 0.85rem;
+    border-radius: 999px;
+    border: 1px solid var(--site-plaat-rand-sterk);
+    background-color: color-mix(
+        in oklab,
+        var(--brand-navy-deep) 55%,
+        transparent
+    );
+    font-size: var(--site-maat-klein);
+    color: var(--site-tekst);
+    transition:
+        border-color 0.25s var(--site-ease),
+        color 0.25s var(--site-ease),
+        transform 0.25s var(--site-ease);
+}
+
+.brand-site-voet-linkedin:focus-visible {
+    border-color: var(--brand-cyan);
+    color: var(--site-kop);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-voet-linkedin:hover {
+        border-color: var(--brand-cyan);
+        color: var(--site-kop);
+    }
+}
+
+.brand-site-voet-linkedin:active {
+    transform: scale(0.98);
+}
+
+.brand-site-voet-linkedin-teken {
+    width: 1.1rem;
+    height: 1.1rem;
+    color: var(--brand-cyan);
+}
+
+.brand-site-voet-kolom {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+/* Een label en geen meting: de gewone letter, klein en in het licht. */
+.brand-site-voet-kop {
+    margin-bottom: 0.5rem;
+    font-size: var(--site-maat-klein);
+    font-weight: 600;
+    letter-spacing: 0.005em;
+    color: var(--brand-cyan);
+}
+
+.brand-site-voet-lijst {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 1.5rem;
+    row-gap: 0.1rem;
+}
+
+/*
+  Een link in de voet. Minstens 44 pixels hoog om op te tikken; de streep
+  eronder groeit van links bij het aanwijzen.
+*/
+.brand-site-voet-link {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    max-width: 100%;
+    min-height: 2.75rem;
+    font-size: var(--site-maat-tekst);
+    color: var(--site-tekst);
+    overflow-wrap: anywhere;
+    background-image: linear-gradient(var(--brand-cyan), var(--brand-cyan));
+    background-size: 0% 1px;
+    background-position: 0 calc(100% - 0.6rem);
+    background-repeat: no-repeat;
+    transition:
+        background-size 0.4s var(--site-ease),
+        color 0.25s var(--site-ease);
+}
+
+.brand-site-voet-link:focus-visible {
+    color: var(--site-kop);
+    background-size: 100% 1px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-voet-link:hover {
+        color: var(--site-kop);
+        background-size: 100% 1px;
+    }
+}
+
+.brand-site-voet-mail {
+    color: var(--brand-cyan);
+}
+
+.brand-site-voet-regel {
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+    font-size: var(--site-maat-tekst);
+    color: var(--site-tekst-zacht);
+    overflow-wrap: anywhere;
+}
+
+/* Onder de streep: het zakelijke links, de credit rechts. */
+.brand-site-voet-balk {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: clamp(2rem, 4vw, 3rem);
+    padding-top: 1rem;
+    border-top: 1px solid var(--site-plaat-rand);
+}
+
+@media (min-width: 50rem) {
+    .brand-site-voet-balk {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 2rem;
+    }
+}
+
+.brand-site-voet-zakelijk {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 1.25rem;
+    font-size: var(--site-maat-label);
+    color: var(--site-tekst-zacht);
+}
+
+/* De privacylink in die regel heeft dezelfde maat als de tekst eromheen. */
+.brand-site-voet-zakelijk .brand-site-voet-link {
+    font-size: inherit;
+    color: var(--site-tekst-zacht);
+}
+
+.brand-site-voet-zakelijk .brand-site-voet-link:focus-visible {
+    color: var(--site-kop);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-voet-zakelijk .brand-site-voet-link:hover {
+        color: var(--site-kop);
+    }
+}
+
+.brand-site-voet-credit {
+    font-size: var(--site-maat-label);
+    color: var(--site-tekst-zacht);
+}
+
+/*
+  Met een muis hoeft een regel geen duimhoogte te hebben; dan staat de
+  lijst compacter en leest hij als één blok.
+*/
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-voet-link,
+    .brand-site-voet-regel {
+        min-height: 2rem;
+    }
+
+    .brand-site-voet-link {
+        background-position: 0 calc(100% - 0.35rem);
+    }
+
+    .brand-site-voet-linkedin {
+        min-height: 2.375rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .brand-site-voet-link,
+    .brand-site-voet-linkedin {
+        transition: none;
+    }
+}

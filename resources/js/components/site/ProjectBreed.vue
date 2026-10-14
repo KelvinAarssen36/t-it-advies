@@ -45,9 +45,9 @@ const adres = computed(() =>
 </script>
 
 <template>
-    <article data-reveal class="brand-projectbreed opacity-0">
-        <Link :href="adres" class="brand-projectbreed-link">
-            <span class="brand-projectbreed-beeld">
+    <article data-reveal class="brand-site-projectbreed opacity-0">
+        <Link :href="adres" class="brand-site-projectbreed-link">
+            <span class="brand-site-projectbreed-beeld">
                 <img
                     v-if="item.beeld"
                     :src="item.beeld"
@@ -63,36 +63,45 @@ const adres = computed(() =>
                     als op een kaart. Een leeg vlak zou lezen alsof er iets
                     ontbreekt in plaats van alsof er niets is.
                 -->
-                <span v-else aria-hidden="true">{{ item.letter }}</span>
+                <span v-else class="brand-site-data" aria-hidden="true">
+                    {{ item.letter }}
+                </span>
             </span>
 
-            <span class="brand-projectbreed-tekst">
-                <span class="brand-projectbreed-kop">
-                    <span class="brand-projectbadge">{{ item.type }}</span>
+            <span class="brand-site-projectbreed-tekst">
+                <span class="brand-site-projectbreed-kop">
+                    <span class="brand-site-project-badge">{{
+                        item.type
+                    }}</span>
 
                     <!--
                         De periode staat naast het soort en niet op een
                         eigen regel: dat scheelt hoogte, en samen zeggen ze
                         in één oogopslag wát het was en wannéér.
                     -->
-                    <span class="brand-projectbreed-wanneer">
+                    <span
+                        class="brand-site-projectbreed-wanneer brand-site-data"
+                    >
                         {{ item.periode }}
                     </span>
                 </span>
 
-                <h3 class="brand-projectbreed-titel">{{ item.titel }}</h3>
+                <h3 class="brand-site-projectbreed-titel">{{ item.titel }}</h3>
 
                 <!--
-                    De puntjes tussen de delen zet de CSS, zodat er geen
-                    losse punt overblijft als een deel ooit wegvalt.
+                    De scheiding tussen de delen zet de CSS, zodat er geen
+                    los teken overblijft als een deel ooit wegvalt.
                 -->
-                <span class="brand-projectbreed-meta">
+                <span class="brand-site-project-wie">
                     <span>{{ item.organisatie }}</span>
                     <span>{{ item.rol }}</span>
                     <span>{{ item.duur }}</span>
                 </span>
 
-                <span v-if="item.samenvatting" class="brand-projectbreed-zin">
+                <span
+                    v-if="item.samenvatting"
+                    class="brand-site-projectbreed-zin"
+                >
                     {{ item.samenvatting }}
                 </span>
             </span>
@@ -103,7 +112,7 @@ const adres = computed(() =>
                 hoe lang een titel ook is. Op een telefoon valt hij weg:
                 daar is de regel al duidelijk genoeg aantikbaar.
             -->
-            <span class="brand-projectbreed-pijl" aria-hidden="true">
+            <span class="brand-site-projectbreed-pijl" aria-hidden="true">
                 <ArrowRight class="size-5" />
             </span>
         </Link>

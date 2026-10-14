@@ -4,6 +4,14 @@ Waar de eigenaar goed in is, in cijfers: vaardigheden met een niveau en
 kengetallen waar een bezoeker op afgaat. Per cijfer kiest hij zelf de
 vorm -- een balk, een ring of een groot getal dat oploopt.
 
+Op de site heet het blok "Instrumenten": een ring is een **wijzer** met
+een schaal van zestig maatstreepjes, een teller is een **meting** -- het
+getal groot en halfvet, de naam eronder, een haarlijn links, net als de
+cijfers bij de ervaring -- en een balk is een **dunne lijn over een
+schaalverdeling** -- een streepje per tien procent en een langer op de
+helft. Geen gevulde grijze baan meer: op een meetinstrument zie je de
+schaal en de naald, niet een balk die half leeg is.
+
 > **Dit is de module met het meeste werk aan de kant van de bezoeker.**
 > Qua opzet is hij de eenvoudigste van de vijf: één tabel, één lijst,
 > geen bijlagen. Wat hem bijzonder maakt is de animatie; zie
@@ -140,15 +148,24 @@ alleen nog wat het krijgt.
 
 ### Het raster
 
-| Band    | Op een telefoon | Vanaf 40rem | Vanaf 50rem |
-| ------- | --------------- | ----------- | ----------- |
-| Ringen  | 2 kolommen      | 4 kolommen  | 4 kolommen  |
-| Tellers | 2 kolommen      | 4 kolommen  | 4 kolommen  |
-| Balken  | 1 kolom         | 1 kolom     | 2 kolommen  |
+| Band    | Op een telefoon | Vanaf 40rem                          | Vanaf 50rem |
+| ------- | --------------- | ------------------------------------ | ----------- |
+| Ringen  | 2 kolommen      | zoveel als er passen, minimaal 11rem | idem        |
+| Tellers | 2 kolommen      | zoveel als er passen, minimaal 13rem | idem        |
+| Balken  | 1 kolom         | 1 kolom                              | 2 kolommen  |
+
+**Ringen en tellers verdelen de hele breedte** (`auto-fit`): drie wijzers
+staan over de volle breedte en niet links met een gat ernaast. Een wijzer
+heeft zelf een maximale maat (10rem), dus hij rekt niet mee; de kolom
+wordt breder, niet de ring.
 
 Balken blijven lang één kolom, en dat is een keuze: bij drie kolommen
 worden ze zo kort dat het verschil tussen 70 en 85 procent niet meer te
-zien is -- en dan is de balk zinloos geworden.
+zien is -- en dan is de lijn zinloos geworden.
+
+**Het getal van een teller schaalt mee met zijn eigen vak**
+(`container-type: inline-size` en een maat in `cqi`). "4.200+" bleef
+anders in vier kolommen niet op één regel staan en brak het plusje los.
 
 ## De animatie: een golf die één keer door het blok rolt
 
@@ -158,6 +175,54 @@ het vorige, dus het rolt van boven naar beneden door het blok in plaats
 van dat alles tegelijk beweegt. Daarna staat het stil.
 
 Zie `vulStatistieken()` in [`motion.ts`](../../../resources/js/lib/motion.ts).
+
+### Per band een golf, en op tijd
+
+**Eerst hing alles aan de bovenkant van het blok**, en dat was te vroeg:
+het hele blok van anderhalve schermhoogte begon tegelijk te vullen zodra
+de kop binnenkwam, dus de rijen onderaan waren al klaar voordat je erbij
+was. Wie snel scrolde zag alleen stilstaande meters. Nu roept
+`StatistiekenSection` `vulStatistieken()` aan **per band** (`[data-bundel]`):
+elke rij vult als hij zelf in beeld komt.
+
+**En per band met een meetanker** (`.brand-site-statistiek-wacht`, een
+onzichtbare strook die 16vh boven de band begint). `vulStatistieken()`
+start als zijn blok op 80% van het scherm staat; met de band zelf als blok
+stond een rij die in de onderste vijfde van het scherm verscheen
+zichtbaar leeg. Met het anker begint de golf zodra de band onderaan in
+beeld komt. Bij een snelle doortocht vullen ze alsnog: een `once`-trigger
+vuurt ook als je er voorbij springt.
+
+### De labels
+
+Een groep begint met zijn kopje, in dezelfde vorm als het sectielabel boven
+een titel: halfvet, in cyaan. Er liep eerst een lijn vanaf het kopje tot
+de rand; die is weg, net als de andere losse lijntjes op de site (zie
+[frontend en animatie](../frontend-en-animatie.md#labels-zonder-lijntjes)).
+De teller stond op een korte haarlijn bovenaan; nu is hij een meting met
+een lijn links, zodat alle cijfers op de site hetzelfde zijn gebouwd.
+
+### De schaal tekent zich mee
+
+Terwijl de naald uitslaat, tekent de schaal zich: bij een wijzer draaien
+de zestig maatstreepjes rond met een kegelvormig masker
+(`.brand-site-statistiek-ring-schaallaag`), bij een balk gaat de
+schaalverdeling van links naar rechts open, en links van een teller trekt
+de haarlijn zich van boven naar beneden. Alles op dezelfde `--vulling`, dus het loopt niet uit de
+pas, en zonder JavaScript staat alles vol.
+
+### Een les over `left`
+
+De lichtpunten op een balk liepen mee met `left: calc(...)` op een
+variabele die elk beeldje verandert -- tijdens het vullen, en daarna
+eindeloos in de rustanimatie zolang het blok in beeld is. `left` is
+opmaak, dus de browser rekende elk beeldje de opmaak opnieuw door. Nu is
+het `translate` in `cqw`: de schaal is een container
+(`container-type: inline-size`), en `1cqw` is een procent van zijn
+breedte. Zelfde plek, geen opmaak. Samen met het schrijven van de
+tussenstand via `nodeValue` in plaats van `textContent` (in `motion.ts`)
+zakte het aandeel trage beeldjes bij het scrollen door dit blok in de
+meting van ruim tachtig naar ongeveer vijf procent.
 
 ### Dit liep eerst mee met de scroll, en dat moest eruit
 
@@ -212,16 +277,16 @@ alles al gebeurd is", voor elk van de drie vormen.
 Dat is er gekomen als **één idee in drie vormen: het lichtpunt dat met het
 vullen meeliep, blijft rondgaan.**
 
-| Vorm       | Wat er beweegt                                     |
-| ---------- | -------------------------------------------------- |
-| **Balk**   | Een glans schuift over het gevulde stuk.           |
-| **Ring**   | Een kort streepje loopt een rondje over de boog.   |
-| **Teller** | Een lichtje zakt langs zijn randlijn naar beneden. |
+| Vorm       | Wat er beweegt                                            |
+| ---------- | --------------------------------------------------------- |
+| **Balk**   | Een lichtpunt loopt over de lijn naar zijn kop.           |
+| **Ring**   | Een kort streepje loopt een rondje over de boog.          |
+| **Teller** | Een lichtje schuift over de haarlijn links van het getal. |
 
-Een teller heeft geen baan en geen boog, dus daar is die randlijn links het
-enige wat er al staat om iets over te laten lopen -- en dat is precies de
-lijn die hem zijn vorm geeft. Zo hoeft er voor de rustanimatie nergens iets
-bij dat er anders niet zou zijn.
+Een teller heeft geen baan en geen boog, dus daar is de haarlijn links
+het enige wat er al staat om iets over te laten lopen -- en dat is precies
+de lijn die hem zijn vorm geeft. Zo hoeft er voor de rustanimatie nergens
+iets bij dat er anders niet zou zijn.
 
 Het draait op twee variabelen, net als het vullen zelf: `--glans` (waar het
 punt staat, 0 tot 1) en `--kracht` (hoe sterk, 0 tot 1). De helper
@@ -242,7 +307,7 @@ Drie keuzes houden het rustig in plaats van druk:
    tijdlijn op pauze als het blok uit beeld is; eeuwig doorlopen op iets dat
    drie schermen hoger staat kost accu en levert niets op.
 
-Bij de ring loopt het streepje tot `--doel` min vijf eenheden. Zonder die
+Bij de ring loopt het streepje tot `--doel` min vier eenheden. Zonder die
 aftrek steekt het aan het eind voorbij de boog uit, en dan lijkt de ring even
 verder te lopen dan zijn percentage. Omdat het binnen de boog blijft, maakt
 een ring van tien procent een sprongetje en een van negentig bijna een hele
@@ -255,19 +320,21 @@ keert dan meteen terug en de rustanimatie begint nooit.
 
 Dit blok wordt met elke statistiek langer, en dat is op een telefoon het
 snelst een probleem: bij vijftien stuks staan er zo'n tien rijen onder
-elkaar. Alle maten zijn daarom **vanaf de telefoon geschreven**, met de
-ruimere waarden terug in een `@media (min-width: 40rem)`:
+elkaar. De maten schalen daarom mee met het scherm (`clamp()`), en de
+ruimere waarden staan pas vanaf 40rem:
 
-| Wat                      | Telefoon | Vanaf 40rem |
-| ------------------------ | -------- | ----------- |
-| Ring                     | 6,5rem   | 8,5rem      |
-| Getal in de ring         | 1,125rem | 1,75rem     |
-| Getal van een teller     | 1,5rem   | 2,25rem     |
-| Ruimte tussen de bundels | 1,5rem   | 2rem        |
-| Ruimte tussen de groepen | 1,75rem  | 2,25rem     |
+| Wat                  | Telefoon            | Breed scherm |
+| -------------------- | ------------------- | ------------ |
+| Ring                 | 6,25rem             | 7,5rem       |
+| Getal in de ring     | 1,125rem            | 1,5rem       |
+| Getal van een teller | 1,75rem, of kleiner | tot 2,75rem  |
 
-Twee ringen van 8,5rem naast elkaar vullen op een telefoon bijna het hele
-scherm; met vier ringen was je halve blok één rij cijfers.
+Dat is de maat van de tweede ronde: de eerste versie van het ontwerp had
+ringen van 10rem en tellers tot 4rem, en dit blok werd daarmee langer dan
+anderhalve schermhoogte. De naam, de notitie en het groepskopje lezen de
+rollen van de site (`--site-maat-klein`, `--site-maat-label`); het
+groepskopje staat in de gewone letter en niet meer in mono, want het is
+een label en geen maat.
 
 ### De balk en de ring zijn CSS, niet JavaScript
 
@@ -287,9 +354,10 @@ daarmee een `stroke-dashoffset` die uit twee variabelen komt:
   vak;
 - `--vulling` -- hoe ver de animatie is, 0 tot 1.
 
-De balk doet hetzelfde met `scaleX`. En `--vulling` valt in `app.css`
-terug op **1**, dus zonder JavaScript staat alles meteen goed, met het
-juiste getal erbij. Het enige wat JavaScript doet is het wégnemen en dan
+De lijn van de balk doet hetzelfde met `scaleX`. En `--vulling` valt
+terug op **1** -- op elk vak zelf, in
+[`statistieken.css`](../../../resources/css/site/statistieken.css) -- dus
+zonder JavaScript staat alles meteen goed, met het juiste getal erbij. Het enige wat JavaScript doet is het wégnemen en dan
 opbouwen.
 
 Dat is de veilige kant op: een statistiek die niets laat zien is erger
@@ -500,6 +568,7 @@ je keuze.
 | [`vulStatistieken()`](../../../resources/js/lib/motion.ts)                                                | De golf die één keer rolt, en het lichtpunt dat daarna rondgaat. |
 | [`StatistiekenSection.vue`](../../../resources/js/components/site/sections/StatistiekenSection.vue)       | Wat de bezoeker ziet.                                            |
 | `StatistiekBalk.vue`, `StatistiekRing.vue`, `StatistiekTeller.vue`                                        | De drie vormen, ook gebruikt voor het voorbeeld in het portaal.  |
+| [`statistieken.css`](../../../resources/css/site/statistieken.css)                                        | De opmaak van de drie vormen, `brand-site-statistiek-*`.         |
 | [`Statistieken.vue`](../../../resources/js/pages/website/Statistieken.vue)                                | Het beheerscherm.                                                |
 | [`StatistiekIndelingDialoog.vue`](../../../resources/js/components/website/StatistiekIndelingDialoog.vue) | De groepen en de volgorde: een vak per groep.                    |
 | [`StatistiekGroepVak.vue`](../../../resources/js/components/website/StatistiekGroepVak.vue)               | Eén zo'n vak: twee naamvelden en zijn lijst.                     |
@@ -525,3 +594,15 @@ indelingsscherm zodat de eigenaar ziet waarom.
 - **Geen insertielijn tussen twee vakken.** Waar iets belandt is te zien
   aan het vak dat oplicht en aan de regel die oplicht; een derde
   aanwijzing erbij maakt het niet duidelijker en kost een plug-in.
+
+## Het voorbeeld in het portaal
+
+De drie vormen staan ook in het beheerscherm, in het voorbeeld naast het
+formulier (`StatistiekDialoog`). **Daar is geen `.brand-site`**: het
+portaal laadt Geist niet en kan in het lichte thema staan. Daarom lezen
+de kleuren in `statistieken.css` de rol-tokens (`--foreground`,
+`--muted-foreground`, `--border`), die in beide thema's kloppen; alleen
+op de site zelf gaan de getallen naar `--site-kop`. Het mono-lettertype
+komt van de utility `font-data`, die in het portaal terugvalt op de
+systeem-mono. En `--vulling` staat op elk vak zelf op 1, zodat het
+voorbeeld ook zonder `.brand-statistieken` eromheen vol staat.

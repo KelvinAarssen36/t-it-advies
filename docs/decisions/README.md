@@ -382,6 +382,14 @@ ook de keuzeknop: een vak dat je scroll overneemt is precies waar iemand
 met bewegingsklachten last van heeft, en de lijst is een volwaardig
 alternatief.
 
+**Bijgewerkt (ronde twee van "Helder zicht", zie 019): het vak neemt de
+scroll niet meer over.** Met zevenentwintig functies stond de pagina
+achtentwintig wielstappen stil, en dat las als een site die vastloopt --
+de belangrijkste reden dat de eigenaar de pagina "buggy" noemde. Bladeren
+gaat nu met pijlknoppen, de jaartallen, een klik of de pijltjestoetsen; het
+muiswiel scrolt altijd de pagina. De keuze voor de carrousel zelf staat:
+hij is nog steeds één vaste hoogte, hoeveel functies er ook bijkomen.
+
 ## 017 -- Lenis blijft de scrollmotor, ScrollSmoother komt er niet in
 
 **Sinds GSAP 3.13 zitten de vroegere Club-plugins gewoon in het pakket**,
@@ -405,7 +413,10 @@ Daar staat weinig tegenover. De koppelcode tussen Lenis en ScrollTrigger
 is twaalf regels en staat op één plek, in `startSmoothScroll()`. En
 parallax is `parallax()` in
 [`motion.ts`](../../resources/js/lib/motion.ts): dertig regels, één keer
-geschreven, en hij doet precies wat `data-speed` doet.
+geschreven, en hij doet precies wat `data-speed` doet. (Sinds
+[019](#019----de-landing-opnieuw-vormgegeven-helder-zicht) doet de hero
+zijn diepte met één eigen scroll-tijdlijn en is `parallax()` weg; het
+argument blijft hetzelfde.)
 
 **Wat we wél overnemen van die gratis plugins:** SplitText, DrawSVG en
 MotionPath. Die voegen iets toe dat we anders niet konden -- tekst per
@@ -448,3 +459,79 @@ pagina, zonder draaiend proces -- dus ook op gedeelde hosting.
 deploy en `php artisan inertia:start-ssr` als blijvend proces ernaast. Dat
 vraagt hosting waar dat mag; bij Strato gedeelde hosting is dat hetzelfde
 probleem als de wachtrij-worker.
+
+---
+
+## 019 -- De landing opnieuw vormgegeven: "Helder zicht"
+
+**Keuze:** de publieke landing kreeg een volledig nieuwe vormgeving rond één
+beeld: het merk is een oog, en een adviseur stelt scherp. Een diafragma dat
+opengaat (de hero, het mobiele menu, Over mij), lagen die in diepte
+schuiven, koppen die scherpstellen, en één omgevingslicht dat per onderdeel
+meeloopt. Secties liggen afwisselend als open veld en als plaat op één
+doorlopend donker vlak.
+
+**Alternatief:** de bestaande kaarten oppoetsen -- marges, schaduwen, een
+paar extra fade-ins. Dat was de veilige weg, en precies wat de eigenaar niet
+vroeg: hij wilde een site met een eigen gezicht, niet dezelfde site wat
+netter.
+
+**Wat er níet veranderde, en dat is de helft van deze keuze:** alles wat de
+klant beheert. Volgorde, aan en uit, lege onderdelen, vertalingen, de
+vensters en uitklappers, de regels rond uitgelichte projecten, het
+contactformulier met zijn spambeveiliging. Elke animatie werkt per
+onderdeel en rekent op geen enkele buurman, zodat een andere volgorde of een
+uitgezet blok niets kapotmaakt. De achtergrond en het licht wisselen op
+plek in de rij, net als vroeger de banden.
+
+**Wat het kost:** een groter CSS-oppervlak in `resources/css/site/`, en
+effecten die op een telefoon bewust minder doen (geen blur, geen parallax,
+geen cursor). Onder reduced motion staat alles direct in zijn eindtoestand.
+
+**Terugdraaien:** de oude vorm staat in de git-geschiedenis vóór deze
+wijziging. Het gedrag hoeft daarbij niet terug: dat is niet veranderd.
+
+---
+
+## 020 -- De stijl van de publieke site in eigen bestanden, onder `brand-site-`
+
+**Keuze:** de stijl van de landing staat in `resources/css/site/`, één
+bestand per onderdeel, samengebracht in `resources/css/site.css` en vanuit
+`app.css` geïmporteerd. Elke klasse daarin begint met `brand-site-`.
+
+**Alternatief:** alles in `app.css` laten, zoals de rest. Dat bestand was
+dertienduizend regels, zonder naamruimte, en twee keer is er al een klasse
+stil overschreven door een tweede met dezelfde naam (zie de valkuilen in
+AGENTS.md).
+
+**Waarom:** een onderdeel en zijn stijl liggen nu naast elkaar, en het
+voorvoegsel maakt een botsing met het portaal onmogelijk: niets in het
+portaal heet `brand-site-`. De tokens (`--site-*`) en de merkkleuren blijven
+in `app.css`, in `:root` en `.dark`, waar alle kleuren staan.
+
+**Terugdraaien:** de bestanden achter elkaar in `app.css` plakken. De namen
+mogen blijven.
+
+---
+
+## 021 -- Geist op de publieke site, Instrument Sans in het portaal
+
+**Keuze:** de publieke site staat in Geist, met Geist Mono voor maat, tijd
+en telling. Het portaal en de inlogschermen blijven op Instrument Sans.
+
+**Alternatief:** Instrument Sans overal, met een zwaardere snede voor de
+koppen. Minder verschil tussen de helften, en één lettertype minder.
+
+**Waarom:** de nieuwe vormgeving leunt op twee registers: grote, strakke
+koppen en precieze getallen. Geist heeft allebei, in één familie, en Geist
+Mono maakt van een jaartal of een stapnummer iets wat er als meting uitziet
+in plaats van als tekst. Het portaal is een werkplek en geen etalage; daar
+was niets mis.
+
+**Wat het kost:** twee extra families, alleen op publieke pagina's. Het
+portaal laadt ze niet; zie `@fonts` in `app.blade.php`. Ze komen net als
+Instrument Sans tijdens de build binnen en worden zelf geserveerd.
+
+**Terugdraaien:** de twee `bunny()`-regels uit `vite.config.ts` halen en
+`--site-font` in `resources/css/site/basis.css` terugzetten op Instrument
+Sans. De `font-data`-klassen vallen dan vanzelf terug op de systeem-mono.

@@ -1,0 +1,1108 @@
+/*
+  De loopbaan ("Ervaring"): cijfers, de carrousel met scherptediepte en de
+  tijdlijn met een lichtrail.
+
+  Het verplaatsen van de kaarten in de carrousel zet JavaScript
+  rechtstreeks op het element (zie ErvaringCarrousel.vue); alles wat niet
+  per beeldje verandert -- kleuren, maten, het kader -- staat hier.
+
+  Zie docs/architecture/modules/ervaring.md.
+*/
+
+/* ---------------------------------------------------------------------
+   De cijfers
+
+   Ze gebruiken de gedeelde meting (`.brand-site-metingen` en
+   `.brand-site-meting-*` in basis.css): het getal bovenaan, het label
+   eronder, een haarlijn ertussen. Hier staat alleen wat er bij de
+   loopbaan anders is: het aantal kolommen.
+   --------------------------------------------------------------------- */
+.brand-site-ervaring-cijfers {
+    grid-template-columns: repeat(var(--ervaring-smal, 2), minmax(0, 1fr));
+}
+
+/*
+  Op een telefoon: één, twee of drie naast elkaar, en bij vier twee aan
+  twee. Drie in twee kolommen liet het derde cijfer alleen op een rij
+  achter.
+*/
+.brand-site-ervaring-cijfers[data-aantal='1'] {
+    --ervaring-smal: 1;
+}
+
+.brand-site-ervaring-cijfers[data-aantal='3'] {
+    --ervaring-smal: 3;
+}
+
+@media (min-width: 50rem) {
+    .brand-site-ervaring-cijfers {
+        grid-template-columns: repeat(
+            var(--ervaring-kolommen, 3),
+            minmax(0, 1fr)
+        );
+    }
+
+    .brand-site-ervaring-cijfers[data-aantal='1'] {
+        --ervaring-kolommen: 1;
+    }
+
+    .brand-site-ervaring-cijfers[data-aantal='2'] {
+        --ervaring-kolommen: 2;
+    }
+
+    .brand-site-ervaring-cijfers[data-aantal='4'] {
+        --ervaring-kolommen: 4;
+    }
+}
+
+/* ---------------------------------------------------------------------
+   De bediening: "Toon alles" en de keuze tussen de weergaven
+   --------------------------------------------------------------------- */
+.brand-site-ervaring-bediening {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: clamp(1.75rem, 3vw, 2.5rem);
+}
+
+.brand-site-ervaring-alles {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    gap: 0.6rem;
+    border: 1px solid var(--site-plaat-rand);
+    border-radius: 999px;
+    background-color: var(--site-plaat);
+    padding: 0 1rem;
+    font-size: var(--site-maat-klein);
+    color: var(--site-tekst);
+    transition:
+        border-color 0.3s var(--site-ease),
+        color 0.3s var(--site-ease),
+        transform 0.25s var(--site-ease);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-ervaring-alles:hover {
+        border-color: var(--site-plaat-rand-sterk);
+        color: var(--site-kop);
+    }
+}
+
+.brand-site-ervaring-alles:active {
+    transform: translateY(1px) scale(0.98);
+}
+
+.brand-site-ervaring-weergave {
+    display: inline-flex;
+    gap: 0.25rem;
+    border: 1px solid var(--site-plaat-rand);
+    border-radius: 999px;
+    background-color: var(--site-plaat);
+    padding: 0.25rem;
+}
+
+.brand-site-ervaring-weergave button {
+    display: inline-flex;
+    min-height: 2.25rem;
+    align-items: center;
+    gap: 0.45rem;
+    border-radius: 999px;
+    padding: 0 0.95rem;
+    font-size: 0.8125rem;
+    color: var(--site-tekst-zacht);
+    transition:
+        background-color 0.3s var(--site-ease),
+        color 0.3s var(--site-ease);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-ervaring-weergave button:hover {
+        color: var(--site-kop);
+    }
+}
+
+.brand-site-ervaring-weergave button[data-actief] {
+    background-color: var(--brand-blue);
+    color: var(--brand-cloud);
+}
+
+.brand-site-ervaring-alles:focus-visible,
+.brand-site-ervaring-weergave button:focus-visible {
+    outline: 2px solid var(--brand-cyan);
+    outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------------
+   Gedeeld door carrousel, lijst en venster
+   --------------------------------------------------------------------- */
+.brand-site-ervaring-nu {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border: 1px solid color-mix(in oklab, var(--brand-cyan) 45%, transparent);
+    border-radius: 999px;
+    padding: 0.05rem 0.55rem;
+    font-family: var(--site-font-data);
+    font-size: 0.6875rem;
+    line-height: 1.5;
+    color: var(--brand-cyan);
+    white-space: nowrap;
+}
+
+/* Een levend puntje: deze functie loopt nog. Echte toestand, geen sier. */
+.brand-site-ervaring-nu::before {
+    content: '';
+    width: 0.375rem;
+    height: 0.375rem;
+    border-radius: 999px;
+    background-color: var(--brand-cyan);
+    box-shadow: 0 0 0.5rem var(--brand-cyan);
+}
+
+/*
+  De metaregel: organisatie, duur, plaats, werkvorm. De scheiding staat in
+  CSS en niet in de tekst, zodat er nooit een punt overblijft als een van
+  de delen er niet is.
+*/
+.brand-site-ervaring-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 0.6rem;
+    font-size: 0.8125rem;
+    color: var(--site-tekst-zacht);
+}
+
+.brand-site-ervaring-meta > * {
+    min-width: 0;
+}
+
+.brand-site-ervaring-meta > * + *::before {
+    content: '';
+    display: inline-block;
+    width: 0.25rem;
+    height: 0.25rem;
+    margin-right: 0.6rem;
+    border-radius: 999px;
+    vertical-align: middle;
+    background-color: color-mix(in oklab, var(--brand-silver) 50%, transparent);
+}
+
+/*
+  De organisatie: een naam en geen verhaal, dus afgekapt na twee regels.
+  De hele tekst blijft in de HTML; het venster toont hem heel.
+*/
+.brand-site-ervaring-org {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    color: var(--brand-ice);
+}
+
+.brand-site-ervaring-org a {
+    text-underline-offset: 3px;
+}
+
+.brand-site-ervaring-pijl {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    align-self: center;
+    color: var(--site-tekst-zacht);
+    opacity: 0.6;
+    transition:
+        transform 0.3s var(--site-ease),
+        opacity 0.3s var(--site-ease),
+        color 0.3s var(--site-ease);
+}
+
+.brand-site-ervaring-venster-functie {
+    font-weight: 500;
+    color: var(--site-kop);
+}
+
+/* ---------------------------------------------------------------------
+   De carrousel: scherptediepte
+
+   Het vak is de zone. Hang je met je muis in de plaat, dan gaat je scroll
+   naar de loopbaan; ernaast scrolt de pagina. De rand licht dan op, zodat
+   wat je ziet klopt met wat er gebeurt.
+
+   De voorste kaart staat scherp op een eigen plaat; de buren erboven en
+   eronder worden kleiner en zakken terug in het donker. Dat zet
+   JavaScript per beeldje (schaal en doorzichtigheid), nooit met blur: de
+   buren moeten te lezen blijven.
+   --------------------------------------------------------------------- */
+.brand-site-ervaring-vak {
+    position: relative;
+    /*
+      Een eigen stapelcontext, en dat is geen detail. De kaarten krijgen
+      van JavaScript een `z-index` tot 100; zonder `isolation` tellen die
+      mee in de stapeling van de hele pagina, en dan staat het venster met
+      de volledige ervaring er ineens áchter.
+    */
+    isolation: isolate;
+    display: flex;
+    height: min(64svh, 32rem);
+    min-height: 22rem;
+    width: 100%;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--site-plaat-rand);
+    border-radius: 1rem;
+    background:
+        radial-gradient(
+            70% 60% at 60% 50%,
+            color-mix(in oklab, var(--brand-blue) 10%, transparent),
+            transparent 70%
+        ),
+        var(--site-plaat);
+    box-shadow:
+        inset 0 1px 0 color-mix(in oklab, var(--brand-platinum) 7%, transparent),
+        0 40px 100px -60px var(--site-schaduw);
+    transition:
+        border-color 0.4s var(--site-ease),
+        box-shadow 0.4s var(--site-ease);
+}
+
+.brand-site-ervaring-vak:focus-visible {
+    outline: 2px solid var(--brand-cyan);
+    outline-offset: 3px;
+}
+
+.brand-site-ervaring-vak[data-binnen] {
+    border-color: var(--site-plaat-rand-sterk);
+    box-shadow:
+        inset 0 1px 0 color-mix(in oklab, var(--brand-platinum) 9%, transparent),
+        0 0 0 1px color-mix(in oklab, var(--brand-cyan) 10%, transparent),
+        0 40px 100px -50px var(--site-licht-blauw);
+}
+
+/*
+  Een vervaging aan de boven- en onderkant, zodat de kaarten het beeld in
+  en uit vloeien in plaats van er hard af te worden geknipt -- de rand van
+  het scherpstelbereik.
+*/
+.brand-site-ervaring-vak::before,
+.brand-site-ervaring-vak::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    z-index: 200;
+    height: 4.5rem;
+    pointer-events: none;
+}
+
+.brand-site-ervaring-vak::before {
+    top: 0;
+    background: linear-gradient(to bottom, var(--site-plaat-vol), transparent);
+}
+
+.brand-site-ervaring-vak::after {
+    bottom: 2.6rem;
+    background: linear-gradient(to top, var(--site-plaat-vol), transparent);
+}
+
+.brand-site-ervaring-binnen {
+    display: grid;
+    min-height: 0;
+    flex: 1;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0.5rem 0.65rem;
+}
+
+@media (min-width: 48rem) {
+    .brand-site-ervaring-binnen {
+        grid-template-columns: 5.5rem minmax(0, 1fr);
+        gap: 1.75rem;
+        padding: 1.5rem 2.25rem;
+    }
+}
+
+/* De rail met de jaartallen. Op een telefoon is er geen ruimte voor. */
+.brand-site-ervaring-rail {
+    position: relative;
+    display: none;
+    gap: 0.75rem;
+    padding-block: 3rem;
+}
+
+@media (min-width: 48rem) {
+    .brand-site-ervaring-rail {
+        display: flex;
+    }
+}
+
+.brand-site-ervaring-spoor {
+    position: relative;
+    width: 1px;
+    flex-shrink: 0;
+    background-color: color-mix(in oklab, var(--brand-cyan) 20%, transparent);
+}
+
+/*
+  Het afgelegde deel, als lichtstraal. Schaalt met `transform` en niet met
+  `height`: dat draait op de GPU en kost bij elke scrollstap geen
+  herberekening van de pagina.
+*/
+.brand-site-ervaring-bereik {
+    position: absolute;
+    inset: 0 -0.5px;
+    transform-origin: top;
+    background-image: linear-gradient(
+        to bottom,
+        var(--brand-blue),
+        var(--brand-cyan)
+    );
+    box-shadow: 0 0 0.75rem var(--site-licht);
+}
+
+.brand-site-ervaring-jaren {
+    position: relative;
+    flex: 1;
+}
+
+/*
+  Elk jaartal staat op zijn eigen hoogte langs de lijn. `translateY` van
+  min de helft zet het midden van de tekst op die hoogte.
+*/
+.brand-site-ervaring-jaar {
+    position: absolute;
+    left: 0;
+    min-height: 1.5rem;
+    transform: translateY(-50%);
+    font-family: var(--site-font-data);
+    font-size: 0.75rem;
+    color: var(--site-tekst-zacht);
+    opacity: 0.45;
+    transition:
+        color 0.3s var(--site-ease),
+        opacity 0.3s var(--site-ease);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-ervaring-jaar:hover {
+        opacity: 1;
+    }
+}
+
+.brand-site-ervaring-jaar[data-actief] {
+    color: var(--brand-cyan);
+    opacity: 1;
+}
+
+/*
+  Alle kaarten liggen op het midden van dit vlak; vandaaruit schuift
+  JavaScript ze omhoog of omlaag. Daarom `relative`: zonder dat heeft "het
+  midden" geen betekenis.
+*/
+.brand-site-ervaring-stapel {
+    position: relative;
+    min-height: 0;
+}
+
+.brand-site-ervaring-kaart {
+    position: absolute;
+    top: 50%;
+    inset-inline: 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    border: 1px solid transparent;
+    border-radius: 1rem;
+    padding: 0.75rem 0.85rem;
+    /*
+      Het beginpunt. JavaScript overschrijft dit meteen; staat het er niet,
+      dan zit alles één beeldje lang op elkaar gestapeld.
+    */
+    transform: translateY(-50%);
+    will-change: transform, opacity;
+    cursor: pointer;
+    transition:
+        background-color 0.4s var(--site-ease),
+        border-color 0.4s var(--site-ease),
+        box-shadow 0.4s var(--site-ease);
+}
+
+@media (min-width: 48rem) {
+    .brand-site-ervaring-kaart {
+        gap: 1.4rem;
+        padding: 1.25rem 1.5rem;
+    }
+}
+
+/*
+  De voorste kaart: scherp, op een eigen plaat. Die plaat dekt ook de
+  buren af waar de beschrijving overheen valt.
+*/
+.brand-site-ervaring-kaart[data-actief] {
+    border-color: var(--site-plaat-rand-sterk);
+    background:
+        linear-gradient(
+            135deg,
+            color-mix(in oklab, var(--brand-cyan) 7%, transparent),
+            transparent 45%
+        ),
+        var(--site-plaat-hoog);
+    box-shadow:
+        inset 0 1px 0 color-mix(in oklab, var(--brand-platinum) 9%, transparent),
+        0 24px 60px -30px var(--site-schaduw);
+}
+
+/*
+  Het beeldmerk. Altijd een vierkant plaatje van de server met de
+  achtergrond er al in gebakken, dus geen uitzondering voor logo of foto.
+  Zie App\Support\Media\Logo.
+*/
+.brand-site-ervaring-bel {
+    display: flex;
+    width: 2.75rem;
+    height: 2.75rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 1px solid var(--site-plaat-rand);
+    border-radius: 999px;
+    background-color: var(--site-plaat-vol);
+    color: var(--site-tekst-zacht);
+    transition:
+        border-color 0.4s var(--site-ease),
+        color 0.4s var(--site-ease),
+        box-shadow 0.4s var(--site-ease);
+}
+
+.brand-site-ervaring-kaart[data-actief] .brand-site-ervaring-bel {
+    border-color: color-mix(in oklab, var(--brand-cyan) 45%, transparent);
+    color: var(--brand-cyan);
+    box-shadow: 0 0 1.5rem var(--site-licht);
+}
+
+@media (min-width: 48rem) {
+    .brand-site-ervaring-bel {
+        width: 3.25rem;
+        height: 3.25rem;
+    }
+
+    .brand-site-ervaring-kaart[data-actief] .brand-site-ervaring-bel {
+        width: 4.5rem;
+        height: 4.5rem;
+    }
+}
+
+.brand-site-ervaring-bel img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Het pictogram schaalt mee met het rondje: 42% van de diameter. */
+.brand-site-ervaring-bel svg {
+    width: 42%;
+    height: 42%;
+}
+
+.brand-site-ervaring-periode {
+    font-family: var(--site-font-data);
+    font-size: 0.75rem;
+    color: var(--site-tekst-zacht);
+    transition: color 0.4s var(--site-ease);
+}
+
+.brand-site-ervaring-kaart[data-actief] .brand-site-ervaring-periode {
+    color: var(--brand-cyan);
+}
+
+.brand-site-ervaring-functie {
+    margin-top: 0.2rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+    color: var(--site-kop);
+}
+
+.brand-site-ervaring-kaart[data-actief] .brand-site-ervaring-functie {
+    font-size: 1.125rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+
+@media (min-width: 48rem) {
+    .brand-site-ervaring-functie {
+        font-size: 1rem;
+    }
+
+    .brand-site-ervaring-kaart[data-actief] .brand-site-ervaring-functie {
+        font-size: 1.625rem;
+    }
+}
+
+/*
+  De beschrijving staat alleen op de voorste kaart, begrensd tot een paar
+  regels: het vak is één scherm hoog, en een lange tekst zou de buren
+  eronder wegduwen. Wie alles wil lezen, opent de kaart of schakelt over
+  naar "Alles op een rij".
+*/
+.brand-site-ervaring-tekst {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    overflow: hidden;
+    margin-top: 0.7rem;
+    max-width: 62ch;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    text-wrap: pretty;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+    color: var(--site-tekst);
+}
+
+@media (min-width: 48rem) {
+    .brand-site-ervaring-tekst {
+        -webkit-line-clamp: 4;
+        line-clamp: 4;
+        font-size: 0.9375rem;
+    }
+}
+
+.brand-site-ervaring-voet {
+    position: relative;
+    z-index: 210;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.35rem 1rem;
+    border-top: 1px solid var(--site-plaat-rand);
+    /*
+      Een eigen ondergrond: de kaarten onder de voorste lopen tot de rand
+      van het vak, en zonder dit schemerde hun tekst door de voet heen.
+    */
+    background-color: color-mix(
+        in oklab,
+        var(--brand-navy-deep) 94%,
+        transparent
+    );
+    padding: 0.5rem 0.5rem 0.5rem 0.9rem;
+    font-size: var(--site-maat-label);
+    color: var(--site-tekst-zacht);
+}
+
+@media (min-width: 48rem) {
+    .brand-site-ervaring-voet {
+        padding: 0.5rem 0.75rem 0.5rem 1.5rem;
+    }
+}
+
+/*
+  Het zinnetje dat zegt wat je moet doen. Het wordt duidelijker zodra je
+  muis in het vak hangt; dan is het ook waar.
+*/
+.brand-site-ervaring-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    opacity: 0.8;
+    transition:
+        opacity 0.3s var(--site-ease),
+        color 0.3s var(--site-ease);
+}
+
+.brand-site-ervaring-vak[data-binnen] .brand-site-ervaring-hint {
+    opacity: 1;
+    color: var(--brand-cyan);
+}
+
+/*
+  Vorige en volgende: de weg door de stapel nu het muiswiel van de pagina
+  is. 44 pixels in het vierkant, voor een duim.
+*/
+.brand-site-ervaring-pijlen {
+    display: inline-flex;
+    gap: 0.375rem;
+}
+
+.brand-site-ervaring-stapknop {
+    display: inline-flex;
+    width: 2.75rem;
+    height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--site-plaat-rand);
+    border-radius: 999px;
+    background-color: color-mix(
+        in oklab,
+        var(--brand-navy-deep) 55%,
+        transparent
+    );
+    color: var(--site-kop);
+    transition:
+        border-color 0.25s var(--site-ease),
+        transform 0.2s var(--site-ease);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-ervaring-stapknop:hover:not(:disabled) {
+        border-color: var(--site-plaat-rand-sterk);
+    }
+}
+
+.brand-site-ervaring-stapknop:active:not(:disabled) {
+    transform: scale(0.96);
+}
+
+.brand-site-ervaring-stapknop:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.brand-site-ervaring-stapknop:focus-visible {
+    outline: 2px solid var(--brand-cyan);
+    outline-offset: 2px;
+}
+
+/* Op een telefoon is de zin te lang naast de knoppen; de knoppen zeggen het al. */
+@media (max-width: 39.999rem) {
+    .brand-site-ervaring-hint {
+        display: none;
+    }
+}
+
+.brand-site-ervaring-balk {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    z-index: 220;
+    width: 100%;
+    height: 2px;
+    transform-origin: left;
+    background-image: var(--brand-gradient);
+}
+
+/* ---------------------------------------------------------------------
+   De lijst: een tijdlijn met een lichtrail
+
+   Een rail van het eerste punt tot het laatste, met een straal die zich
+   tekent terwijl je scrolt (`--tijdlijn-voortgang`, gezet door
+   `drawTimeline`). De punten lichten op zodra de straal ze bereikt
+   (`data-bereikt`). Vanaf 64rem staat het jaartal in een eigen kolom en
+   blijft het hangen zolang je in zijn groep zit.
+   --------------------------------------------------------------------- */
+.brand-site-ervaring-lijst {
+    --ervaring-jaar: 0rem;
+
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+@media (min-width: 64rem) {
+    .brand-site-ervaring-lijst {
+        --ervaring-jaar: 5.5rem;
+    }
+}
+
+/*
+  De rail loopt van het midden van het eerste punt tot dat van het
+  laatste; een lijn die boven het eerste punt uitsteekt ziet eruit alsof
+  er iets is afgeknipt. 1.25rem is de helft van een punt van 2.5rem.
+*/
+.brand-site-ervaring-lijst-rail {
+    position: absolute;
+    top: 1.25rem;
+    bottom: 1.25rem;
+    left: calc(var(--ervaring-jaar) + 1.25rem - 0.5px);
+    width: 1px;
+    background-color: color-mix(in oklab, var(--brand-cyan) 18%, transparent);
+}
+
+.brand-site-ervaring-lijst-rail::after {
+    content: '';
+    position: absolute;
+    inset: 0 -0.5px;
+    transform: scaleY(var(--tijdlijn-voortgang, 0));
+    transform-origin: top;
+    background-image: linear-gradient(
+        to bottom,
+        var(--brand-blue),
+        var(--brand-cyan)
+    );
+    box-shadow: 0 0 0.875rem var(--site-licht);
+}
+
+/*
+  `minmax(0, 1fr)` en niet `1fr`: dat laatste krijgt als ondergrens de
+  breedte van het langste woord, en dan schuift de hele tijdlijn buiten
+  een smal scherm.
+*/
+.brand-site-ervaring-lijst-groep {
+    display: grid;
+    grid-template-columns: var(--ervaring-jaar) minmax(0, 1fr);
+}
+
+/*
+  `grid-column: 2` expliciet. Het jaartal staat op een telefoon op
+  `display: none`, en zonder deze regel zet de browser de items dan in de
+  eerste kolom -- die daar nul breed is. Zie de valkuil in
+  docs/architecture/modules/ervaring.md.
+*/
+.brand-site-ervaring-lijst-groep-items {
+    grid-column: 2;
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.brand-site-ervaring-lijst-jaar {
+    grid-column: 1;
+    display: none;
+}
+
+@media (min-width: 64rem) {
+    .brand-site-ervaring-lijst-jaar {
+        position: sticky;
+        top: 6rem;
+        display: block;
+        align-self: start;
+        padding-top: 0.6rem;
+        font-family: var(--site-font-data);
+        font-size: 0.875rem;
+        color: var(--site-tekst-zacht);
+        opacity: 0.5;
+        transition:
+            color 0.4s var(--site-ease),
+            opacity 0.4s var(--site-ease);
+    }
+
+    /* Het jaar waar je doorheen scrolt licht op; zie `followYears`. */
+    .brand-site-ervaring-lijst-jaar[data-actief] {
+        color: var(--brand-cyan);
+        opacity: 1;
+    }
+}
+
+/*
+  Een raster en geen flexbox: de kaart is een `<button>`, en een knop als
+  flexitem krimpt naar zijn eigen inhoud in plaats van de vrije ruimte te
+  pakken.
+*/
+.brand-site-ervaring-lijst-item {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: 0.85rem;
+    transition: opacity 0.3s var(--site-ease);
+}
+
+@media (min-width: 40rem) {
+    .brand-site-ervaring-lijst-item {
+        gap: 1.25rem;
+    }
+}
+
+/*
+  De regel onder je muis licht op, de rest zakt iets terug: dezelfde
+  scherptediepte als in de carrousel, maar dan op aanwijzen.
+*/
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-ervaring-lijst:hover
+        .brand-site-ervaring-lijst-item:not(:hover) {
+        opacity: 0.55;
+    }
+}
+
+.brand-site-ervaring-lijst-punt {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    width: 2.5rem;
+    height: 2.5rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 1px solid var(--site-plaat-rand);
+    border-radius: 999px;
+    background-color: var(--site-plaat-vol);
+    color: var(--site-tekst-zacht);
+    transition:
+        border-color 0.4s var(--site-ease),
+        color 0.4s var(--site-ease),
+        box-shadow 0.4s var(--site-ease);
+}
+
+.brand-site-ervaring-lijst-punt img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/*
+  Het punt licht op zodra de straal eraan toe is. GSAP zet het attribuut;
+  de kleur staat hier, zodat de huisstijl niet in JavaScript belandt.
+*/
+.brand-site-ervaring-lijst-punt[data-bereikt] {
+    border-color: color-mix(in oklab, var(--brand-cyan) 70%, transparent);
+    color: var(--brand-cyan);
+    box-shadow: 0 0 1.25rem var(--site-licht);
+}
+
+/*
+  De functie die nu loopt krijgt een zachte ring die uitdijt. Eén punt dat
+  leeft, zodat je oog daar landt. De ring valt buiten het punt, dus dat
+  knipt hier niet af; het beeld krijgt dan zelf de ronding.
+*/
+.brand-site-ervaring-lijst-punt[data-loopt] {
+    overflow: visible;
+}
+
+.brand-site-ervaring-lijst-punt[data-loopt]::before {
+    content: '';
+    position: absolute;
+    inset: -0.35rem;
+    border: 1px solid color-mix(in oklab, var(--brand-cyan) 45%, transparent);
+    border-radius: 999px;
+    animation: brand-site-ervaring-puls 2.8s ease-out infinite;
+}
+
+.brand-site-ervaring-lijst-punt[data-loopt] img {
+    border-radius: 999px;
+}
+
+@keyframes brand-site-ervaring-puls {
+    0% {
+        opacity: 0.8;
+        transform: scale(0.92);
+    }
+
+    70%,
+    100% {
+        opacity: 0;
+        transform: scale(1.3);
+    }
+}
+
+/*
+  De kaart: een glazen regel. De hele regel is een knop, dus met het
+  toetsenbord te bereiken en met Enter te openen.
+*/
+.brand-site-ervaring-lijst-kaart {
+    width: 100%;
+    min-width: 0;
+    cursor: pointer;
+    border: 1px solid var(--site-plaat-rand);
+    border-radius: 1rem;
+    background-color: var(--site-plaat);
+    padding: 0.85rem 1rem;
+    font: inherit;
+    text-align: left;
+    color: inherit;
+    transition:
+        border-color 0.35s var(--site-ease),
+        background-color 0.35s var(--site-ease),
+        transform 0.35s var(--site-ease);
+}
+
+@media (min-width: 40rem) {
+    .brand-site-ervaring-lijst-kaart {
+        padding: 1.1rem 1.4rem;
+    }
+}
+
+.brand-site-ervaring-lijst-kaart:focus-visible {
+    outline: 2px solid var(--brand-cyan);
+    outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-ervaring-lijst-kaart:hover {
+        border-color: var(--site-plaat-rand-sterk);
+        background-color: var(--site-plaat-hoog);
+        transform: translateX(4px);
+    }
+
+    .brand-site-ervaring-lijst-kaart:hover .brand-site-ervaring-pijl {
+        transform: translateX(3px);
+        opacity: 1;
+        color: var(--brand-cyan);
+    }
+}
+
+/*
+  De regel zelf. Op een telefoon gaat de periode naar zijn eigen regel
+  (`flex-basis: 100%`); naast de titel is er dan te weinig breedte.
+*/
+.brand-site-ervaring-lijst-kop {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.4rem 0.75rem;
+}
+
+@media (min-width: 40rem) {
+    .brand-site-ervaring-lijst-kop {
+        flex-wrap: nowrap;
+        gap: 0.5rem 1.25rem;
+    }
+}
+
+.brand-site-ervaring-lijst-functie {
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    overflow-wrap: anywhere;
+    color: var(--site-kop);
+}
+
+.brand-site-ervaring-lijst-tijd {
+    display: flex;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    flex-basis: 100%;
+    order: 3;
+    gap: 0 0.6rem;
+    font-size: 0.75rem;
+    color: var(--site-tekst-zacht);
+}
+
+@media (min-width: 40rem) {
+    .brand-site-ervaring-lijst-tijd {
+        flex-basis: auto;
+        order: 0;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.15rem;
+        font-size: 0.8125rem;
+        text-align: right;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .brand-site-ervaring-alles,
+    .brand-site-ervaring-weergave button,
+    .brand-site-ervaring-vak,
+    .brand-site-ervaring-kaart,
+    .brand-site-ervaring-bel,
+    .brand-site-ervaring-periode,
+    .brand-site-ervaring-jaar,
+    .brand-site-ervaring-hint,
+    .brand-site-ervaring-stapknop,
+    .brand-site-ervaring-pijl,
+    .brand-site-ervaring-lijst-item,
+    .brand-site-ervaring-lijst-punt,
+    .brand-site-ervaring-lijst-kaart,
+    .brand-site-ervaring-lijst-jaar {
+        transition: none;
+    }
+
+    .brand-site-ervaring-lijst-punt[data-loopt]::before {
+        animation: none;
+        opacity: 0.6;
+        transform: none;
+    }
+
+    .brand-site-ervaring-lijst-kaart:hover,
+    .brand-site-ervaring-lijst-kaart:hover .brand-site-ervaring-pijl {
+        transform: none;
+    }
+
+    /* Zonder beweging is er geen "waar ben ik nu" om aan te wijzen. */
+    .brand-site-ervaring-lijst-jaar {
+        opacity: 1;
+    }
+
+    .brand-site-ervaring-lijst:hover
+        .brand-site-ervaring-lijst-item:not(:hover) {
+        opacity: 1;
+    }
+}
+
+/* ---------------------------------------------------------------------
+   De jaarband
+
+   De loopbaan als één regel jaartallen, van oud naar nieuw, die met de
+   scroll van links naar rechts schuift (zie `schuifBand` in
+   ErvaringSection.vue). Het vak knipt het spoor af en laat het aan de
+   randen wegvloeien; het spoor zelf is één regel die nooit afbreekt.
+
+   De jaartallen zijn omlijnd en niet gevuld: het is een achtergrond voor
+   de cijfers en de lijst, geen tweede kop. De organisatie staat er klein
+   naast, zodat een jaartal nooit los betekenisloos in beeld staat.
+   --------------------------------------------------------------------- */
+.brand-site-ervaring-band {
+    margin-top: clamp(1.75rem, 3.5vw, 2.5rem);
+    margin-inline: calc(var(--site-goot) * -1);
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(
+        90deg,
+        transparent,
+        black 8%,
+        black 92%,
+        transparent
+    );
+    mask-image: linear-gradient(
+        90deg,
+        transparent,
+        black 8%,
+        black 92%,
+        transparent
+    );
+}
+
+.brand-site-ervaring-band-spoor {
+    display: flex;
+    width: max-content;
+    gap: clamp(1.75rem, 3.5vw, 3rem);
+    padding-inline: var(--site-goot);
+    will-change: transform;
+}
+
+.brand-site-ervaring-band-stap {
+    display: inline-flex;
+    flex: none;
+    align-items: baseline;
+    gap: 0.75rem;
+    white-space: nowrap;
+}
+
+.brand-site-ervaring-band-jaar {
+    font-size: clamp(2.25rem, 1.6rem + 2.4vw, 3.75rem);
+    font-weight: 600;
+    font-feature-settings: 'tnum';
+    line-height: 1;
+    letter-spacing: -0.04em;
+    color: transparent;
+    -webkit-text-stroke: 1px
+        color-mix(in oklab, var(--brand-cyan) 45%, transparent);
+}
+
+/*
+  Met de band ervoor: de globale regel `.brand-dark-page :where(span)` in
+  app.css zet `max-width: 100%` en staat later in het bestand, met
+  dezelfde specificiteit. Zonder het extra deel won die, en stond een
+  organisatienaam van zestig tekens voluit in de band.
+*/
+.brand-site-ervaring-band .brand-site-ervaring-band-org {
+    display: inline-block;
+    max-width: 11rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: var(--site-maat-klein);
+    font-weight: 500;
+    color: var(--site-tekst-zacht);
+}

@@ -71,6 +71,24 @@ export default defineConfig({
                 bunny('Instrument Sans', {
                     weights: [400, 500, 600],
                 }),
+                /*
+                 * Alleen voor de publieke site. Het portaal en de
+                 * inlogschermen blijven op Instrument Sans; welke pagina
+                 * welke lettertypen laadt staat bij `@fonts` in
+                 * app.blade.php. Zie docs/architecture/frontend-en-animatie.md.
+                 *
+                 * Alleen de gewone en de halfvette Geist worden vooraf
+                 * geladen: dat zijn de lopende tekst en de koppen boven de
+                 * vouw. De rest komt binnen zodra hij nodig is.
+                 */
+                bunny('Geist', {
+                    weights: [400, 500, 600, 700],
+                    preload: [{ weight: 400 }, { weight: 600 }],
+                }),
+                bunny('Geist Mono', {
+                    weights: [400, 500],
+                    preload: false,
+                }),
             ],
         }),
         inertia(),

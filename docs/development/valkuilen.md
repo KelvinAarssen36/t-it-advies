@@ -230,6 +230,105 @@ grens uit de module zelf in plaats van hem over te typen.
 
 ---
 
+## De publieke site
+
+### Een `backdrop-filter` vangt wat erin `position: fixed` staat
+
+Een element met `backdrop-filter` (of `transform`, of `filter`) wordt het
+kader voor zijn vaste kinderen. `position: fixed; inset: 0` vult dan niet
+het scherm maar dat element. Dat gebeurde bijna met het mobiele menu: het
+staat in de kop, en de vervaging stond op `<header>`. Daarom zit hij nu op
+de pil erbinnen; zie `resources/css/site/kop.css`.
+
+### Een vast element dat buiten het scherm uitsteekt, maakt de pagina breder
+
+Op een telefoon telt een vast element dat over de rand loopt mee voor de
+breedte van de pagina: de browser zoomt uit, en je kunt zijwaarts schuiven
+terwijl er in de opmaak niets mis lijkt. Het lichtveld had `inset: -20vmax`
+om bij het schuiven geen rand te tonen. Nu knipt het vaste vlak zichzelf af
+en staat het grotere licht in een `::before`.
+
+Meet het met de breedte die je zelf opgaf en niet met `innerWidth`: in een
+mobiele emulatie groeit `innerWidth` gewoon mee, en dan zegt een controle
+op `scrollWidth > innerWidth` dat alles in orde is.
+
+### Een venster staat niet in `.brand-site`
+
+De vensters van reka-ui staan in een portaal aan het eind van `<body>`. Wat
+via `.brand-site` geërfd wordt -- het lettertype, de kleur, de variabelen
+die alleen daar staan zoals `--site-ease` -- komt daar niet aan. Zet het op
+het venster zelf (`.brand-blad` in `resources/css/site/vensters.css`), en
+gebruik in een venster alleen de tokens uit `:root`.
+
+### `var(--x), terugval` is niet hetzelfde als `var(--x, terugval)`
+
+Staat `--font-geist` niet klaar (in het portaal laadt Geist niet), dan
+maakt `font-family: var(--font-geist), sans-serif` de **hele** regel
+ongeldig en valt de browser terug op zijn standaardletter -- niet op
+`sans-serif`. Geef de terugval dus binnen de `var()` mee:
+`var(--font-geist, 'Instrument Sans'), ...`.
+
+### Een kopbalk die op een laptop past, past niet vanzelf op een tablet
+
+Tussen 50rem en een laptop staan het merk, vijf menu-items, de taalknop en
+de contactknop naast elkaar. Op 820 pixels vroegen ze samen 899, en de
+pagina ging zijwaarts schuiven -- alleen op een tablet, dus op een
+telefoon en een laptop zag je niets. Nu meet de kop zelf hoeveel items er
+passen (`pasIn()` in SiteHeader.vue, zie pagina-indeling.md), en valt
+tussen 50 en 64rem de naam naast het merkteken weg. Meet elke wijziging
+aan de kopbalk toch op 800, 820, 1024 en 1440 pixels, in beide talen.
+
+Een onzichtbare meetrij steekt nog steeds uit: `visibility: hidden` telt
+mee voor de schuifbreedte. Zet hem in een doosje van nul breed met
+`overflow: hidden`.
+
+### Geen `stagger` in een scrub met berekende afstanden
+
+Een `fromTo` met `scrub`, `stagger` en een afstand als functie
+(`x: () => ...`, met `invalidateOnRefresh`) tekent de beginstand van een
+later element pas als zijn beurt in de stagger komt. Bij de projectkaarten
+stonden de tweede en derde kaart daardoor eerst op hun plek en schoten ze
+pas daarna naar rechts weg; de rechterkolom van de kerngegevens deed
+hetzelfde. Laat alle elementen tegelijk beginnen, en maak de waaier met de
+afstand: elk element start verder weg en legt zijn weg dus sneller af.
+
+### Een globale regel met een klasse ervoor weegt mee
+
+In `app.css` krijgen tekstelementen op de publieke site `min-width: 0` en
+`max-width: 100%`, als vangnet tegen lange woorden. Die regel was bedoeld om
+niets te wegen, maar stond als `.brand-dark-page :where(span, p, ...)`: het
+deel buiten de `:where()` telt wél, één klasse, net zoveel als de klasse
+van een module. Bij gelijk gewicht wint wat later komt, en app.css komt na
+de site-bestanden. Zo viel **elke** `max-width` op een kop, inleiding of
+label stil terug op 100%: inleidingen liepen over de volle breedte, het
+verhaal op /over-mij had regels van 110 tekens, en de meetrij van het
+menu mat alleen zijn opvulling.
+
+Eerst werd dat per geval omzeild met een extra klasse ervoor (de band in
+Ervaring). Nu staat ook `.brand-dark-page` in een `:where()` en weegt de
+regel echt nul. **Een vangnet dat breed geldt, schrijf je met
+`:where()` om de hele selector**, niet alleen om het laatste deel. Meet bij
+twijfel `getComputedStyle(el).maxWidth` in de browser: staat er `100%`
+waar je iets anders schreef, dan wint er iets anders.
+
+### Een hover zonder muis blijft hangen
+
+Op een telefoon blijft `:hover` na een tik staan tot je ergens anders
+tikt: een kaart die opgelicht blijft, een link die van kleur verschoten
+lijkt. Zet hover op de publieke site altijd in
+`@media (hover: hover) and (pointer: fine)`, en geef toetsenbordfocus
+(`:focus-visible`) zijn eigen regel erbuiten. `:active` mag wel overal.
+Zie "Eén taal voor alles wat je aanraakt" in
+[frontend-en-animatie](../architecture/frontend-en-animatie.md).
+
+### `history.replaceState(null, ...)` wist Inertia's geheugen
+
+Inertia bewaart de pagina en de scrollpositie in `history.state`. Een anker
+bijwerken met `replaceState(null, '', '#x')` gooit dat weg, en de
+terugknop werkt daarna niet meer: menu → Werkwijze → /werkwijze → terug
+bleef op /werkwijze staan. Geef de bestaande state mee:
+`replaceState(history.state, '', '#x')`.
+
 ## Modules
 
 ### Een route zonder methode valt pas om als de klant klikt

@@ -204,7 +204,7 @@ const wisselOpen = (wil: boolean): void => {
                                     {{ getoond.periode }}
                                     <span
                                         v-if="getoond.loopt"
-                                        class="brand-tijdlijn-nu ml-2"
+                                        class="brand-site-ervaring-nu ml-2"
                                     >
                                         {{ $t('Nu') }}
                                     </span>
@@ -233,8 +233,11 @@ const wisselOpen = (wil: boolean): void => {
                             </button>
                         </div>
 
-                        <DialogDescription data-rij class="brand-tijdlijn-meta">
-                            <span class="brand-tijdlijn-org">
+                        <DialogDescription
+                            data-rij
+                            class="brand-site-ervaring-meta"
+                        >
+                            <span class="brand-site-ervaring-org">
                                 <a
                                     v-if="getoond.website"
                                     :href="getoond.website"
@@ -321,12 +324,14 @@ const wisselOpen = (wil: boolean): void => {
                                     <span
                                         class="flex flex-wrap items-center gap-x-2 gap-y-1"
                                     >
-                                        <span class="font-medium text-white">
+                                        <span
+                                            class="brand-site-ervaring-venster-functie"
+                                        >
                                             {{ item.functie }}
                                         </span>
                                         <span
                                             v-if="item.loopt"
-                                            class="brand-tijdlijn-nu"
+                                            class="brand-site-ervaring-nu"
                                         >
                                             {{ $t('Nu') }}
                                         </span>
@@ -336,13 +341,15 @@ const wisselOpen = (wil: boolean): void => {
                                         {{ item.organisatie }}
                                     </span>
 
-                                    <span class="brand-blad-rij-tijd">
+                                    <span
+                                        class="brand-blad-rij-tijd brand-site-data"
+                                    >
                                         {{ item.periode }} · {{ item.duur }}
                                     </span>
                                 </span>
 
                                 <ChevronRight
-                                    class="brand-tijdlijn-pijl"
+                                    class="brand-site-ervaring-pijl"
                                     aria-hidden="true"
                                 />
                             </button>

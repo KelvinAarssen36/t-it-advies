@@ -1,0 +1,481 @@
+/*
+  Contact: de slotscène.
+
+  Links de kop en de weg naar het mailadres, rechts het formulier op een
+  glazen plaat. Op een telefoon onder elkaar, de kop eerst. Het formulier
+  blijft binnen zijn plaat smal genoeg om prettig in te vullen; de sectie
+  zelf krijgt de volle breedte, want dit is het einde van het verhaal.
+
+  Ook de aparte contactpagina gebruikt de plaat, het formulier en het
+  visitekaartje hieronder.
+
+  Zie docs/architecture/modules/contact.md.
+*/
+
+.brand-site-contact {
+    display: grid;
+    gap: clamp(2rem, 5vw, 3rem);
+}
+
+@media (min-width: 50rem) {
+    .brand-site-contact {
+        grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+        align-items: start;
+        gap: clamp(2rem, 4vw, 4rem);
+    }
+
+    /*
+      De kop blijft staan terwijl je het formulier invult. Zo zie je bij
+      het laatste veld nog steeds waar je naartoe schrijft.
+    */
+    .brand-site-contact-kant {
+        position: sticky;
+        top: 6rem;
+    }
+}
+
+.brand-site-contact-kant {
+    min-width: 0;
+}
+
+/*
+  De weg buiten het formulier om. Hier tekende eerst een lijn zich boven
+  het label, en die is weg: dezelfde losse lijntjes stonden bij elke
+  sectiekop, en ze zeiden niets. Het label en het adres staan nu op hun
+  eigen ruimte.
+*/
+.brand-site-contact-mail {
+    position: relative;
+    display: grid;
+    gap: 0.5rem;
+    margin-top: clamp(1.5rem, 3vw, 2.25rem);
+    padding-top: 1.25rem;
+    max-width: 28rem;
+}
+
+.brand-site-contact-mail-label {
+    font-size: var(--site-maat-klein);
+    color: var(--site-tekst-zacht);
+}
+
+.brand-site-contact-mail-adres {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    width: fit-content;
+    max-width: 100%;
+    font-size: var(--site-maat-kop);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--site-kop);
+    overflow-wrap: anywhere;
+    background-image: linear-gradient(var(--brand-cyan), var(--brand-cyan));
+    background-size: 0% 1px;
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    padding-bottom: 0.2rem;
+    transition:
+        background-size 0.45s var(--site-ease),
+        color 0.25s var(--site-ease);
+}
+
+.brand-site-contact-mail-adres svg {
+    color: var(--brand-cyan);
+}
+
+.brand-site-contact-mail-adres:focus-visible {
+    color: var(--brand-ice);
+    background-size: 100% 1px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-contact-mail-adres:hover {
+        color: var(--brand-ice);
+        background-size: 100% 1px;
+    }
+}
+
+/* ---------------------------------------------------------------------
+   De plaat en het formulier
+   --------------------------------------------------------------------- */
+
+/*
+  Het omhulsel waarmee de plaat uit de diepte omhoogkomt. De beweging zit
+  op dit omhulsel en niet op de plaat zelf: de plaat heeft `data-reveal`,
+  en twee systemen die om beurten dezelfde transform schrijven laten hem
+  springen. Zie ContactSection.vue.
+*/
+.brand-site-contact-diepte {
+    min-width: 0;
+}
+.brand-site-contact-plaat {
+    @apply brand-site-glas;
+    position: relative;
+    min-width: 0;
+    padding: clamp(1.25rem, 2.8vw, 2rem);
+    background:
+        radial-gradient(
+            110% 70% at 100% 0%,
+            color-mix(in oklab, var(--brand-cyan) 7%, transparent),
+            transparent 60%
+        ),
+        var(--site-plaat-hoog);
+
+    /* Het formulier kiest zijn kolommen op zijn eigen breedte. */
+    container-type: inline-size;
+}
+
+.brand-site-contact-formulier {
+    display: flex;
+    flex-direction: column;
+    gap: 1.125rem;
+    transition:
+        opacity 200ms ease,
+        filter 200ms ease;
+}
+
+/*
+  Onderweg: het formulier zakt een tikje weg en is niet meer aan te
+  klikken. Geen animatie maar een toestand, en daarom ook onder reduced
+  motion: zonder beweging is dit het enige dat laat zien dat je klik is
+  aangekomen. `pointer-events` voorkomt een tweede klik op Versturen.
+*/
+.brand-site-contact-formulier[data-bezig] {
+    opacity: 0.55;
+    filter: saturate(0.8);
+    pointer-events: none;
+}
+
+.brand-site-contact-velden {
+    display: grid;
+    gap: 0.875rem 1rem;
+}
+
+/*
+  Naam en e-mailadres naast elkaar zodra de plaat er breed genoeg voor is;
+  onderwerp en bericht over de volle breedte. Op de breedte van de plaat
+  en niet van het scherm: naast de kop is het formulier op een tablet
+  smaller dan het scherm doet vermoeden.
+*/
+@container (min-width: 30rem) {
+    .brand-site-contact-velden {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .brand-site-contact-veld.is-breed {
+        grid-column: 1 / -1;
+    }
+}
+
+/*
+  `align-content: start`: twee velden naast elkaar staan in één rij van het
+  raster en worden even hoog. Krijgt de buurman een foutmelding, dan rekte
+  dit veld mee en verdeelde het de extra hoogte over label en invoer -- de
+  invoer werd hoger en zakte uit de lijn.
+*/
+.brand-site-contact-veld {
+    display: grid;
+    align-content: start;
+    gap: 0.4rem;
+    min-width: 0;
+}
+
+.brand-site-contact-veld > label {
+    font-size: var(--site-maat-klein);
+    color: var(--site-tekst);
+    transition: color 0.2s var(--site-ease);
+}
+
+/*
+  Het veld met de aandacht licht op: het label kleurt cyaan en er komt
+  een zachte lichtkring om de invoer. Een schaduw en geen dikkere rand,
+  want een rand verandert de maat en duwt de rest opzij.
+*/
+.brand-site-contact-veld:focus-within > label {
+    color: var(--brand-cyan);
+}
+
+.brand-site-contact-formulier .brand-control {
+    border-radius: 0.625rem;
+    min-height: 2.75rem;
+    border-color: var(--site-plaat-rand-sterk);
+    background-color: color-mix(in oklab, var(--brand-navy) 55%, transparent);
+    transition:
+        border-color 0.25s var(--site-ease),
+        background-color 0.25s var(--site-ease),
+        box-shadow 0.35s var(--site-ease);
+}
+
+.brand-site-contact-formulier textarea.brand-control {
+    min-height: 7.5rem;
+    padding-block: 0.65rem;
+}
+
+.brand-site-contact-formulier .brand-control:focus-visible,
+.brand-site-contact-formulier .brand-control[data-state='open'] {
+    border-color: var(--brand-cyan);
+    background-color: color-mix(
+        in oklab,
+        var(--brand-navy-deep) 80%,
+        transparent
+    );
+    box-shadow:
+        0 0 0 4px var(--site-licht),
+        0 12px 40px -16px var(--site-licht-blauw);
+}
+
+/* Een afgekeurd veld houdt zijn rode rand, ook als het de aandacht heeft. */
+.brand-site-contact-formulier .brand-control[aria-invalid='true'] {
+    border-color: var(--destructive);
+}
+
+.brand-site-contact-voet {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1.25rem;
+    padding-top: 0.25rem;
+}
+
+/*
+  Het formulier is onderweg gewijzigd. Bewust de waarschuwingskleur en
+  niet rood of groen: geen fout van de bezoeker en geen succes. Zijn tekst
+  staat er nog; hij hoeft alleen opnieuw te versturen. Zie
+  ContactRequest::after().
+*/
+.brand-site-contact-waarschuwing {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    border-radius: 0.625rem;
+    border: 1px solid color-mix(in oklab, var(--warning) 45%, transparent);
+    background-color: color-mix(in oklab, var(--warning) 10%, transparent);
+    padding: 0.75rem 0.9rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    text-wrap: pretty;
+    color: color-mix(in oklab, var(--warning) 70%, var(--brand-cloud));
+}
+
+/* ---------------------------------------------------------------------
+   Gelukt
+
+   Dit vak neemt de plek van het formulier in. Het vinkje staat in een
+   iris: een ring die één keer uitdijt als een pupil die opengaat.
+   --------------------------------------------------------------------- */
+.brand-site-contact-gelukt {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: clamp(1.75rem, 4vw, 2.75rem) 1rem;
+    text-align: center;
+}
+
+.brand-site-contact-vink {
+    position: relative;
+    display: flex;
+    width: 3.5rem;
+    height: 3.5rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    color: var(--success);
+    background: radial-gradient(
+        circle,
+        color-mix(in oklab, var(--success) 22%, transparent),
+        color-mix(in oklab, var(--success) 8%, transparent) 70%
+    );
+    border: 1px solid color-mix(in oklab, var(--success) 45%, transparent);
+}
+
+.brand-site-contact-iris {
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    border: 1px solid color-mix(in oklab, var(--brand-cyan) 70%, transparent);
+    opacity: 0;
+    pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .brand-site-contact-iris {
+        animation: brand-site-contact-iris 1.4s var(--site-ease) 0.2s 1 both;
+    }
+}
+
+@keyframes brand-site-contact-iris {
+    from {
+        opacity: 0.9;
+        transform: scale(0.6);
+    }
+
+    to {
+        opacity: 0;
+        transform: scale(2.4);
+    }
+}
+
+.brand-site-contact-gelukt-titel {
+    font-size: var(--site-maat-titel-lang);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--site-kop);
+}
+
+.brand-site-contact-gelukt-tekst {
+    max-width: 34rem;
+    font-size: var(--site-maat-tekst);
+    color: var(--site-tekst-zacht);
+    text-wrap: pretty;
+}
+
+/*
+  Het wegschuiven als het gelukt is. Alleen het weggaan staat hier: het
+  opkomen van de bevestiging doet GSAP (`animeerBevestiging`), dus de
+  enter-klassen van Vue hebben hier met opzet geen regels.
+*/
+.brand-site-contact-wissel-leave-active {
+    transition:
+        opacity 200ms ease-in,
+        translate 200ms ease-in;
+}
+
+.brand-site-contact-wissel-leave-to {
+    opacity: 0;
+    translate: 0 -10px;
+}
+
+/* ---------------------------------------------------------------------
+   De variant met een eigen contactpagina: een grote knop
+   --------------------------------------------------------------------- */
+.brand-site-contact-uitnodiging {
+    @apply brand-site-glas;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: clamp(1.5rem, 3vw, 2.25rem);
+    min-width: 0;
+}
+
+/*
+  Naast een kop van drie regels hangt een kleine plaat anders bovenaan in
+  een lege kolom. Midden op de hoogte van de kop leest hij als het
+  antwoord erop. Op het omhulsel, want dat is het vak in het raster.
+*/
+.brand-site-contact-diepte:has(> .brand-site-contact-uitnodiging) {
+    align-self: center;
+}
+
+.brand-site .brand-site-contact-grote-knop {
+    min-height: 3rem;
+    padding-inline: 1.5rem;
+    font-size: 1rem;
+}
+
+/* ---------------------------------------------------------------------
+   De aparte contactpagina (/contact)
+   --------------------------------------------------------------------- */
+.brand-site-contact-pagina {
+    padding-block: clamp(4.5rem, 8vw, 6rem) clamp(2.5rem, 5vw, 4rem);
+}
+
+.brand-site-contact-pagina-titel {
+    font-size: var(--site-maat-titel-kort);
+    font-weight: 600;
+    line-height: 1.04;
+    letter-spacing: -0.03em;
+    color: var(--site-kop);
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+}
+
+/* Het visitekaartje naast het formulier: naar wíe schrijf je. */
+.brand-site-contact-kaart {
+    @apply brand-site-glas;
+    display: flex;
+    height: fit-content;
+    flex-direction: column;
+    padding: 1.25rem;
+    min-width: 0;
+}
+
+/*
+  Naast het formulier blijft het kaartje staan terwijl je naar beneden
+  invult: bij het bericht -- het langste veld, onderaan -- zie je nog
+  steeds naar wie je schrijft en hoe snel hij antwoordt. Pas vanaf de
+  breedte waarop het naast het formulier staat (`lg`); eronder staat het
+  onder het formulier en valt er niets te plakken.
+*/
+@media (min-width: 64rem) {
+    .brand-site-contact-kaart {
+        position: sticky;
+        top: 5.5rem;
+    }
+}
+
+.brand-site-contact-kaart-foto {
+    width: 4.5rem;
+    height: 4.5rem;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 999px;
+    border: 1px solid var(--site-plaat-rand-sterk);
+}
+
+.brand-site-contact-kaart-naam {
+    margin-top: 0.875rem;
+    font-size: var(--site-maat-kop);
+    font-weight: 600;
+    color: var(--site-kop);
+}
+
+.brand-site-contact-kaart-rol {
+    margin-top: 0.15rem;
+    font-size: var(--site-maat-klein);
+    color: var(--site-tekst-zacht);
+}
+
+.brand-site-contact-kaart-streep {
+    margin: 1rem 0;
+    border: 0;
+    border-top: 1px solid var(--site-plaat-rand);
+}
+
+.brand-site-contact-kaart-lijst {
+    display: grid;
+    gap: 0.625rem;
+    font-size: var(--site-maat-klein);
+    color: var(--site-tekst-zacht);
+}
+
+.brand-site-contact-kaart-lijst > li {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.brand-site-contact-kaart-lijst svg {
+    color: var(--brand-cyan);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .brand-site-contact-mail-adres,
+    .brand-site-contact-veld > label,
+    .brand-site-contact-formulier .brand-control,
+    .brand-site-contact-wissel-leave-active {
+        transition: none;
+    }
+
+    .brand-site-contact-wissel-leave-to {
+        translate: none;
+    }
+
+    /* Het dimmen tijdens het versturen blijft; dat is een toestand. */
+    .brand-site-contact-formulier {
+        transition: none;
+    }
+}

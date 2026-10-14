@@ -1,0 +1,419 @@
+/*
+  De kop van de publieke site: een zwevende glazen balk. Zie SiteHeader.vue.
+
+  **De blur zit op de pil en niet op `<header>`.** Een `backdrop-filter`
+  maakt van zijn element het kader voor alles wat erin `position: fixed`
+  staat -- en dan zou het mobiele menu, dat het hele scherm hoort te
+  vullen, in een balk van vier rem gevangen zitten.
+*/
+
+.brand-site-kopbalk {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    padding-top: calc(0.625rem + env(safe-area-inset-top, 0px));
+    padding-inline: clamp(0.75rem, 2vw, 1.5rem);
+    pointer-events: none;
+}
+
+/*
+  Op de voorpagina zweeft de balk over de hero, die zijn eigen ruimte
+  bovenaan houdt. Op een subpagina neemt hij gewoon zijn plek in, zodat
+  de inhoud er niet onder verdwijnt.
+*/
+.brand-site:has(.brand-site-hero) .brand-site-kopbalk {
+    margin-bottom: calc(-3.75rem - env(safe-area-inset-top, 0px));
+}
+
+.brand-site-kopbalk-pil {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    max-width: calc(var(--site-raam) + 1rem);
+    height: 3.125rem;
+    margin-inline: auto;
+    padding-inline: 1rem 0.375rem;
+    border: 1px solid var(--site-plaat-rand);
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--brand-navy-deep) 42%, transparent);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    backdrop-filter: blur(16px) saturate(140%);
+    pointer-events: auto;
+    transition:
+        background-color 0.4s var(--site-ease),
+        border-color 0.4s var(--site-ease),
+        box-shadow 0.4s var(--site-ease);
+}
+
+.brand-site-kopbalk[data-vast] .brand-site-kopbalk-pil {
+    border-color: color-mix(in oklab, var(--brand-cyan) 16%, transparent);
+    background: color-mix(in oklab, var(--brand-navy-deep) 78%, transparent);
+    box-shadow:
+        inset 0 1px 0 color-mix(in oklab, var(--brand-platinum) 7%, transparent),
+        0 18px 50px -24px var(--site-schaduw);
+}
+
+/* --- Het merk ---------------------------------------------------------- */
+
+.brand-site-merk {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-height: 2.75rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--site-kop);
+    white-space: nowrap;
+}
+
+.brand-site-merk-teken {
+    width: 1.5rem;
+    height: auto;
+    flex-shrink: 0;
+    transition:
+        scale 0.3s var(--site-ease),
+        filter 0.3s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-merk:hover .brand-site-merk-teken {
+        scale: 1.08;
+        filter: drop-shadow(
+            0 0 8px color-mix(in oklab, var(--brand-cyan) 65%, transparent)
+        );
+    }
+}
+
+.brand-site-merk-rest {
+    color: var(--site-kop);
+}
+
+/*
+  Op een heel smal scherm blijft alleen het teken over: dat is herkenbaar
+  genoeg, en het scheelt precies de ruimte die het menu nodig heeft.
+*/
+.brand-site-merk-naam {
+    display: none;
+}
+
+@media (min-width: 26rem) {
+    .brand-site-merk-naam {
+        display: inline;
+    }
+}
+
+/* --- Het menu in de balk ----------------------------------------------- */
+
+.brand-site-nav,
+.brand-site-kopbalk-acties {
+    display: none;
+}
+
+@media (min-width: 50rem) {
+    /*
+      De balk neemt alle ruimte tussen het merk en de knoppen (`flex: 1`)
+      en zet zijn items in het midden daarvan. Zijn breedte hangt zo niet
+      af van wat erin staat, en dat is wat `pasIn()` in SiteHeader.vue
+      nodig heeft: die meet hoeveel items er in deze ruimte passen. Hing
+      de breedte van de inhoud af, dan veranderde hij met elke uitkomst.
+    */
+    .brand-site-nav {
+        position: relative;
+        display: flex;
+        flex: 1 1 0;
+        align-items: center;
+        justify-content: center;
+        gap: 0.125rem;
+        min-width: 0;
+    }
+
+    /* Tot de eerste meting: anders zie je items komen en weer gaan. */
+    .brand-site-nav:not([data-gemeten]) > .brand-site-nav-link {
+        visibility: hidden;
+    }
+
+    .brand-site-kopbalk-acties {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+}
+
+/*
+  De meetlat voor `pasIn()`: dezelfde items, onzichtbaar en zonder plek.
+
+  Een doosje van nul bij nul dat alles afknipt, met de rij erin op zijn
+  eigen breedte. Zo houdt elk item zijn echte maat, en steekt de rij --
+  alle onderdelen naast elkaar zijn breder dan een tablet -- niet buiten
+  de pagina. `visibility: hidden` alleen was dat wel: onzichtbaar telt
+  gewoon mee voor de schuifbreedte, en de pagina ging zijwaarts schuiven.
+*/
+.brand-site-nav-maat {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+/*
+  Met de balk ervoor, en dat is nodig: `.brand-dark-page :where(span)` in
+  app.css zet `max-width: 100%` en staat later, met dezelfde
+  specificiteit. Honderd procent van een doosje van nul is nul, en dan
+  mat elk item alleen zijn opvulling.
+*/
+.brand-site-nav .brand-site-nav-maat-rij {
+    display: flex;
+    gap: inherit;
+    width: max-content;
+    max-width: none;
+}
+
+/* Op hun eigen maat: de rij is breder dan het doosje, en zou ze anders indrukken. */
+.brand-site-nav .brand-site-nav-maat-rij > * {
+    flex: none;
+    max-width: none;
+}
+
+/*
+  Tussen tablet en kleine laptop valt de naam naast het merkteken weg -- het
+  teken alleen is herkenbaar genoeg, net als op een heel smal scherm -- en
+  ligt het menu iets dichter op elkaar. Dat scheelt daar ruimte voor één
+  of twee items; hoeveel er dan in de balk passen, meet SiteHeader.vue.
+*/
+@media (min-width: 50rem) and (max-width: 63.999rem) {
+    .brand-site-merk-naam {
+        display: none;
+    }
+
+    .brand-site-nav-link {
+        padding-inline: 0.45rem;
+    }
+}
+
+/* De contactknop in de balk: kleiner dan in de inhoud, het is navigatie. */
+.brand-site-kopbalk-acties [data-slot='button'] {
+    height: 2.25rem;
+    padding-inline: 0.95rem;
+    font-size: 0.8125rem;
+}
+
+.brand-site-nav-link {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.25rem;
+    padding: 0.3rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.8125rem;
+    color: var(--site-tekst);
+    white-space: nowrap;
+    transition: color var(--site-duur-hover) var(--site-ease);
+}
+
+.brand-site-nav-link.is-active {
+    color: var(--brand-ice);
+}
+
+/*
+  Onder de muis een zacht vlak achter het woord, zodat je ziet welk item
+  je raakt voordat je klikt; de lichtstreep blijft voor het onderdeel
+  waar je bent. Ingedrukt wordt het vlak even iets lichter.
+*/
+.brand-site-nav-link::before {
+    content: '';
+    position: absolute;
+    inset: 0.125rem 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: var(--site-licht);
+    opacity: 0;
+    transition: opacity var(--site-duur-hover) var(--site-ease);
+}
+
+.brand-site-nav-link:active::before {
+    opacity: 1;
+    transition-duration: var(--site-duur-druk);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-nav-link:hover {
+        color: var(--brand-ice);
+    }
+
+    .brand-site-nav-link:hover::before {
+        opacity: 0.7;
+    }
+}
+
+.brand-site-nav-link:focus-visible,
+.brand-site-nav-portaal:focus-visible,
+.brand-site-merk:focus-visible,
+.brand-site-menuknop:focus-visible {
+    outline: 2px solid var(--brand-cyan);
+    outline-offset: 2px;
+}
+
+/*
+  De lens onder het actieve item: een lichtstreep met een zachte gloed
+  erboven, die van item naar item glijdt. Eén element, één pixel breed,
+  opgerekt met `scale` (`--streep-w` is een getal zonder eenheid): schalen
+  en schuiven gebeuren op de GPU en raken de opmaak niet aan. Zie
+  `meetStreep()` in SiteHeader.vue.
+*/
+.brand-site-nav-lens {
+    position: absolute;
+    bottom: 0.2rem;
+    left: 0;
+    width: 1px;
+    height: 1px;
+    transform-origin: left center;
+    background: var(--brand-cyan);
+    box-shadow:
+        0 0 8px 1px color-mix(in oklab, var(--brand-cyan) 70%, transparent),
+        0 -6px 18px 4px color-mix(in oklab, var(--brand-cyan) 18%, transparent);
+    translate: var(--streep-x, 0) 0;
+    scale: var(--streep-w, 0) 1;
+    opacity: min(var(--streep-w, 0), 1);
+    transition:
+        translate 0.45s var(--site-ease),
+        scale 0.45s var(--site-ease),
+        opacity 0.25s ease;
+}
+
+.brand-site-nav-portaal {
+    font-size: 0.875rem;
+    color: var(--site-tekst-zacht);
+    transition: color 0.25s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-nav-portaal:hover {
+        color: var(--brand-cyan);
+    }
+}
+
+/* Het lijstje onder "Meer": hetzelfde glas, ronder dan in het portaal. */
+.brand-site-nav-meer {
+    border-radius: 1rem;
+    border-color: var(--site-plaat-rand);
+    background: var(--site-plaat-vol);
+}
+
+/* --- Het mobiele menu --------------------------------------------------- */
+
+.brand-site-menuknop {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 999px;
+    color: var(--site-kop);
+    transition: background-color 0.25s ease;
+}
+
+.brand-site-menuknop:active {
+    background: var(--site-licht);
+}
+
+@media (min-width: 50rem) {
+    .brand-site-menuknop {
+        display: none;
+    }
+}
+
+/*
+  Het menu vult het hele scherm en gaat open als een diafragma vanuit de
+  knop (zie `vouwOpen()`). Het kan zelf schuiven als er veel onderdelen
+  zijn, vandaar `data-lenis-prevent` in de markup.
+*/
+.brand-site-menu {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: calc(5.5rem + env(safe-area-inset-top, 0px)) var(--site-goot)
+        calc(2rem + env(safe-area-inset-bottom, 0px));
+    background:
+        radial-gradient(
+            60vmax 50vmax at 100% 0%,
+            var(--site-licht-blauw),
+            transparent 70%
+        ),
+        var(--site-veld);
+    pointer-events: auto;
+}
+
+@media (min-width: 50rem) {
+    .brand-site-menu {
+        display: none;
+    }
+}
+
+.brand-site-menu-lijst {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.brand-site-menu-link {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: 3.25rem;
+    padding-left: 1rem;
+    font-size: clamp(1.6rem, 1.2rem + 2vw, 2.1rem);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    color: var(--site-kop);
+    overflow-wrap: anywhere;
+}
+
+.brand-site-menu-link::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.85rem;
+    bottom: 0.85rem;
+    width: 2px;
+    border-radius: 2px;
+    background: var(--brand-cyan);
+    box-shadow: 0 0 10px var(--brand-cyan);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.brand-site-menu-link.is-active {
+    color: var(--brand-ice);
+}
+
+.brand-site-menu-link.is-active::before {
+    opacity: 1;
+}
+
+.brand-site-menu-taal {
+    align-self: flex-start;
+    margin-top: 1.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .brand-site-kopbalk-pil,
+    .brand-site-merk-teken,
+    .brand-site-nav-lens {
+        transition: none;
+    }
+
+    .brand-site-merk:hover .brand-site-merk-teken {
+        scale: 1;
+    }
+}

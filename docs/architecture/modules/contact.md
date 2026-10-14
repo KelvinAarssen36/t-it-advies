@@ -225,6 +225,68 @@ het hele onderdeel uit staat -- dan wil de eigenaar geen contactformulier, en
 een adres dat er toch is leidt bezoekers naar iets dat hij heeft weggehaald.
 Hij staat in `pages/public/` en krijgt daarmee vanzelf de publieke layout.
 
+**De knop naar die pagina is een Inertia-`Link`**, en geen kale `<a>` meer.
+Die laatste herlaadde de hele site -- intro, lettertypen en al -- voor een
+pagina die in dezelfde layout staat. Er was geen reden voor: Turnstile laadt
+zijn script zelf zodra het formulier op `/contact` verschijnt, en de
+honeypotvelden komen met elk antwoord vers mee.
+
+### De slotscène
+
+Op de landing is contact het laatste onderdeel van het verhaal, en zo ziet
+het er ook uit ("Helder zicht", zie
+[frontend en animatie](../frontend-en-animatie.md)):
+
+- **Vanaf een tablet twee kolommen.** Links de kop (via `SectionHeading`) met
+  daaronder groot het mailadres; rechts het formulier op een glazen plaat
+  (`brand-site-glas`). De linkerkolom blijft staan terwijl je het formulier
+  invult (`position: sticky`), zodat je bij het laatste veld nog ziet naar
+  wie je schrijft. Op een telefoon staat alles onder elkaar, de kop eerst.
+- **Het formulier kiest zijn kolommen op zijn eigen breedte**, met een
+  container query en niet op de schermbreedte: naast de kop is de plaat op
+  een tablet veel smaller dan het scherm. Naam en e-mailadres naast elkaar
+  vanaf 30rem plaatbreedte; onderwerp en bericht altijd over de volle breedte.
+- **Het veld met de aandacht licht op**: het label kleurt cyaan en er komt
+  een zachte lichtkring (`--site-licht`) om de invoer. Een schaduw en geen
+  dikkere rand, want een rand verandert de maat. Invoervelden hebben 10px
+  ronding, knoppen zijn pillen. Een afgekeurd veld houdt zijn rode rand.
+- **Bij een eigen contactpagina** staat rechts een plaat met één grote knop
+  en de mailregel eronder.
+
+**De slotscène beweegt mee met het scrollen** (ronde twee; zie
+[besluit 019](../../decisions/README.md)):
+
+- **De kop** komt regel voor regel op en stelt scherp, zoals elke sectiekop
+  (`data-split`).
+- **Geen lijn meer boven het mailadres.** Daar tekende eerst een lijn zich
+  van links naar rechts boven "Liever mailen?". Dezelfde losse lijntjes
+  stonden bij elke sectiekop, en de eigenaar vond ze terecht weinig
+  zeggend; ze zijn overal weg (zie de labels in
+  [frontend en animatie](../frontend-en-animatie.md#labels-zonder-lijntjes)).
+  Het label en het adres staan nu op hun eigen ruimte.
+- **De plaat met het formulier komt uit de diepte omhoog** (van 72 pixels
+  lager en iets kleiner naar zijn plek, `scrub`), alleen vanaf 50rem. De
+  beweging zit op het omhulsel `.brand-site-contact-diepte` en niet op de
+  plaat zelf: die heeft `data-reveal`, en twee systemen die om beurten
+  dezelfde transform schrijven laten hem springen. **Staat contact op een
+  oneven plek**, dan is de hele sectie al een plaat die omhoogkomt
+  (`plaatOpkomst` in SiteSection) en doet dit omhulsel niets: twee lagen
+  die tegelijk omhoogkomen lezen als één schok. Op zijn plek gaat de
+  transform er weer af, zodat het omhulsel niet het kader wordt van het
+  uitklapmenu van het onderwerp.
+
+**Compacter dan in de eerste versie.** Labels in `--site-maat-klein`,
+velden 44 pixels hoog (een duim past er nog op), het bericht 7,5rem, de
+plaat en de tussenruimtes kleiner. Op 1440 pixels ging de sectie van 823
+naar 683 pixels; het formulier en de kop passen nu samen in één scherm.
+
+**Het mailadres staat op de landing één keer, naast het formulier.**
+`ContactFormulier` heeft daarvoor de prop `toon-mail` (standaard aan); de
+sectie zet hem uit, omdat het adres al groot in de linkerkolom staat. Op
+`/contact` en bij de knop-variant staat de regel gewoon onder de knop. Zet je
+hem ergens anders uit, zorg dan dat het adres in beeld blijft: het is de
+uitweg als Turnstile niet laadt (zie hieronder).
+
 ### Die pagina was onaf, en dat was aan drie dingen te zien
 
 Het staat hier omdat het drie verschillende soorten fout waren, en alleen de
@@ -247,8 +309,9 @@ onderaan de landingspagina.
 
 **2. Er zat geen omhulsel om de pagina.** Het formulier liep van rand tot
 rand en er was geen ruimte boven en onder -- op een breed scherm een
-veldenrij van bijna twee meter. `/privacy` doet het goed met
-`mx-auto max-w-* px-6 py-16`; dat patroon staat nu ook hier.
+veldenrij van bijna twee meter. Nu staat de pagina in hetzelfde raam als de
+secties van de voorpagina (`brand-site-raam` plus
+`brand-site-contact-pagina` voor de ruimte boven en onder).
 
 **3. Een formulier alleen op een lege pagina is een invulbriefje.** Er staat
 nu naast wíe je schrijft: dezelfde foto als het medaillon in de kop van de
@@ -398,6 +461,11 @@ Nu zijn het drie stappen die in elkaar overlopen:
 | Het antwoord is er | Het formulier schuift 200 ms weg: wegvallend en tien beeldpunten omhoog                    |
 | Daarna             | Het vak komt op (500 ms), en het vinkje ploft er met een overshoot in                      |
 
+Om het vinkje dijt daarbij één keer een ring uit, als een pupil die opengaat
+(`brand-site-contact-iris`, alleen CSS, niet onder reduced motion). Het
+dimmen tijdens het versturen blijft wél onder reduced motion: dat is een
+toestand en geen animatie.
+
 #### En dan sprong je naar de bovenkant van de pagina
 
 Dat was geen animatiefout maar een instelling die er altijd al verkeerd
@@ -498,8 +566,9 @@ het hele verhaal staat in
 
 Gevolg van `required`: laadt het script van Cloudflare niet, dan is er geen
 tokenveld en is het formulier niet te versturen. Dat is de keuze -- liever
-dicht dan onbeschermd -- en daarom staat het **e-mailadres onder de knop**,
-op beide plekken waar het formulier staat. Dat is de prop `email` op
+dicht dan onbeschermd -- en daarom staat het **e-mailadres altijd in beeld
+bij het formulier**: op de landing groot ernaast, op `/contact` onder de
+knop (de prop `toon-mail`; zie "De slotscène"). Dat is de prop `email` op
 `ContactFormulier.vue`, die `HomeController::contactblok()` en
 `PublicContactController` meegeven. Een bezoeker mag nooit met lege handen
 staan omdat een derde partij eruit ligt.
@@ -689,6 +758,8 @@ thema aanpast en er niet aan denkt.
 | [`ContactBevestigingMail`](../../../app/Mail/ContactBevestigingMail.php)                             | De bevestiging aan de bezoeker                                     |
 | [`PruneContactSubmissions`](../../../app/Console/Commands/PruneContactSubmissions.php)               | De bewaartermijn                                                   |
 | [`ContactFormulier.vue`](../../../resources/js/components/site/ContactFormulier.vue)                 | Het formulier, voor de landing én de eigen pagina                  |
+| [`ContactSection.vue`](../../../resources/js/components/site/sections/ContactSection.vue)            | De slotscène op de landing                                         |
+| [`site/contact.css`](../../../resources/css/site/contact.css)                                        | De opmaak van sectie, formulier, bevestiging en `/contact`         |
 | [`website/Contact.vue`](../../../resources/js/pages/website/Contact.vue)                             | Het beheerscherm                                                   |
 | [`admin/Aanvragen.vue`](../../../resources/js/pages/admin/Aanvragen.vue)                             | De postbus                                                         |
 | [`TurnstileRule`](../../../app/Rules/TurnstileRule.php)                                              | De botcheck; gebruik hem via `veld()`                              |

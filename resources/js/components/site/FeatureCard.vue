@@ -3,17 +3,24 @@ import { ArrowRight } from '@lucide/vue';
 import DienstIcoon from '@/components/site/DienstIcoon.vue';
 
 /**
- * Een kaart op een donkere achtergrond.
+ * Een dienst als kaart, voor een smal scherm.
  *
- * De glow zit alleen op hover en is bewust zwak. Volgens het palet is glow
- * een accent, geen standaardopmaak: laat je elke kaart gloeien, dan valt
- * niets meer op.
+ * Op een breed scherm staan de diensten als index met een paneel ernaast
+ * (zie DienstenSection); daar bestaat aanwijzen, hier niet. Daarom staat de
+ * samenvatting hier altijd zichtbaar, en is er geen hover-effect waar een
+ * telefoon toch niets mee kan.
  *
  * **De kaart is een knop zodra er iets te openen valt.** Heeft een dienst
  * een uitgebreide tekst, dan geeft de aanroeper `open` mee en wordt het
- * element een `<button>`: aanklikbaar, maar ook bereikbaar met de
- * tabtoets en te bedienen met Enter. Is er niets te openen, dan blijft
- * het een `<article>` -- een knop die niets doet is erger dan geen knop.
+ * element een `<button>`: aanklikbaar, maar ook bereikbaar met de tabtoets
+ * en te bedienen met Enter. Is er niets te openen, dan blijft het een
+ * `<article>` -- een knop die niets doet is erger dan geen knop.
+ *
+ * Bewust géén `data-reveal`: de sectie laat de kaart zelf binnenkomen met
+ * `kaartenBinnen()`, en twee dingen die om beurten dezelfde
+ * doorzichtigheid schrijven laten hem knipperen. Zet je deze kaart ergens
+ * neer zonder zo'n aanroep, zorg dan dat hij zichtbaar wordt -- `opacity-0`
+ * blijft anders staan.
  *
  * Zie docs/architecture/modules/diensten.md.
  */
@@ -34,74 +41,43 @@ const emit = defineEmits<{ openen: [] }>();
 </script>
 
 <template>
-    <!--
-        `brand-kantel` zet alleen de glans klaar die de cursor volgt; de
-        kanteling zelf komt van kantelKaarten() in motion.ts en gebeurt
-        alleen waar er een muis is. Zonder die functie is de klasse stil:
-        de glans staat dan op doorzichtigheid nul.
-
-        Bewust géén `data-reveal`: de sectie waarin deze kaart staat laat
-        hem zelf binnenkomen met `kaartenBinnen()`, en twee dingen die om
-        beurten dezelfde doorzichtigheid schrijven laten de kaart
-        knipperen. Zet je deze kaart ergens neer zonder zo'n aanroep,
-        zorg dan dat hij zichtbaar wordt -- `opacity-0` blijft anders
-        staan.
-    -->
     <component
         :is="open ? 'button' : 'article'"
         :type="open ? 'button' : undefined"
-        class="brand-dienstkaart brand-kantel group relative flex flex-col rounded-xl border border-border bg-card p-6 text-left opacity-0 transition-shadow duration-300 hover:brand-glow"
-        :class="{ 'is-klikbaar': open }"
+        class="brand-site-dienst-kaart brand-site-glas opacity-0"
+        :data-klikbaar="open ? '' : undefined"
         @click="open ? emit('openen') : undefined"
     >
-        <span v-if="icoon" class="brand-dienstkaart-icoon" aria-hidden="true">
+        <span
+            v-if="icoon"
+            class="brand-site-dienst-kaart-icoon"
+            aria-hidden="true"
+        >
             <DienstIcoon :icoon="icoon" class="size-5" />
         </span>
 
-        <h3 class="text-lg font-medium text-white">
+        <h3 class="brand-site-dienst-kaart-titel">
             {{ title }}
         </h3>
 
-        <!--
-            Een eigen klasse, want dit was de enige publieke tekst zonder.
-            Daardoor was er ook geen plek om hem te klemmen, en kreeg een
-            korte dienst naast een lange het hele hoogteverschil als een
-            leeg vlak binnen een omrande kaart -- met niets erin, want
-            "Lees meer" verschijnt pas bij hover.
-        -->
-        <div class="brand-dienstkaart-zin">
+        <div class="brand-site-dienst-kaart-zin">
             <slot />
         </div>
 
         <!--
-            De expertisepunten. Ze staan er als losse labels en niet als
-            opsomming met bolletjes: het zijn steekwoorden, en die scan je
-            eerder dan dat je ze leest.
+            De expertisepunten als losse labels en niet als opsomming met
+            bolletjes: het zijn steekwoorden, en die scan je eerder dan dat
+            je ze leest.
         -->
-        <ul v-if="punten.length > 0" class="brand-dienstkaart-punten">
-            <!--
-                `--punt` is het nummer in de rij. De CSS rekent daar een
-                vertraging mee uit, zodat de labels bij hover van links
-                naar rechts oplichten in plaats van allemaal tegelijk.
-                Eén getal in een variabele is genoeg; de rest staat in
-                app.css.
-            -->
-            <li
-                v-for="(punt, index) in punten"
-                :key="punt"
-                :style="{ '--punt': index }"
-            >
+        <ul v-if="punten.length > 0" class="brand-site-diensten-punten">
+            <li v-for="punt in punten" :key="punt">
                 {{ punt }}
             </li>
         </ul>
 
-        <!--
-            `mt-auto` duwt dit naar onderen, zodat het bij kaarten van
-            verschillende hoogte toch op één lijn staat.
-        -->
-        <span v-if="open" class="brand-dienstkaart-meer mt-auto">
+        <span v-if="open" class="brand-site-dienst-kaart-meer">
             {{ $t('Lees meer') }}
-            <ArrowRight class="size-3.5" />
+            <ArrowRight class="size-4" aria-hidden="true" />
         </span>
     </component>
 </template>

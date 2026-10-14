@@ -1,0 +1,149 @@
+/*
+  Kerngegevens: de praktische feiten als lijst. Zie KerngegevensSection.vue.
+
+  **Rijen zo hoog als hun inhoud.** De strook met gelijke vakken die hier
+  stond, gaf elk vak de hoogte van het langste in zijn rij: één lange
+  waarde, en zijn buren kregen een leeg vlak onder hun tekst. Nu is het
+  een raster van twee kolommen waarin elke rij zijn eigen hoogte heeft, en
+  een lijn tussen de rijen in plaats van een omlijning eromheen.
+
+  **De waarde is het antwoord.** Per feit: een vak met het teken, het label
+  klein erboven, de waarde in de maat van een kopje en de notitie eronder.
+  Het label zegt alleen waar je kijkt; "Eén werkdag" is wat je wilde weten.
+*/
+
+.brand-site-kern-lijst {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    column-gap: clamp(2rem, 4vw, 3.5rem);
+    margin: 0;
+    border-top: 1px solid var(--site-plaat-rand);
+
+    /*
+      De twee kolommen schuiven van opzij naar hun plek; wat dan nog
+      buiten de lijst steekt, knipt dit af, zodat de pagina niet zijwaarts
+      gaat schuiven. `clip` en geen `hidden`: dat maakt geen schuifvlak.
+    */
+    overflow-x: clip;
+    overflow-clip-margin: 1rem;
+}
+
+/*
+  Twee kolommen zodra er ruimte is. Bij een oneven aantal krijgt het
+  laatste feit de hele breedte; anders blijft er een halve rij leeg.
+*/
+@media (min-width: 50rem) {
+    .brand-site-kern-lijst:not([data-aantal='1']) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .brand-site-kern-lijst:not([data-aantal='1'])
+        > .brand-site-kern-feit:last-child:nth-child(odd) {
+        grid-column: 1 / -1;
+    }
+}
+
+.brand-site-kern-feit {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: 1rem;
+    min-width: 0;
+    padding-block: clamp(1rem, 1.8vw, 1.25rem);
+    border-bottom: 1px solid var(--site-plaat-rand);
+}
+
+/*
+  Het teken in een eigen vak: groot genoeg om als teken te lezen, klein
+  genoeg om de waarde niet weg te drukken. Het lichtt op met de rij.
+*/
+.brand-site-kern-teken {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 1px solid var(--site-plaat-rand-sterk);
+    border-radius: 0.75rem;
+    background: color-mix(in oklab, var(--brand-navy-deep) 70%, transparent);
+    color: var(--brand-cyan);
+    transition:
+        border-color 0.3s var(--site-ease),
+        background-color 0.3s var(--site-ease);
+}
+
+.brand-site-kern-teken svg {
+    width: 1.125rem;
+    height: 1.125rem;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-kern-feit:hover .brand-site-kern-teken {
+        border-color: color-mix(in oklab, var(--brand-cyan) 55%, transparent);
+        background-color: var(--site-licht);
+    }
+}
+
+.brand-site-kern-tekst {
+    display: grid;
+    gap: 0.25rem;
+    min-width: 0;
+    padding-top: 0.125rem;
+}
+
+/*
+  Het label: hetzelfde als een cijferlabel elders op de site (zie
+  `.brand-site-meting-label` in basis.css), maar boven de waarde, omdat
+  je een lijst van boven naar beneden leest.
+*/
+.brand-site-kern-label {
+    font-size: var(--site-maat-klein);
+    font-weight: 500;
+    line-height: 1.45;
+    color: var(--site-tekst-zacht);
+    overflow-wrap: anywhere;
+}
+
+.brand-site-kern-waarde {
+    display: grid;
+    gap: 0.25rem;
+    min-width: 0;
+    margin: 0;
+}
+
+/*
+  De waarde, helemaal. Een afkapping hoort hier niet: het rolbord zet elk
+  woord in een eigen inline-blok, en het beletselteken van `line-clamp`
+  viel dan midden in de regel. De klant heeft deze tekst zelf getypt.
+  `overflow-wrap: anywhere` laat een woord van veertig tekens afbreken in
+  plaats van uit de rij te steken; de maskers van het rolbord krijgen een
+  maximale breedte, anders past een lang woord als één masker nooit.
+*/
+.brand-site-kern-cijfer {
+    min-width: 0;
+    padding-bottom: 0.1em;
+    overflow-wrap: anywhere;
+    font-size: var(--site-maat-kop);
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.015em;
+    color: var(--site-kop);
+}
+
+.brand-site-kern-cijfer > * {
+    max-width: 100%;
+}
+
+.brand-site-kern-notitie {
+    font-size: var(--site-maat-klein);
+    line-height: 1.5;
+    text-wrap: pretty;
+    overflow-wrap: anywhere;
+    color: var(--site-tekst-zacht);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .brand-site-kern-teken {
+        transition: none;
+    }
+}

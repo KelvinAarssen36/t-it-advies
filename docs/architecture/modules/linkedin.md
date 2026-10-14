@@ -1,13 +1,13 @@
 # Het LinkedIn-blok
 
-De uitnodiging om verder te kijken op LinkedIn: een kaart met het
+De uitnodiging om verder te kijken op LinkedIn: een plaat met het
 merkteken, een korte tekst en een knop naar het profiel. Daarnaast staat
-er een klein merkteken bovenaan de pagina, naast de twee knoppen in de
-kop.
+er een klein merkteken bovenaan de pagina, naast de knoppen in de kop.
 
-> **Dit is geen module.** Er is geen beheerscherm en geen tabel. Wat de
-> klant ermee kan is hem verslepen en uitzetten, net als elk ander
-> onderdeel van de pagina.
+> **Eerst was dit geen module.** Er was geen beheerscherm en geen tabel;
+> de tekst stond in `LinkedinSection.vue`. Nu beheert de eigenaar onder
+> **Website → LinkedIn** het opschrift, de titel, de zin en de knoptekst,
+> in beide talen. **De link zelf ligt nog steeds vast**; zie hieronder.
 
 ## Waarom een eigen onderdeel en geen pictogram in de voet
 
@@ -34,116 +34,162 @@ voettekst hoort bij de layout en niet bij één pagina — en één bron
 betekent dat die knoppen niet uiteen kunnen gaan lopen. Zie
 `HandleInertiaRequests`.
 
-Er is geen validatie die meekijkt, want er is geen formulier. De enige
-bescherming tegen een adres dat nergens heen gaat is
+Er is geen validatie die meekijkt, want het adres heeft geen formulier.
+De enige bescherming tegen een adres dat nergens heen gaat is
 [`LinkedinSectionTest`](../../../tests/Feature/Website/LinkedinSectionTest.php),
-die controleert dat het een `https`-link naar linkedin.com is.
+die controleert dat het een `https`-link naar linkedin.com is. Het
+beheerscherm toont het adres wel, met een slotje en een kopieerknop, zodat
+de eigenaar ziet waar de knop heen gaat zonder te zoeken naar een veld dat
+er bewust niet is. Een `url` die toch in een verzoek wordt meegestuurd,
+verandert niets (`LinkedinCrudTest::test_a_sent_url_is_ignored`).
 
-Komt er later toch een scherm voor — en dat kan, zodra er meer van dit
-soort links bijkomen — dan verhuist dit naar een eigen tabel met een eigen
-module.
+## Wat de eigenaar beheert
 
-## "Niets in te vullen" is niet "nog niet te beheren"
+| Wat                 | Waar het staat                                   | Eindpunt                    | Leeg in het Engels                      |
+| ------------------- | ------------------------------------------------ | --------------------------- | --------------------------------------- |
+| Opschrift           | `section_headings` (`section = linkedin`)        | `PUT website/linkedin/kop`  | Valt terug op het Nederlands            |
+| Titel               | idem                                             | idem                        | Valt terug op het Nederlands            |
+| Zin eronder         | idem                                             | idem                        | Valt weg                                |
+| Knoptekst (40 tkn.) | `linkedin_settings` (één rij, `LinkedinSetting`) | `PUT website/linkedin/knop` | De **Engelse standaard**: "View [naam]" |
 
-Op het indelingsscherm stond bij elk onderdeel zonder beheerscherm "Nog
-niet te beheren". Dat is een belofte dat het er ooit komt, en bij dit
-blok is die belofte onwaar: er is één link en die ligt vast.
+**De kop is de gedeelde kop.** Dezelfde tabel, hetzelfde
+`KoptekstDialoog`-venster en dezelfde trait (`BewaartKoptekst`) als bij
+elk ander onderdeel, met de standaardtekst in `SectionHeading::standaard()`:
+precies wat er in de component stond, met de Engelse vertaling die er toen
+al in `lang/en.json` voor stond. Een bestaande site ziet na de update dus
+niets veranderen. Zie [kopteksten](../kopteksten.md).
 
-Vandaar `PageSectionKey::teBeheren()`, naast het bestaande
-`beheerRoute()`. De eerste zegt of er iets te beheren _valt_, de tweede of
-er al een scherm _is_. Het indelingsscherm kent daarmee drie toestanden in
-plaats van twee.
+**De knop heeft een eigen tabel** omdat de gedeelde kop er geen plek voor
+heeft. Beide kolommen zijn `nullable` en de migratie vult niets in: leeg
+betekent de standaard, "Bekijk [naam]" in de taal van de bezoeker
+(`LinkedinSetting::knop()`). De terugval gaat bewust niet naar het
+Nederlands: een Nederlands woord op een Engelse knop leest als een fout,
+en "View [naam]" is altijd waar.
 
-> **De voettekst viel hier ook onder, en nu niet meer.** Toen dit werd
-> opgeschreven stond de tekst van die voet in de code en viel er dus
-> niets te beheren. Sinds er een telefoonnummer, een werkgebied en een
-> KvK-nummer in staan is dat veranderd; zie
-> [voettekst](voettekst.md). Dit blok is daarmee het enige onderdeel dat
-> `teBeheren()` op `false` heeft staan -- en dat blijft zo, want er is
-> één link en die ligt vast.
+**Twee vensters, twee eindpunten**, net als bij de voettekst: het ene
+venster kan zo nooit de velden van het andere wissen
+(`test_one_dialog_does_not_wipe_the_other`). Allebei hebben ze de
+vertaalknop; de route kent daarvoor `button_nl` naast de velden van de
+kop. Zie [automatisch vertalen](../automatisch-vertalen.md).
+
+Rechten, validatie, logboek en meldingen gaan zoals overal:
+`can:manage portal` op de groep in `routes/website.php`, een
+`LinkedinKnopRequest`, `LogsActivity` op beide modellen, en `Toast` met
+"Er was niets veranderd." als er niets veranderde. Een lege eerste opslag
+van de knop maakt geen lege rij.
+
+## In de back-up
+
+Beide tabellen gaan mee: de kop als rij in `section_headings`, de knop in
+`linkedin_settings`, en de plek en zichtbaarheid van het blok in
+`page_sections`. Het adres niet; dat staat niet in de database.
+
+Een back-up van **vóór** dit beheer heeft voor LinkedIn niets. Terugzetten
+laat dan de huidige teksten staan, ook de kop -- terwijl die in een
+gedeelde tabel staat die wél wordt teruggezet. Hoe dat werkt staat in
+[back-ups](../../operations/back-ups.md#een-kop-van-een-onderdeel-dat-later-te-beheren-werd);
+de gevallen staan in `BackupLinkedinTest`.
+
+## Het indelingsscherm
+
+Op het indelingsscherm stond bij dit blok eerst geen link maar de
+mededeling dat er niets te beheren viel, via `PageSectionKey::teBeheren()`.
+Dat is nu `true` en `beheerRoute()` wijst naar `website.linkedin.index`;
+het blok staat ook in de zijbalk, tussen Contact en Voettekst. Het blijft
+gewoon te verslepen en uit te zetten, en er is één onderdeel en geen
+tweede module.
+
+Sinds LinkedIn erbij staat heeft elk onderdeel een scherm, en heeft
+`beheerRoute()` geen `default => null` meer: een nieuw onderdeel dwingt
+daar een keuze af.
+
+## Het rustmoment van de pagina
+
+Na de volle blokken eromheen is dit één brede glazen plaat met weinig
+erin: links de uitnodiging (opschrift, titel, één zin, de knop en het
+adres klein eronder), rechts het merkteken in een baan van twee vaste
+cirkels, met twee ringen die er langzaam vandaan gaan. Op een telefoon
+staat het merkteken klein boven de tekst, zonder baan.
+
+Het opschrift is het gewone sectielabel (`.brand-site-opschrift`): klein,
+halfvet, cyaan, zonder lijntje. Het adres onder de knop staat in de
+dataletter, zonder `https://www.`: zo zie je vóór het klikken waar je
+heen gaat, en het is echte informatie en geen versiering.
+
+De knop volgt de bewegingstaal van de site: hover alleen met een muis
+(`@media (hover: hover) and (pointer: fine)`), het pijltje schuift een
+stapje mee, indrukken geeft mee in 120 ms, en de focus is de cyaan rand
+van twee pixels. Bij toetsenbordfocus gebeurt hetzelfde als bij hover.
+
+De plaat krijgt een spotlicht langs de rand dat de cursor volgt
+(`spotlicht()` in motion.ts, alleen met een muis). De opmaak staat in
+[`linkedin.css`](../../../resources/css/site/linkedin.css).
+
+### Het ene dat aan de scroll hangt
+
+Vanaf 50rem draait er een stip over de buitenste cirkel mee met de
+scroll: van -60° tot +60° terwijl het blok van onder naar boven door het
+beeld gaat, en de baan als geheel zakt 8% van zijn hoogte trager dan de
+pagina. Allebei `scrub: 0.6`, dus terugscrollen draait het terug. Het
+staat op een eigen laag (`data-linkedin-baan`, `data-linkedin-draai`), los van de entree
+van het merkteken, zodat de twee animaties niet op dezelfde `transform`
+vechten. De tekst staat stil: die moet je kunnen lezen. Op een telefoon is
+er geen baan; onder reduced motion staat de stip stil bovenaan de cirkel.
 
 ## De animatie zit op het merkteken en niet erachter
 
-Hier stond eerst een netwerkje van lijnen dat zichzelf tekende achter de
-kaart: vier lijnen naar buiten, met knooppunten die oppopten zodra hun
-lijn er was. Op papier was dat precies waar LinkedIn over gaat. Op het
-scherm was het niets — het lag áchter de kaart, de lijnen waren haarfijn
-en de helft stond buiten beeld. Een animatie die je moet aanwijzen
-voordat iemand hem ziet, is geen animatie.
+Hier stond ooit een netwerkje van lijnen dat zichzelf tekende achter de
+kaart. Op het scherm was dat niets: het lag erachter, de lijnen waren
+haarfijn en de helft stond buiten beeld. Een animatie die je moet
+aanwijzen voordat iemand hem ziet, is geen animatie.
 
-Wat er nu staat vertrekt vanaf het merkteken zelf, want daar kijk je toch
-al. `zendSignaal()` in
-[`motion.ts`](../../../resources/js/lib/motion.ts) doet twee dingen:
+Wat er staat vertrekt vanaf het merkteken zelf, want daar kijk je toch
+al. `zend()` in
+[`LinkedinSection.vue`](../../../resources/js/components/site/sections/LinkedinSection.vue)
+doet twee dingen (het stond eerst in `zendSignaal()` in motion.ts; zie
+hieronder waarom het nu in het component staat):
 
-1. **De inhoud komt van onderen op**, in leesvolgorde: het merkteken, het
-   opschrift, de titel, de tekst, de knop. Eén tijdlijn met een `stagger`
-   van 0,09 seconde, dus de kaart bouwt zich op zoals je hem leest.
+1. **De inhoud komt van onderen op**, in leesvolgorde. Eén tijdlijn met een
+   `stagger` van 0,09 seconde, dus het blok bouwt zich op zoals je het
+   leest.
 2. **Een ring gaat uit vanaf het merkteken** terwijl dat nog aan het
    opkomen is. Erná laten vertrekken is netter geordend en een stuk
    doder: dan is het een los trucje achteraf in plaats van één beweging.
 
-Daarna blijven de twee ringen om beurten uitgaan, met vier seconden
-ertussen: vaker wordt het een knipperlicht, minder vaak en je hebt het
-nooit gezien. Dat doorgaande deel staat achter `(min-width: 50rem)`, om
-dezelfde reden als de ring om het portret — een animatie die nooit
-ophoudt houdt zijn laag eeuwig in beweging, en dat kost op een telefoon
-scherpte en accu. De eerste ring bij binnenkomst zie je daar wél.
+Daarna blijven de twee ringen om beurten uitgaan. Dat doorgaande deel
+staat achter `(min-width: 50rem)`: een animatie die nooit ophoudt houdt
+zijn laag eeuwig in beweging, en dat kost op een telefoon scherpte en accu.
+
+**Twee fouten die hier zaten, en die je niet zag maar wel betaalde.** De
+herhalende ringen begonnen twee seconden na het laden van de pagina, of
+het blok nu in beeld was of tien schermen verderop, en liepen daarna
+eindeloos door. Nu:
+
+- **begint de entree op het merkteken** (de eerste ring vertrekt op het
+  moment dat je het teken ziet), op dezelfde grens als de andere reveals:
+  85% van het scherm, op een telefoon 115%;
+- **staat de herhaling stil buiten beeld**: een `ScrollTrigger` met
+  `onToggle` pauzeert de tijdlijn zodra het blok uit beeld scrolt en hervat
+  hem als het terugkomt, en hij begint pas na de entree.
 
 Staat `prefers-reduced-motion` aan, dan staat de inhoud er meteen en
 blijven de ringen onzichtbaar.
 
-## En erachter draait een radar
+## De radar is weg
 
-De keuze tussen een radarveeg, een stippenraster dat meelicht, deeltjes
-die naar binnen drijven en twee trage kleurvlekken is op de veeg
-uitgekomen, en de reden is dat hij hetzelfde zegt als de ringen ervoor:
-daar gaat een signaal uit, hier wordt gekeken. De andere drie zeggen
-allemaal iets anders, en dan staan er twee losse ideeën in één blok.
+Achter de kaart draaide eerst een radarveeg (`draaiRadar()`), als
+tegenhanger van de ringen: daar gaat een signaal uit, hier wordt gekeken.
+In het nieuwe ontwerp is hij eruit, want hij deed hetzelfde als de ringen,
+alleen drukker -- en dit blok is juist het rustmoment. De kaart kantelt
+ook niet meer met de cursor; een spotlicht langs de rand is genoeg.
 
-Het is CSS met één regel JavaScript eromheen. De bundel is een
-`conic-gradient`, de twee cirkels zijn randen, en `draaiRadar()` in
-[`motion.ts`](../../../resources/js/lib/motion.ts) laat de laag opkomen
-en rondgaan — achttien seconden voor een hele slag, zo traag dat je de
-beweging niet betrapt en alleen merkt dat het licht verschoven is.
+## Op een telefoon
 
-Twee dingen die je bij het aanpassen vast weer moet uitzoeken:
-
-- **De volgorde van de kleurstops staat op zijn kop**, met de volle
-  kleur bij 360 graden. De laag draait met de klok mee, dus de hoogste
-  hoek loopt voorop; daar hoort de harde rand en niet de uitgedoofde
-  staart. Zet je het om, dan draait hij zichtbaar achteruit.
-- **Er ligt een `mask-image` met een gat in het midden.** Zonder dat gat
-  loopt alle kleur samen tot een fel puntje achter de kaart, en zonder
-  het uitdoven aan de buitenkant houdt de wig een harde cirkelrand.
-
-Hij staat **vanaf 50rem**, dezelfde grens als de ringpuls. Op een
-telefoon is er geen ruimte naast de kaart, dus er zou toch niets van te
-zien zijn, en een laag die eeuwig beweegt kost daar scherpte en accu.
-Hij is daar dubbel dichtgezet: `display: none` in de CSS én een
-`matchMedia` in `draaiRadar`, zodat een smal venster hem ook echt stilzet
-en niet alleen verbergt. Bij `prefers-reduced-motion` blijft de bundel op
-nul en zie je alleen de twee cirkels.
-
-## Op een telefoon is het blok een stuk kleiner
-
-Het blok was daar te groot: een kaart van bijna een halve schermhoogte
-voor één knop, met een gloed van 26rem die op een toestel van 375 pixels
-breder is dan het scherm — dan is het geen gloed achter de kaart meer
-maar een waas over het hele blok.
-
-Alle maten van dit blok zijn daarom **vanaf de telefoon geschreven**, met
-de oude, ruimere waarden terug in een `@media (min-width: 40rem)`. Dat is
-dezelfde grens die de titel al had. Op desktop en tablet verandert er dus
-niets; het is een aanpassing die alleen de telefoon raakt.
-
-De knop is wel smaller geworden maar niet lager: 2,75rem is wat een
-vinger nodig heeft en daar gaat hij niet onder.
-
-De kaart zelf kantelt mee met de cursor en heeft een gloed die de muis
-volgt: dezelfde twee effecten als op de hero en de dienstkaarten, zodat
-het als hetzelfde huis voelt. De kanteling is hier zachter (2,5 graden in
-plaats van 4), want dit is één groot vlak en daarop voelt vier graden als
-scheefzakken.
+Het blok is daar een plaat met een kleiner merkteken (3,75rem) boven de
+tekst, zonder cirkels en zonder baan die met de scroll meedraait. De knop
+is 2,75rem hoog: wat een vinger nodig heeft; het adres valt eronder als de
+regel te smal is. Een lange titel of een lang woord breekt af in plaats van
+de plaat breder te maken (`overflow-wrap: anywhere`).
 
 ## Het merkteken in de kop
 
@@ -181,13 +227,21 @@ hoort erbij zodra je `target="_blank"` gebruikt.
 
 ## Wat waar staat
 
-| Bestand                                                                                     | Wat het doet                                                                    |
-| ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| [`config/site.php`](../../../config/site.php)                                               | Het adres.                                                                      |
-| [`PageSectionKey`](../../../app/Enums/PageSectionKey.php)                                   | De `case`, de plek in de rij en `teBeheren()`.                                  |
-| [`LinkedinSection.vue`](../../../resources/js/components/site/sections/LinkedinSection.vue) | Wat de bezoeker ziet.                                                           |
-| [`LinkedinMerk.vue`](../../../resources/js/components/site/LinkedinMerk.vue)                | Het merkteken, gedeeld door de kop en het blok.                                 |
-| [`HeroSection.vue`](../../../resources/js/components/site/sections/HeroSection.vue)         | De kleine knop naast "Neem contact op".                                         |
-| [`zendSignaal()`](../../../resources/js/lib/motion.ts)                                      | Het opkomen van de inhoud en de ringen om het merkteken.                        |
-| [`draaiRadar()`](../../../resources/js/lib/motion.ts)                                       | De veeg die achter de kaart rondgaat, vanaf 50rem.                              |
-| [`LinkedinSectionTest`](../../../tests/Feature/Website/LinkedinSectionTest.php)             | Dat het adres aankomt, klopt, en dat het blok te verslepen en uit te zetten is. |
+| Bestand                                                                                                 | Wat het doet                                                                                                          |
+| ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| [`config/site.php`](../../../config/site.php)                                                           | Het adres.                                                                                                            |
+| [`LinkedinController`](../../../app/Http/Controllers/Website/LinkedinController.php)                    | Het beheerscherm: de kop (`kop()`) en de knop (`knop()`), elk een eigen eindpunt.                                     |
+| [`LinkedinSetting`](../../../app/Models/LinkedinSetting.php)                                            | De knoptekst en zijn terugval per taal.                                                                               |
+| [`SectionHeading::standaard()`](../../../app/Models/SectionHeading.php)                                 | De standaardtekst van de kop, in beide talen.                                                                         |
+| [`Linkedin.vue`](../../../resources/js/pages/website/Linkedin.vue)                                      | Het scherm in het portaal, met `KoptekstDialoog` en `LinkedinKnopDialoog`.                                            |
+| [`Inhoudsregister`](../../../app/Support/Backup/Inhoudsregister.php)                                    | `linkedin_settings` in de back-up, en `KOP_BIJ_TABEL` voor oude back-ups.                                             |
+| [`PageSectionKey`](../../../app/Enums/PageSectionKey.php)                                               | De `case`, de plek in de rij en `beheerRoute()`.                                                                      |
+| [`LinkedinSection.vue`](../../../resources/js/components/site/sections/LinkedinSection.vue)             | Wat de bezoeker ziet.                                                                                                 |
+| [`LinkedinMerk.vue`](../../../resources/js/components/site/LinkedinMerk.vue)                            | Het merkteken, gedeeld door de kop en het blok.                                                                       |
+| [`HeroSection.vue`](../../../resources/js/components/site/sections/HeroSection.vue)                     | De kleine knop naast "Neem contact op".                                                                               |
+| `zend()` in [`LinkedinSection.vue`](../../../resources/js/components/site/sections/LinkedinSection.vue) | Het opkomen van de inhoud, de ringen om het merkteken (pauzeren buiten beeld) en de baan die met de scroll meedraait. |
+| [`spotlicht()`](../../../resources/js/lib/motion.ts)                                                    | Het licht langs de rand van de plaat dat de cursor volgt.                                                             |
+| [`linkedin.css`](../../../resources/css/site/linkedin.css)                                              | De opmaak van het blok, `brand-site-linkedin-*`.                                                                      |
+| [`LinkedinSectionTest`](../../../tests/Feature/Website/LinkedinSectionTest.php)                         | Dat het adres aankomt, klopt, en dat het blok te verslepen en uit te zetten is.                                       |
+| [`LinkedinCrudTest`](../../../tests/Feature/Website/LinkedinCrudTest.php)                               | Rechten, opslaan, validatie, terugval, vertalen, logboek en wat de bezoeker ziet.                                     |
+| [`BackupLinkedinTest`](../../../tests/Feature/Admin/BackupLinkedinTest.php)                             | Mee in de back-up, terug na herstel, en een oude back-up die alles laat staan.                                        |

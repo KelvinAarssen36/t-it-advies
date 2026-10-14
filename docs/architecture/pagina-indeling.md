@@ -214,6 +214,39 @@ Drie dingen die daarbij horen:
 doet elk portaalverzoek deze query plus alle inhoudstellers voor een menu
 dat daar niet bestaat.
 
+### Korte namen in het menu, en zoveel als er passen
+
+**Het menu gebruikt een eigen, korte naam per onderdeel.** De naam in het
+beheer (`PageSectionKey::label()`) beschrijft wat een onderdeel _is_, en
+mag lang zijn: "Kerngegevens", "Werkwijze", "Statistieken". In een balk van
+drie rem hoog zijn dat de woorden die hem vol maakten. Daarom is er
+`PageSectionKey::menuLabel()`, die `Navigatie::menu()` gebruikt:
+
+| Onderdeel    | In het beheer | In het menu (NL / EN) |
+| ------------ | ------------- | --------------------- |
+| Kerngegevens | Kerngegevens  | Feiten / Facts        |
+| Werkwijze    | Werkwijze     | Aanpak / Approach     |
+| Statistieken | Statistieken  | Cijfers / Numbers     |
+| De rest      | (zelfde)      | `label()`             |
+
+De sleutels, ankers en volgorde veranderen niet; alleen het woord. De
+Engelse vertaling loopt via `lang/en.json`, zoals elke `__()`. Een nieuw
+onderdeel met een lange naam krijgt hier een regel; zonder valt het terug
+op `label()` en werkt het gewoon.
+
+**Hoeveel er in de balk staan wordt gemeten, niet ingesteld.** Er stond
+een vast getal (vijf), en dat was nergens goed: op 1440 pixels vier woorden
+en "Meer" in een balk met ruimte voor het dubbele, op een tablet bijna
+tegen de knoppen aan. `pasIn()` in
+[`SiteHeader`](../../resources/js/components/site/SiteHeader.vue) meet een
+onzichtbare kopie van alle items en zet er zoveel los als er passen, met
+"Meer" meegerekend als er iets overblijft; hoogstens zeven, want daarboven
+is het een rij woorden en geen menu. Dat gebeurt opnieuw bij elke
+maatwijziging, taalwissel en paginawissel. Gemeten op de testdata (elf
+onderdelen): zeven plus "Meer" vanaf 1100 pixels, zes op 900, vijf op
+820, vier op 800, in beide talen en zonder overloop. Onder 50rem is het
+het uitklapmenu, zoals altijd.
+
 ### De voettekst deed niets, en dat kwam hierdoor boven
 
 De voettekst heeft dezelfde lijst en dus hetzelfde nodig. Daar stond een
@@ -271,9 +304,30 @@ nooit bent geweest. Zie `?van=start` in `PublicProjectController`.
 `Welcome.vue` geeft elke sectie een `tone` op basis van zijn index: even is
 `base`, oneven is `raised`. Zou elke sectie zijn eigen tint kiezen, dan
 staan er na een verplaatsing twee verhoogde vlakken tegen elkaar aan en is
-de lijn ertussen weg. De breedte kiest een sectie wél zelf -- het
-contactformulier is smal omdat een formulier over de volle breedte slecht
-leest, en dat hangt niet af van waar het staat.
+de lijn ertussen weg.
+
+### Veld en plaat
+
+Sinds de nieuwe vormgeving (zie [besluit 019](../decisions/README.md))
+betekenen die twee tonen:
+
+- **`base` is een open veld.** De sectie ligt rechtstreeks op het donker,
+  met een horizonlijn erboven die zich tekent zodra hij in beeld komt.
+- **`raised` is een plaat.** Een iets ingesprongen vlak van Deep Navy met
+  een glazen rand en een ronding van 16 pixels.
+
+Allebei in [`SiteSection.vue`](../../resources/js/components/site/SiteSection.vue)
+en `resources/css/site/basis.css`. Een onderdeel weet dus niet op welke
+plek het staat, en hoeft dat ook niet: het krijgt de toon en de lijn mee.
+
+**Het omgevingslicht volgt dezelfde regel.** Eén vast vlak achter de
+pagina schuift per actieve sectie naar links of rechts, op even of oneven
+plek; zie `lichtVeld()` in
+[`motion.ts`](../../resources/js/lib/motion.ts). Een andere volgorde geeft
+dus nog steeds een licht dat netjes afwisselt.
+
+De breedte kiest een sectie wél zelf -- het hangt af van wat erin staat en
+niet van waar het staat.
 
 ## Slepen én pijltjes
 
@@ -382,10 +436,12 @@ korte pauze van 200 ms, precies zolang als de sluitanimatie duurt.
 
 **Elk onderdeel met inhoud is nu beheerbaar.** De werkwijze was de laatste
 die zijn teksten nog in een Vue-component had staan; sinds de module
-[werkwijze](modules/werkwijze.md) komt ook die uit de database. Wat
-overblijft zonder beheerscherm is nog één onderdeel: de
-[LinkedIn-knop](modules/linkedin.md), en die heeft geen inhoud -- er is
-één link en die ligt vast.
+[werkwijze](modules/werkwijze.md) komt ook die uit de database. Sinds
+[LinkedIn](modules/linkedin.md) een eigen scherm heeft (kop en knoptekst,
+in beide talen), heeft elk onderdeel er een, en geeft
+`PageSectionKey::beheerRoute()` altijd een route. Wat in LinkedIn vastligt
+is alleen de link zelf: die komt uit `config('site.linkedin')`, op één
+plek, en gaat niet mee in een back-up.
 
 > **De voettekst stond hier ook, en staat er niet meer.** Daar hoorde bij
 > dat hij geen inhoud hééft. Dat was waar zolang er niets in stond dat
@@ -404,8 +460,8 @@ overblijft zonder beheerscherm is nog één onderdeel: de
 Er staan inmiddels genoeg voorbeelden om uit te kiezen als je de volgende bouwt.
 
 [Projecten](modules/projecten.md) is het voorbeeld voor een module met een
-**eigen adres per item**. Hij staat op positie 4, tussen de werkwijze en de
-tijdlijn, en hij laat twee dingen zien die nergens anders staan: hoe je
+**eigen adres per item**. Hij staat standaard op positie 5, tussen de werkwijze en
+de tijdlijn, en hij laat twee dingen zien die nergens anders staan: hoe je
 "hoogstens één uitgelicht" afdwingt zonder dat de database dat kan
 uitdrukken, en hoe een slug eruitziet in een project waar er verder geen
 een is. Let bij het lezen vooral op de waarschuwing over `standaardPositie()`

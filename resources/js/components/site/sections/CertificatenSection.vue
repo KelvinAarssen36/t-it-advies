@@ -13,7 +13,15 @@ import CertificaatTegel from '@/components/site/CertificaatTegel.vue';
 import CertificaatVenster from '@/components/site/CertificaatVenster.vue';
 import SectionHeading from '@/components/site/SectionHeading.vue';
 import SiteSection from '@/components/site/SiteSection.vue';
-import { kaartenBinnen, kantelKaarten, scrollNaar } from '@/lib/motion';
+import {
+    gsap,
+    kantelKaarten,
+    opEenTelefoon,
+    prefersReducedMotion,
+    ScrollTrigger,
+    scrollNaar,
+    scrollVoortgang,
+} from '@/lib/motion';
 import type {
     CertificaatOpDeSite,
     CertificatenKop,
@@ -25,7 +33,7 @@ import type { SectieProps } from '@/types/secties';
  * De certificaten, met de opleidingen eronder.
  *
  * De tijdlijn vertelt wát de eigenaar heeft gedaan; dit is het bewijs
- * erbij. Een raster van tegels waarin het logo van de uitgever de
+ * erbij: een wand van glazen platen waarin het logo van de uitgever de
  * blikvanger is, want een bezoeker scant logo's die hij herkent en leest
  * pas daarna de naam.
  *
@@ -33,11 +41,13 @@ import type { SectieProps } from '@/types/secties';
  * dezelfde reden: een blok dat met elk certificaat langer wordt duwt de
  * rest van de pagina onder de vouw. Acht op een breed scherm -- twee
  * rijen van vier, precies één blik -- en vier op een telefoon, waar ze
- * onder elkaar staan.
+ * twee aan twee staan. De kolommen in resources/css/site/certificaten.css
+ * horen bij deze getallen.
  *
- * **De opleidingen zijn geen tweede raster.** Ze staan als een kort
- * lijstje onder de streep: de opleiding, de instelling, en rechts het
- * niveau met de periode. Zijn er geen, dan staat de streep er ook niet.
+ * **De opleidingen zijn geen tweede wand.** Ze staan als een tijdstrook
+ * eronder: periode, opleiding, instelling en niveau, op een breed scherm
+ * naast elkaar langs één lijn en op een telefoon onder elkaar. Zijn er
+ * geen, dan staat de strook er ook niet.
  *
  * `tone` en `divided` komen van buiten: welke achtergrond deze sectie
  * krijgt hangt af van waar hij in de rij staat, en dat weet hij zelf
@@ -126,11 +136,10 @@ const nummers = computed<(number | '…')[]>(() => {
 });
 
 const sectie = useTemplateRef<HTMLElement>('sectie');
-
-const opruimers: Array<() => void> = [];
+const strook = useTemplateRef<HTMLElement>('strook');
 
 /**
- * De kanteling staat apart van de rest van de opruimers.
+ * De kanteling staat apart van de entree.
  *
  * Hij hangt aan de tegels die er nú staan, en bij het bladeren zijn dat
  * andere elementen. Vandaar dat hij los bij de hand moet zijn: eerst
@@ -155,11 +164,96 @@ const tegels = (): HTMLElement[] =>
  * `direct` omdat de tegels al in beeld staan; een scroll-trigger vuurt
  * dan nooit af.
  */
+/**
+ * De wand zet zich in elkaar.
+ *
+ * De tegels komen gekanteld en iets verder weg binnen en klikken op hun
+ * plek, langs het raster. Een gebundelde trigger (`ScrollTrigger.batch`):
+ * wat samen in beeld komt, komt samen op, en een rij die net onder de rand
+ * begint wacht niet op zijn eigen trigger.
+ *
+ * **Eigen code en niet `stapelBinnen`.** Die haalt de transform na afloop
+ * weg, en daarmee ook het perspectief dat `kantelKaarten` nodig heeft om
+ * een tegel bij het aanwijzen te laten kantelen. Hier eindigt de tegel op
+ * hetzelfde perspectief, dus het kantelen sluit naadloos aan.
+ *
+ * `direct` speelt hem meteen, voor een nieuwe bladzijde: daar sta je al.
+ */
+const KANTEL = { transformPerspective: 800 };
+
+const tegelsBinnen = (direct = false): (() => void) => {
+    const alle = tegels();
+
+    if (alle.length === 0) {
+        return () => {};
+    }
+
+    const eind = {
+        ...KANTEL,
+        opacity: 1,
+        y: 0,
+        z: 0,
+        rotationX: 0,
+        rotationY: 0,
+    };
+
+    if (prefersReducedMotion()) {
+        gsap.set(alle, eind);
+
+        return () => {};
+    }
+
+    const kolommen = compact.value ? 2 : 4;
+
+    alle.forEach((tegel, index) =>
+        gsap.set(tegel, {
+            ...KANTEL,
+            opacity: 0,
+            y: 40,
+            z: -60,
+            rotationX: 18,
+            // De linkerhelft kantelt naar rechts in, de rechterhelft naar
+            // links: de wand klapt van buiten naar het midden dicht.
+            rotationY: index % kolommen < kolommen / 2 ? 10 : -10,
+        }),
+    );
+
+    const speel = (groep: Element[]) =>
+        gsap.to(groep, {
+            ...eind,
+            duration: opEenTelefoon() ? 0.6 : 0.95,
+            ease: 'expo.out',
+            stagger: 0.06,
+            overwrite: true,
+        });
+
+    if (direct) {
+        const tween = speel(alle);
+
+        return () => tween.kill();
+    }
+
+    const triggers = ScrollTrigger.batch(alle, {
+        start: opEenTelefoon() ? 'top 110%' : 'top 88%',
+        once: true,
+        onEnter: (groep) => speel(groep),
+    });
+
+    return () => {
+        triggers.forEach((t) => t.kill());
+        gsap.killTweensOf(alle);
+    };
+};
+
+let stopBinnen: (() => void) | undefined;
+let stopStrook: (() => void) | undefined;
+
 const herstelTegels = (): void => {
     stopKantelen?.();
+    stopBinnen?.();
 
-    kaartenBinnen(tegels(), { direct: true });
-    stopKantelen = kantelKaarten(tegels(), { graden: 5 });
+    stopBinnen = tegelsBinnen(true);
+    stopKantelen = kantelKaarten(tegels(), { graden: 3 });
 };
 
 /**
@@ -243,15 +337,29 @@ onMounted(async () => {
      */
     await nextTick();
 
-    opruimers.push(kaartenBinnen(tegels()));
-    stopKantelen = kantelKaarten(tegels(), { graden: 5 });
+    stopBinnen = tegelsBinnen();
+    stopKantelen = kantelKaarten(tegels(), { graden: 3 });
+
+    /*
+     * De lichtlijn langs de opleidingen tekent met je scroll mee: een
+     * positie, dus `scrub`, en hij loopt terug als je omhoog gaat. De
+     * variabele staat op de strook zelf, een klein blok, en niet op de
+     * sectie. Zie `scrollVoortgang` in motion.ts.
+     */
+    if (strook.value !== null) {
+        stopStrook = scrollVoortgang(strook.value, {
+            start: 'top 85%',
+            eind: 'bottom 55%',
+        });
+    }
 });
 
 onBeforeUnmount(() => {
     breedte?.removeEventListener('change', opBreedte);
 
     stopKantelen?.();
-    opruimers.forEach((opruimen) => opruimen());
+    stopBinnen?.();
+    stopStrook?.();
 });
 </script>
 
@@ -265,7 +373,10 @@ onBeforeUnmount(() => {
                 :intro="kop.inleiding ?? undefined"
             />
 
-            <div v-if="zichtbaar.length > 0" class="brand-certificaten mt-12">
+            <div
+                v-if="zichtbaar.length > 0"
+                class="brand-site-certificaten-wand"
+            >
                 <CertificaatTegel
                     v-for="certificaat in zichtbaar"
                     :key="certificaat.id"
@@ -281,7 +392,7 @@ onBeforeUnmount(() => {
             -->
             <nav
                 v-if="paginas > 1"
-                class="brand-bladeren mt-10"
+                class="brand-bladeren mt-8"
                 :aria-label="$t('Pagina van de certificaten')"
             >
                 <button
@@ -336,34 +447,48 @@ onBeforeUnmount(() => {
             </nav>
 
             <!--
-                De opleidingen. Geen tweede raster maar een kort lijstje
-                onder een streep: dit is de aanvulling en niet het
-                onderwerp. Zijn er geen, dan staat de streep er ook niet.
-            -->
-            <div v-if="opleidingen.length > 0" class="brand-opleidingen">
-                <p class="brand-opleidingen-kopje">{{ $t('Opleiding') }}</p>
+                De opleidingen, als tijdstrook: op een breed scherm naast
+                elkaar langs één lijn, op een telefoon onder elkaar langs
+                een lijn aan de linkerkant. Dit is de aanvulling en niet
+                het onderwerp, dus geen tweede wand van platen. Zijn er
+                geen, dan staat de strook er ook niet.
 
-                <ul class="brand-opleidingen-lijst">
+                De volgorde komt van de server, op periode; er valt hier
+                niets te sorteren.
+            -->
+            <div
+                v-if="opleidingen.length > 0"
+                class="brand-site-certificaten-opleidingen"
+            >
+                <h3 class="brand-site-certificaten-kopje">
+                    {{ $t('Opleiding') }}
+                </h3>
+
+                <ol ref="strook" class="brand-site-certificaten-strook">
                     <li
                         v-for="opleiding in opleidingen"
                         :key="opleiding.id"
-                        class="brand-opleiding"
+                        class="brand-site-certificaten-opleiding"
                     >
-                        <span class="brand-opleiding-naam">
-                            {{ opleiding.naam }}
-                        </span>
-                        <span class="brand-opleiding-instelling">
-                            {{ opleiding.instelling }}
-                        </span>
-                        <span class="brand-opleiding-periode">
-                            <template v-if="opleiding.niveau">
-                                {{ opleiding.niveau }}
-                                <span aria-hidden="true">·</span>
-                            </template>
+                        <span
+                            class="brand-site-certificaten-periode brand-site-data"
+                        >
                             {{ opleiding.periode }}
                         </span>
+                        <span class="brand-site-certificaten-opleiding-naam">
+                            {{ opleiding.naam }}
+                        </span>
+                        <span class="brand-site-certificaten-instelling">
+                            {{ opleiding.instelling }}
+                        </span>
+                        <span
+                            v-if="opleiding.niveau"
+                            class="brand-site-certificaten-niveau"
+                        >
+                            {{ opleiding.niveau }}
+                        </span>
                     </li>
-                </ul>
+                </ol>
             </div>
         </div>
 

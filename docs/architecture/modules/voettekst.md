@@ -169,32 +169,38 @@ vergeten in plaats van een besparing.
 
 ## De vorm op de pagina
 
-Drie kolommen vanaf `48rem`, daaronder onder elkaar, en een balk onder een
-streep voor het zakelijke.
+Het slotbeeld van de site ("Helder zicht"). De opmaak staat in
+[`site/voettekst.css`](../../../resources/css/site/voettekst.css), onder het
+voorvoegsel `brand-site-voet-`.
 
-**De middelste kolom is de breedste, en de lijst erin loopt in twee
-rijtjes.** Dat is geen opsmuk maar een maatprobleem: de sitemap volgt de
-indeling van de eigenaar, en bij elf onderdelen werd die kolom elf regels
-lang naast een contactkolom van drie. Dan is de voet bijna twaalf regels
-hoog met twee kolommen die na een kwart ophouden.
+- **De naam groot, maar niet schreeuwend**: tot 2,75rem met het merkteken
+  ervoor. In de eerste versie stond hij op 4,5rem en was hij het grootste
+  woord van de hele pagina; het slotbeeld hoort af te sluiten, niet de
+  hero over te doen. Het is de vaste naam van het
+  bedrijf en geen tekst die iemand hoeft te beheren; het merkteken komt via
+  hetzelfde `AppLogoIcon` als de kop. Eronder de zin van de eigenaar en de
+  LinkedIn-knop, als die er zijn.
+- **Het oog uit de hero erachter**, groot en sterk gedempt
+  (`hero-achtergrond-960/1600.webp`, `loading="lazy"`, lege `alt`). De
+  pagina begint en eindigt bij hetzelfde beeld. Het staat binnen de breedte
+  van het scherm en de voet knipt af (`overflow: clip`): een element dat
+  buiten de pagina steekt laat een mobiele browser zijwaarts schuiven.
+- **Drie kolommen vanaf `tablet:` (50rem)**: het merk krijgt de helft, de
+  sitemap en contact delen de rest. Daaronder alles onder elkaar.
+- **De sitemap loopt in twee rijtjes**, met een raster van twee kolommen.
+  De lijst volgt de indeling van de eigenaar en is bij elf onderdelen anders
+  elf regels lang naast een contactkolom van drie.
+- **Elke link is minstens 44 pixels hoog op een aanraakscherm**; met een
+  muis staat de lijst compacter. De streep eronder groeit van links bij het
+  aanwijzen.
+- **Onder de streep het zakelijke, zonder puntjes ertussen.** Op een
+  telefoon breekt die regel toch, en dan bleef er een puntje aan het begin
+  van een regel hangen; nu scheidt ruimte de onderdelen. KvK, btw en
+  telefoon staan in Geist Mono.
 
-Het gebeurt met kolomstroom (`columns: 7rem 2`) en niet met een raster, en
-dat is de reden dat het zonder onderhoud werkt: hoeveel links er staan
-weten wij niet. Bij elf wordt het zes en vijf, bij zeven vier en drie, en
-bij drie blijft het één kolom -- zonder dat er ergens een getal door
-tweeën wordt gedeeld. De `7rem` is de ondergrens per kolom: past dat er
-niet twee keer in, dan maakt de browser er vanzelf één van in plaats van
-twee kolommen waarin "Certificaten" doormidden breekt.
-
-**Het merkteken staat erbij**, via hetzelfde `AppLogoIcon` als de kop --
-iets kleiner (1,5rem tegen 1,75rem) en zonder de zweef-animatie die
-`brand-merk-teken` wel heeft. Daar is het merk een link naar de
-voorpagina en hoort het te reageren; hier staat het er alleen om te zeggen
-van wie deze site is.
-
-> Het pad naar het bestand staat in `AppLogoIcon.vue` en niet in de voet,
-> dus `LandingBeeldTest` krijgt er geen `/images/...` bij om te
-> controleren. Dat houden we zo.
+> Omdat het oog in `SiteFooter.vue` zelf staat, controleert
+> `LandingBeeldTest` nu ook die paden. Het merkteken staat nog steeds in
+> `AppLogoIcon.vue`.
 
 ## De credit
 
@@ -212,18 +218,33 @@ de eigenaar van deze site. _Kelvin_ Aarssen heeft hem gebouwd. Dat scheelt
 worden gebruikt. Alleen het label "Gemaakt door" gaat door `$t()` -- een
 naam vertaal je niet.
 
+**Geen eigen marge erboven.** De laatste sectie heeft al zijn eigen
+ruimte onderaan en de lijn is de scheiding; met een marge erbovenop stond
+er een lege strook van bijna tweehonderd pixels tussen het laatste
+onderdeel en de voet. Op 1440 pixels ging de voet van 519 naar ongeveer
+400 pixels, op een telefoon van 1040 naar ongeveer 920.
+
 ## De animatie
 
-Twee dingen, allebei zuinig:
+Drie dingen, en samen sluiten ze de pagina af:
 
-- **De kolommen komen op met `data-reveal`**, de gedeelde reveal uit
-  `PublicLayout`. Geen nieuwe code, dezelfde beweging als de rest van de
-  site.
+- **De drie blokken komen gestaffeld op**, het merk eerst en dan de twee
+  lijstjes (`stapelBinnen` in `SiteFooter.vue`, gebundeld met
+  `ScrollTrigger.batch`). Ze dragen geen `data-reveal` en geen `opacity-0`
+  meer: de begintoestand zet JavaScript zelf, dus zonder script staat de
+  voet er gewoon. De voet blijft bij een navigatie staan, dus dit speelt
+  één keer per bezoek.
+- **Het oog en het woordmerk schuiven langzaam omhoog** terwijl de voet
+  binnenkomt -- het oog trager (`yPercent` 18 naar 0) dan de naam (40
+  pixels naar 0), zodat er diepte tussen zit. Dat drukt een positie uit en
+  hangt dus aan de scroll (`scrub`). Alleen vanaf 50rem en niet onder
+  reduced motion: op een telefoon kost een meebewegende laag met een foto
+  erin vooral scherpte.
 - **De accentlijn bovenin groeit vanuit het midden naar buiten** zodra de
   voet in beeld komt. Dat leest als een afsluiting -- een streep die onder
   het verhaal wordt gezet -- en niet als nóg een blok dat komt opzetten.
 
-De lijn heeft een eigen klasse `.brand-footer-lijn` en gebruikt niet de
+De lijn heeft een eigen klasse `.brand-site-voet-lijn` en gebruikt niet de
 bestaande `brand-rule`, hoewel hij er hetzelfde uitziet: die utility
 wordt ook door `Error.vue` en `WelcomeDialog.vue` gebruikt, en op een
 foutpagina hoort niets op te leven.
