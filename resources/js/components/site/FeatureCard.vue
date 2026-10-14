@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ArrowRight } from '@lucide/vue';
 import DienstIcoon from '@/components/site/DienstIcoon.vue';
+import DienstOnderdelen from '@/components/site/DienstOnderdelen.vue';
 
 /**
  * Een dienst als kaart, voor een smal scherm.
@@ -29,7 +30,7 @@ withDefaults(
         title: string;
         /** De sleutel uit App\Enums\ServiceIcon, of niets. */
         icoon?: string | null;
-        /** De expertisepunten, als kleine labels onder de tekst. */
+        /** De onderdelen van de dienst; zie DienstOnderdelen. */
         punten?: string[];
         /** Of de kaart een venster opent. */
         open?: boolean;
@@ -65,15 +66,10 @@ const emit = defineEmits<{ openen: [] }>();
         </div>
 
         <!--
-            De expertisepunten als losse labels en niet als opsomming met
-            bolletjes: het zijn steekwoorden, en die scan je eerder dan dat
-            je ze leest.
+            De onderdelen als één blok vakjes met elk een teken, net als in
+            het paneel op een breed scherm. Zie DienstOnderdelen.
         -->
-        <ul v-if="punten.length > 0" class="brand-site-diensten-punten">
-            <li v-for="punt in punten" :key="punt">
-                {{ punt }}
-            </li>
-        </ul>
+        <DienstOnderdelen :punten="punten" />
 
         <span v-if="open" class="brand-site-dienst-kaart-meer">
             {{ $t('Lees meer') }}

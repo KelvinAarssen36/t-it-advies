@@ -264,7 +264,35 @@ const scanReveals = () => {
  * de taal zit in de sleutel van `main` -- maar hoort de bezoeker te laten
  * staan waar hij stond. Zie het blok hieronder.
  */
-const voorBinnenkomst = (): void => {
+/**
+ * Of er een hero op de pagina staat; de kopbalk zweeft daar overheen
+ * (`.brand-site[data-met-hero]` in kop.css).
+ *
+ * **Hier stond `.brand-site:has(.brand-site-hero)`**, en dat was de duurste
+ * regel van de site: een `:has()` op de wortel, met het onderwerp eronder,
+ * laat de browser bij élke wijziging in de pagina de hele site opnieuw
+ * doorrekenen. Elke kop die SplitText opdeelde kostte zo twee keer
+ * 3600 elementen. Zie docs/architecture/prestaties.md.
+ *
+ * Gezet als de nieuwe `main` binnenkomt (en de oude weg is,
+ * `mode="out-in"`), dus precies wanneer de `:has()` omsloeg -- niet eerder,
+ * want dan verspringt de kop terwijl de oude pagina nog uitfadet.
+ */
+const markeerHero = (pagina: Element | null | undefined): void => {
+    root.value?.toggleAttribute(
+        'data-met-hero',
+        pagina?.querySelector('.brand-site-hero') != null,
+    );
+};
+
+/*
+ * `pagina` is de nieuwe `main` die Vue meegeeft. Niet zoeken in de wortel:
+ * `before-enter` komt vóórdat Vue hem invoegt, dus daar staat hij nog niet
+ * in -- gemeten, de kop zweefde dan niet meer na een terugbezoek.
+ */
+const voorBinnenkomst = (pagina?: Element): void => {
+    markeerHero(pagina);
+
     /*
      * Alleen de taal is gewisseld: terugzetten waar de bezoeker stond.
      *
@@ -461,7 +489,23 @@ const naBinnenkomst = (): void => {
     });
 };
 
+/*
+ * Een klasse op `<html>` zolang de publieke site er staat; daar hangt het
+ * lettertype van `<html>` en `<body>` aan (basis.css). De server zet hem al
+ * bij het eerste laden (app.blade.php), zodat er geen moment is waarop de
+ * browser het portaallettertype gaat laden; dit houdt hem bij als je met
+ * Inertia tussen de site en het portaal wisselt.
+ *
+ * **Een klasse en geen `html:has(.brand-site)`.** Een `:has()` op een groot
+ * voorouder laat de browser bij elke wijziging in de pagina opnieuw kijken
+ * of hij nog klopt -- en SplitText wijzigt bij elke kop de pagina. Zie
+ * docs/architecture/prestaties.md.
+ */
+const SITE_KLASSE = 'brand-site-pagina';
+
 onMounted(() => {
+    document.documentElement.classList.add(SITE_KLASSE);
+    markeerHero(root.value);
     window.addEventListener('popstate', onthoudGeschiedenis);
     stopScroll = startSmoothScroll();
     scanReveals();
@@ -494,6 +538,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+    document.documentElement.classList.remove(SITE_KLASSE);
     window.removeEventListener('popstate', onthoudGeschiedenis);
     stopVeld?.();
     stopListening?.();

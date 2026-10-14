@@ -1,0 +1,233 @@
+/*
+  De welkomstanimatie: "scherpstellen". Zie SiteIntro.vue.
+
+  Drie lagen in één vast vlak over het scherm:
+  - het veld: Midnight Navy met het gat van het diafragma, en een gloed
+    erboven als eigen laag;
+    (`--gat`, `--gat-x`, `--gat-y`, door SiteIntro geschoven);
+  - de lens met het merkteken en de naam eronder;
+  - de knop om over te slaan.
+
+  Alleen het veld draagt de variabelen, en het veld heeft geen kinderen:
+  een CSS-variabele erft, en op de laag zelf zou elke stap van het gat de
+  stijl van de lens en de letters opnieuw laten berekenen.
+*/
+
+.brand-site-intro {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: grid;
+    place-items: center;
+
+    /*
+      Het vangnet. Wat er ook misgaat in de code -- een fout halverwege,
+      een tabblad dat op de achtergrond stilstaat -- na vier seconden is de
+      laag weg en de pagina eronder bruikbaar. Normaal haalt SiteIntro hem
+      ruim eerder uit de DOM, en speelt dit nooit.
+    */
+    animation: brand-site-intro-vangnet 0.3s linear 4s forwards;
+}
+
+@keyframes brand-site-intro-vangnet {
+    to {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+    }
+}
+
+.brand-site-intro-veld {
+    position: absolute;
+    inset: 0;
+    background: var(--site-veld);
+
+    /*
+      Het diafragma: een gat dat groeit vanuit de plek waar de lens landt.
+      `mask` werkt met doorzichtigheid; zwart betekent hier alleen "dicht".
+      De rand van twee pixels houdt de cirkel glad.
+    */
+    -webkit-mask-image: radial-gradient(
+        circle at var(--gat-x, 50%) var(--gat-y, 50%),
+        transparent var(--gat, 0px),
+        black calc(var(--gat, 0px) + 2px)
+    );
+    mask-image: radial-gradient(
+        circle at var(--gat-x, 50%) var(--gat-y, 50%),
+        transparent var(--gat, 0px),
+        black calc(var(--gat, 0px) + 2px)
+    );
+}
+
+/*
+  De gloed achter de lens: een eigen laag die alleen in doorzichtigheid
+  verandert. Een gloed die via een variabele in het veld meeliep, liet de
+  browser bij elk beeldje het hele scherm opnieuw schilderen.
+*/
+.brand-site-intro-gloed {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+        min(80vw, 46rem) circle at 50% 46%,
+        color-mix(in oklab, var(--brand-blue) 22%, transparent),
+        transparent 70%
+    );
+    pointer-events: none;
+}
+
+.brand-site-intro-midden {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: 1.25rem;
+}
+
+/*
+  De lens. Zijn doos is die van de ringen in de hero, op een andere maat;
+  SiteIntro rekent de verschuiving en de schaal daartussen uit.
+*/
+.brand-site-intro-lens {
+    position: relative;
+    display: grid;
+    width: clamp(9rem, 20vw, 16rem);
+    aspect-ratio: 1;
+    place-items: center;
+}
+
+.brand-site-intro-ringen {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.brand-site-intro-schaal {
+    fill: none;
+    stroke: color-mix(in oklab, var(--brand-platinum) 24%, transparent);
+    stroke-width: 5px;
+    stroke-dasharray: 0.5 5.5;
+}
+
+.brand-site-intro-binnen {
+    fill: none;
+    stroke: color-mix(in oklab, var(--brand-cyan) 28%, transparent);
+    stroke-width: 1px;
+}
+
+.brand-site-intro-boog circle:first-child {
+    stroke: var(--brand-cyan);
+}
+
+.brand-site-intro-boog circle:last-child {
+    fill: var(--brand-ice);
+}
+
+/*
+  Op een telefoon alleen de ring: de schaal, de binnenring en de boog
+  bewegen daar niet mee (zie SiteIntro), en stilstaand lezen ze als
+  restjes.
+*/
+@media (max-width: 49.999rem) {
+    .brand-site-intro-schaal,
+    .brand-site-intro-binnen,
+    .brand-site-intro-boog {
+        display: none;
+    }
+}
+
+.brand-site-intro-merk {
+    position: relative;
+    width: 38%;
+    height: auto;
+    filter: drop-shadow(
+        0 0 18px color-mix(in oklab, var(--brand-cyan) 35%, transparent)
+    );
+}
+
+/*
+  De naam: elke letter in een eigen masker, zodat hij van onderen
+  opkomt. "@T" in het merkverloop, de rest in het wit van de koppen --
+  hetzelfde als in de kop van de site.
+*/
+.brand-site-intro-naam {
+    display: flex;
+    font-size: clamp(1.125rem, 0.9rem + 0.9vw, 1.625rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    color: var(--site-kop);
+    white-space: nowrap;
+}
+
+.brand-site-intro-letter {
+    display: inline-block;
+    overflow: hidden;
+    padding-bottom: 0.08em;
+}
+
+.brand-site-intro-letter > span {
+    display: inline-block;
+}
+
+.brand-site-intro-letter[data-merk] > span {
+    color: var(--brand-cyan);
+}
+
+.brand-site-intro-streep {
+    display: block;
+    width: 6rem;
+    height: 1px;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        var(--brand-cyan),
+        transparent
+    );
+    transform-origin: center;
+}
+
+/*
+  Overslaan. Rechtsonder, klein en rustig: wie hem zoekt vindt hem, wie
+  kijkt wordt er niet door gestoord. Een gewone knop, dus ook met de
+  tabtoets bereikbaar -- al spoelt elke toets de entree ook zonder door.
+*/
+.brand-site-intro-sla {
+    position: absolute;
+    right: max(1.25rem, env(safe-area-inset-right, 0px));
+    bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
+    min-height: 2.75rem;
+    padding-inline: 1.125rem;
+    border: 1px solid var(--site-plaat-rand);
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--brand-navy-deep) 70%, transparent);
+    font-size: var(--site-maat-klein);
+    font-weight: 500;
+    color: var(--site-tekst-zacht);
+    transition:
+        color var(--site-duur-hover) var(--site-ease),
+        border-color var(--site-duur-hover) var(--site-ease);
+}
+
+.brand-site-intro-sla:focus-visible {
+    outline: 2px solid var(--brand-cyan);
+    outline-offset: 2px;
+    color: var(--site-kop);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-intro-sla:hover {
+        color: var(--site-kop);
+        border-color: var(--site-plaat-rand-sterk);
+    }
+}
+
+/*
+  Onder reduced motion speelt de entree niet (lib/intro.ts). Staat de laag
+  er toch, dan is hij meteen weg.
+*/
+@media (prefers-reduced-motion: reduce) {
+    .brand-site-intro {
+        display: none;
+    }
+}

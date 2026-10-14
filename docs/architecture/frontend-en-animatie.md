@@ -24,17 +24,17 @@ ophaalt.
 
 ## De publieke site
 
-| Onderdeel                            | Waarvoor                                                                                    |
-| ------------------------------------ | ------------------------------------------------------------------------------------------- |
-| `layouts/PublicLayout.vue`           | Kop, voet, lichtveld, smooth scrolling en de scroll-reveals. Zet `brand-site` op de wortel. |
-| `components/site/SiteHeader.vue`     | Navigatie: een zwevende glazen balk met een lichtmarkering; mobiel een menu als diafragma.  |
-| `components/site/SiteFooter.vue`     | De voettekst: de afsluitende compositie van elke publieke pagina.                           |
-| `components/site/SiteSection.vue`    | Eén breedte en één verticale ruimte voor alle secties; open veld of plaat.                  |
-| `components/site/SectionHeading.vue` | Opschrift, titel en inleiding; de titel kiest zijn maat op lengte.                          |
-| `components/site/SiteIntro.vue`      | De merkintro: het oog stelt scherp en gaat open als een diafragma.                          |
-| `components/site/ScrollProgress.vue` | De voortgangsbalk bovenaan.                                                                 |
-| `components/site/sections/`          | De onderdelen zelf, één component per `PageSectionKey`, plus hun deelcomponenten.           |
-| `resources/css/site.css`             | De stijl van de publieke site, één bestand per onderdeel onder `resources/css/site/`.       |
+| Onderdeel                            | Waarvoor                                                                                                              |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| `layouts/PublicLayout.vue`           | Kop, voet, lichtveld, smooth scrolling en de scroll-reveals. Zet `brand-site` op de wortel.                           |
+| `components/site/SiteHeader.vue`     | Navigatie: een zwevende glazen balk met een lichtmarkering; mobiel een menu als diafragma.                            |
+| `components/site/SiteFooter.vue`     | De voettekst: de afsluitende compositie van elke publieke pagina.                                                     |
+| `components/site/SiteSection.vue`    | Eén breedte en één verticale ruimte voor alle secties; open veld of plaat.                                            |
+| `components/site/SectionHeading.vue` | Opschrift, titel en inleiding; de titel kiest zijn maat op lengte.                                                    |
+| `components/site/SiteIntro.vue`      | De welkomstanimatie bij het eerste bezoek: een lens stelt scherp en landt in de iris van de hero. Zie `lib/intro.ts`. |
+| `components/site/ScrollProgress.vue` | De voortgangsbalk bovenaan.                                                                                           |
+| `components/site/sections/`          | De onderdelen zelf, één component per `PageSectionKey`, plus hun deelcomponenten.                                     |
+| `resources/css/site.css`             | De stijl van de publieke site, één bestand per onderdeel onder `resources/css/site/`.                                 |
 
 **De landingspagina bepaalt niet meer welke onderdelen er staan.** Dat doet
 de klant, in het portaal. `Welcome.vue` is een `v-for` over de sleutels die
@@ -1147,52 +1147,98 @@ op een telefoon komt de achtergrond alleen op.
 op iets waar een foto of scherpe tekst in zit, reken er dan op dat het
 op een telefoon zachter wordt.
 
-### De intro bij binnenkomst
+### De intro bij binnenkomst: "scherpstellen"
 
-Een navy laag met de merkgloed en het logo, acht tienden van een seconde,
-één keer per bezoek. Zie
-[`SiteIntro.vue`](../../resources/js/components/site/SiteIntro.vue).
+De welkomstanimatie bij het eerste bezoek aan de voorpagina. Zie
+[`SiteIntro.vue`](../../resources/js/components/site/SiteIntro.vue),
+[`intro.ts`](../../resources/js/lib/intro.ts) en
+[`intro.css`](../../resources/css/site/intro.css).
 
-**Het merkteken stelt scherp, en dan gaat het oog open.** De laag krijgt
-een gat in het midden dat groeit tot voorbij de hoeken van het scherm: een
-diafragma dat opengaat, met de hero erachter. Dat gat is een `mask` met een
-radiaal verloop op de CSS-variabele `--gat` (`resources/css/site/hero.css`);
-JavaScript schuift alleen die maat. Het logo vliegt ondertussen naar je toe
-en lost op.
+**Het idee.** Het merk is een oog en de site is een lens: dingen komen in
+focus. In het donker tekenen de ringen van een lens zich om het merkteken,
+het teken stelt scherp (een kleine blur op één klein beeld), de schaalring
+draait als een focusring, een lichtboog loopt mee en "@T IT Advies" komt
+letter voor letter op. Dan **vliegt de lens naar de iris in de hero** --
+dezelfde cirkels in hetzelfde `viewBox`, dus gemeten en verschoven
+(translate + scale) vallen ze precies op elkaar -- en gaat het diafragma
+daar open: eerst tot de rand van de ring, zodat je even door de lens het
+portret ziet, en dan tot voorbij de hoeken. Het merkteken krimpt de pupil
+in, en waar de lens oplost tekent de ring van de hero zich en gaat het
+portret open. De entree eindigt dus niet vóór de hero maar ín de hero.
 
-**Het is geen laadscherm en dat verschil is het hele punt.** De hero staat
-er al volledig onder; dit is een gordijn dat opengaat voor iets wat er al
-is. Gaat de animatie stuk, dan staat de site eronder klaar.
+| Fase        | Breed (≥ 50rem)                                            | Smal                                             |
+| ----------- | ---------------------------------------------------------- | ------------------------------------------------ |
+| Opbouw      | ~1,3 s: ring, schaal, binnenring, boog, naam               | ~1,0 s: alleen de ring en de naam                |
+| Landen      | ~1,3 s: lens vliegt naar de iris, diafragma vanuit de iris | ~0,8 s: lens krimpt, diafragma vanuit het midden |
+| Hero begint | bij aankomst van de lens (signaal)                         | meteen bij het landen (signaal)                  |
 
-Wanneer hij niet speelt staat in
-[`intro.ts`](../../resources/js/lib/intro.ts): bij `prefers-reduced-motion`,
-als hij deze sessie al gezien is, of als de pagina zelf al traag binnenkwam
--- dan is acht tienden seconde erbovenop geen entree meer maar een straf.
+**Wanneer hij speelt** (allemaal in `introSpeeltAf()`):
 
-**Die beslissing is synchroon en wordt één keer genomen**, en dat is met
-opzet geen belofte waar de hero op wacht. Zou de introlaag om welke reden
-dan ook niet verschijnen, dan wacht de hero anders eeuwig en blijft zijn
-tekst op doorzichtigheid nul staan. Onzichtbare inhoud is een ergere fout
-dan een gemiste animatie, dus beide kanten stellen de vraag los van elkaar
-en krijgen gegarandeerd hetzelfde antwoord.
+- alleen bij de **eerste paginalaad**, en alleen als dat de voorpagina is
+  (`page.component === 'Welcome'`). Een Inertia-navigatie naar de
+  voorpagina speelt hem nooit: de vraag is dan allang beantwoord;
+- **één keer per browser**: daarna staat `brand-intro-gezien` in
+  `localStorage`. Geen datum, geen teller, niets naar de server. Verversen
+  en een taalwissel spelen hem dus niet opnieuw;
+- **niet met een anker** in het adres (`/#contact`): dan wil je daar
+  uitkomen. Er wordt dan ook niets onthouden;
+- **niet zonder opslag** (privévenster, geblokkeerd): anders speelde hij bij
+  elke verversing;
+- **niet onder reduced motion**: dan staat de site er meteen;
+- **niet als het laden al traag was** (DOMContentLoaded na 2,5 s breed of
+  1,5 s smal); ook dan wordt niets onthouden.
 
-#### Op een telefoon gaat dezelfde entree sneller
+**Overslaan.** Elke toets (ook Tab en Escape), klik, tik, scrollbeweging of
+veeg spoelt de entree in een paar tienden van een seconde door naar het
+einde (de landing op 2,6× snelheid), en rechtsonder staat de knop "Intro
+overslaan". Er wordt niet aan de scrollpositie gezeten: wie meteen scrolt,
+scrolt. Zodra de lens landt laat de laag klikken door (`pointer-events`).
 
-Niet korter in stappen maar korter in tijd: je ziet hetzelfde gebeuren, het
-is alleen eerder klaar.
+**De hero wacht op een signaal, met een vangnet.** `naDeIntro()` in
+`intro.ts` roept de hero aan zodra de intro `introDraagtOver()` meldt, of
+meteen als er geen intro speelt, en anders uiterlijk na 2,6 s. De laag
+zelf heeft in CSS een vangnet (`brand-site-intro-vangnet`): na vier
+seconden is hij doorzichtig en laat hij alles door, ook als de code
+halverwege vastloopt. Beide zijn getest door de entree halverwege stil te
+zetten.
 
-|                       | Breed            | Smal (`< 48rem`) |
-| --------------------- | ---------------- | ---------------- |
-| Intro overslaan vanaf | 2000 ms laadtijd | 1100 ms laadtijd |
-| Hero begint na        | 0,5 s            | 0,25 s           |
-| Tijdlijn van de hero  | 1×               | 1,4×             |
-| Diafragma, kop        | volle duur       | 0,7× de duur     |
+**Wat het kost.** Het gat is een `mask` met een radiaal verloop op
+`--gat`; die variabelen staan op het veld, en het veld heeft geen
+kinderen, zodat er per stap niets anders opnieuw berekend wordt. De gloed
+is een eigen laag die alleen in doorzichtigheid verandert (als variabele
+in het veld liet hij elk beeldje het hele scherm opnieuw schilderen). De
+lens beweegt met transform; het enige filter is de blur op het merkteken,
+alleen breed.
 
-De grens is `47.9375rem` in
-[`motion.ts`](../../resources/js/lib/motion.ts) (`opEenTelefoon`) --
-hetzelfde getal als `@media (min-width: 48rem)` in de CSS, zodat de
-animaties en de opmaak niet uit elkaar kunnen lopen. De zwaardere effecten
-(blur, diepte) gebruiken de tabletgrens van 50rem (`opEenBreedScherm`).
+**Opnieuw bekijken.**
+
+- Zet `?intro` achter het adres (`https://t-it-advies.test/?intro`): dan
+  speelt hij altijd, ook als hij al gezien is, en de parameter gaat daarna
+  uit het adres. Dit werkt ook op de echte site, zonder iets te wissen.
+- Of wis de vlag: in de console van de browser
+  `localStorage.removeItem('brand-intro-gezien')`, en ververs.
+- In de ontwikkelmodus hangen de twee tijdlijnen aan
+  `window.__brandIntro` (`opbouw()`, `landing()`), zodat je hem kunt
+  stilzetten en beeld voor beeld kunt bekijken
+  (`__brandIntro.opbouw().pause().progress(0.5)`). In de gebouwde site
+  bestaat dat niet.
+
+#### De hero na de intro
+
+De hero zelf is ongewijzigd van opzet -- de achtergrond komt op, de kop
+komt op, de iris gaat open en de ring tekent zich -- maar begint nu op het
+signaal in plaats van na een vaste wachttijd.
+
+**De achtergrond heeft geen blur meer.** Hij stelde scherp van een
+vervaging over het hele scherm, en dat viel samen met het diafragma en de
+kop: op de gebouwde site was 22 tot 37 procent van de beeldjes in de hero
+te laat (wie tijdens de entree scrolde), zonder de blur 0 tot 3 procent;
+de p95 tijdens de entree ging van 33 naar 16,8 ms. Het scherpstellen doet
+de lens; de foto schuift alleen nog van iets te dichtbij op zijn plek.
+Op een telefoon loopt zijn tijdlijn 1,4× sneller. De grens is `47.9375rem`
+in [`motion.ts`](../../resources/js/lib/motion.ts) (`opEenTelefoon`); de
+zwaardere effecten (blur, diepte, de volle lens) gebruiken de tabletgrens
+van 50rem (`opEenBreedScherm`).
 
 ### Beweging tijdens het scrollen, niet alleen bij binnenkomst
 

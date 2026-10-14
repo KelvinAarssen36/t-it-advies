@@ -2753,75 +2753,11 @@ button:hover > .brand-verlaat,
       Zie tekenPad() in resources/js/lib/motion.ts.
     */
     /*
-      De merkintro bij binnenkomst.
-
-      Een navy laag over het hele scherm met de merkgloed en het logo. Hij
-      haalt zichzelf na acht tienden seconde uit de DOM; zie SiteIntro.vue.
-
-      De z-index ligt boven de voortgangsbalk en de kop, maar bewust onder
-      niets anders -- er is op dit moment ook nog niets anders. Zou er ooit
-      een melding overheen moeten, dan hoort die hoger en niet deze lager.
-
-      `position: fixed` en niet `absolute`: de bezoeker kan meteen gaan
-      scrollen, en dan hoort het gordijn te blijven waar het is in plaats
-      van mee omhoog te schuiven.
-    */
-    .brand-intro {
-        position: fixed;
-        inset: 0;
-        z-index: 200;
-        display: grid;
-        place-items: center;
-        background-color: var(--brand-navy);
-    }
-
-    .brand-intro-gloed {
-        position: absolute;
-        width: min(70vw, 34rem);
-        aspect-ratio: 1;
-        border-radius: 50%;
-        background: radial-gradient(
-            circle,
-            color-mix(in srgb, var(--brand-blue) 45%, transparent) 0%,
-            color-mix(in srgb, var(--brand-cyan) 18%, transparent) 45%,
-            transparent 70%
-        );
-        filter: blur(30px);
-    }
-
-    .brand-intro-merk {
-        position: relative;
-        width: min(38vw, 9rem);
-        height: auto;
-    }
-
-    /*
       De bevestiging onder het contactformulier.
 
       Groen en met een vinkje, in tegenstelling tot de kale grijze regel
       die hier stond. Dit is het enige moment op de landing waarop de
-      bezoeker iets heeft gedaan en antwoord krijgt; dan mag het er ook
-      uitzien als antwoord en niet als een mededeling.
-
-      Zie ContactSection.vue voor de animatie erbij.
-    */
-    .brand-bevestiging {
-        display: flex;
-        align-items: flex-start;
-        gap: 0.6rem;
-        border: 1px solid color-mix(in srgb, var(--success) 45%, transparent);
-        border-radius: 0.5rem;
-        background-color: color-mix(in srgb, var(--success) 10%, transparent);
-        padding: 0.75rem 1rem;
-        font-size: 0.875rem;
-        line-height: 1.5;
-        text-wrap: pretty;
-        color: var(--brand-text-on-dark);
-    }
-
-    .brand-bevestiging svg {
-        color: var(--success);
-    }
+      bezoeker iets heeft gedaan en antwoord krijgt;
 
     /*
       De stand "3 / 7" in plaats van losse nummers, op een smal scherm.
@@ -2890,20 +2826,7 @@ button:hover > .brand-verlaat,
       Hij ligt eronder (`z-index: 0` tegenover de stappen op 1): de lijn
       raakt de nummers en hoort er niet overheen te lopen.
 
-      `[data-leeg]` zet het component bij minder dan twee stappen; één
-      punt is geen lijn.
-    */
-    .brand-werkwijze-lijn {
-        position: absolute;
-        inset: 0;
-        z-index: 0;
-        overflow: visible;
-        pointer-events: none;
-    }
-
-    .brand-werkwijze-lijn[data-leeg] {
-        display: none;
-    }
+      `[data-leeg]` zet het component bij minder dan twee stappen;
 
     /*
       Het raster past zich aan het aantal stappen aan; `--stappen` komt
@@ -2962,184 +2885,23 @@ button:hover > .brand-verlaat,
         }
     }
 
-    /*
-      De duur, naast het nummer. Klein en in cijferbreedte, zodat "1-2
-      weken" en "3 weken" onder elkaar niet gaan dansen.
-    */
-    .brand-werkwijze-duur {
-        margin-left: 0.5rem;
-        font-size: 0.75rem;
-        font-variant-numeric: tabular-nums;
-        color: var(--brand-silver);
-    }
-
-    /* --- /werkwijze: de stappen uitgeschreven -------------------------- */
-
-    /*
-      De stappen onder elkaar, met de lijn ernaast.
-
-      De inspringing links is de ruimte waar die lijn doorheen loopt: het
-      nummer staat er bovenop en de tekst ernaast. Op een telefoon blijft
-      diezelfde opzet staan -- hij is smal genoeg om te werken en het
-      alternatief zou de lijn weer wegnemen, precies wat deze verbouwing
-      juist oploste.
-    */
-    .brand-werkwijzepagina {
-        position: relative;
-        z-index: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 3rem;
-    }
-
-    .brand-werkwijzepagina-stap {
-        padding-left: 2.25rem;
+    @media (min-width: 48rem) {
     }
 
     @media (min-width: 48rem) {
-        .brand-werkwijzepagina-stap {
-            padding-left: 3rem;
-        }
     }
 
-    /*
-      Het nummer hangt in de kantlijn, bovenop de lijn.
-
-      Met een eigen achtergrond: de lijn loopt eronderdoor, en zonder dat
-      vlakje zou hij dwars door het cijfer heen lopen.
-    */
-    .brand-werkwijzepagina-kop {
-        position: relative;
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 0.625rem;
-    }
-
-    .brand-werkwijzepagina-kop .brand-werkwijze-nummer {
-        position: absolute;
-        left: -2.25rem;
-        display: inline-flex;
-        height: 1.75rem;
-        width: 1.75rem;
-        align-items: center;
-        justify-content: center;
-        border-radius: 999px;
-        border: 1px solid var(--brand-border-dark);
-        background-color: var(--brand-navy-deep);
-    }
+    /* Hoeveelste van hoeveel;
 
     @media (min-width: 48rem) {
-        .brand-werkwijzepagina-kop .brand-werkwijze-nummer {
-            left: -3rem;
-        }
-    }
-
-    /* Hoeveelste van hoeveel; klein, want het is een hulpmiddel. */
-    .brand-werkwijzepagina-teller {
-        font-size: 0.75rem;
-        color: var(--brand-border-dark-strong);
-    }
-
-    .brand-werkwijzepagina-titel {
-        margin-top: 0.5rem;
-        font-size: 1.375rem;
-        font-weight: 600;
-        text-wrap: balance;
-        color: #ffffff;
-    }
-
-    @media (min-width: 48rem) {
-        .brand-werkwijzepagina-titel {
-            font-size: 1.625rem;
-        }
-    }
-
-    .brand-werkwijzepagina-kort {
-        margin-top: 0.5rem;
-        max-width: 60ch;
-        font-size: 1.0625rem;
-        line-height: 1.6;
-        text-wrap: pretty;
-        color: var(--brand-silver);
-    }
-
-    /*
-      Het verhaal. `gap` tussen de alinea's en geen `pre-line`: hier zijn
-      het echte alinea's, door het component gesplitst op een witregel.
-    */
-    .brand-werkwijzepagina-tekst {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-        margin-top: 1rem;
-        max-width: 68ch;
-        line-height: 1.8;
-        text-wrap: pretty;
-        color: var(--foreground);
-    }
-
-    /*
-      Wat de stap oplevert, als afgezet vlak.
-
-      Zwaarder dan het streepje op de kaart van de voorpagina, en met
-      reden: hier is het de afsluiting van een stuk tekst, en daar hoort
-      het op te vallen in plaats van mee te lopen.
-    */
-    .brand-werkwijzepagina-resultaat {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-        margin-top: 1.25rem;
-        border-left: 2px solid var(--brand-cyan);
-        border-radius: 0 0.5rem 0.5rem 0;
-        background-color: color-mix(
-            in srgb,
-            var(--brand-navy-raised) 45%,
-            transparent
-        );
-        padding: 0.875rem 1rem;
-        max-width: 60ch;
-        text-wrap: pretty;
-        color: var(--brand-silver);
-    }
-
-    .brand-werkwijzepagina-resultaat-kop {
-        font-size: 0.6875rem;
-        font-weight: 600;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--brand-cyan);
-    }
-
-    /* Het lichtpuntje dat over de lijn reist. */
-    .brand-werkwijze-punt {
-        fill: var(--brand-ice);
-        filter: drop-shadow(0 0 6px var(--brand-cyan));
     }
 
     /*
       Het nummer van een stap. Gedempt tot de lijn hem bereikt, daarna in
       de merkkleur met een zachte gloed. JavaScript zet alleen het
-      attribuut; de kleur hoort hier.
-    */
-    .brand-werkwijze-nummer {
-        display: inline-block;
-        color: var(--brand-silver);
-        transition:
-            color 350ms ease,
-            text-shadow 350ms ease,
-            scale 350ms ease;
-    }
+      attribuut;
 
     @media (prefers-reduced-motion: reduce) {
-        /*
-          Het nummer kleurt nog wel op -- dat is de aanwijzing dat de stap
-          aan de beurt is -- maar zwelt niet aan.
-        */
-        .brand-werkwijze-nummer {
-            transition: color 350ms ease;
-        }
     }
 }
 
@@ -5204,27 +4966,6 @@ button:hover > .brand-verlaat,
     }
 
     /*
-      Een e-mailadres in de tekst.
-
-      Onderstreept en in de accentkleur, want het is een link die iets
-      doet: je mailprogramma gaat open. Een adres dat eruitziet als tekst
-      laat de bezoeker kopiëren en plakken.
-    */
-    /*
-      Het opschrift boven de kop van de contactpagina.
-
-      Dezelfde vorm als het opschrift boven een blok op de landing: klein,
-      in hoofdletters, in de accentkleur. Zie SectionHeading.
-    */
-    .brand-privacy-opschrift {
-        font-size: 0.6875rem;
-        font-weight: 500;
-        letter-spacing: 0.16em;
-        text-transform: uppercase;
-        color: var(--brand-cyan);
-    }
-
-    /*
       Het merkje "uitgelicht" in de onderwerpentabel.
 
       Zelfde vorm als de andere merkjes op die schermen, in de accentkleur:
@@ -5252,19 +4993,7 @@ button:hover > .brand-verlaat,
 
       Alleen het weggaan staat hier. Het opkomen van de bevestiging doet
       GSAP, want daar hoort het vinkje met een overshoot in te ploffen en
-      dat is geen overgang. Vue zet zijn enter-klassen er wel op; die
-      hebben hier met opzet geen regels.
-    */
-    .brand-contactwissel-leave-active {
-        transition:
-            opacity 200ms ease-in,
-            translate 200ms ease-in;
-    }
-
-    .brand-contactwissel-leave-to {
-        opacity: 0;
-        translate: 0 -10px;
-    }
+      dat is geen overgang. Vue zet zijn enter-klassen er wel op;
 
     /*
       De keuze tussen de twee mailstijlen.
@@ -5845,6 +5574,78 @@ button:hover > .brand-verlaat,
       Dat scheelt een grens die bij een lang onderdeelwoord net verkeerd
       ligt.
     */
+    /*
+      De lijst in "wat gaat er mee in een back-up".
+
+      **Drie kolommen en geen tabel**: een vinkje, de naam, en rechts de
+      dag waarop het voor het laatst is vastgelegd. `1fr auto` laat die
+      datum altijd tegen de rechterrand staan, hoe lang de naam ook is --
+      zo lopen de datums onder elkaar en lees je de lijst in één blik.
+
+      `min-width: 0` op de naam hoort erbij: zonder dat duwt een lang
+      onderdeelwoord de datum het venster uit. Zie de valkuil over een
+      flex-kind dat zijn eigen breedte bepaalt.
+    */
+    .brand-dekking {
+        display: flex;
+        flex-direction: column;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .brand-dekking-regel {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 0.625rem;
+        border-bottom: 1px solid var(--border);
+        padding: 0.5rem 0;
+        font-size: 0.875rem;
+    }
+
+    .brand-dekking-regel:last-child {
+        border-bottom: 0;
+    }
+
+    /*
+      Het vinkje in een rondje, zodat de rij ook zonder de tekst te lezen
+      als "in orde" leest. Bij een onderdeel dat er nog niet in zat blijft
+      het rondje leeg: dat is een open plek en geen fout, dus geen kruisje
+      en geen waarschuwingskleur.
+    */
+    .brand-dekking-teken {
+        display: flex;
+        width: 1.25rem;
+        height: 1.25rem;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9999px;
+        background-color: color-mix(in srgb, var(--success) 18%, transparent);
+        color: var(--success);
+    }
+
+    .brand-dekking-regel[data-nog-niet] .brand-dekking-teken {
+        border: 1px dashed var(--border);
+        background-color: transparent;
+    }
+
+    .brand-dekking-naam {
+        min-width: 0;
+        color: var(--foreground);
+    }
+
+    .brand-dekking-wanneer {
+        font-size: 0.8125rem;
+        font-variant-numeric: tabular-nums;
+        color: var(--muted-foreground);
+    }
+
+    .brand-dekking-regel[data-nog-niet] .brand-dekking-naam,
+    .brand-dekking-regel[data-nog-niet] .brand-dekking-wanneer {
+        color: var(--muted-foreground);
+    }
+
     .brand-siteterug {
         display: flex;
         flex-wrap: wrap;
@@ -7642,41 +7443,9 @@ button:hover > .brand-verlaat,
       Vanaf de tabletgrens naast elkaar, met de foto links.
 
       **De tekst is waar het om gaat, dus die krijgt de ruimte.** De foto
-      heeft een vaste maat en de alinea vult de rest; omgekeerd zou een
-      korte samenvatting een enorme foto naast zich krijgen.
-    */
-
-    /* --- De pagina's: het overzicht en één project --------------------- */
-
-    .brand-projectpagina-opschrift {
-        font-size: 0.875rem;
-        letter-spacing: 0.2em;
-        text-transform: uppercase;
-        color: var(--brand-cyan);
-    }
-
-    .brand-projectpagina-titel {
-        margin-top: 0.5rem;
-        font-size: 1.875rem;
-        font-weight: 600;
-        letter-spacing: -0.015em;
-        text-wrap: balance;
-        color: #ffffff;
-    }
+      heeft een vaste maat en de alinea vult de rest;
 
     @media (min-width: 40rem) {
-        .brand-projectpagina-titel {
-            font-size: 2.25rem;
-        }
-    }
-
-    .brand-projectpagina-inleiding {
-        margin-top: 0.75rem;
-        max-width: 60ch;
-        font-size: 1.0625rem;
-        line-height: 1.6;
-        text-wrap: pretty;
-        color: var(--muted-foreground);
     }
 
     /* De regel in de beheertabel: beeld plus titel. */
@@ -7778,20 +7547,6 @@ button:hover > .brand-verlaat,
     }
 
     .brand-pagina-enter-from {
-        translate: none;
-    }
-
-    /*
-      Het contactformulier wisselt ook zonder beweging naar de bevestiging.
-      Het dimmen tijdens het versturen blijft wél: dat is geen animatie maar
-      een toestand, en die is hier juist nodig -- zonder beweging is het het
-      enige dat laat zien dat je klik is aangekomen.
-    */
-    .brand-contactwissel-leave-active {
-        transition: none;
-    }
-
-    .brand-contactwissel-leave-to {
         translate: none;
     }
 }

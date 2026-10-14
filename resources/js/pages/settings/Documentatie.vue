@@ -570,7 +570,21 @@ defineOptions({
                             <p>
                                 {{
                                     $t(
-                                        'Je website is gebouwd rond je logo: een oog dat scherpstelt. Bij binnenkomst gaat het oog open als een lens en verschijnt je foto in een ring. Daarna beweegt de pagina mee terwijl je bezoeker scrolt: vlakken komen uit de diepte omhoog, het beeld van je project opent zich, je certificaten zetten zich in elkaar en het licht van je werkwijze loopt door de stappen. Het hangt allemaal aan het scrollen zelf, dus niemand hoeft ergens op te wachten. De merkintro zie je één keer per bezoek.',
+                                        'Je website is gebouwd rond je logo: een oog dat scherpstelt. Bij binnenkomst gaat het oog open als een lens en verschijnt je foto in een ring. Daarna beweegt de pagina mee terwijl je bezoeker scrolt: vlakken komen uit de diepte omhoog, het beeld van je project opent zich, je certificaten zetten zich in elkaar en het licht van je werkwijze loopt door de stappen. Het hangt allemaal aan het scrollen zelf, dus niemand hoeft ergens op te wachten.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Wie je website voor het eerst opent, krijgt een korte welkomst van ruim twee seconden: in het donker tekent zich een lens om je logo, je naam komt op, en dan vliegt de lens naar je foto en gaat de pagina daarvandaan open. Dat gebeurt één keer per browser, alleen op de voorpagina, en niet als iemand een link naar een bepaald onderdeel volgt. Wie meteen wil beginnen, drukt op een toets, klikt of scrolt, en is er direct. Op een telefoon is hij korter en eenvoudiger, en wie in zijn systeeminstellingen minder beweging heeft gekozen, krijgt hem niet.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Wil je hem zelf nog eens zien? Zet ?intro achter het adres van je website, bijvoorbeeld jouwdomein.nl/?intro. Dan speelt hij altijd, ook als je hem al gezien hebt; voor je bezoekers verandert er niets.',
                                     )
                                 }}
                             </p>
@@ -1103,6 +1117,13 @@ defineOptions({
                                 {{
                                     $t(
                                         'Wat je aanbiedt. Op een groot scherm staan je diensten als een rij grote namen; wijst een bezoeker er een aan, dan verschijnt ernaast de korte tekst en het lijstje met expertise. Op een telefoon staan ze als kaarten onder elkaar. Elke dienst krijgt een pictogram, een titel, een korte tekst en dat lijstje.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Wat er onder een dienst valt, zoals monitoring, back-ups en updates, staat als een net blokje vakjes met elk een klein teken. Dat teken kiest je website zelf bij het woord dat je typt: bij back-ups een back-upteken, bij storingen een sirene. Herkent hij een woord niet, dan krijgt het een vinkje. Je hoeft daar dus niets voor te kiezen.',
                                     )
                                 }}
                             </p>
@@ -2131,6 +2152,13 @@ defineOptions({
                                 {{
                                     $t(
                                         'Onder Beheer → Back-ups leg je vast hoe je website er op dit moment voor staat. Al je teksten, je indeling en je afbeeldingen gaan mee. Wil je later terug naar hoe het was, dan zet je die back-up terug.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Wil je precies weten wat er meegaat, druk dan op Wat gaat er mee?. Je krijgt dan een lijstje van al je onderdelen met een vinkje erachter, en de dag waarop het voor het laatst is vastgelegd. Staat er bij een onderdeel nog niet meegenomen, dan is dat onderdeel nieuwer dan je laatste back-up -- maak er dan even een nieuwe.',
                                     )
                                 }}
                             </p>

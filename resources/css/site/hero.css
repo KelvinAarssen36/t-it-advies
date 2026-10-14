@@ -283,8 +283,13 @@
         display: block;
     }
 
+    /*
+      De lichtboog draait eindeloos (zie `tekenRing`), dus hij krijgt een
+      eigen laag: dan schuift de browser hem en tekent hij niets opnieuw.
+    */
     .brand-site-hero-beeld,
-    .brand-site-hero-iris {
+    .brand-site-hero-iris,
+    .brand-site-hero-baan {
         will-change: transform;
     }
 }
@@ -311,23 +316,4 @@
         transition: none;
         transform: none;
     }
-}
-
-/*
-  De merkintro gaat open als een diafragma: een gat in het midden van de
-  laag dat groeit tot voorbij de hoeken. `--gat` wordt door SiteIntro.vue
-  geschoven. Het masker werkt met doorzichtigheid, dus de kleur erin zegt
-  niets; zwart is hier alleen "dicht".
-*/
-.brand-site .brand-intro {
-    -webkit-mask-image: radial-gradient(
-        circle at 50% 50%,
-        transparent var(--gat, 0px),
-        black calc(var(--gat, 0px) + 1px)
-    );
-    mask-image: radial-gradient(
-        circle at 50% 50%,
-        transparent var(--gat, 0px),
-        black calc(var(--gat, 0px) + 1px)
-    );
 }

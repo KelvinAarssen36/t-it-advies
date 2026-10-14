@@ -58,6 +58,32 @@ kerngegevens, de vragen, Over mij, de projecten, de werkwijze, het
 contactformulier, de voettekst en het LinkedIn-blok. Plus
 de bestanden achter `logo_path`, `photo_path` en `image_path`.
 
+### En dat staat ook op het scherm
+
+Naast de knop die een back-up maakt staat **Wat gaat er mee?**. Dat opent
+een venster met dezelfde lijst, maar dan in onderdelen die de eigenaar
+herkent -- "Projecten" in plaats van `projects` en `project_settings` --
+met achter elk de dag waarop het voor het laatst is vastgelegd.
+
+Dat komt uit [`Dekking`](../../app/Support/Backup/Dekking.php), en twee
+keuzes daarin zijn het vermelden waard:
+
+- **De datum komt van de back-uprij en niet uit de zip.** Elke back-up
+  schrijft in `aantallen` hoeveel rijen hij per tabel meenam; staat de naam
+  van een tabel daarin, dan zat dat onderdeel erin. Er hoeft dus geen
+  bestand opengemaakt te worden om die lijst te tonen.
+- **Een onderdeel dat nog nooit meeging krijgt geen vinkje maar "nog niet
+  meegenomen".** Dat is geen storing: het betekent dat het onderdeel
+  nieuwer is dan de nieuwste back-up. Toen dit venster werd gebouwd gold
+  dat voor Kerngegevens, LinkedIn en de voettekst, en dat is precies het
+  moment waarop je een nieuwe back-up wilt maken.
+
+> Elke tabel uit het register hoort bij één onderdeel in dat venster. Valt
+> er een tabel buiten de indeling, dan komt hij er met zijn eigen naam
+> onder te staan in plaats van stil weg te vallen -- liever databasejargon
+> op het scherm dan een lijst die onvolledig is terwijl hij compleet oogt.
+> Komt er een module bij, zet hem dan in `Dekking::ONDERDELEN`.
+
 ### En wat er nooit in gaat
 
 | Wat                                                               | Waarom niet                                                                                                                                                                                                                                                                  |

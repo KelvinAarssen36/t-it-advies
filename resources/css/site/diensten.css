@@ -50,11 +50,10 @@
 }
 
 /*
-  Het spoor: de rail vult zich met licht terwijl je door de index scrolt.
-  `--voortgang` (0 tot 1) komt van `scrollVoortgang` en staat op dit ene
-  smalle element, niet op de index: een CSS-variabele erft, en op de index
-  zou elke scrollstap de stijl van alle namen opnieuw laten berekenen.
-  Zonder JavaScript en onder reduced motion staat hij vol.
+  Het spoor: het licht in de rail. Bij de eerste binnenkomst tekent het
+  zich van boven naar beneden (`binnenkomst()` in DienstenSection); daarna
+  staat het vol. Zonder JavaScript en onder reduced motion staat het
+  meteen vol.
 */
 .brand-site-diensten-spoor {
     position: absolute;
@@ -69,7 +68,6 @@
         transparent
     );
     transform-origin: top;
-    transform: scaleY(var(--voortgang, 1));
 }
 
 /*
@@ -280,111 +278,209 @@
 }
 
 /*
-  De expertisepunten: kleine pillen. Ook gebruikt in DienstVenster en op
-  de kaart, zodat een steekwoord er overal hetzelfde uitziet.
+  Het blok onderdelen in het paneel, met een klein kopje erboven: zonder
+  kopje leest een rij steekwoorden onder een zin als een vervolg van die
+  zin.
 */
-.brand-site-diensten-punten {
+.brand-site-diensten-onderdelen {
+    margin-top: 1.5rem;
+}
+
+.brand-site-diensten-onderdelen-kop {
+    font-size: var(--site-maat-label);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--site-tekst-zacht);
+}
+
+.brand-site-diensten-onderdelen .brand-site-onderdelen {
+    margin-top: 0.625rem;
+}
+
+/* --- De onderdelen -------------------------------------------------------
+
+  Wat er onder een dienst valt ("monitoring", "back-ups", "updates"), als
+  één blok gelijke vakjes met een haarlijn ertussen. Zie DienstOnderdelen.vue.
+
+  **Twee kolommen zodra er plaats is, anders één**, en dat zonder
+  mediaquery: `max(8.5rem, 50% - 1px)` maakt elke kolom minstens de helft,
+  dus er passen er nooit meer dan twee; is het blok smaller dan zeventien rem,
+  dan wordt het er één. Zo werkt hetzelfde blok in het paneel, op een kaart
+  van een telefoon en in het venster.
+
+  **De lijnen tekent elk vakje zelf, links en boven** (`box-shadow`, een
+  pixel buiten het vakje). Het blok knipt wat aan de buitenkant valt weg,
+  dus er staan alleen lijnen tússen de vakjes, bij elk aantal kolommen.
+  Een rand per vakje zou dubbele lijnen geven, en elk vakje een knop laten
+  lijken.
+   --------------------------------------------------------------------- */
+.brand-site-onderdelen {
+    display: grid;
+    grid-template-columns: repeat(
+        auto-fit,
+        minmax(max(8.5rem, calc(50% - 1px)), 1fr)
+    );
+    margin-top: 1.25rem;
+    overflow: hidden;
+    border: 1px solid var(--site-plaat-rand);
+    border-radius: 0.875rem;
+    background: color-mix(in oklab, var(--brand-navy-deep) 45%, transparent);
+}
+
+/* Een oneven laatste vakje neemt de hele rij, anders blijft er een gat. */
+.brand-site-onderdelen[data-oneven] > .brand-site-onderdeel:last-child {
+    grid-column: 1 / -1;
+}
+
+.brand-site-onderdeel {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.375rem;
-    margin-top: 1.125rem;
+    min-width: 0;
+    align-items: center;
+    gap: 0.625rem;
+    min-height: 2.875rem;
+    padding: 0.5rem 0.75rem;
+    box-shadow:
+        -1px 0 0 var(--site-plaat-rand),
+        0 -1px 0 var(--site-plaat-rand);
+    transition: background-color var(--site-duur-hover) var(--site-ease);
 }
 
 /*
-  Steekwoorden en geen maat of telling, dus in de gewone letter: mono was
-  hier een kostuum.
+  Het teken in een klein vak: dezelfde vorm als het pictogram in de index
+  ernaast, kleiner. Gedimd cyaan in rust, zodat het blok kalm is en de
+  titel van de dienst het zwaarst blijft.
 */
-.brand-site-diensten-punten > li {
+.brand-site-onderdeel-teken {
     display: inline-flex;
-    align-items: baseline;
-    gap: 0.4rem;
-    min-width: 0;
-    max-width: 100%;
-    padding: 0.25rem 0.625rem;
+    flex: none;
+    width: 1.75rem;
+    height: 1.75rem;
+    align-items: center;
+    justify-content: center;
     border: 1px solid var(--site-plaat-rand);
-    border-radius: 999px;
-    font-size: var(--site-maat-label);
-    line-height: 1.4;
-    color: var(--site-tekst);
-    background-color: color-mix(in oklab, var(--brand-navy) 40%, transparent);
-    overflow-wrap: anywhere;
+    border-radius: 0.5rem;
+    color: color-mix(in oklab, var(--brand-cyan) 80%, var(--site-tekst));
+    background: color-mix(in oklab, var(--brand-cyan) 6%, transparent);
     transition:
         color var(--site-duur-hover) var(--site-ease),
         border-color var(--site-duur-hover) var(--site-ease),
         background-color var(--site-duur-hover) var(--site-ease);
 }
 
-/*
-  Een lichtpunt voor elk onderdeel. Het staat er altijd, gedimd, zodat er
-  onder de muis niets bij komt en niets verschuift: alleen het licht gaat
-  aan.
-*/
-.brand-site-diensten-punten > li::before {
-    content: '';
-    flex: none;
-    width: 0.3125rem;
-    height: 0.3125rem;
-    border-radius: 50%;
-    background: var(--site-plaat-rand-sterk);
-    translate: 0 -0.0625rem;
-    transition:
-        background-color var(--site-duur-hover) var(--site-ease),
-        box-shadow var(--site-duur-hover) var(--site-ease);
+/* Steekwoorden en geen maat of telling, dus in de gewone letter. */
+.brand-site-onderdeel-tekst {
+    min-width: 0;
+    font-size: var(--site-maat-klein);
+    font-weight: 500;
+    line-height: 1.35;
+    color: var(--site-tekst);
+    overflow-wrap: anywhere;
+    transition: color var(--site-duur-hover) var(--site-ease);
 }
 
 /*
-  Wijs je een onderdeel aan, dan licht het op en stappen de andere een
-  stapje terug: je leest het als "dit hoort bij de dienst", zoals een
-  lens één ding scherp zet.
-
-  **Bewust geen knop.** Een onderdeel opent niets, dus het krijgt geen
-  handje, geen lift en geen indrukken; alleen licht. Een badge die zich
-  als knop gedraagt, belooft een klik die niets doet. De kleur en niet de
-  doorzichtigheid gaat omlaag bij de buren: de entree hieronder houdt de
-  doorzichtigheid met `both` vast, en een animatie wint van een gewone
-  regel.
+  Onder de muis licht het teken op: het wijst aan. Geen lift, geen handje,
+  geen indrukken -- een onderdeel opent niets, en een vakje dat zich als
+  knop gedraagt belooft een klik die niets doet.
 */
 @media (hover: hover) and (pointer: fine) {
-    .brand-site-diensten-punten:hover > li:not(:hover) {
-        color: var(--site-tekst-zacht);
-        border-color: color-mix(
+    .brand-site-onderdeel:hover {
+        background-color: color-mix(
             in oklab,
-            var(--site-plaat-rand) 60%,
+            var(--brand-cyan) 6%,
             transparent
         );
     }
 
-    .brand-site-diensten-punten > li:hover {
+    .brand-site-onderdeel:hover .brand-site-onderdeel-teken {
         color: var(--brand-ice);
-        border-color: color-mix(in oklab, var(--brand-cyan) 45%, transparent);
+        border-color: color-mix(in oklab, var(--brand-cyan) 50%, transparent);
         background-color: var(--site-licht);
     }
 
-    .brand-site-diensten-punten > li:hover::before {
-        background: var(--brand-cyan);
-        box-shadow: 0 0 0.5rem
-            color-mix(in oklab, var(--brand-cyan) 70%, transparent);
+    .brand-site-onderdeel:hover .brand-site-onderdeel-tekst {
+        color: var(--site-kop);
     }
 }
 
 /*
-  Bij een nieuwe dienst lichten de punten van links naar rechts op, één
-  voor één. `--punt` is het nummer in de rij; zie DienstenSection.
+  Een dienst die in beeld komt -- de eerste keer dat de sectie binnenkomt,
+  en daarna bij elke wissel -- laat zijn onderdelen na elkaar opkomen, en
+  bij elk vakje flitst het teken kort aan: het licht loopt van het eerste
+  naar het laatste.
+
+  `data-licht` op de stapel zet het aan; DienstenSection zet het pas als de
+  sectie in beeld komt. Zonder dat zou de eerste dienst zijn opkomst
+  afspelen bij het laden, ver buiten beeld, en zag niemand hem. Zonder
+  JavaScript staat het er niet, en zijn de vakjes gewoon zichtbaar.
 */
-.brand-site-diensten-blad[data-actief] .brand-site-diensten-punten > li {
-    animation: brand-site-diensten-punt 0.3s var(--site-ease) both;
-    animation-delay: calc(0.05s + min(var(--punt, 0), 6) * 0.03s);
+.brand-site-diensten-stapel[data-licht]
+    .brand-site-diensten-blad[data-actief]
+    .brand-site-onderdeel {
+    animation: brand-site-onderdeel-op 0.32s var(--site-ease) both;
+    animation-delay: calc(
+        var(--licht-start, 0s) + 0.06s + min(var(--plek, 0), 7) * 0.045s
+    );
 }
 
-@keyframes brand-site-diensten-punt {
+.brand-site-diensten-stapel[data-licht]
+    .brand-site-diensten-blad[data-actief]
+    .brand-site-onderdeel-teken {
+    animation: brand-site-onderdeel-licht 0.7s var(--site-ease) both;
+    animation-delay: calc(
+        var(--licht-start, 0s) + 0.12s + min(var(--plek, 0), 7) * 0.07s
+    );
+}
+
+@keyframes brand-site-onderdeel-op {
     from {
         opacity: 0;
-        transform: translateY(0.375rem);
+        transform: translateY(0.25rem);
     }
 
     to {
         opacity: 1;
         transform: none;
+    }
+}
+
+@keyframes brand-site-onderdeel-licht {
+    0%,
+    100% {
+        color: color-mix(in oklab, var(--brand-cyan) 80%, var(--site-tekst));
+        border-color: var(--site-plaat-rand);
+        background-color: color-mix(
+            in oklab,
+            var(--brand-cyan) 6%,
+            transparent
+        );
+    }
+
+    35% {
+        color: var(--brand-ice);
+        border-color: color-mix(in oklab, var(--brand-cyan) 60%, transparent);
+        background-color: color-mix(
+            in oklab,
+            var(--brand-cyan) 18%,
+            transparent
+        );
+    }
+}
+
+/*
+  Op een telefoon is er geen paneel dat binnenkomt en geen muis, dus licht
+  het teken op terwijl het vakje het scherm in schuift: een korte flits die
+  met je duim meeloopt, en bij terugscrollen terugloopt. De browser doet
+  het zelf (`animation-timeline: view()`); een browser die dat niet kent,
+  toont de vakjes gewoon rustig.
+*/
+@supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+        .brand-site-dienst-kaart .brand-site-onderdeel-teken {
+            animation: brand-site-onderdeel-licht linear both;
+            animation-timeline: view();
+            animation-range: entry 60% cover 45%;
+        }
     }
 }
 
@@ -445,8 +541,8 @@
     overflow: hidden;
 }
 
-.brand-site-dienst-kaart .brand-site-diensten-punten {
-    margin-top: 0.875rem;
+.brand-site-dienst-kaart .brand-site-onderdelen {
+    margin-top: 1rem;
 }
 
 .brand-site-dienst-kaart-meer {
@@ -472,8 +568,9 @@
     .brand-site-diensten-naam-pijl,
     .brand-site-diensten-blad,
     .brand-site-diensten-blad[data-actief],
-    .brand-site-diensten-punten > li,
-    .brand-site-diensten-punten > li::before {
+    .brand-site-onderdeel,
+    .brand-site-onderdeel-teken,
+    .brand-site-onderdeel-tekst {
         transition: none;
     }
 
@@ -481,7 +578,9 @@
         transform: none;
     }
 
-    .brand-site-diensten-blad[data-actief] .brand-site-diensten-punten > li {
+    .brand-site-diensten-stapel[data-licht]
+        .brand-site-diensten-blad[data-actief]
+        :is(.brand-site-onderdeel, .brand-site-onderdeel-teken) {
         animation: none;
     }
 }

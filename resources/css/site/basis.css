@@ -32,6 +32,34 @@
     -webkit-font-smoothing: antialiased;
 }
 
+/*
+  Ook `<html>` en `<body>` in Geist zolang de publieke site erin staat.
+
+  **Dit is een prestatieregel, geen stijlregel.** De body heeft `font-sans`
+  (Instrument Sans, het lettertype van het portaal), en de Tailwind-basis
+  zet hetzelfde op `<html>`. Alleen al de witruimte daarin liet de browser
+  dat lettertype laden, twee seconden na de rest -- gemeten: met alleen
+  `body` kwam hij nog steeds, met beide niet meer. Elk lettertype dat
+  binnenkomt is werk: de koppen splitsen dan opnieuw als het hun eigen
+  lettertype is (`splitsRegels()` in motion.ts), en een lettertype dat
+  niemand gebruikt is een download voor niets. Zie
+  docs/architecture/prestaties.md.
+
+  Aan een klasse op `<html>` (`brand-site-pagina`, gezet door Blade en
+  bijgehouden door PublicLayout) en **niet** aan `html:has(.brand-site)`:
+  een `:has()` op `<html>` laat de browser bij elke wijziging in de pagina
+  opnieuw kijken of hij nog klopt. Een Inertia-bezoek naar het portaal haalt
+  de klasse weer weg, dus het portaal houdt Instrument Sans. Het
+  "Meer"-lijstje in de kop, dat buiten `.brand-site` wordt getekend, staat
+  hiermee ook in Geist, net als de rest van de kop.
+*/
+html.brand-site-pagina,
+html.brand-site-pagina body {
+    font-family:
+        var(--font-geist, 'Instrument Sans'), ui-sans-serif, system-ui,
+        sans-serif;
+}
+
 .brand-site ::selection {
     background-color: var(--site-licht-blauw);
     color: var(--site-kop);

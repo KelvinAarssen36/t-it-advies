@@ -9,6 +9,7 @@ import {
     DialogTitle,
 } from 'reka-ui';
 import { nextTick, ref, watch } from 'vue';
+import DienstOnderdelen from '@/components/site/DienstOnderdelen.vue';
 import DienstIcoon from '@/components/site/DienstIcoon.vue';
 import { gsap, prefersReducedMotion } from '@/lib/motion';
 import type { DienstOpDeSite } from '@/types/diensten';
@@ -118,11 +119,10 @@ watch(open, (isOpen) => {
                         <p class="brand-blad-kopje">
                             {{ $t('Waar dit over gaat') }}
                         </p>
-                        <ul class="brand-site-diensten-punten mt-2">
-                            <li v-for="punt in props.item.punten" :key="punt">
-                                {{ punt }}
-                            </li>
-                        </ul>
+                        <DienstOnderdelen
+                            class="mt-2"
+                            :punten="props.item.punten"
+                        />
                     </div>
 
                     <!--

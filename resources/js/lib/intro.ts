@@ -1,49 +1,46 @@
 /**
- * Of de merkintro bij binnenkomst afspeelt.
+ * De welkomstanimatie: wanneer hij speelt, en het moment waarop hij de hero
+ * het stokje overgeeft.
  *
- * De intro is een laag over de hero heen die in acht tienden van een
- * seconde wegvloeit. Dat is het enige moment op de hele site waarop de
- * bezoeker even niets kan; alles hieronder gaat erover wanneer je dat
- * níet doet.
+ * De animatie zelf staat in SiteIntro.vue; de hero (HeroSection.vue) wacht
+ * op het signaal hieronder. Zie "De intro bij binnenkomst" in
+ * docs/architecture/frontend-en-animatie.md.
  *
- * **De beslissing is synchroon en wordt één keer genomen.** Dat is met
- * opzet geen belofte waar de hero op wacht: zou de introlaag om welke
- * reden dan ook niet gemonteerd worden, dan wacht de hero eeuwig en blijft
- * zijn tekst op doorzichtigheid nul staan. Onzichtbare inhoud is een
- * ergere fout dan een gemiste animatie, dus beide kanten kunnen deze vraag
- * los van elkaar stellen en krijgen hetzelfde antwoord.
+ * **Eén keer per browser, en alleen als je echt op de voorpagina landt.**
+ * Hij speelt bij het eerste bezoek aan de landing, en daarna niet meer: niet
+ * bij verversen, niet na een taalwissel, niet als je via het menu terugkomt
+ * van een andere pagina. Wat er onthouden wordt is één vlag in
+ * `localStorage` ("gezien"), in deze browser, voor deze bezoeker. Geen
+ * datum, geen teller, niets wat naar de server gaat.
  *
- * Zie SiteIntro.vue en HeroSection.vue.
+ * **De beslissing is synchroon en wordt één keer genomen**, bij de eerste
+ * vraag, zodat de intro en de hero gegarandeerd hetzelfde antwoord krijgen.
  */
 
 import { opEenTelefoon, prefersReducedMotion } from '@/lib/motion';
 
-/** Hoe lang de intro in beeld is, in seconden. */
-export const INTRO_DUUR = 0.8;
-
 const SLEUTEL = 'brand-intro-gezien';
+
+/**
+ * Met `?intro` in het adres speelt hij altijd, ook als hij al gezien is.
+ * Voor de eigenaar en voor ons, om hem opnieuw te bekijken zonder de
+ * opslag van de browser te wissen; de parameter gaat daarna uit het adres.
+ */
+const OPNIEUW = 'intro';
 
 let besluit: boolean | undefined;
 
 /** Vanaf welk laadmoment we de intro overslaan, in milliseconden. */
-const GEDULD_BREED = 2000;
-
-/**
- * Op een telefoon leggen we de lat lager.
- *
- * Daar telt elke tiende seconde zwaarder: het scherm is kleiner, dus wat
- * nog moet opkomen is meteen de hele pagina, en je staat vaker op een
- * trage verbinding. Wat op een laptop een entree is, voelt daar als een
- * pagina die niet laadt.
- */
-const GEDULD_SMAL = 1100;
+const GEDULD_BREED = 2500;
+const GEDULD_SMAL = 1500;
 
 /**
  * Of de pagina snel genoeg binnenkwam om er nog iets voor te zetten.
  *
  * Duurde het laden zelf al lang -- trage verbinding, oude telefoon -- dan
- * is acht tienden seconde er bovenop geen entree meer maar een straf. In
- * dat geval slaan we hem over en ziet de bezoeker meteen de site.
+ * is twee seconden er bovenop geen entree meer maar een straf. Dan slaan we
+ * hem over, en onthouden we niets: bij een volgend, sneller bezoek mag hij
+ * alsnog.
  */
 function snelGenoeg(): boolean {
     if (typeof performance === 'undefined') {
@@ -54,8 +51,6 @@ function snelGenoeg(): boolean {
         'navigation',
     ) as PerformanceNavigationTiming[];
 
-    // Zonder meting het voordeel van de twijfel: liever een intro te veel
-    // dan een lege beslissing op basis van niets.
     if (navigatie === undefined) {
         return true;
     }
@@ -66,46 +61,142 @@ function snelGenoeg(): boolean {
     );
 }
 
+/** Staat `?intro` in het adres? Haalt hem er meteen weer uit. */
+function opnieuwGevraagd(): boolean {
+    const adres = new URL(window.location.href);
+
+    if (!adres.searchParams.has(OPNIEUW)) {
+        return false;
+    }
+
+    adres.searchParams.delete(OPNIEUW);
+    window.history.replaceState(
+        window.history.state,
+        '',
+        `${adres.pathname}${adres.search}${adres.hash}`,
+    );
+
+    return true;
+}
+
 /**
  * Speelt de intro deze keer af?
  *
- * Het antwoord wordt bij de eerste vraag vastgelegd, zodat de hero en de
- * introlaag gegarandeerd hetzelfde krijgen -- ook al vragen ze het op een
- * ander moment.
+ * Nee als:
+ * - de bezoeker minder beweging wil (dan staat de site er meteen);
+ * - de eerste pagina niet de voorpagina is (`opDeLanding`);
+ * - er een anker in het adres staat: wie een link naar #contact volgt, wil
+ *   bij Contact uitkomen en niet eerst naar een entree kijken;
+ * - hij al eens gezien is in deze browser;
+ * - de browser niets kan onthouden (privévenster, geblokkeerde opslag): dan
+ *   zou hij bij elke verversing opnieuw spelen, en dat is erger dan nooit;
+ * - het laden al te lang duurde.
  *
- * Het onthouden gebeurt in `sessionStorage`: precies waar dat voor bedoeld
- * is, een gemak voor deze ene bezoeker in dit ene tabblad. Lukt lezen of
- * schrijven niet -- een privévenster, geblokkeerde opslag -- dan speelt de
- * intro gewoon af. Dat is de goede kant om op te falen.
+ * Het antwoord wordt bij de eerste vraag vastgelegd. Daarom kan het ook bij
+ * een Inertia-navigatie naar de voorpagina nooit meer "ja" worden: de vraag
+ * is dan allang gesteld.
  */
-export function introSpeeltAf(): boolean {
+export function introSpeeltAf(opDeLanding = true): boolean {
     if (besluit !== undefined) {
         return besluit;
     }
 
-    if (
-        typeof window === 'undefined' ||
-        prefersReducedMotion() ||
-        !snelGenoeg()
-    ) {
-        besluit = false;
+    besluit = beslis(opDeLanding);
 
-        return besluit;
+    return besluit;
+}
+
+function beslis(opDeLanding: boolean): boolean {
+    if (typeof window === 'undefined' || prefersReducedMotion()) {
+        return false;
+    }
+
+    const opnieuw = opnieuwGevraagd();
+
+    if (!opDeLanding || window.location.hash.length > 1) {
+        return false;
+    }
+
+    if (opnieuw) {
+        return true;
     }
 
     try {
-        if (sessionStorage.getItem(SLEUTEL) === 'ja') {
-            besluit = false;
-
-            return besluit;
+        if (window.localStorage.getItem(SLEUTEL) !== null) {
+            return false;
         }
 
-        sessionStorage.setItem(SLEUTEL, 'ja');
+        if (!snelGenoeg()) {
+            return false;
+        }
+
+        window.localStorage.setItem(SLEUTEL, '1');
     } catch {
-        // Niet kunnen onthouden mag de intro niet tegenhouden.
+        return false;
     }
 
-    besluit = true;
+    return true;
+}
 
-    return besluit;
+/* --- Het stokje naar de hero ------------------------------------------- */
+
+/**
+ * Hoe lang de hero hoogstens op de intro wacht, in milliseconden.
+ *
+ * Een vangnet en geen planning: normaal geeft de intro het signaal zelf,
+ * rond 1,3 seconde, of meteen als de bezoeker overslaat. Komt het signaal
+ * om welke reden dan ook niet -- een fout in de intro, een tabblad op de
+ * achtergrond -- dan begint de hero toch. Onzichtbare inhoud is een ergere
+ * fout dan een gemiste animatie.
+ */
+const UITERLIJK = 2600;
+
+let overgedragen = false;
+const wachtenden: Array<() => void> = [];
+
+/**
+ * De intro geeft het stokje over: de hero mag beginnen. Mag vaker worden
+ * aangeroepen; alleen de eerste keer telt.
+ */
+export function introDraagtOver(): void {
+    if (overgedragen) {
+        return;
+    }
+
+    overgedragen = true;
+    wachtenden.splice(0).forEach((verder) => verder());
+}
+
+/**
+ * Roept `verder` aan zodra de hero mag beginnen: meteen als er geen intro
+ * speelt of hij al voorbij is, anders bij het signaal of uiterlijk na
+ * `UITERLIJK`. Geeft een opruimfunctie terug voor als de hero eerder
+ * verdwijnt.
+ */
+export function naDeIntro(verder: () => void): () => void {
+    if (!introSpeeltAf() || overgedragen) {
+        verder();
+
+        return () => {};
+    }
+
+    let gedaan = false;
+
+    const eenmaal = (): void => {
+        if (gedaan) {
+            return;
+        }
+
+        gedaan = true;
+        window.clearTimeout(vangnet);
+        verder();
+    };
+
+    const vangnet = window.setTimeout(eenmaal, UITERLIJK);
+    wachtenden.push(eenmaal);
+
+    return () => {
+        gedaan = true;
+        window.clearTimeout(vangnet);
+    };
 }

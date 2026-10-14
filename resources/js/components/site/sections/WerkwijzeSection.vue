@@ -411,7 +411,6 @@ onBeforeUnmount(() => {
                 <div class="brand-site-werkwijze-zijkant">
                     <SectionHeading
                         v-if="kop"
-                        class="brand-site-werkwijze-kop"
                         :eyebrow="kop.opschrift ?? undefined"
                         :title="kop.titel"
                         :intro="kop.inleiding ?? undefined"

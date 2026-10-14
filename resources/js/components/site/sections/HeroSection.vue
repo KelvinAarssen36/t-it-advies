@@ -3,7 +3,7 @@ import { usePage } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, onMounted, useTemplateRef } from 'vue';
 import LinkedinMerk from '@/components/site/LinkedinMerk.vue';
 import { Button } from '@/components/ui/button';
-import { INTRO_DUUR, introSpeeltAf } from '@/lib/intro';
+import { naDeIntro } from '@/lib/intro';
 import {
     gsap,
     irisOpen,
@@ -125,7 +125,7 @@ const kop = useTemplateRef<HTMLElement>('kop');
 const iris = useTemplateRef<HTMLElement>('iris');
 const pupil = useTemplateRef<HTMLElement>('pupil');
 const ring = useTemplateRef<SVGCircleElement>('ring');
-const baan = useTemplateRef<SVGGElement>('baan');
+const baan = useTemplateRef<SVGSVGElement>('baan');
 const schaal = useTemplateRef<SVGCircleElement>('schaal');
 
 let intro: gsap.core.Timeline | undefined;
@@ -179,87 +179,88 @@ onMounted(() => {
     }
 
     /*
-     * Speelt de merkintro, dan begint de hero pas als het oog daar
-     * opengaat. lib/intro.ts legt het antwoord bij de eerste vraag vast,
-     * dus de intro en deze sectie horen hetzelfde. Op een telefoon begint
-     * hij halverwege en loopt hij sneller: anderhalve seconde niets op een
+     * De hero begint als de welkomstanimatie hem het stokje geeft: op het
+     * moment dat de lens landt en het diafragma opengaat, of meteen als er
+     * geen entree speelt of de bezoeker hem overslaat. `naDeIntro` wacht
+     * hoogstens 2,6 seconde; zie lib/intro.ts. Tot dan staan de kop, de
+     * tekst en het portret op hun begintoestand (`opacity-0` in het
+     * sjabloon), onder de laag van de entree.
+     *
+     * Op een telefoon loopt hij sneller: anderhalve seconde opkomst op een
      * klein scherm leest als een lege site, niet als een statige.
      */
     const smal = opEenTelefoon();
-    const volledigWachten = INTRO_DUUR - 0.3;
-    const wachten = introSpeeltAf()
-        ? smal
-            ? volledigWachten / 2
-            : volledigWachten
-        : 0;
 
-    intro = gsap.timeline({
-        delay: wachten,
-        defaults: { ease: 'expo.out' },
-    });
+    const begin = (): void => {
+        intro = gsap.timeline({ defaults: { ease: 'expo.out' } });
 
-    /*
-     * De achtergrond stelt scherp: van een waas naar scherp, en van iets
-     * te dichtbij naar zijn plek. Alleen op een breed scherm met blur; een
-     * filter over een heel scherm kost op een telefoon meer dan hij
-     * oplevert, daar komt hij alleen op.
-     */
-    if (beeld.value !== null) {
+        /*
+         * De achtergrond komt op: van iets te dichtbij naar zijn plek.
+         *
+         * **Zonder vervaging, en dat is gemeten.** Hier stelde de foto
+         * scherp van een blur naar scherp. Een filter over het hele scherm
+         * laat de browser elk beeldje de volle foto opnieuw berekenen, en
+         * dat viel precies samen met het diafragma van de entree en de kop
+         * die opkomt: op de gebouwde site was een kwart tot een derde van
+         * de beeldjes in de hero te laat, zonder de blur nul tot drie
+         * procent. Het scherpstellen doet de lens van de entree al; hier
+         * schuift de foto alleen nog op zijn plek.
+         */
+        if (beeld.value !== null) {
+            intro.fromTo(
+                beeld.value,
+                smal ? { opacity: 0 } : { opacity: 0, scale: 1.16 },
+                smal
+                    ? { opacity: 1, duration: 1 }
+                    : {
+                          opacity: 1,
+                          scale: 1.06,
+                          duration: 1.6,
+                      },
+                0,
+            );
+        }
+
         intro.fromTo(
-            beeld.value,
-            smal
-                ? { opacity: 0 }
-                : { opacity: 0, scale: 1.16, filter: 'blur(14px)' },
-            smal
-                ? { opacity: 1, duration: 1 }
-                : {
-                      opacity: 1,
-                      scale: 1.06,
-                      filter: 'blur(0px)',
-                      duration: 2,
-                      clearProps: 'filter',
-                  },
-            0,
+            opkomers,
+            { opacity: 0, y: 24 },
+            { opacity: 1, y: 0, duration: 1, stagger: 0.1 },
+            0.3,
         );
-    }
 
-    intro.fromTo(
-        opkomers,
-        { opacity: 0, y: 24 },
-        { opacity: 1, y: 0, duration: 1, stagger: 0.1 },
-        0.45,
-    );
+        if (smal) {
+            intro.timeScale(1.4);
+        }
 
-    if (smal) {
-        intro.timeScale(1.4);
-    }
+        /*
+         * De kop, de iris en de ring hebben elk hun eigen opruimfunctie en
+         * begintoestand, en staan dus los van de tijdlijn. De kop draagt
+         * daarom geen `data-intro`: twee systemen die om beurten in
+         * dezelfde doorzichtigheid schrijven, is precies hoe je een
+         * knipperende kop krijgt.
+         */
+        if (kop.value !== null) {
+            opruimers.push(kopOpkomst(kop.value, { wachten: 0.1 }));
+        }
 
-    /*
-     * De kop, de iris en de ring hebben elk hun eigen opruimfunctie en
-     * begintoestand, en staan dus los van de tijdlijn. De kop draagt
-     * daarom geen `data-intro`: twee systemen die om beurten in dezelfde
-     * doorzichtigheid schrijven, is precies hoe je een knipperende kop
-     * krijgt.
-     */
-    if (kop.value !== null) {
-        opruimers.push(kopOpkomst(kop.value, { wachten: wachten + 0.1 }));
-    }
+        if (pupil.value !== null) {
+            opruimers.push(
+                irisOpen(pupil.value, {
+                    direct: true,
+                    wachten: 0.1,
+                    duur: 1.4,
+                }),
+            );
+        }
 
-    if (pupil.value !== null) {
-        opruimers.push(
-            irisOpen(pupil.value, {
-                direct: true,
-                wachten: wachten + 0.15,
-                duur: 1.6,
-            }),
-        );
-    }
+        if (ring.value !== null) {
+            opruimers.push(
+                tekenRing(ring.value, baan.value, { wachten: 0.15 }),
+            );
+        }
+    };
 
-    if (ring.value !== null) {
-        opruimers.push(
-            tekenRing(ring.value, baan.value, { wachten: wachten + 0.35 }),
-        );
-    }
+    opruimers.push(naDeIntro(begin));
 
     if (gloed.value !== null) {
         opruimers.push(volgDeMuis(gloed.value));
@@ -529,25 +530,31 @@ onBeforeUnmount(() => {
                             stroke-width="1"
                             vector-effect="non-scaling-stroke"
                         />
+                    </svg>
 
-                        <!--
-                            De lichtboog die blijft rondgaan. De groep is er
-                            voor de rotatie: een cirkel draait anders om de
-                            hoek van het tekenvlak en niet om zijn midden.
-                        -->
-                        <g ref="baan" class="brand-site-hero-baan">
-                            <circle
-                                cx="50"
-                                cy="50"
-                                r="47"
-                                fill="none"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-dasharray="22 274"
-                                vector-effect="non-scaling-stroke"
-                            />
-                            <circle cx="50" cy="3" r="1.4" />
-                        </g>
+                    <!--
+                        De lichtboog die blijft rondgaan, in een eigen
+                        tekening over de ringen heen. Die tekening draait als
+                        geheel (een CSS-transform), zodat de browser de ringen
+                        niet elk beeldje opnieuw hoeft te tekenen; zie
+                        `tekenRing` in motion.ts.
+                    -->
+                    <svg
+                        ref="baan"
+                        class="brand-site-hero-ringen brand-site-hero-baan"
+                        viewBox="0 0 100 100"
+                    >
+                        <circle
+                            cx="50"
+                            cy="50"
+                            r="47"
+                            fill="none"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-dasharray="22 274"
+                            vector-effect="non-scaling-stroke"
+                        />
+                        <circle cx="50" cy="3" r="1.4" />
                     </svg>
 
                     <div ref="pupil" class="brand-site-hero-pupil opacity-0">

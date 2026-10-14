@@ -34,6 +34,7 @@ class LandingBeeldTest extends TestCase
             'kop' => ['components/site/SiteHeader.vue'],
             'voet' => ['components/site/SiteFooter.vue'],
             'merk' => ['components/AppLogoIcon.vue'],
+            'welkomst' => ['components/site/SiteIntro.vue'],
         ];
     }
 

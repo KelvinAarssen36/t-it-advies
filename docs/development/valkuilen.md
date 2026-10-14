@@ -329,6 +329,52 @@ terugknop werkt daarna niet meer: menu → Werkwijze → /werkwijze → terug
 bleef op /werkwijze staan. Geef de bestaande state mee:
 `replaceState(history.state, '', '#x')`.
 
+### SplitText splitst bij élk lettertype opnieuw
+
+Met `type: 'lines'` en `autoSplit: true` hangt SplitText een luisteraar aan
+`document.fonts`, en splitst hij opnieuw bij elk lettertype dat klaar is --
+ook een dat in die kop niet voorkomt. Met tien koppen was dat de grootste
+hapering van de site. Gebruik `splitsRegels()` / `stopRegels()` uit
+`motion.ts`, nooit `SplitText.create` met regels. Zie
+[prestaties](../architecture/prestaties.md).
+
+### Een lettertype dat niemand gebruikt, laadt toch
+
+`<html>` en `<body class="font-sans">` hebben Instrument Sans, en alleen de
+witruimte daarin was genoeg om dat lettertype op de publieke site te laten
+laden -- met een `loadingdone` erachteraan. Op de publieke site zet
+`html.brand-site-pagina` beide op Geist (basis.css). Kijk bij twijfel met
+`document.fonts.addEventListener('loadingdone', ...)` wat er binnenkomt.
+
+### Een `:has()` op een groot voorouder rekent bij elke wijziging alles door
+
+`.brand-site:has(.brand-site-hero) .brand-site-kopbalk` liet elke wijziging in
+de pagina -- elke kop die SplitText opdeelde -- de hele site (3640
+elementen) opnieuw doorrekenen. Een `:has()` op een kaart is prima; op `html`,
+`body` of de wortel van de site niet. Zet daar een attribuut of klasse uit
+JavaScript (`data-met-hero`, `brand-site-pagina`).
+
+### `ScrollTrigger.batch` lekt als hij nooit afgaat
+
+Hij maakt per callback een gepauzeerde `delayedCall` die alleen verdwijnt als
+de batch afgaat. Klik je weg voordat dat gebeurt, dan houdt die de callback
+vast, en via de elementen de hele vorige pagina. Triggers killen helpt niet.
+Gebruik `bundel()` uit `motion.ts`.
+
+### Een opruimfunctie houdt ook vast wat ernaast in de scope staat
+
+Een closure houdt in V8 de hele scope vast waarin hij staat, niet alleen de
+variabelen die hij gebruikt. In `bundel()` hield de opruimfunctie zo een
+`Set` met alle tweens van dat moment vast -- en daarmee na een taalwissel de
+hele vorige pagina. Leeg zulke hulpvariabelen zodra je ze niet meer nodig
+hebt.
+
+### `before-enter` komt vóór het invoegen
+
+In Vue's `<Transition>` staat het nieuwe element bij `before-enter` nog niet in
+de DOM. Wie daar in de wortel naar iets van de nieuwe pagina zoekt, vindt het
+niet; kijk in het element dat de hook meekrijgt.
+
 ## Modules
 
 ### Een route zonder methode valt pas om als de klant klikt

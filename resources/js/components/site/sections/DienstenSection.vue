@@ -11,21 +11,20 @@ import {
     watch,
 } from 'vue';
 import DienstIcoon from '@/components/site/DienstIcoon.vue';
+import DienstOnderdelen from '@/components/site/DienstOnderdelen.vue';
 import DienstVenster from '@/components/site/DienstVenster.vue';
 import FeatureCard from '@/components/site/FeatureCard.vue';
 import SectionHeading from '@/components/site/SectionHeading.vue';
 import SiteSection from '@/components/site/SiteSection.vue';
 import { Button } from '@/components/ui/button';
 import {
+    alInBeeld,
     gsap,
-    irisOpen,
     kaartenBinnen,
     prefersReducedMotion,
     ScrollTrigger,
     scrollNaar,
-    scrollVoortgang,
     spotlicht,
-    stapelBinnen,
 } from '@/lib/motion';
 import type { DienstOpDeSite, DienstenKop } from '@/types/diensten';
 import type { SectieProps } from '@/types/secties';
@@ -179,7 +178,31 @@ const kies = (dienst: DienstOpDeSite): void => {
  * langs drie andere. Zonder drempel wisselt het paneel dan vier keer in een
  * halve seconde; met negentig milliseconden blijft het staan tot je stilhoudt.
  */
-const wijsAan = (dienst: DienstOpDeSite): void => {
+/*
+ * **Alleen als de muis echt beweegt.** Scrol je met de muis stil boven de
+ * index, dan schuiven de namen onder de wijzer door, en de browser meldt
+ * dat als "de muis komt binnen" -- ook al heeft niemand hem aangeraakt.
+ * Zonder deze grens wisselde het paneel tijdens het scrollen vier keer van
+ * dienst (gemeten). Een echte beweging verandert de plek van de wijzer;
+ * doorschuivende inhoud niet.
+ */
+let laatsteWijzer = { x: -1, y: -1 };
+
+const wijzerBewoog = (gebeurtenis: MouseEvent): boolean => {
+    const bewogen =
+        gebeurtenis.clientX !== laatsteWijzer.x ||
+        gebeurtenis.clientY !== laatsteWijzer.y;
+
+    laatsteWijzer = { x: gebeurtenis.clientX, y: gebeurtenis.clientY };
+
+    return bewogen;
+};
+
+const wijsAan = (dienst: DienstOpDeSite, gebeurtenis: MouseEvent): void => {
+    if (!wijzerBewoog(gebeurtenis)) {
+        return;
+    }
+
     window.clearTimeout(drempel);
     drempel = window.setTimeout(() => {
         actiefId.value = dienst.id;
@@ -225,81 +248,225 @@ let kijker: ResizeObserver | undefined;
 
 watch(actief, () => void nextTick(meetLens));
 
-/* --- Binnenkomen: de index bouwt zich op ------------------------------ */
+/* --- Binnenkomen: één beweging, van boven naar beneden ---------------- */
 
 /*
- * **Breed bouwt de index zich op terwijl je binnenkomt.** De namen schuiven
- * per regel uit een masker omhoog, gestaffeld, en hun pictogram zet zich
- * neer; de rail ernaast loopt met je scroll mee door de index
- * (`scrollVoortgang`), en het paneel gaat de eerste keer open als een
- * diafragma (`irisOpen`). Drie bewegingen die samen één moment zijn: de
- * lijst verschijnt, en het licht valt op de eerste dienst.
+ * **Breed komt de sectie binnen als één beweging**, en die loopt in één
+ * richting: het licht valt van boven naar beneden. De rail van de index
+ * tekent zich omlaag, de namen komen er gestaffeld achteraan omhoog, het
+ * paneel rolt tegelijk van boven open, en daarna komt zijn inhoud op en
+ * lichten de onderdelen een voor een aan. Ruim een seconde in totaal, en
+ * eenmalig: de sectie komt één keer binnen, niet bij elke scroll.
+ *
+ * **Hier stonden drie bewegingen die elk hun eigen gang gingen**, en dat
+ * was het slordige: de namen schoven uit een masker, de pictogrammen
+ * ploften er met een schaal achteraan, de rail liep met de scroll mee en
+ * het paneel ging pas daarna open als een cirkel vanuit het midden -- met
+ * halverwege een losse ronde vlek en een scheef afgesneden hoek. Drie
+ * tempo's, twee richtingen en een halve sectie leeg.
  *
  * **Smal komen de kaarten één voor één binnen** (`kaartenBinnen`), zoals
- * voorheen; een masker per regel op een kaart van een telefoonscherm
- * breed is te veel beweging voor te weinig ruimte.
+ * voorheen.
  *
- * De twee soorten opruimers staan los van elkaar: bij bladeren bouwt
- * alleen de index zich opnieuw op (het paneel staat al open), en bij een
- * wissel tussen breed en smal begint alles opnieuw, want dan staan er
- * andere elementen.
+ * Bij bladeren komen alleen de nieuwe namen op; het paneel staat al open.
+ * Bij een wissel tussen breed en smal begint alles opnieuw, want dan staan
+ * er andere elementen.
  */
 const sectie = useTemplateRef<HTMLElement>('sectie');
 const paneel = useTemplateRef<HTMLElement>('paneel');
 const spoor = useTemplateRef<HTMLElement>('spoor');
+const stapel = useTemplateRef<HTMLElement>('stapel');
 const indexOpruimers: Array<() => void> = [];
 const paneelOpruimers: Array<() => void> = [];
+
+/** Of de sectie al een keer is binnengekomen (dan alleen nog bladeren). */
+let binnengekomen = false;
 
 const kaarten = (): HTMLElement[] =>
     Array.from(
         sectie.value?.querySelectorAll<HTMLElement>('[data-kaart]') ?? [],
     );
 
-const binnen = (selector: string): HTMLElement[] =>
-    Array.from(index.value?.querySelectorAll<HTMLElement>(selector) ?? []);
-
 /**
- * De namen schuiven per regel uit hun masker omhoog, gebundeld: wat samen
- * in beeld komt, komt samen op, met een kleine stagger.
- *
- * **Eigen code en niet `stapelBinnen`**, en dat is een bewuste uitzondering.
- * Die hulp zet aan het eind `x` en `y` terug maar niet `yPercent`, dus een
- * regel die met een procent onder zijn masker begint, bleef daar de hele
- * duur staan en sprong pas bij het opruimen ineens in beeld -- in de
- * browser gemeten ruim een seconde te laat. Een procent is hier nodig: een
- * naam is één of drie regels hoog, en een vaste pixelafstand verstopt de
- * ene niet en de andere half.
+ * Het licht op de onderdelen aanzetten. Pas als de sectie in beeld komt:
+ * stond het er vanaf het laden, dan speelde de eerste dienst zijn opkomst
+ * af ver buiten beeld. `--licht-start` laat het licht op de onderdelen
+ * wachten tot het paneel bij ze is opengerold; bij een latere wissel staat
+ * hij op nul.
  */
-const regelsOmhoog = (regels: HTMLElement[]): (() => void) => {
-    if (regels.length === 0 || prefersReducedMotion()) {
+const zetLicht = (wacht: number): void => {
+    if (stapel.value === null) {
+        return;
+    }
+
+    stapel.value.style.setProperty('--licht-start', `${wacht}s`);
+    stapel.value.setAttribute('data-licht', '');
+};
+
+/** De namen, na bladeren: alleen de rijen, kort en gestaffeld. */
+const rijenOp = (): (() => void) => {
+    const rijen = Array.from(
+        index.value?.querySelectorAll<HTMLElement>(':scope > li') ?? [],
+    );
+
+    if (rijen.length === 0 || prefersReducedMotion()) {
         return () => {};
     }
 
-    gsap.set(regels, { yPercent: 110 });
-
-    const triggers = ScrollTrigger.batch(regels, {
-        start: 'top 88%',
-        once: true,
-        onEnter: (groep) =>
-            gsap.to(groep, {
-                yPercent: 0,
-                duration: 0.9,
-                stagger: 0.06,
-                ease: 'expo.out',
-                overwrite: true,
-                clearProps: 'transform',
-            }),
-    });
+    const tween = gsap.fromTo(
+        rijen,
+        { opacity: 0, y: 12 },
+        {
+            opacity: 1,
+            y: 0,
+            duration: 0.5,
+            stagger: 0.05,
+            ease: 'expo.out',
+            clearProps: 'opacity,transform',
+        },
+    );
 
     return () => {
-        triggers.forEach((trigger) => trigger.kill());
-        gsap.killTweensOf(regels);
-        gsap.set(regels, { clearProps: 'transform' });
+        tween.kill();
+        gsap.set(rijen, { clearProps: 'opacity,transform' });
     };
 };
 
-/** De index (breed) of de kaarten (smal) laten binnenkomen. */
-const bouwIndex = (): void => {
+/**
+ * De eerste binnenkomst, breed. Eén tijdlijn, zodat alles op elkaar wacht
+ * in plaats van op zijn eigen trigger: wie snel scrolt ziet dezelfde
+ * volgorde als wie langzaam scrolt, alleen eerder.
+ */
+const binnenkomst = (): (() => void) => {
+    const indexEl = index.value;
+    const paneelEl = paneel.value;
+    const blokEl = sectie.value?.querySelector<HTMLElement>(
+        '.brand-site-diensten',
+    );
+
+    if (blokEl == null || paneelEl === null) {
+        return () => {};
+    }
+
+    if (prefersReducedMotion()) {
+        binnengekomen = true;
+        zetLicht(0);
+
+        return () => {};
+    }
+
+    const rijen = Array.from(
+        indexEl?.querySelectorAll<HTMLElement>(':scope > li') ?? [],
+    );
+    const lensEl = indexEl?.querySelector<HTMLElement>(
+        '.brand-site-diensten-lens',
+    );
+    const blad = paneelEl.querySelector<HTMLElement>(
+        '.brand-site-diensten-blad[data-actief]',
+    );
+    const delen = Array.from(
+        blad?.querySelectorAll<HTMLElement>(':scope > [data-deel]') ?? [],
+    );
+    const elementen = [
+        spoor.value,
+        lensEl,
+        paneelEl,
+        ...rijen,
+        ...delen,
+    ].filter((el): el is HTMLElement => el != null);
+
+    const tijdlijn = gsap.timeline({
+        paused: true,
+        defaults: { ease: 'expo.out' },
+        onStart: () => zetLicht(0.5),
+        onComplete: () => {
+            gsap.set(elementen, { clearProps: 'opacity,transform,clipPath' });
+            stapel.value?.style.removeProperty('--licht-start');
+        },
+    });
+
+    if (spoor.value !== null) {
+        tijdlijn.fromTo(
+            spoor.value,
+            { scaleY: 0 },
+            { scaleY: 1, duration: 0.95, ease: 'power2.inOut' },
+            0,
+        );
+    }
+
+    tijdlijn
+        .fromTo(
+            rijen,
+            { opacity: 0, y: 14 },
+            { opacity: 1, y: 0, duration: 0.6, stagger: 0.06 },
+            0.05,
+        )
+        .fromTo(
+            paneelEl,
+            { clipPath: 'inset(0% 0% 100% 0% round 1rem)', y: 18 },
+            {
+                clipPath: 'inset(0% 0% 0% 0% round 1rem)',
+                y: 0,
+                duration: 0.9,
+                ease: 'expo.inOut',
+            },
+            0.08,
+        )
+        .fromTo(
+            delen,
+            { opacity: 0, y: 10 },
+            { opacity: 1, y: 0, duration: 0.55, stagger: 0.06 },
+            0.42,
+        );
+
+    if (lensEl != null) {
+        tijdlijn.fromTo(
+            lensEl,
+            { opacity: 0 },
+            { opacity: 1, duration: 0.3, ease: 'power1.out' },
+            0.4,
+        );
+    }
+
+    /*
+     * De beginstand meteen zetten, anders staat alles een beeldje lang in
+     * zijn eindstand voordat de trigger hem terugzet: een flits.
+     */
+    tijdlijn.progress(0);
+
+    const speel = (): void => {
+        binnengekomen = true;
+        tijdlijn.play();
+    };
+
+    let trigger: ScrollTrigger | undefined;
+
+    if (alInBeeld(blokEl, 0.82)) {
+        speel();
+    } else {
+        trigger = ScrollTrigger.create({
+            trigger: blokEl,
+            start: 'top 82%',
+            once: true,
+            onEnter: speel,
+        });
+    }
+
+    return () => {
+        trigger?.kill();
+        tijdlijn.kill();
+        gsap.set(elementen, { clearProps: 'opacity,transform,clipPath' });
+    };
+};
+
+/**
+ * De index (breed) of de kaarten (smal) laten binnenkomen.
+ *
+ * `gebladerd` alleen na bladeren: dan komen de nieuwe namen op. Bij het
+ * laden doet `binnenkomst()` dat al, en twee bewegingen op dezelfde rij
+ * laten hem knipperen.
+ */
+const bouwIndex = (gebladerd: boolean): void => {
     indexOpruimers.splice(0).forEach((opruimen) => opruimen());
 
     if (!breed.value) {
@@ -308,26 +475,12 @@ const bouwIndex = (): void => {
         return;
     }
 
-    indexOpruimers.push(
-        regelsOmhoog(binnen('.brand-site-diensten-naam-regel')),
-        stapelBinnen(binnen('.brand-site-diensten-naam-icoon'), {
-            van: { opacity: 0, scale: 0.6 },
-            stagger: 0.06,
-        }),
-    );
-
-    if (spoor.value !== null && index.value !== null) {
-        indexOpruimers.push(
-            scrollVoortgang(spoor.value, {
-                trigger: index.value,
-                start: 'top 80%',
-                eind: 'bottom 45%',
-            }),
-        );
+    if (gebladerd && binnengekomen) {
+        indexOpruimers.push(rijenOp());
     }
 };
 
-/** Het paneel: één keer open als een diafragma, met een spotlicht. */
+/** Het paneel: de eerste binnenkomst, en het spotlicht onder de muis. */
 const bouwPaneel = (): void => {
     paneelOpruimers.splice(0).forEach((opruimen) => opruimen());
 
@@ -335,14 +488,17 @@ const bouwPaneel = (): void => {
         return;
     }
 
-    paneelOpruimers.push(
-        irisOpen(paneel.value, { midden: '50% 20%', duur: 1.1 }),
-        spotlicht([paneel.value]),
-    );
+    if (!binnengekomen) {
+        paneelOpruimers.push(binnenkomst());
+    } else {
+        zetLicht(0);
+    }
+
+    paneelOpruimers.push(spotlicht([paneel.value]));
 };
 
-const herstel = (): void => {
-    bouwIndex();
+const herstel = (gebladerd = false): void => {
+    bouwIndex(gebladerd);
     meetLens();
     kijkNaarIndex();
 };
@@ -366,7 +522,7 @@ const naarPagina = async (nieuw: number): Promise<void> => {
 
     await nextTick();
 
-    herstel();
+    herstel(true);
     scrollNaar('diensten');
 };
 
@@ -467,7 +623,7 @@ onBeforeUnmount(() => {
                             :aria-current="
                                 actief?.id === dienst.id ? 'true' : undefined
                             "
-                            @mouseenter="wijsAan(dienst)"
+                            @mousemove="wijsAan(dienst, $event)"
                             @focus="kies(dienst)"
                             @click="kies(dienst)"
                         >
@@ -507,7 +663,7 @@ onBeforeUnmount(() => {
                     ref="paneel"
                     class="brand-site-diensten-paneel brand-site-spot brand-site-glas"
                 >
-                    <div class="brand-site-diensten-stapel">
+                    <div ref="stapel" class="brand-site-diensten-stapel">
                         <article
                             v-for="dienst in zichtbaar"
                             :key="dienst.id"
@@ -520,7 +676,12 @@ onBeforeUnmount(() => {
                                 actief?.id !== dienst.id ? 'true' : undefined
                             "
                         >
+                            <!--
+                                `data-deel` zijn de delen die bij de eerste
+                                binnenkomst na elkaar opkomen.
+                            -->
                             <span
+                                data-deel
                                 class="brand-site-diensten-iris"
                                 aria-hidden="true"
                             >
@@ -530,26 +691,24 @@ onBeforeUnmount(() => {
                                 />
                             </span>
 
-                            <h3 class="brand-site-diensten-titel">
+                            <h3 data-deel class="brand-site-diensten-titel">
                                 {{ dienst.titel }}
                             </h3>
 
-                            <p class="brand-site-diensten-zin">
+                            <p data-deel class="brand-site-diensten-zin">
                                 {{ dienst.samenvatting }}
                             </p>
 
-                            <ul
+                            <div
                                 v-if="dienst.punten.length > 0"
-                                class="brand-site-diensten-punten"
+                                data-deel
+                                class="brand-site-diensten-onderdelen"
                             >
-                                <li
-                                    v-for="(punt, plek) in dienst.punten"
-                                    :key="punt"
-                                    :style="{ '--punt': plek }"
-                                >
-                                    {{ punt }}
-                                </li>
-                            </ul>
+                                <p class="brand-site-diensten-onderdelen-kop">
+                                    {{ $t('Waar dit over gaat') }}
+                                </p>
+                                <DienstOnderdelen :punten="dienst.punten" />
+                            </div>
 
                             <!--
                                 Alleen als er echt meer te lezen valt: een
@@ -557,6 +716,7 @@ onBeforeUnmount(() => {
                             -->
                             <div
                                 v-if="dienst.verhaal !== null"
+                                data-deel
                                 class="brand-site-diensten-meer"
                             >
                                 <Button

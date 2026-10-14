@@ -20,8 +20,12 @@
   Op de voorpagina zweeft de balk over de hero, die zijn eigen ruimte
   bovenaan houdt. Op een subpagina neemt hij gewoon zijn plek in, zodat
   de inhoud er niet onder verdwijnt.
+
+  `data-met-hero` zet PublicLayout (`markeerHero()`). Geen
+  `.brand-site:has(.brand-site-hero)`: zie de uitleg daar en
+  docs/architecture/prestaties.md.
 */
-.brand-site:has(.brand-site-hero) .brand-site-kopbalk {
+.brand-site[data-met-hero] .brand-site-kopbalk {
     margin-bottom: calc(-3.75rem - env(safe-area-inset-top, 0px));
 }
 

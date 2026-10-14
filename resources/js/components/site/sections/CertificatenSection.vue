@@ -14,11 +14,11 @@ import CertificaatVenster from '@/components/site/CertificaatVenster.vue';
 import SectionHeading from '@/components/site/SectionHeading.vue';
 import SiteSection from '@/components/site/SiteSection.vue';
 import {
+    bundel,
     gsap,
     kantelKaarten,
     opEenTelefoon,
     prefersReducedMotion,
-    ScrollTrigger,
     scrollNaar,
     scrollVoortgang,
 } from '@/lib/motion';
@@ -233,14 +233,16 @@ const tegelsBinnen = (direct = false): (() => void) => {
         return () => tween.kill();
     }
 
-    const triggers = ScrollTrigger.batch(alle, {
+    // `bundel` en niet `ScrollTrigger.batch`: die laatste lekte de hele
+    // pagina als je wegklikte voordat de wand in beeld kwam. Zie motion.ts.
+    const stopBundel = bundel(alle, {
         start: opEenTelefoon() ? 'top 110%' : 'top 88%',
         once: true,
         onEnter: (groep) => speel(groep),
     });
 
     return () => {
-        triggers.forEach((t) => t.kill());
+        stopBundel();
         gsap.killTweensOf(alle);
     };
 };

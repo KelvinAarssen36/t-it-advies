@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Support\Backup\BackupLezer;
 use App\Support\Backup\BackupMaker;
 use App\Support\Backup\BackupTerugzetter;
+use App\Support\Backup\Dekking;
 use App\Support\Backup\Inhoudsregister;
 use App\Support\Backup\Opruimer;
 use App\Support\Backup\Verschilrapport;
@@ -61,6 +62,7 @@ class BackupController extends Controller
         private readonly Opruimer $opruimer,
         private readonly Verschilrapport $verschil,
         private readonly Inhoudsregister $register,
+        private readonly Dekking $dekking,
     ) {}
 
     public function index(Request $request): Response
@@ -118,6 +120,14 @@ class BackupController extends Controller
         return Inertia::render('admin/Backups', [
             'backups' => $eigen->map($naarHetScherm)->values()->all(),
             'kopieen' => $kopieen->map($naarHetScherm)->values()->all(),
+
+            /*
+             * Wat er meegaat, in onderdelen die de eigenaar herkent. Geen
+             * aparte route: het is één kleine lijst die altijd bij dit
+             * scherm hoort, en een venster dat eerst moet laden voelt als
+             * een vraag in plaats van een antwoord.
+             */
+            'dekking' => $this->dekking->voorHetScherm(),
 
             'cijfers' => [
                 'ruimte' => Backup::prettigeGrootte($this->opruimer->ruimtegebruik()),

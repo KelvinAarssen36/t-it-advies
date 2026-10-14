@@ -109,6 +109,53 @@ export function alInBeeld(element: Element, deel = 0.85): boolean {
 }
 
 /**
+ * `ScrollTrigger.batch`, maar met een opruimfunctie die écht alles opruimt.
+ *
+ * **`batch` lekte de hele vorige pagina.** Per callback (`onEnter` enz.)
+ * maakt hij meteen een gepauzeerde `gsap.delayedCall`. Gaat de batch af,
+ * dan loopt die af en verdwijnt hij; gaat hij nóóit af -- je klikt naar een
+ * project voordat je bij de certificaten bent -- dan blijft hij voor altijd
+ * in de tijdlijn staan. Hij houdt de callback vast, de callback houdt de
+ * elementen vast, en via `__vueParentComponent` hield dat de hele oude
+ * pagina in het geheugen: gemeten ±3100 knopen en 3 MB per bezoek aan de
+ * voorpagina, en het werd met elke terugkeer meer. De triggers killen is
+ * niet genoeg; de delayedCalls staan los van de triggers.
+ *
+ * Daarom: kijken welke delayedCalls `batch` net aanmaakte (de nieuwe,
+ * gepauzeerde tweens met een functie als doel) en die bij het opruimen ook
+ * killen. Zie docs/architecture/prestaties.md.
+ */
+export function bundel(
+    doelen: Element[],
+    vars: ScrollTrigger.BatchVars,
+): () => void {
+    const ervoor = new Set(gsap.globalTimeline.getChildren(false, true, false));
+    const triggers = ScrollTrigger.batch(doelen, vars);
+    const vertragingen = gsap.globalTimeline
+        .getChildren(false, true, false)
+        .filter(
+            (tween) =>
+                !ervoor.has(tween) &&
+                tween.paused() &&
+                typeof (tween as gsap.core.Tween).targets()[0] === 'function',
+        );
+
+    /*
+     * Meteen leeg, en dat is geen netheid. De opruimfunctie hieronder deelt
+     * zijn scope met `ervoor`, dus zolang die bestaat, bestaat deze set --
+     * met daarin álle tweens van dat moment, ook die op elementen van een
+     * pagina die allang weg is. Gemeten: zonder deze regel hield een
+     * taalwissel alsnog de hele vorige pagina vast.
+     */
+    ervoor.clear();
+
+    return () => {
+        triggers.forEach((trigger) => trigger.kill());
+        vertragingen.forEach((vertraging) => vertraging.kill());
+    };
+}
+
+/**
  * Zet smooth scrolling aan. Geeft een opruimfunctie terug die je in
  * onUnmounted moet aanroepen, anders blijft Lenis draaien na een
  * Inertia-navigatie.
@@ -140,7 +187,18 @@ export function startSmoothScroll(): () => void {
     huidige.on('scroll', onScroll);
 
     const ticker = (time: number) => huidige.raf(time * 1000);
-    gsap.ticker.add(ticker);
+
+    /*
+     * **Vooraan in de ticker** (het derde argument), vóór GSAP zijn tweens
+     * tekent. Achteraan schreef GSAP eerst alle transforms van dit beeldje,
+     * waarna Lenis met `scrollTo` scrolde -- en scrollen dwingt de browser
+     * die verse stijlen meteen door te rekenen. Daarna las ScrollTrigger de
+     * positie en schreef GSAP weer. Gemeten: zo'n twee extra doorrekeningen
+     * per beeldje tijdens het scrollen. Nu scrolt Lenis eerst op een schone
+     * pagina, rekent ScrollTrigger zijn voortgang uit, en tekent GSAP
+     * daarna alles in één keer. Zie docs/architecture/prestaties.md.
+     */
+    gsap.ticker.add(ticker, false, true);
     gsap.ticker.lagSmoothing(0);
 
     return () => {
@@ -427,13 +485,11 @@ export function revealCards(
         return () => {};
     }
 
-    const triggers = ScrollTrigger.batch(rest, {
+    return bundel(rest, {
         start: 'top 88%',
         once: true,
         onEnter: binnen,
     });
-
-    return () => triggers.forEach((trigger) => trigger.kill());
 }
 
 /**
@@ -612,11 +668,12 @@ export function trackScrollProgress(target: HTMLElement): () => void {
 
     let scrollable = 0;
     let frame = 0;
+    let positie = window.scrollY;
 
     const write = (): void => {
         frame = 0;
 
-        const progress = scrollable > 0 ? window.scrollY / scrollable : 0;
+        const progress = scrollable > 0 ? positie / scrollable : 0;
 
         // Afkappen tussen 0 en 1: op een telefoon kun je voorbij het begin
         // en het einde doorveren, en dan schiet de balk anders door.
@@ -631,12 +688,25 @@ export function trackScrollProgress(target: HTMLElement): () => void {
         }
     };
 
-    const measure = (): void => {
-        scrollable = document.documentElement.scrollHeight - window.innerHeight;
+    /*
+     * **De positie lezen in het scroll-event, niet in het animation frame.**
+     * Het scroll-event komt aan het begin van een beeldje, op een pagina
+     * die nog schoon is. In het animation frame heeft GSAP al geschreven,
+     * en dan dwingt het lezen van `scrollY` de browser alles eerst door te
+     * rekenen: gemeten ruim duizend keer tijdens één keer doorscrollen.
+     */
+    const opScroll = (): void => {
+        positie = window.scrollY;
         schedule();
     };
 
-    window.addEventListener('scroll', schedule, { passive: true });
+    const measure = (): void => {
+        scrollable = document.documentElement.scrollHeight - window.innerHeight;
+        positie = window.scrollY;
+        schedule();
+    };
+
+    window.addEventListener('scroll', opScroll, { passive: true });
     window.addEventListener('resize', measure);
 
     const observer = new ResizeObserver(measure);
@@ -645,7 +715,7 @@ export function trackScrollProgress(target: HTMLElement): () => void {
     measure();
 
     return () => {
-        window.removeEventListener('scroll', schedule);
+        window.removeEventListener('scroll', opScroll);
         window.removeEventListener('resize', measure);
         observer.disconnect();
 
@@ -653,6 +723,159 @@ export function trackScrollProgress(target: HTMLElement): () => void {
             window.cancelAnimationFrame(frame);
         }
     };
+}
+
+/* -------------------------------------------------------------------------
+ * Regels splitsen zonder dat elk lettertype alle koppen opnieuw splitst.
+ *
+ * **Dit was de grootste hapering van de site**, gemeten en niet vermoed:
+ * zie docs/architecture/prestaties.md. SplitText met `autoSplit` en
+ * `type: 'lines'` hangt bij elke splitsing een luisteraar aan
+ * `document.fonts` ('loadingdone'), en die splitst bij élk lettertype dat
+ * klaar is opnieuw -- ook als dat lettertype in die kop niet voorkomt. Op de
+ * voorpagina staan zo'n tien gesplitste koppen; elk binnenkomend lettertype
+ * (Geist, Geist Mono, een extra gewicht) liet ze alle tien opnieuw opmeten,
+ * opsplitsen en hun animatie opnieuw opbouwen. Gemeten: twee taken van
+ * ±800 ms, ruim een seconde na het laden -- precies als een bezoeker begint
+ * te scrollen -- en bij een viermaal tragere processor ruim drie seconden.
+ *
+ * Nu haalt `splitsRegels()` die luisteraar na elke splitsing weer weg, en
+ * luistert één gedeelde luisteraar hier in de plaats. Die splitst alleen de
+ * koppen opnieuw waarvan het **eigen** lettertype (familie en gewicht) net
+ * binnen is: alleen dan verandert de regelval. De luisteraar voor een
+ * andere breedte (ResizeObserver, met een drempel) blijft van SplitText.
+ *
+ * `_split` is intern in SplitText (3.13+). Bestaat hij niet meer na een
+ * update, dan valt dit stil terug op het oude gedrag: dan splitst SplitText
+ * weer bij elk lettertype, wat trager is maar niet fout.
+ * ---------------------------------------------------------------------- */
+type RegelSplitsing = {
+    split: SplitText;
+    vars: SplitText.Vars;
+};
+
+const regelSplitsingen = new Set<RegelSplitsing>();
+let luistertNaarLettertypen = false;
+
+const zonderAanhalingstekens = (familie: string): string =>
+    familie.replace(/["']/g, '').trim().toLowerCase();
+
+/** Valt `gewicht` binnen wat een FontFace dekt ("600" of "100 900")? */
+const gewichtPast = (dekking: string, gewicht: number): boolean => {
+    const [van, tot = van] = dekking
+        .split(/\s+/)
+        .map((deel) => Number.parseInt(deel, 10) || 400);
+
+    return gewicht >= van && gewicht <= tot;
+};
+
+const haalLettertypeLuisteraarWeg = (split: SplitText): void => {
+    const intern = (split as unknown as { _split?: EventListener })._split;
+
+    if (typeof intern === 'function') {
+        document.fonts?.removeEventListener('loadingdone', intern);
+    }
+};
+
+const opLettertype = (gebeurtenis: Event): void => {
+    const binnen = ((gebeurtenis as FontFaceSetLoadEvent).fontfaces ?? []).map(
+        (face) => ({
+            familie: zonderAanhalingstekens(face.family),
+            gewicht: face.weight,
+        }),
+    );
+
+    if (binnen.length === 0) {
+        return;
+    }
+
+    /*
+     * Eerst alles lezen, dan pas splitsen. Splitsen schrijft in de pagina;
+     * door lezen en schrijven af te wisselen rekent de browser na elke kop
+     * de hele opmaak opnieuw door.
+     */
+    const opnieuw: RegelSplitsing[] = [];
+
+    regelSplitsingen.forEach((splitsing) => {
+        const element = splitsing.split.elements[0] as HTMLElement | undefined;
+
+        if (
+            !splitsing.split.isSplit ||
+            element === undefined ||
+            !element.isConnected
+        ) {
+            return;
+        }
+
+        const stijl = getComputedStyle(element);
+        const familie = zonderAanhalingstekens(
+            stijl.fontFamily.split(',')[0] ?? '',
+        );
+        const gewicht = Number.parseInt(stijl.fontWeight, 10) || 400;
+
+        if (
+            binnen.some(
+                (face) =>
+                    face.familie === familie &&
+                    gewichtPast(face.gewicht, gewicht),
+            )
+        ) {
+            opnieuw.push(splitsing);
+        }
+    });
+
+    opnieuw.forEach(({ split, vars }) => split.split(vars));
+};
+
+/**
+ * `SplitText.create` voor regels, met `autoSplit`, maar zonder de dure
+ * hersplitsing bij elk lettertype. Zie het blok hierboven.
+ *
+ * Geeft de splitsing terug; ruim op met `stopRegels()`, dat ook `revert()`
+ * doet.
+ */
+export function splitsRegels(
+    target: HTMLElement,
+    vars: SplitText.Vars,
+): SplitText {
+    const eigen = vars.onSplit;
+
+    const volledig: SplitText.Vars = {
+        ...vars,
+        autoSplit: true,
+        /*
+         * In `onSplit`, want SplitText hangt zijn luisteraar bij élke
+         * splitsing opnieuw op -- ook bij een hersplitsing door een andere
+         * breedte -- en roept `onSplit` pas daarna aan.
+         */
+        onSplit: (self: SplitText) => {
+            haalLettertypeLuisteraarWeg(self);
+
+            return eigen?.(self);
+        },
+    };
+
+    const split = SplitText.create(target, volledig);
+
+    regelSplitsingen.add({ split, vars: volledig });
+
+    if (!luistertNaarLettertypen && document.fonts !== undefined) {
+        document.fonts.addEventListener('loadingdone', opLettertype);
+        luistertNaarLettertypen = true;
+    }
+
+    return split;
+}
+
+/** Draait een splitsing van `splitsRegels()` terug en vergeet hem. */
+export function stopRegels(split: SplitText): void {
+    regelSplitsingen.forEach((splitsing) => {
+        if (splitsing.split === split) {
+            regelSplitsingen.delete(splitsing);
+        }
+    });
+
+    split.revert();
 }
 
 /**
@@ -708,7 +931,9 @@ export function splitReveal(
         return () => {};
     }
 
-    const splits = targets.map((target) => {
+    const splits: SplitText[] = [];
+
+    const splitsKop = (target: HTMLElement): void => {
         gsap.set(target, { opacity: 1 });
 
         /*
@@ -729,45 +954,95 @@ export function splitReveal(
         const koprand = vanaf === 0.85 ? 0.88 : vanaf;
         const scherpstellen = opEenBreedScherm();
 
-        return SplitText.create(target, {
-            type: 'lines',
-            mask: 'lines',
-            autoSplit: true,
-            onSplit: (self) =>
-                gsap.from(self.lines, {
-                    yPercent: 115,
-                    /*
-                     * Scherpstellen: de regel komt op van een lichte waas
-                     * naar scherp, als een lens die zijn focus vindt.
-                     * Alleen op een breed scherm, en alleen op koppen --
-                     * `filter` is duurder dan een transform, en op een
-                     * paar regels tekst valt dat weg; op een telefoon
-                     * niet. `clearProps` haalt hem er na afloop af, zodat
-                     * de tekst daarna niet in een eigen laag blijft staan.
-                     */
-                    ...(scherpstellen
-                        ? { filter: 'blur(10px)', clearProps: 'filter' }
-                        : {}),
-                    duration: duur * 1.1,
-                    stagger: duur * 0.11,
-                    ease: 'power3.out',
+        splits.push(
+            splitsRegels(target, {
+                type: 'lines',
+                mask: 'lines',
+                onSplit: (self) =>
+                    gsap.from(self.lines, {
+                        yPercent: 115,
+                        /*
+                         * Scherpstellen: de regel komt op van een lichte waas
+                         * naar scherp, als een lens die zijn focus vindt.
+                         * Alleen op een breed scherm, en alleen op koppen --
+                         * `filter` is duurder dan een transform, en op een
+                         * paar regels tekst valt dat weg; op een telefoon
+                         * niet. `clearProps` haalt hem er na afloop af, zodat
+                         * de tekst daarna niet in een eigen laag blijft staan.
+                         */
+                        ...(scherpstellen
+                            ? { filter: 'blur(10px)', clearProps: 'filter' }
+                            : {}),
+                        duration: duur * 1.1,
+                        stagger: duur * 0.11,
+                        ease: 'power3.out',
 
-                    // Al in beeld? Dan meteen, zonder trigger. Zie
-                    // `alInBeeld`.
-                    ...(alInBeeld(target, koprand)
-                        ? {}
-                        : {
-                              scrollTrigger: {
-                                  trigger: target,
-                                  start: `top ${koprand * 100}%`,
-                                  once: true,
-                              },
-                          }),
-                }),
-        });
+                        // Al in beeld? Dan meteen, zonder trigger. Zie
+                        // `alInBeeld`.
+                        ...(alInBeeld(target, koprand)
+                            ? {}
+                            : {
+                                  scrollTrigger: {
+                                      trigger: target,
+                                      start: `top ${koprand * 100}%`,
+                                      once: true,
+                                  },
+                              }),
+                    }),
+            }),
+        );
+    };
+
+    /*
+     * **Pas splitsen vlak voordat de kop in beeld komt.** Splitsen meet de
+     * regels op, en dat dwingt de browser de opmaak door te rekenen -- per
+     * kop, terwijl de pagina nog wordt opgebouwd. Tien koppen tegelijk bij
+     * het laden was gemeten de duurste stap van de eerste seconde
+     * (docs/architecture/prestaties.md). Wat binnen twee schermen staat
+     * splitst meteen; de rest pas als hij één scherm onder de onderrand is,
+     * ruim voordat zijn eigen trigger (`koprand`) afgaat.
+     *
+     * Het merkje `gezien` komt er wél meteen op, anders pakt een herscan
+     * dezelfde kop nog een keer. Tot hij gesplitst is blijft hij op
+     * doorzichtigheid 0 -- maar hij staat dan nog een scherm onder je.
+     */
+    const later: HTMLElement[] = [];
+
+    targets.forEach((target) => {
+        target.dataset.gezien = '';
+
+        if (
+            alInBeeld(target, 2) ||
+            typeof IntersectionObserver === 'undefined'
+        ) {
+            splitsKop(target);
+        } else {
+            later.push(target);
+        }
     });
 
-    return () => splits.forEach((split) => split.revert());
+    const kijker =
+        later.length > 0
+            ? new IntersectionObserver(
+                  (items) =>
+                      items.forEach((item) => {
+                          if (!item.isIntersecting) {
+                              return;
+                          }
+
+                          kijker?.unobserve(item.target);
+                          splitsKop(item.target as HTMLElement);
+                      }),
+                  { rootMargin: '0px 0px 100% 0px' },
+              )
+            : undefined;
+
+    later.forEach((target) => kijker?.observe(target));
+
+    return () => {
+        kijker?.disconnect();
+        splits.forEach((split) => stopRegels(split));
+    };
 }
 
 /**
@@ -1492,11 +1767,10 @@ export function kaartenBinnen(
  * beweegt trekt de ogen weg van die tekst. Dit valt op als je ernaar
  * kijkt en niet als je ernaast leest.
  *
- * **De rotatie zit op een groep om de boog heen en niet op de boog zelf.**
- * Een SVG-element draait om de oorsprong van zijn eigen coördinaten, en
- * dat is bij een cirkel de linkerbovenhoek van het tekenvlak en niet zijn
- * middelpunt. Met `transformOrigin` op de groep staat dat vast op het
- * midden, ongeacht hoe groot het medaillon op dat moment is.
+ * **De rotatie zit op een eigen `<svg>` om de boog heen**, en niet op een
+ * element binnen de tekening: zie de uitleg bij `draaien` hieronder. Het
+ * midden van dat vierkante element is het midden van de ring, dus
+ * `transformOrigin: 50% 50%` staat vast, hoe groot het medaillon ook is.
  *
  * Bij reduced motion staat de ring meteen vol en draait er niets.
  *
@@ -1504,7 +1778,7 @@ export function kaartenBinnen(
  */
 export function tekenRing(
     ring: SVGCircleElement,
-    baan: SVGGElement | null,
+    baan: Element | null,
     { wachten = 0 } = {},
 ): () => void {
     if (prefersReducedMotion()) {
@@ -1551,10 +1825,19 @@ export function tekenRing(
     const mm = gsap.matchMedia();
 
     mm.add('(min-width: 50rem)', () => {
+        /*
+         * **De boog staat in een eigen `<svg>`, en die draait als geheel.**
+         * Draaide GSAP een `<g>` binnen de tekening, dan schreef hij elk
+         * beeldje het `transform`-attribuut van dat element, en dan
+         * schildert de browser de hele tekening opnieuw: bovenaan de pagina,
+         * ook stilstaand, ruim drie seconden schilderwerk per drie seconden
+         * (gemeten in een profiel). Een los `<svg>`-element draait met een
+         * gewone CSS-transform, en die schuift de compositor zonder iets
+         * opnieuw te tekenen.
+         */
         const draaien = gsap.to(baan, {
             rotation: 360,
-            transformOrigin: 'center center',
-            svgOrigin: '50 50',
+            transformOrigin: '50% 50%',
             duration: 14,
             repeat: -1,
             ease: 'none',
@@ -2585,10 +2868,14 @@ export function kopOpkomst(
     gsap.set(kop, { opacity: 1 });
 
     const scherp = opEenBreedScherm();
-    const split = SplitText.create(kop, {
+    /*
+     * Via `splitsRegels` en niet rechtstreeks `SplitText.create` met
+     * `autoSplit`: dan hersplitst SplitText de kop bij élk lettertype dat
+     * binnenkomt, ook als het een ander is. Zie `splitsRegels`.
+     */
+    const split = splitsRegels(kop, {
         type: 'lines',
         mask: 'lines',
-        autoSplit: true,
         onSplit: (self) =>
             gsap.from(self.lines, {
                 yPercent: 110,
@@ -2602,7 +2889,7 @@ export function kopOpkomst(
             }),
     });
 
-    return () => split.revert();
+    return () => stopRegels(split);
 }
 
 /* -------------------------------------------------------------------------
@@ -2727,7 +3014,7 @@ export function stapelBinnen(
     const { vanaf, duur: standaard } = beweging();
     gsap.set(nieuw, van);
 
-    const triggers = ScrollTrigger.batch(nieuw, {
+    const stopBundel = bundel(nieuw, {
         start: `top ${vanaf * 100}%`,
         once: true,
         onEnter: (groep) =>
@@ -2745,7 +3032,7 @@ export function stapelBinnen(
     });
 
     return () => {
-        triggers.forEach((t) => t.kill());
+        stopBundel();
         gsap.killTweensOf(nieuw);
     };
 }

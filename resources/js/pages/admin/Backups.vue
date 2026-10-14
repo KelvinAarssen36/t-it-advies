@@ -14,6 +14,7 @@ import {
 } from '@lucide/vue';
 import { computed, onMounted, ref } from 'vue';
 import BackupCodeDialoog from '@/components/admin/BackupCodeDialoog.vue';
+import BackupDekkingDialoog from '@/components/admin/BackupDekkingDialoog.vue';
 import BackupRegel from '@/components/admin/BackupRegel.vue';
 import BackupVolDialoog from '@/components/admin/BackupVolDialoog.vue';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +23,12 @@ import { bevestigAanmaken } from '@/lib/bevestiging';
 import { t } from '@/lib/i18n';
 import { dashboard } from '@/routes/admin';
 import backups from '@/routes/admin/backups';
-import type { BackupCijfers, BackupRij, Verschil } from '@/types/backups';
+import type {
+    BackupCijfers,
+    BackupDekking,
+    BackupRij,
+    Verschil,
+} from '@/types/backups';
 
 /**
  * Beheer → Back-ups.
@@ -45,6 +51,8 @@ const props = defineProps<{
     kopieen: BackupRij[];
     cijfers: BackupCijfers;
     verschil?: Verschil | null;
+    /** Wat er meegaat, per onderdeel. Zie `BackupDekkingDialoog`. */
+    dekking: BackupDekking[];
 }>();
 
 defineOptions({
@@ -76,6 +84,9 @@ const keuzes = computed(() =>
  * onthoudt wat hij wilde doen terwijl hij dat kiest.
  */
 const volOpen = ref(false);
+
+/** Het venster dat laat zien wat er meegaat. Leest alleen, vraagt niets. */
+const dekkingOpen = ref(false);
 const wachtendeActie = ref<'maken' | 'uploaden' | 'opruimen' | null>(null);
 const wachtendBestand = ref<File | null>(null);
 const volFouten = ref<Record<string, string>>({});
@@ -396,6 +407,17 @@ const verstuurUpload = (
             </Button>
 
             <!--
+                Naast de knop die de back-up maakt, want dat is het moment
+                waarop je je afvraagt wat erin gaat. `ghost` en niet
+                `outline`: hij staat naast twee knoppen die iets dóen, en
+                dit opent alleen een lijst om te lezen.
+            -->
+            <Button variant="ghost" @click="dekkingOpen = true">
+                <ShieldCheck class="size-4" />
+                {{ $t('Wat gaat er mee?') }}
+            </Button>
+
+            <!--
                 Uploaden heeft geen code nodig: er wordt niets
                 overschreven. Het bestand komt in de lijst te staan, en
                 pas het terugzetten vraagt om de sloten.
@@ -537,6 +559,11 @@ const verstuurUpload = (
             :actie="actie"
             :verschil="props.verschil ?? null"
             :laadt="verschilLaadt"
+        />
+
+        <BackupDekkingDialoog
+            v-model:open="dekkingOpen"
+            :dekking="props.dekking"
         />
     </div>
 </template>

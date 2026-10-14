@@ -27,7 +27,7 @@ Dit is de derde module, en hij combineert de twee die er al waren. Van
 | `title_nl` / `title_en`     | nl ja, en nee | 80          | De kop van de kaart              |
 | `summary_nl` / `summary_en` | nl ja, en nee | 300         | De tekst op de kaart             |
 | `body_nl` / `body_en`       | nee           | 5000        | Het hele verhaal, in het venster |
-| expertisepunten             | nee, 0–8      | 60 per punt | De labels onder de tekst         |
+| expertisepunten             | nee, 0–8      | 60 per punt | De onderdelen onder de tekst     |
 | `published`                 | —             | bool        | Online of offline                |
 | `position`                  | —             | int         | De volgorde                      |
 
@@ -131,33 +131,45 @@ komen alle maten uit de rollen in `basis.css`: de namen op `--site-maat-kop`
 `--site-maat-lead`. Op 1440 breed ging het blok van 1202 naar 952 pixels,
 op een telefoon van 1605 naar 1357.
 
-### Het scrollmoment: de index bouwt zich op
+### De binnenkomst: één beweging, van boven naar beneden
 
-Dit is de beweging van deze sectie, en ze hoort bij de inhoud: een
-inhoudsopgave die zich opbouwt terwijl je hem binnenkomt.
+Dit is de beweging van deze sectie, en ze loopt in één richting: het licht
+valt van boven naar beneden, zoals bij een lens die scherpstelt. Eén
+tijdlijn (`binnenkomst()` in `DienstenSection.vue`), eenmalig, ruim een
+seconde:
 
-- **De namen schuiven per regel uit een masker omhoog**, gestaffeld: wat
-  samen in beeld komt, komt samen op (`ScrollTrigger.batch`, eenmalig). Het
-  masker is `.brand-site-diensten-naam-tekst`, de regel erin
-  `.brand-site-diensten-naam-regel`; een kleine marge onderaan houdt de
-  staart van een g of j binnen beeld. Het pictogram ernaast zet zich neer
-  (`stapelBinnen`, van iets kleiner).
-- **Het spoor vult zich met je scroll** (`scrollVoortgang` op
-  `.brand-site-diensten-spoor`, van 80% tot 45% van het scherm): een lichte
-  lijn langs de index die met je meeloopt -- een positie, geen waarde. De
-  variabele staat op dat ene smalle element en niet op de index, want een
-  CSS-variabele erft en zou anders bij elke scrollstap alle namen opnieuw
-  laten opmaken.
-- **Het paneel gaat de eerste keer open als een diafragma** (`irisOpen`).
-  Bij bladeren niet opnieuw: dan bouwt alleen de index zich op, want het
-  paneel stond al open.
+| Tijd   | Wat er gebeurt                                                        |
+| ------ | --------------------------------------------------------------------- |
+| 0      | De rail van de index tekent zich omlaag (`scaleY`, 0,95 s)            |
+| 0,05 s | De namen komen gestaffeld omhoog, rij voor rij (icoon en naam samen)  |
+| 0,08 s | Het paneel rolt van boven open (`clip-path: inset`, 0,9 s)            |
+| 0,4 s  | De lens verschijnt naast de actieve naam                              |
+| 0,42 s | De inhoud van het paneel komt op: teken, titel, zin, onderdelen, knop |
+| ~0,6 s | De onderdelen lichten een voor een aan (CSS, `data-licht`)            |
 
-**De namen hebben hun eigen batch en gebruiken niet `stapelBinnen`.** Die
-hulp zette bij de eerste versie aan het eind wel `x` en `y` terug maar
-niet `yPercent`; een regel die met een procent onder zijn masker begon,
-bleef daar de hele duur staan en sprong bij het opruimen ineens in beeld
--- in de browser gemeten ruim een seconde te laat. Een procent is nodig:
-een naam is één of drie regels hoog.
+Daarna gaan alle inline stijlen eraf. Staat de sectie al in beeld bij het
+laden, dan speelt hij meteen; anders bij `top 82%`.
+
+**Hier stonden drie bewegingen die elk hun eigen gang gingen**, en dat was
+wat de eigenaar slordig vond: de namen schoven per regel uit een masker,
+de pictogrammen ploften er met een schaal achteraan, de rail liep met de
+scroll mee, en het paneel ging pas daarna open als een cirkel vanuit het
+midden -- met halverwege een losse ronde vlek en een scheef afgesneden
+hoek. Drie tempo's, twee richtingen, en een halve sectie die leeg bleef.
+Gezien op een filmstrook tijdens het scrollen, niet op een stilstaand
+beeld.
+
+Bij bladeren komen alleen de nieuwe namen op (`rijenOp()`); het paneel
+staat dan al open.
+
+### Scrollen is geen aanwijzen
+
+**Met een stilstaande muis boven de index wisselde het paneel tijdens het
+scrollen van dienst**: de namen schuiven onder de wijzer door, en de
+browser meldt dat als "de muis komt binnen". Gemeten: vier wissels in tien
+wielstappen. Nu reageert een naam op `mousemove`, en alleen als de wijzer
+zelf van plek is veranderd (`wijzerBewoog()`); doorschuivende inhoud
+verandert de plek van de wijzer niet. Daarna: nul wissels.
 
 **Wisselen tussen diensten is kort**: een kruisovergang met een kleine stap
 omhoog, onder de 220 milliseconden, met CSS-overgangen zodat snel langs de
@@ -205,21 +217,49 @@ draait `herstel()` (de index of de kaarten opnieuw opbouwen) na élke
 wisseling van de inhoud: bij het bladeren én bij het overgaan van de grens
 -- waar de hele opbouw wisselt van index naar kaarten, en ook het paneel
 opnieuw begint (`bouwPaneel()`). Wat al in beeld staat speelt meteen; de
-rest wacht op de scroll.
+rest wacht op de scroll. Na de eerste binnenkomst speelt die niet opnieuw:
+bij bladeren komen alleen de namen op.
 
-### De expertisepunten
+### De onderdelen: een blok met tekens
 
-Kleine pillen in de gewone letter -- het zijn steekwoorden en geen maat,
-dus Geist Mono was hier een kostuum --, op de kaart, in het paneel en in
-`DienstVenster` dezelfde (`.brand-site-diensten-punten`). Wordt een dienst
-actief, dan lichten ze **van links naar rechts** op, één voor één, in
-0,3 seconde met 30 milliseconden ertussen (`--punt` is het nummer in de
-rij, na de zesde niet langer). Achter elkaar leest als een
-lijn die zich vult; allemaal tegelijk als een blok dat van kleur wisselt.
+Wat er onder een dienst valt ("monitoring", "back-ups", "updates",
+"storingen") staat als **één blok gelijke vakjes** met een haarlijn
+ertussen, zoals de kerngegevens: elk vakje een klein teken in een vak en
+het steekwoord ernaast, met het kopje "Waar dit over gaat" erboven.
+Hetzelfde blok in het paneel, op de kaart en in `DienstVenster`
+([`DienstOnderdelen.vue`](../../../resources/js/components/site/DienstOnderdelen.vue)).
+Hier stonden kleine pillen met een stip, en dat las als een verzameling
+losse tags.
+
+- **Twee kolommen zodra er plaats is, anders één**, zonder mediaquery
+  (`minmax(max(8.5rem, 50% - 1px), 1fr)`). Een oneven laatste vakje neemt
+  de hele rij. De lijnen tekent elk vakje zelf links en boven; het blok
+  knipt de buitenkant weg, dus er staan alleen lijnen tussen de vakjes.
+- **Het teken kiest de site zelf**, op grond van het woord
+  ([`onderdeelIcoon.ts`](../../../resources/js/lib/onderdeelIcoon.ts)):
+  een vaste lijst woordbegins in het Nederlands en het Engels
+  (`back-up`/`backup` → back-up, `monitor`/`bewak` → hartslag, `update`/
+  `patch` → verversen, `storing`/`incident` → sirene, enzovoort). Wat niet
+  herkend wordt krijgt een vinkje: dat past bij elk steekwoord, terwijl een
+  verkeerd geraden teken iets beweert. Er is bewust geen veld om per
+  onderdeel een teken te kiezen; komt er een woord bij dat een eigen teken
+  verdient, zet het dan in die lijst.
+- **Niet klikbaar, en zo gedraagt het zich.** Onder de muis licht het
+  vakje zacht op en wordt het teken cyaan; geen rand per vakje, geen
+  handje, geen indrukken.
+- **Een dienst die in beeld komt** laat zijn onderdelen na elkaar opkomen,
+  met een korte flits op elk teken (`brand-site-onderdeel-licht`, 45 en
+  70 ms ertussen). Pas als de sectie binnenkomt (`data-licht` op de
+  stapel); daarvoor zou de eerste dienst zijn opkomst afspelen buiten
+  beeld. Bij een wissel speelt het opnieuw.
+- **Op een telefoon** is er geen paneel en geen muis: daar licht elk teken
+  kort op terwijl het vakje het scherm in schuift, met de scroll mee en
+  terug (`animation-timeline: view()`, alleen CSS). Een browser die dat niet
+  kent toont het blok rustig.
 
 Wie om minder beweging heeft gevraagd krijgt het paneel en de lens zonder
-overgang: de inhoud wisselt meteen, de namen staan er al, het spoor is vol
-en het paneel staat open. Niets schuift.
+overgang: de inhoud wisselt meteen, de namen staan er al, het spoor is vol,
+het paneel staat open en de onderdelen lichten niet op. Niets schuift.
 
 De opmaak staat in
 [`resources/css/site/diensten.css`](../../../resources/css/site/diensten.css).

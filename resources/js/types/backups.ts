@@ -86,3 +86,15 @@ export type Verschil = {
     andereSite: boolean;
     bestaat: boolean;
 };
+
+/**
+ * Eén onderdeel in het venster "wat gaat er mee".
+ *
+ * `laatst` is de dag waarop het voor het laatst is vastgelegd, of `null`
+ * als het nog nooit in een back-up zat -- meestal omdat het onderdeel
+ * nieuwer is dan de nieuwste back-up. Zie `Dekking`.
+ */
+export type BackupDekking = {
+    naam: string;
+    laatst: string | null;
+};

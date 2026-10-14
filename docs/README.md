@@ -48,6 +48,7 @@ Nieuw op dit project? Lees in deze volgorde:
 
 - [Overzicht](architecture/overzicht.md) -- de stack, de lagen en waarom.
 - [Frontend en animatie](architecture/frontend-en-animatie.md) -- Inertia, Vue, Tailwind, GSAP, Lenis, en wanneer wel of geen Three.js.
+- [Prestaties](architecture/prestaties.md) -- wat de haperingen op de publieke site veroorzaakte, hoe dat gemeten is, wat er hersteld is en wat bewust is gebleven.
 - [Huisstijl en kleuren](architecture/huisstijl-en-kleuren.md) -- het kleurenpalet, de gradients, en hoe die in de Tailwind-tokens landen.
 - [Formulieren en schuifbalken](architecture/formulieren-en-schuifbalken.md) -- de standaard voor keuzevelden en schuifbalken in het portaal.
 - [Pagina-indeling](architecture/pagina-indeling.md) -- hoe de klant de volgorde van de landing bepaalt, en hoe je er een onderdeel bij bouwt.
