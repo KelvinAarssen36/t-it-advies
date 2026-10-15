@@ -304,23 +304,37 @@
         overflow-x: clip;
     }
 
+    /*
+      **De vervaging is smaller dan de zijruimte, en dat is met opzet.**
+      Liep de helling over de volle `--rand` -- tot 128 pixels -- dan lag
+      een knoop die vlak bij de rand stond middenin die helling: zijn
+      linkerkant viel weg en zijn rechterkant niet, en dan ziet een rond
+      bolletje met een gloed eruit als een cirkel die is afgeknipt. Dat
+      was de klacht.
+
+      Met een vaste helling van twee rem staat een knoop er ofwel
+      helemaal in ofwel helemaal buiten. Een stap die vertrekt vervaagt
+      nog steeds, alleen dichter bij de rand en over een kortere afstand
+      -- en dat valt niet op, want daar is hij toch al voorbij het raam.
+    */
     .brand-site-werkwijze-scene[data-baan] .brand-site-werkwijze {
         --rand: 0px;
+        --vervaging: min(var(--rand), 2rem);
         margin-inline: calc(-1 * var(--rand));
         margin-bottom: -1rem;
         padding: 0 var(--rand) 1rem;
         -webkit-mask-image: linear-gradient(
             90deg,
             transparent,
-            #000 var(--rand),
-            #000 calc(100% - var(--rand)),
+            #000 var(--vervaging),
+            #000 calc(100% - var(--vervaging)),
             transparent
         );
         mask-image: linear-gradient(
             90deg,
             transparent,
-            #000 var(--rand),
-            #000 calc(100% - var(--rand)),
+            #000 var(--vervaging),
+            #000 calc(100% - var(--vervaging)),
             transparent
         );
     }
