@@ -1166,11 +1166,11 @@ portret ziet, en dan tot voorbij de hoeken. Het merkteken krimpt de pupil
 in, en waar de lens oplost tekent de ring van de hero zich en gaat het
 portret open. De entree eindigt dus niet vóór de hero maar ín de hero.
 
-| Fase        | Breed (≥ 50rem)                                            | Smal                                             |
-| ----------- | ---------------------------------------------------------- | ------------------------------------------------ |
-| Opbouw      | ~1,3 s: ring, schaal, binnenring, boog, naam               | ~1,0 s: alleen de ring en de naam                |
-| Landen      | ~1,3 s: lens vliegt naar de iris, diafragma vanuit de iris | ~0,8 s: lens krimpt, diafragma vanuit het midden |
-| Hero begint | bij aankomst van de lens (signaal)                         | meteen bij het landen (signaal)                  |
+| Fase        | Breed (≥ 50rem)                                            | Smal                                                    |
+| ----------- | ---------------------------------------------------------- | ------------------------------------------------------- |
+| Opbouw      | ~1,3 s: ring, schaal, binnenring, boog, naam               | ~1,0 s: alleen de ring en de naam                       |
+| Landen      | ~1,3 s: lens vliegt naar de iris, diafragma vanuit de iris | ~1,0 s: zelfde vlucht naar de kleine iris, 1,3× sneller |
+| Hero begint | bij aankomst van de lens (signaal)                         | bij aankomst van de lens (signaal)                      |
 
 **Wanneer hij speelt** (allemaal in `introSpeeltAf()`):
 
@@ -1222,6 +1222,23 @@ alleen breed.
   stilzetten en beeld voor beeld kunt bekijken
   (`__brandIntro.opbouw().pause().progress(0.5)`). In de gebouwde site
   bestaat dat niet.
+
+#### De hero op een telefoon: een regel met wie het doet
+
+Onder 50rem opent de hero met een vaste regel: de iris (dezelfde ringen en
+hetzelfde portret als breed, op 5,5–7 rem) met de naam en de functie
+ernaast, en daaronder de titel, de zin en de knoppen. Hier stond eerst
+alleen achtergrond -- de titel begon op een derde van het scherm -- en het
+portret was een stipje in het visitekaartje onder de titel. De
+welkomstanimatie had op een telefoon daardoor geen plek om te landen en
+opende vanuit een leeg midden; nu landt de lens in die iris, net als breed.
+
+De HTML is niet veranderd: de tekstkolom doet op een telefoon niet mee als
+eigen doos (`display: contents` in hero.css), zodat de iris en het kaartje
+in hetzelfde raster naast elkaar staan. De ronde foto van het kaartje
+vervalt; naam en functie blijven. De hero blijft één schermhoogte, en op
+375×667 staan de knoppen nog ruim in beeld. Er draait hier niets eindeloos:
+de lichtboog om de iris draait alleen vanaf 50rem.
 
 #### De hero na de intro
 
@@ -1718,6 +1735,52 @@ Wat er per plek gebeurt:
 Bestaande `:hover`-regels in de site-bestanden zijn in één keer in die
 mediaquery gezet; een losse `:hover` op het hoogste niveau hoort er niet
 meer bij te komen (zie [valkuilen](../development/valkuilen.md)).
+
+### Waar je bent op een telefoon: het kompas
+
+In de mobiele kopbalk staat naast het merk de korte, vertaalde naam van het
+onderdeel waar je leest (`kompasNaam` in SiteHeader, uit dezelfde
+`volgSecties` als de markering op een breed scherm en dezelfde menunamen als
+het menu). Bij een wissel rolt de oude naam in 120 ms omhoog weg en komt de
+nieuwe in 200 ms van onderen op (`brand-site-kompas-*` in kop.css); onder
+reduced motion wisselt hij meteen. In de hero en op een subpagina staat er
+niets. Een tik opent het menu, waarin dat onderdeel al gemarkeerd is.
+
+De knop vult de ruimte tussen het merk en de menuknop (`flex: 1`) en kapt
+een lange naam af, dus hij verandert nooit van breedte: gemeten op 390 en
+360 pixels staan merk, kompas en menuknop bij alle elf onderdelen op
+dezelfde plek. Een verborgen of verplaatste module volgt vanzelf, want de
+namen komen uit de lijst van de server.
+
+**"Naar de inhoud"** is de eerste tabstop van elke publieke pagina,
+zichtbaar zodra hij de focus heeft (`.brand-site-naar-inhoud` in basis.css).
+Hij zet de focus echt op `main` (`tabindex="-1"`, zonder focusrand) en laat
+Lenis erheen scrollen; de volgende Tab gaat naar de eerste link in de
+inhoud.
+
+### Sectiekoppen naar rol
+
+`SectionHeading` kent een `rol`: **verhaal** (Diensten, Projecten) krijgt een
+titel een maat groter (`--site-maat-titel-groot`) en vanaf 64rem een
+redactionele opbouw met de inleiding rechts op de hoogte van de titel;
+**feit** (Kerngegevens, Statistieken, Certificaten) krijgt een compacte kop
+(titel op `--site-maat-titel-lang`, inleiding in de tekstmaat, minder ruimte
+naar de inhoud). De andere onderdelen houden de standaardkop: FAQ, Werkwijze,
+Over mij en Contact hebben al een eigen compositie, Ervaring is een mengvorm.
+De rol hoort bij de module, dus het werkt bij elke volgorde; de koppen
+blijven één `h2` per sectie. Gemeten op 1440: verhaal 57,6 px, standaard 48,
+feit 31 (op een telefoon 34, 30 en 22).
+
+### De lens sluit in de voet
+
+Het slot van de welkomstanimatie: om het merkteken in de voet tekent zich
+een ring terwijl de voet binnenschuift, de schaalring draait dicht en het
+oog stelt scherp (`sluitDeLens` in SiteFooter). Gekoppeld aan de voet zelf
+(`top bottom` tot `bottom bottom`, `scrub: 0.4`), dus onafhankelijk van het
+laatste onderdeel en zonder extra scrollruimte; terugscrollen opent hem
+weer. De schaalring is een eigen `<svg>` die als geheel draait (een
+CSS-transform). Op een telefoon alleen de ring, zonder draai; onder reduced
+motion staat hij meteen rond -- dat is de stand in de CSS.
 
 ### De vervolgpagina's
 

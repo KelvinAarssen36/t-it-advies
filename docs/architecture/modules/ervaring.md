@@ -431,8 +431,8 @@ ding scherpstelt. Zie
 - **De lijst is een tijdlijn met een lichtrail.** Een dunne lijn waar een
   straal van Electric Blue naar cyaan doorheen tekent terwijl je scrolt;
   de punten lichten op zodra de straal ze bereikt.
-- **Alles wat tijd is, staat in Geist Mono**: perioden, jaartallen langs
-  de rail, de stand "4 / 27", de duur in de lijst.
+- **Alles wat tijd is, staat in Geist Mono**: perioden, de teller in
+  de jaarband, de stand "4 / 27", de duur in de lijst.
 - **De cijfers zijn groot en mono, zonder kaders.** Het getal is het
   beeld; een doos eromheen maakt er een tegel van. Een dun cyaan streepje
   boven het label is de enige versiering.
@@ -459,8 +459,9 @@ twee derde van het scherm); hoeveel functies erbij komen verandert daar
 niets aan, alleen hoe ver je erdoorheen bladert.
 
 **Het muiswiel is van de pagina, niet van het vak.** Je bladert met de
-pijlknoppen onderin het vak, met de jaartallen in de rail, door op een
-kaart te klikken, of met de pijltjestoetsen als het vak de focus heeft. De
+pijlknoppen onderin het vak, met de jaarband erboven (zie verderop), door
+op een kaart te klikken, of met de pijltjestoetsen als het vak de focus
+heeft. De
 functie waar je bent staat vooraan op een eigen kaart; die ervóór en die
 erna staan kleiner erboven en eronder, **leesbaar** -- je ziet dus niet
 alleen dát er iets voor en na komt, maar ook wát.
@@ -524,11 +525,12 @@ Wat daarbij bewust zo is:
 - **Alle ervaringen staan in de HTML**, niet alleen de actieve. Er is er
   één zichtbaar; de rest draagt `inert`, zodat hij niet in de tab- of
   voorleesvolgorde zit maar wél door een zoekmachine wordt gelezen.
-- **De jaartallen langs de rail worden uitgedund.** Alleen waar een nieuw
-  jaar begint, en alleen met genoeg ruimte sinds het vorige. Bij
-  vijfentwintig functies over vijfendertig jaar zouden ze anders over
-  elkaar vallen, en dan is het geen oriëntatiepunt meer maar een grijze
-  streep. Erop klikken springt naar die plek.
+- **Er staat geen rail met jaartallen meer naast de kaarten.** Die deed
+  hetzelfde als de jaarband boven de sectie, maar kleiner en alleen hier;
+  twee tijdlijnen naast elkaar is er één te veel. De carrousel meldt nu
+  welke ervaring vooraan staat (`wissel`) en laat zich ernaartoe sturen
+  (`naar`); de jaarband doet de rest. De kaarten krijgen daardoor de volle
+  breedte van het vak.
 - **Bij `prefers-reduced-motion` bestaat de carrousel niet.** Een stapel
   die glijdt en openwaaiert is precies waar iemand met bewegingsklachten
   last van heeft. Er is dan geen afgezwakte versie; er is een lijst, en die is
@@ -838,33 +840,70 @@ het: onder het veld staat "Wij tellen er 28", en op de knop komt een
 waarschuwingsteken zodra een cijfer achterloopt. Terug op automatisch zetten
 lost het op.
 
-### De jaarband
+### De jaarband: de jaarbediening
 
-Onder de cijfers staat de loopbaan als één regel jaartallen, van oud naar
-nieuw, één per beginjaar met de organisatie erbij. **Hij schuift tijdens
-het scrollen door de sectie van links naar rechts**, gekoppeld aan de
-scroll (`scrub`, van het moment dat hij onder in beeld komt tot hij boven
-verdwijnt): hij loopt dus terug in de tijd terwijl je naar beneden leest,
-in dezelfde richting als de lijst eronder, die met het nieuwste begint.
-Omhoogscrollen draait het om. Zie `band` en `schuifBand` in
-[`ErvaringSection.vue`](../../../resources/js/components/site/sections/ErvaringSection.vue).
+Boven de weergave staat de loopbaan als één regel jaartallen, van oud naar
+nieuw, met de organisatie erbij. **Het is de jaarbediening van Ervaring**,
+voor de carrousel en de lijst allebei: het jaar van de ervaring die je ziet
+licht op, en een klik op een jaar brengt je bij die ervaring. Zie
+[`ErvaringJaarband.vue`](../../../resources/js/components/site/sections/ErvaringJaarband.vue).
 
-- **De afstand is begrensd.** Met zevenentwintig jaren is het spoor
-  zesduizend pixels lang, en dat in één schermhoogte scrollen is geen
-  beweging meer maar een veeg (in de browser gemeten: zes pixels band per
-  pixel scroll). Het spoor begint met het nieuwste jaar aan de rechterrand
-  en schuift hoogstens zestig procent van het vak op.
-- **Alles komt uit de maten zelf** en wordt bij een verversing opnieuw
-  gemeten (`invalidateOnRefresh`): na een taalwissel, een andere breedte
-  of geladen letters klopt het nog. Het vak knipt het spoor af en laat het
-  aan de randen wegvloeien, dus de pagina wordt er niet breder van.
-- **Het is een beeld en geen tweede bron**: `aria-hidden`, en alles erin
-  komt uit dezelfde ervaringen. Bij één beginjaar staat hij er niet: één
-  jaartal is geen tijdlijn. Onder reduced motion staat hij stil op het
-  nieuwste jaar.
-- De jaartallen zijn omlijnd en niet gevuld: het is een achtergrond voor de
-  cijfers en de lijst, geen tweede kop. Een organisatienaam wordt na 11rem
-  afgekort; de volle naam staat in de lijst.
+> **Hier was hij eerst een beeld.** Hij schoof met de scroll van links naar
+> rechts (`scrub`), `aria-hidden`, los van alles eronder -- en de carrousel
+> had daarnaast een eigen rail met jaartallen. Twee keer dezelfde tijdlijn,
+> en de opvallendste van de twee deed niets. De scroll-gekoppelde pan is
+> weg; de band beweegt alleen nog als gevolg van bediening.
+
+**De indeling is per beginjaar**, net als de groepen in de lijst. Niet elk
+jaar van de loopbaan: met vijfendertig jaar en zevenentwintig functies zou
+een band met elk jaar vooral lege jaartallen tonen, en een jaartal waar je op
+klikt hoort je ergens heen te brengen.
+
+| Geval                                    | Wat je ziet                                                              | Wat een klik doet                                                        |
+| ---------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| Eén ervaring begon in dat jaar           | het jaartal en de organisatie                                            | naar die ervaring                                                        |
+| Meer ervaringen begonnen in dat jaar     | een teller: "×2", of "1/2" als je er een van ziet                        | naar de nieuwste van dat jaar; nóg een klik naar de volgende in dat jaar |
+| De zichtbare ervaring beslaat meer jaren | zijn beginjaar gevuld, de beginjaren binnen zijn periode sterker omlijnd | --                                                                       |
+
+Het laatste jaar van een periode komt van de server (`totJaar`, het jaar van
+`ended_on`, of dit jaar als hij nog loopt); zie `HomeController::ervaring`.
+
+**Welke ervaring "de zichtbare" is**, verschilt per weergave: in de carrousel
+de voorste kaart; in de lijst de ervaring die je via de band koos, en anders
+de eerste van de pagina. Een gekozen regel in de lijst krijgt een cyaan rand
+(`data-gekozen`).
+
+**Bediening:**
+
+- **Een `toolbar` met één tabstop.** De pijltjes links en rechts, Home en End
+  gaan van jaar naar jaar en brengen de ervaring mee; de focus blijft dan in
+  de band (en de lijst scrollt niet mee, anders schuift de band bij elke
+  stap uit beeld). Enter, spatie of een klik op een jaar brengt ook de focus
+  naar die ervaring in de lijst, zodat je met Enter verder kunt lezen. Elke
+  knop heeft een label: "2021, 2 ervaringen" of "1998, 1 ervaring: Rosys BV".
+- **Op een aanraakscherm veeg je de band zelf**: gewone native horizontale
+  scroll met `scroll-snap`, zonder eigen sleepcode. `data-lenis-prevent-horizontal`
+  laat een zijwaartse veeg aan de band; een verticale veeg gaat naar de
+  pagina, ook als hij op de band begint (gemeten met touch-events: zijwaarts
+  schoof de band 364 px en de pagina 0; verticaal de pagina 285 px).
+- **Met een muis** verschijnen pijlknoppen aan de randen zodra er jaren
+  buiten beeld staan, en vloeit die rand weg. De balk zelf is verborgen.
+- **De band schuift mee naar het actieve jaar**, met `scrollTo` op de band
+  zelf (smooth; onder reduced motion meteen) en nooit met
+  `scrollIntoView`: dat zou de pagina laten springen als de band net buiten
+  beeld staat. Bladert de carrousel over veel kaarten tegelijk (End), dan
+  loopt het actieve jaar met de glijdende stapel mee en staat het na ruim
+  een seconde stil.
+- Bij één beginjaar staat hij er niet: één jaartal is geen tijdlijn. Onder
+  reduced motion is er alleen de lijst, en de band werkt daar gewoon.
+
+**Gemeten** (dev-server, 27 ervaringen, 20 beginjaren): bij 1x CPU 0,5%
+trage beeldjes tijdens wisselen en scrollen op desktop, 0% op mobiel, CLS 0,
+geen paginaverbreding op 360, 390 en 1440. Met 4x tragere CPU kost de band
+tijdens het scrollen niets meetbaars (73–80% trage beeldjes met én zonder
+band; die traagheid geldt voor de hele pagina in de dev-modus). De kleine
+verschuiving bij 4x (CLS 0,005) komt van de voorste carrouselkaart die zijn
+beschrijving toont, niet van de band.
 
 ### De animaties van de lijst
 
@@ -969,7 +1008,7 @@ zodat de pagina waar hij heen gaat geen greep krijgt op de onze.
 | [ExperienceHeadingTest](../../../tests/Feature/Website/ExperienceHeadingTest.php)         | De kop: allebei de talen opslaan, een verplichte titel, een lege inleiding die `null` wordt, de terugval die de titel wél en de inleiding niet doet, en dat een deploy de tekst van de klant niet terugzet.                                                                                |
 | [ExperienceStatsTest](../../../tests/Feature/Website/ExperienceStatsTest.php)             | De cijfers: de drie modussen, hoogstens vier, geen dubbel soort, een eigen getal dat een getal nodig heeft, hernoemen met terugval op het standaardwoord, dat wat wij zouden tellen bij het **soort** hoort en niet bij de rij, en dat de route niet door de detailpagina wordt opgeslokt. |
 | [ExperienceLogoTest](../../../tests/Feature/Website/ExperienceLogoTest.php)               | De upload: dat er een vierkantje van 256 uit komt, dat de naam van de klant niet wordt gebruikt, dat rommel wordt geweigerd, en dat er niets blijft slingeren.                                                                                                                             |
-| [ExperienceTimelineTest](../../../tests/Feature/Website/ExperienceTimelineTest.php)       | Wat de bezoeker krijgt: de volgorde, de terugval op het Nederlands, en dat een leeg veld niets oplevert.                                                                                                                                                                                   |
+| [ExperienceTimelineTest](../../../tests/Feature/Website/ExperienceTimelineTest.php)       | Wat de bezoeker krijgt: de volgorde, de terugval op het Nederlands, dat een leeg veld niets oplevert, en het begin- en eindjaar voor de jaarband (`jaar`, `totJaar`).                                                                                                                      |
 | [ExperienceTranslationTest](../../../tests/Feature/Website/ExperienceTranslationTest.php) | De vertaalknop, met een dubbel in plaats van de echte dienst.                                                                                                                                                                                                                              |
 | [ExperienceSeederTest](../../../tests/Feature/Database/ExperienceSeederTest.php)          | De echte loopbaan die met elke deploy meegaat: twee keer draaien verandert niets, en de seeder overschrijft nooit wat de klant zelf aanpaste.                                                                                                                                              |
 

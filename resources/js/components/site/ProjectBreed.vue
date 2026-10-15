@@ -4,6 +4,8 @@ import { ArrowRight } from '@lucide/vue';
 import { computed } from 'vue';
 import { project } from '@/routes';
 import type { ProjectHerkomst, ProjectOpDeSite } from '@/types/projecten';
+import { beeldKapot, meldKapot } from '@/lib/beelden';
+import { opProjectKlik } from '@/lib/projectOvergang';
 
 /**
  * Eén project als regel in de lijst op `/projecten`.
@@ -45,17 +47,42 @@ const adres = computed(() =>
 </script>
 
 <template>
-    <article data-reveal class="brand-site-projectbreed opacity-0">
-        <Link :href="adres" class="brand-site-projectbreed-link">
-            <span class="brand-site-projectbreed-beeld">
+    <!--
+        Een klik laat het tegeltje meevliegen naar het grote beeld op de
+        projectpagina; zie lib/projectOvergang.ts.
+    -->
+    <article
+        data-reveal
+        class="brand-site-projectbreed opacity-0"
+        @click="opProjectKlik($event, $event.currentTarget, item.slug)"
+    >
+        <!--
+            Vooraf ophalen bij aanwijzen of indrukken: dan staat de
+            projectpagina klaar op het moment van klikken, en hoeft het
+            meevliegende beeld (lib/projectOvergang.ts) niet te wachten.
+            Kort bewaren (anderhalve seconde, de klik volgt meteen): met de
+            standaard van dertig seconden hield de cache van Inertia een
+            hele voorpagina vast in het geheugen (gemeten: ±3200 knopen).
+        -->
+        <Link
+            :href="adres"
+            :prefetch="['hover', 'click']"
+            :cache-for="1500"
+            class="brand-site-projectbreed-link"
+        >
+            <span
+                class="brand-site-projectbreed-beeld"
+                :data-project-beeld="item.slug"
+            >
                 <img
-                    v-if="item.beeld"
+                    v-if="item.beeld && !beeldKapot(item.beeld)"
                     :src="item.beeld"
                     :alt="$t('Beeld bij :titel', { titel: item.titel })"
                     width="640"
                     height="640"
                     loading="lazy"
                     decoding="async"
+                    @error="meldKapot(item.beeld)"
                 />
 
                 <!--

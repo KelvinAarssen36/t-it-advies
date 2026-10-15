@@ -181,6 +181,31 @@ class ExperienceTimelineTest extends TestCase
         $this->assertSame('2021', $this->landing()['experiences'][0]['jaar']);
     }
 
+    public function test_the_year_band_gets_the_last_year_of_the_period(): void
+    {
+        /*
+         * De jaarband licht de jaren van de periode van de zichtbare
+         * ervaring op. Daarvoor is ook het laatste jaar nodig; voor een
+         * functie die nog loopt is dat het huidige jaar.
+         */
+        Experience::factory()->create([
+            'started_on' => '2019-03-01',
+            'ended_on' => '2023-06-01',
+        ]);
+
+        $this->assertSame('2023', $this->landing()['experiences'][0]['totJaar']);
+    }
+
+    public function test_a_running_experience_runs_until_this_year(): void
+    {
+        Experience::factory()->loopt()->create(['started_on' => '2021-03-01']);
+
+        $this->assertSame(
+            now()->format('Y'),
+            $this->landing()['experiences'][0]['totJaar'],
+        );
+    }
+
     public function test_a_running_experience_says_until_today(): void
     {
         Experience::factory()->loopt()->create(['started_on' => '2021-03-01']);

@@ -169,6 +169,7 @@ onBeforeUnmount(() => stopKaarten?.());
 <template>
     <SiteSection id="projecten" :tone="tone" :divided="divided">
         <SectionHeading
+            rol="verhaal"
             v-if="kop"
             :eyebrow="kop.opschrift ?? undefined"
             :title="kop.titel"

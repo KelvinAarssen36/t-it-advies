@@ -114,6 +114,9 @@ const oogSrcset = [
 const voetElement = useTemplateRef<HTMLElement>('voetElement');
 
 const oog = useTemplateRef<HTMLElement>('oog');
+const lensSchaal = useTemplateRef<SVGSVGElement>('lensSchaal');
+const lensRing = useTemplateRef<SVGCircleElement>('lensRing');
+const lensTeken = useTemplateRef<{ $el: HTMLElement }>('lensTeken');
 const naam = useTemplateRef<HTMLElement>('naam');
 
 const opruimers: Array<() => void> = [];
@@ -153,6 +156,9 @@ onMounted(() => {
     }
 
     const voet = voetElement.value;
+
+    opruimers.push(sluitDeLens(voet));
+
     const mm = gsap.matchMedia();
 
     mm.add('(min-width: 50rem)', () => {
@@ -183,6 +189,80 @@ onMounted(() => {
 
     opruimers.push(() => mm.revert());
 });
+
+/**
+ * De lens sluit: het slot van de welkomstanimatie.
+ *
+ * De entree begint met een lens die zich om het merkteken tekent en opengaat
+ * de site in. Hier, aan het eind, tekent dezelfde ring zich om het teken in
+ * de voet terwijl de voet binnenschuift, de schaalring draait dicht en het
+ * oog stelt scherp. Onderaan de pagina is de lens rond; scrol je terug, dan
+ * gaat hij weer open.
+ *
+ * **Gekoppeld aan de voet zelf** (`top bottom` tot `bottom bottom`), dus het
+ * werkt welk onderdeel er ook als laatste staat, en er komt geen scrollruimte
+ * bij: de afstand is de hoogte van de voet. **Alleen transform, opacity en de
+ * streep van één kleine cirkel.** De schaalring is een eigen `<svg>` die als
+ * geheel draait (een CSS-transform; zie de les van de hero-ring in
+ * docs/architecture/prestaties.md). Op een telefoon alleen de ring, zonder
+ * draai en zonder naloop. Onder reduced motion staat de lens meteen rond: dat is de stand in
+ * de CSS, en hier gebeurt dan niets.
+ */
+const sluitDeLens = (voet: HTMLElement): (() => void) => {
+    const ring = lensRing.value;
+
+    if (ring === null) {
+        return () => {};
+    }
+
+    const teken = lensTeken.value?.$el ?? null;
+    const breed = window.matchMedia('(min-width: 50rem)').matches;
+
+    const tijdlijn = gsap.timeline({
+        defaults: { ease: 'none' },
+        scrollTrigger: {
+            trigger: voet,
+            start: 'top bottom',
+            end: 'bottom bottom',
+            /*
+             * Op een telefoon direct met de scroll en zonder naloop: een
+             * naloop laat GSAP ook tussen de scrollstappen door elk
+             * beeldje rekenen, en op een trage telefoon gaf de voet daarmee
+             * gemeten meer trage beeldjes dan de rest van de pagina.
+             */
+            scrub: breed ? 0.4 : true,
+            invalidateOnRefresh: true,
+        },
+    });
+
+    tijdlijn.fromTo(ring, { drawSVG: '0%' }, { drawSVG: '100%' }, 0);
+
+    if (breed && lensSchaal.value !== null) {
+        tijdlijn.fromTo(
+            lensSchaal.value,
+            { rotation: 80, opacity: 0.25 },
+            { rotation: 0, opacity: 1 },
+            0,
+        );
+    }
+
+    if (breed && teken !== null) {
+        tijdlijn.fromTo(
+            teken,
+            { scale: 0.82, opacity: 0.45 },
+            { scale: 1, opacity: 1 },
+            0.15,
+        );
+    }
+
+    return () => {
+        tijdlijn.scrollTrigger?.kill();
+        tijdlijn.kill();
+        gsap.set([ring, lensSchaal.value, teken].filter(Boolean), {
+            clearProps: 'all',
+        });
+    };
+};
 
 onBeforeUnmount(() => opruimers.forEach((opruimen) => opruimen()));
 </script>
@@ -225,7 +305,42 @@ onBeforeUnmount(() => opruimers.forEach((opruimen) => opruimen()));
                         één keer voorgelezen.
                     -->
                     <p ref="naam" class="brand-site-voet-naam">
-                        <AppLogoIcon class="brand-site-voet-teken" />
+                        <!--
+                            De lens die de pagina afsluit: dezelfde ringen
+                            als de welkomstanimatie, om het merkteken. Zie
+                            `sluitDeLens` hierboven.
+                        -->
+                        <span class="brand-site-voet-lens" aria-hidden="true">
+                            <svg
+                                ref="lensSchaal"
+                                class="brand-site-voet-schaal"
+                                viewBox="0 0 100 100"
+                            >
+                                <circle
+                                    cx="50"
+                                    cy="50"
+                                    r="48.5"
+                                    pathLength="360"
+                                    vector-effect="non-scaling-stroke"
+                                />
+                            </svg>
+                            <svg
+                                class="brand-site-voet-ring"
+                                viewBox="0 0 100 100"
+                            >
+                                <circle
+                                    ref="lensRing"
+                                    cx="50"
+                                    cy="50"
+                                    r="45"
+                                    vector-effect="non-scaling-stroke"
+                                />
+                            </svg>
+                            <AppLogoIcon
+                                ref="lensTeken"
+                                class="brand-site-voet-teken"
+                            />
+                        </span>
                         <span>
                             <span class="brand-text-gradient">@T</span>
                             <span> IT Advies</span>

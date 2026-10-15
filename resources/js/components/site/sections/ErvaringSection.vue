@@ -5,9 +5,10 @@ import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue';
 import ErvaringVenster from '@/components/site/ErvaringVenster.vue';
 import SectionHeading from '@/components/site/SectionHeading.vue';
 import ErvaringCarrousel from '@/components/site/sections/ErvaringCarrousel.vue';
+import ErvaringJaarband from '@/components/site/sections/ErvaringJaarband.vue';
 import ErvaringLijst from '@/components/site/sections/ErvaringLijst.vue';
 import SiteSection from '@/components/site/SiteSection.vue';
-import { countUp, gsap, prefersReducedMotion } from '@/lib/motion';
+import { countUp, prefersReducedMotion } from '@/lib/motion';
 import type {
     ErvaringCijfer,
     ErvaringKop,
@@ -129,91 +130,28 @@ const keuzeTonen = computed(() => genoeg.value && bewegingMag.value);
 
 const cijferrij = ref<HTMLElement | null>(null);
 
-/**
- * De jaarband: de loopbaan als één regel jaartallen met hun organisatie.
- *
- * Van oud naar nieuw, één per beginjaar. Hij schuift tijdens het scrollen
- * door de sectie langzaam van links naar rechts, en loopt dus terug in de
- * tijd terwijl je naar beneden leest -- dezelfde richting als de lijst
- * eronder, die met het nieuwste begint. Omhoogscrollen draait het om.
- *
- * Het is een beeld van wat eronder staat en geen tweede bron: `aria-hidden`,
- * en alles erin komt uit dezelfde ervaringen. Zie `schuifBand`.
- */
-const band = computed(() => {
-    const perJaar = new Map<string, string>();
-
-    for (const item of items.value) {
-        if (item.jaar !== '' && !perJaar.has(item.jaar)) {
-            perJaar.set(item.jaar, item.organisatie);
-        }
-    }
-
-    return [...perJaar.entries()]
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([jaar, organisatie]) => ({ jaar, organisatie }));
-});
-
-const bandVak = useTemplateRef<HTMLElement>('bandVak');
-const bandSpoor = useTemplateRef<HTMLElement>('bandSpoor');
-let stopBand: (() => void) | undefined;
+/* --- De jaarband ------------------------------------------------------ */
 
 /**
- * De band schuift van links naar rechts, gekoppeld aan de scroll.
+ * Welke ervaring nu zichtbaar is: de voorste kaart van de carrousel, of in
+ * de lijst de gekozen (anders de eerste van de pagina). Beide weergaven
+ * melden dat met `wissel`; de jaarband licht dat jaar op.
  *
- * **De afstand komt uit de maten zelf, en is begrensd.** Het spoor begint
- * met het nieuwste jaar aan de rechterrand van het vak en schuift dan een
- * stuk naar rechts, terug in de tijd. Niet de hele lengte: met zevenentwintig
- * jaren is het spoor zesduizend pixels lang, en dat in één schermhoogte
- * scrollen is geen beweging meer maar een veeg. Hoogstens zestig procent
- * van het vak, en minstens een kwart, zodat ook een korte loopbaan beweegt.
- *
- * Als functies, met `invalidateOnRefresh`: na een andere taal, een andere
- * schermbreedte of nieuw geladen letters wordt het opnieuw gemeten. Het vak
- * knipt het spoor af, dus de pagina wordt er niet breder van.
- *
- * Onder reduced motion staat hij stil, op het nieuwste jaar.
+ * De band is de jaarbediening voor allebei de weergaven. Hier schoof hij
+ * eerst met de scroll mee als los beeld (`aria-hidden`), naast een eigen
+ * rail met jaartallen in de carrousel; nu is er één tijdlijn, en die doet
+ * iets. Zie ErvaringJaarband.
  */
-const schuifBand = (): (() => void) => {
-    const vak = bandVak.value;
-    const spoor = bandSpoor.value;
+const zichtbaarIndex = ref<number | null>(null);
 
-    if (vak === null || spoor === null) {
-        return () => {};
-    }
+type Bestuurbaar = { naar: (index: number, focus?: boolean) => void };
 
-    /** Waar het nieuwste jaar net aan de rechterrand staat. */
-    const begin = (): number =>
-        -Math.max(spoor.scrollWidth - vak.clientWidth, 0);
-    const afstand = (): number => vak.clientWidth * 0.6;
+const carrousel = useTemplateRef<Bestuurbaar>('carrousel');
+const lijst = useTemplateRef<Bestuurbaar>('lijst');
 
-    if (prefersReducedMotion()) {
-        gsap.set(spoor, { x: begin() });
-
-        return () => gsap.set(spoor, { clearProps: 'transform' });
-    }
-
-    const tween = gsap.fromTo(
-        spoor,
-        { x: () => begin() },
-        {
-            x: () => begin() + afstand(),
-            ease: 'none',
-            scrollTrigger: {
-                trigger: vak,
-                start: 'top bottom',
-                end: 'bottom top',
-                scrub: true,
-                invalidateOnRefresh: true,
-            },
-        },
-    );
-
-    return () => {
-        tween.scrollTrigger?.kill();
-        tween.kill();
-        gsap.set(spoor, { clearProps: 'transform' });
-    };
+/** Een jaar gekozen in de band: de weergave die er staat gaat erheen. */
+const naarErvaring = (index: number, focus: boolean): void => {
+    (carrousel.value ?? lijst.value)?.naar(index, focus);
 };
 
 let stopTellen: (() => void) | undefined;
@@ -266,13 +204,8 @@ onMounted(() => {
     );
 });
 
-onMounted(() => {
-    stopBand = schuifBand();
-});
-
 onBeforeUnmount(() => {
     stopTellen?.();
-    stopBand?.();
 });
 </script>
 
@@ -315,32 +248,6 @@ onBeforeUnmount(() => {
                 </dd>
             </div>
         </dl>
-
-        <!--
-            De jaarband: alleen bij meer dan één jaar, want één jaartal is
-            geen tijdlijn. Zie `band` en `schuifBand` hierboven.
-        -->
-        <div
-            v-if="band.length > 1"
-            ref="bandVak"
-            class="brand-site-ervaring-band"
-            aria-hidden="true"
-        >
-            <div ref="bandSpoor" class="brand-site-ervaring-band-spoor">
-                <span
-                    v-for="stap in band"
-                    :key="stap.jaar"
-                    class="brand-site-ervaring-band-stap"
-                >
-                    <span class="brand-site-ervaring-band-jaar">
-                        {{ stap.jaar }}
-                    </span>
-                    <span class="brand-site-ervaring-band-org">
-                        {{ stap.organisatie }}
-                    </span>
-                </span>
-            </div>
-        </div>
 
         <!--
             "Toon alles" staat er vanaf vier functies, ook als de keuze
@@ -387,6 +294,17 @@ onBeforeUnmount(() => {
             </div>
         </div>
 
+        <!--
+            De jaarband: de jaarbediening van wat eronder staat. Alleen bij
+            meer dan één beginjaar (dat beslist de band zelf), want één
+            jaartal is geen tijdlijn.
+        -->
+        <ErvaringJaarband
+            :items="items"
+            :actief="zichtbaarIndex"
+            @naar="naarErvaring"
+        />
+
         <div class="mt-6">
             <!--
                 `key` erop, zodat het wisselen van weergave een nieuw
@@ -397,10 +315,19 @@ onBeforeUnmount(() => {
             <ErvaringCarrousel
                 v-if="weergave === 'carrousel' && keuzeTonen"
                 key="carrousel"
+                ref="carrousel"
                 :items="items"
                 @open="toon"
+                @wissel="zichtbaarIndex = $event"
             />
-            <ErvaringLijst v-else key="lijst" :items="items" @open="toon" />
+            <ErvaringLijst
+                v-else
+                key="lijst"
+                ref="lijst"
+                :items="items"
+                @open="toon"
+                @wissel="zichtbaarIndex = $event"
+            />
         </div>
 
         <!--

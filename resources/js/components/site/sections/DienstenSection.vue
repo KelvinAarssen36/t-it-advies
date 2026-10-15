@@ -577,6 +577,7 @@ onBeforeUnmount(() => {
     <SiteSection id="diensten" :tone="tone" :divided="divided">
         <div ref="sectie">
             <SectionHeading
+                rol="verhaal"
                 v-if="kop"
                 :eyebrow="kop.opschrift"
                 :title="kop.titel"

@@ -591,6 +591,13 @@ defineOptions({
                             <p>
                                 {{
                                     $t(
+                                        'Onderaan sluit de lens zich weer: als je bezoeker bij de voettekst komt, tekent zich een ring om je logo en stelt het oog scherp. Zo begint en eindigt je website met hetzelfde beeld. Op een telefoon is ook je hero aangepast: bovenaan staan je foto in een kleine lens, je naam en je functie, en daar landt de welkomstanimatie ook.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
                                         'Het is versiering en nooit een voorwaarde. Alles staat er ook als er niets beweegt, en de pagina houdt je nergens tegen -- je kunt altijd gewoon doorscrollen.',
                                     )
                                 }}
@@ -633,6 +640,13 @@ defineOptions({
                                 {{
                                     $t(
                                         'Er staan zoveel onderdelen los in de balk als er op het scherm van je bezoeker passen, hoogstens zeven; de rest staat onder "Meer". Op een breed scherm zijn dat er dus meer dan op een tablet, en op een telefoon zit alles achter de menuknop. Daar hoef je niets voor te doen.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Op een telefoon staat in de balk naast je logo de naam van het onderdeel waar je bezoeker op dat moment leest. Tikt hij daarop, dan gaat het menu open met dat onderdeel gemarkeerd. En wie met het toetsenbord door je site gaat, kan met de eerste druk op Tab meteen naar de inhoud springen, zonder eerst langs het hele menu te moeten.',
                                     )
                                 }}
                             </p>
@@ -1262,6 +1276,13 @@ defineOptions({
                             <p>
                                 {{
                                     $t(
+                                        'Klikt een bezoeker op een project, dan vliegt de afbeelding van dat project naar de grote afbeelding op de projectpagina, en met de terugknop weer terug naar het kaartje. Lukt het laden van een afbeelding een keer niet, dan staat er in hetzelfde vlak de eerste letter van de organisatie, in plaats van een leeg vak met tekst.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
                                         'Onder Weergave kies je hoe de pagina met al je projecten eruitziet: onder elkaar als lijst, of naast elkaar als kaarten. De lijst leest het makkelijkst en blijft compact, ook als je er twintig hebt; kaarten zijn luchtiger en komen beter tot hun recht zodra je projecten een afbeelding hebben. Je kunt het altijd omzetten -- het blok op je voorpagina verandert er niet door.',
                                     )
                                 }}
@@ -1289,6 +1310,13 @@ defineOptions({
                                 {{
                                     $t(
                                         'Een periode vul je in maanden in, niet in dagen -- niemand weet nog op welke dag hij ergens begon. Loopt de functie nog, dan laat je het einde leeg en zet je website er "tot vandaag" bij.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Boven je tijdlijn staat een band met de jaartallen waarin je functies begonnen. Een bezoeker klikt op een jaar en springt naar die ervaring; begonnen er twee in hetzelfde jaar, dan brengt een tweede klik hem naar de volgende. Het jaar van de ervaring die hij bekijkt licht op, en loopt een functie over meer jaren, dan zie je die jaren ook. Die band maakt je website zelf uit de datums die je invult; je hoeft er niets voor te doen.',
                                     )
                                 }}
                             </p>
@@ -1386,6 +1414,13 @@ defineOptions({
                                 {{
                                     $t(
                                         'Met het veld Groep zet je cijfers bij elkaar onder een kopje: alles met "Netwerk" komt bij elkaar te staan. Het veld stelt groepen voor die je al gebruikt, zodat je niet per ongeluk twee keer bijna hetzelfde typt. Laat je het leeg, dan staat het cijfer los bovenaan, boven de eerste kop.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'De cijfers zonder groep zijn je samenvatting: die staan altijd bovenaan in beeld. Heb je twee of meer groepen, dan staan die op je website naast elkaar als tabbladen, met de naam van de groep en hoeveel cijfers erin staan; je bezoeker kiest er één en ziet die. Zo blijft het blok kort, ook als je veel cijfers hebt. Heb je maar één groep, dan zijn er geen tabbladen en staat hij er gewoon met zijn kopje.',
                                     )
                                 }}
                             </p>

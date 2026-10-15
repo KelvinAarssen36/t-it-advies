@@ -317,84 +317,14 @@
     padding: 0.5rem 0.65rem;
 }
 
+/*
+  Eén kolom, ook breed. Hier stond links een rail met jaartallen; die taak
+  heeft nu de jaarband boven de carrousel (zie verderop).
+*/
 @media (min-width: 48rem) {
     .brand-site-ervaring-binnen {
-        grid-template-columns: 5.5rem minmax(0, 1fr);
-        gap: 1.75rem;
         padding: 1.5rem 2.25rem;
     }
-}
-
-/* De rail met de jaartallen. Op een telefoon is er geen ruimte voor. */
-.brand-site-ervaring-rail {
-    position: relative;
-    display: none;
-    gap: 0.75rem;
-    padding-block: 3rem;
-}
-
-@media (min-width: 48rem) {
-    .brand-site-ervaring-rail {
-        display: flex;
-    }
-}
-
-.brand-site-ervaring-spoor {
-    position: relative;
-    width: 1px;
-    flex-shrink: 0;
-    background-color: color-mix(in oklab, var(--brand-cyan) 20%, transparent);
-}
-
-/*
-  Het afgelegde deel, als lichtstraal. Schaalt met `transform` en niet met
-  `height`: dat draait op de GPU en kost bij elke scrollstap geen
-  herberekening van de pagina.
-*/
-.brand-site-ervaring-bereik {
-    position: absolute;
-    inset: 0 -0.5px;
-    transform-origin: top;
-    background-image: linear-gradient(
-        to bottom,
-        var(--brand-blue),
-        var(--brand-cyan)
-    );
-    box-shadow: 0 0 0.75rem var(--site-licht);
-}
-
-.brand-site-ervaring-jaren {
-    position: relative;
-    flex: 1;
-}
-
-/*
-  Elk jaartal staat op zijn eigen hoogte langs de lijn. `translateY` van
-  min de helft zet het midden van de tekst op die hoogte.
-*/
-.brand-site-ervaring-jaar {
-    position: absolute;
-    left: 0;
-    min-height: 1.5rem;
-    transform: translateY(-50%);
-    font-family: var(--site-font-data);
-    font-size: 0.75rem;
-    color: var(--site-tekst-zacht);
-    opacity: 0.45;
-    transition:
-        color 0.3s var(--site-ease),
-        opacity 0.3s var(--site-ease);
-}
-
-@media (hover: hover) and (pointer: fine) {
-    .brand-site-ervaring-jaar:hover {
-        opacity: 1;
-    }
-}
-
-.brand-site-ervaring-jaar[data-actief] {
-    color: var(--brand-cyan);
-    opacity: 1;
 }
 
 /*
@@ -928,6 +858,15 @@
     outline-offset: 2px;
 }
 
+/*
+  De regel die via de jaarband is gekozen: een cyaan rand, zodat je ziet bij
+  welke ervaring dat jaar hoort -- ook als de focus in de band blijft.
+*/
+.brand-site-ervaring-lijst-kaart[data-gekozen] {
+    border-color: color-mix(in oklab, var(--brand-cyan) 55%, transparent);
+    background-color: var(--site-plaat-hoog);
+}
+
 @media (hover: hover) and (pointer: fine) {
     .brand-site-ervaring-lijst-kaart:hover {
         border-color: var(--site-plaat-rand-sterk);
@@ -999,7 +938,9 @@
     .brand-site-ervaring-kaart,
     .brand-site-ervaring-bel,
     .brand-site-ervaring-periode,
-    .brand-site-ervaring-jaar,
+    .brand-site-ervaring-band-stap,
+    .brand-site-ervaring-band-jaar,
+    .brand-site-ervaring-band-org,
     .brand-site-ervaring-hint,
     .brand-site-ervaring-stapknop,
     .brand-site-ervaring-pijl,
@@ -1035,74 +976,208 @@
 /* ---------------------------------------------------------------------
    De jaarband
 
-   De loopbaan als één regel jaartallen, van oud naar nieuw, die met de
-   scroll van links naar rechts schuift (zie `schuifBand` in
-   ErvaringSection.vue). Het vak knipt het spoor af en laat het aan de
-   randen wegvloeien; het spoor zelf is één regel die nooit afbreekt.
+   De jaarbediening van Ervaring: één knop per beginjaar, van oud naar
+   nieuw, met de organisatie klein ernaast. Het jaar van de ervaring die je
+   ziet staat gevuld; de jaren binnen zijn periode zijn wat sterker omlijnd;
+   de rest is een omlijnd jaartal in de achtergrond. Zie ErvaringJaarband.vue.
 
-   De jaartallen zijn omlijnd en niet gevuld: het is een achtergrond voor
-   de cijfers en de lijst, geen tweede kop. De organisatie staat er klein
-   naast, zodat een jaartal nooit los betekenisloos in beeld staat.
+   **Native horizontaal scrollen**, met `scroll-snap` en zonder zichtbare
+   balk: op een aanraakscherm veeg je de band zelf, en met een muis zijn er
+   pijlknoppen aan de randen zodra er iets buiten beeld staat. De randen
+   vloeien alleen weg aan de kant waar nog jaren staan.
    --------------------------------------------------------------------- */
 .brand-site-ervaring-band {
-    margin-top: clamp(1.75rem, 3.5vw, 2.5rem);
-    margin-inline: calc(var(--site-goot) * -1);
-    overflow: hidden;
+    position: relative;
+    margin-top: clamp(1.5rem, 3vw, 2.25rem);
+}
+
+.brand-site-ervaring-band-spoor {
+    display: flex;
+    gap: clamp(0.75rem, 2vw, 1.75rem);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    /* Ruimte voor de focusrand, die anders tegen de rand van het vak valt. */
+    padding: 0.375rem 0.25rem;
+    margin: -0.375rem -0.25rem;
+    --vervaag-links: 0px;
+    --vervaag-rechts: 0px;
     -webkit-mask-image: linear-gradient(
         90deg,
         transparent,
-        black 8%,
-        black 92%,
+        black var(--vervaag-links),
+        black calc(100% - var(--vervaag-rechts)),
         transparent
     );
     mask-image: linear-gradient(
         90deg,
         transparent,
-        black 8%,
-        black 92%,
+        black var(--vervaag-links),
+        black calc(100% - var(--vervaag-rechts)),
         transparent
     );
 }
 
-.brand-site-ervaring-band-spoor {
-    display: flex;
-    width: max-content;
-    gap: clamp(1.75rem, 3.5vw, 3rem);
-    padding-inline: var(--site-goot);
-    will-change: transform;
+.brand-site-ervaring-band-spoor::-webkit-scrollbar {
+    display: none;
+}
+
+.brand-site-ervaring-band[data-terug] .brand-site-ervaring-band-spoor {
+    --vervaag-links: 3rem;
+}
+
+.brand-site-ervaring-band[data-verder] .brand-site-ervaring-band-spoor {
+    --vervaag-rechts: 3rem;
 }
 
 .brand-site-ervaring-band-stap {
+    position: relative;
     display: inline-flex;
     flex: none;
     align-items: baseline;
-    gap: 0.75rem;
+    gap: 0.625rem;
+    min-height: 2.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.75rem;
     white-space: nowrap;
+    scroll-snap-align: center;
+    transition: background-color var(--site-duur-hover) var(--site-ease);
 }
 
 .brand-site-ervaring-band-jaar {
-    font-size: clamp(2.25rem, 1.6rem + 2.4vw, 3.75rem);
+    font-size: clamp(1.75rem, 1.25rem + 1.8vw, 3rem);
     font-weight: 600;
     font-feature-settings: 'tnum';
     line-height: 1;
     letter-spacing: -0.04em;
     color: transparent;
     -webkit-text-stroke: 1px
-        color-mix(in oklab, var(--brand-cyan) 45%, transparent);
+        color-mix(in oklab, var(--brand-cyan) 40%, transparent);
+    transition:
+        color var(--site-duur-hover) var(--site-ease),
+        -webkit-text-stroke-color var(--site-duur-hover) var(--site-ease);
 }
 
 /*
   Met de band ervoor: de globale regel `.brand-dark-page :where(span)` in
-  app.css zet `max-width: 100%` en staat later in het bestand, met
-  dezelfde specificiteit. Zonder het extra deel won die, en stond een
-  organisatienaam van zestig tekens voluit in de band.
+  app.css zet `max-width: 100%`. Zie valkuilen.md.
 */
 .brand-site-ervaring-band .brand-site-ervaring-band-org {
     display: inline-block;
-    max-width: 11rem;
+    max-width: 10rem;
     overflow: hidden;
     text-overflow: ellipsis;
     font-size: var(--site-maat-klein);
     font-weight: 500;
     color: var(--site-tekst-zacht);
+    transition: color var(--site-duur-hover) var(--site-ease);
+}
+
+/* Meer ervaringen die in dit jaar begonnen: hoeveel, of welke je ziet. */
+.brand-site-ervaring-band-aantal {
+    align-self: center;
+    padding: 0.0625rem 0.375rem;
+    border: 1px solid var(--site-plaat-rand-sterk);
+    border-radius: 999px;
+    font-size: var(--site-maat-label);
+    color: var(--site-tekst-zacht);
+}
+
+/* Binnen de periode van de zichtbare ervaring: sterker omlijnd. */
+.brand-site-ervaring-band-stap[data-in-periode] .brand-site-ervaring-band-jaar {
+    -webkit-text-stroke-color: color-mix(
+        in oklab,
+        var(--brand-cyan) 75%,
+        transparent
+    );
+}
+
+/* Het jaar van de zichtbare ervaring: gevuld, en zijn organisatie leesbaar. */
+.brand-site-ervaring-band-stap[aria-current] .brand-site-ervaring-band-jaar {
+    color: var(--brand-cyan);
+    -webkit-text-stroke-color: transparent;
+}
+
+.brand-site-ervaring-band-stap[aria-current] .brand-site-ervaring-band-org {
+    color: var(--site-kop);
+}
+
+.brand-site-ervaring-band-stap[aria-current] .brand-site-ervaring-band-aantal {
+    border-color: color-mix(in oklab, var(--brand-cyan) 50%, transparent);
+    color: var(--brand-cyan);
+}
+
+.brand-site-ervaring-band-stap:focus-visible {
+    outline: 2px solid var(--brand-cyan);
+    outline-offset: 2px;
+}
+
+.brand-site-ervaring-band-stap:active {
+    background-color: var(--site-licht);
+    transition-duration: var(--site-duur-druk);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-ervaring-band-stap:hover {
+        background-color: color-mix(
+            in oklab,
+            var(--brand-cyan) 6%,
+            transparent
+        );
+    }
+
+    .brand-site-ervaring-band-stap:not([aria-current]):hover
+        .brand-site-ervaring-band-jaar {
+        -webkit-text-stroke-color: var(--brand-ice);
+    }
+}
+
+/*
+  De pijlknoppen aan de randen: alleen met een muis, en alleen aan de kant
+  waar nog jaren buiten beeld staan. Een vinger veegt de band zelf.
+*/
+.brand-site-ervaring-band-blader {
+    position: absolute;
+    top: 50%;
+    z-index: 1;
+    display: none;
+    width: 2.25rem;
+    height: 2.25rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--site-plaat-rand);
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--brand-navy-deep) 80%, transparent);
+    color: var(--site-tekst);
+    translate: 0 -50%;
+    transition:
+        color var(--site-duur-hover) var(--site-ease),
+        border-color var(--site-duur-hover) var(--site-ease);
+}
+
+.brand-site-ervaring-band-blader[data-kant='terug'] {
+    left: 0;
+}
+
+.brand-site-ervaring-band-blader[data-kant='verder'] {
+    right: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-ervaring-band[data-terug]
+        .brand-site-ervaring-band-blader[data-kant='terug'],
+    .brand-site-ervaring-band[data-verder]
+        .brand-site-ervaring-band-blader[data-kant='verder'] {
+        display: inline-flex;
+    }
+
+    .brand-site-ervaring-band-blader:hover {
+        color: var(--brand-ice);
+        border-color: var(--site-plaat-rand-sterk);
+    }
+}
+
+.brand-site-ervaring-band-blader:active {
+    scale: 0.96;
 }

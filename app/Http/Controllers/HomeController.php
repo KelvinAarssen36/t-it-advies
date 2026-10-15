@@ -769,6 +769,12 @@ class HomeController extends Controller
             // Alleen om de tijdlijn in jaargroepen te zetten; op de kaart
             // zelf staat de volledige periode.
             'jaar' => $ervaring->started_on->format('Y'),
+            /*
+             * Het laatste jaar van de periode, voor de jaarband: een functie
+             * van 2019 tot 2023 licht daar de jaren van zijn periode op, en
+             * niet alleen zijn beginjaar. Loopt hij nog, dan is dat dit jaar.
+             */
+            'totJaar' => ($ervaring->ended_on ?? now())->format('Y'),
             'loopt' => $ervaring->loopt(),
             'beschrijving' => $ervaring->beschrijving(),
         ];

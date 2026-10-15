@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { ChevronLeft, ChevronRight } from '@lucide/vue';
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+import {
+    computed,
+    nextTick,
+    onBeforeUnmount,
+    onMounted,
+    ref,
+    watch,
+} from 'vue';
 import ErvaringIcoon from '@/components/site/ErvaringIcoon.vue';
 import {
     drawTimeline,
@@ -30,7 +37,11 @@ import type { ErvaringOpDeSite } from '@/types/ervaring';
  */
 const props = defineProps<{ items: ErvaringOpDeSite[] }>();
 
-const emit = defineEmits<{ open: [item: ErvaringOpDeSite] }>();
+const emit = defineEmits<{
+    open: [item: ErvaringOpDeSite];
+    /** Welke ervaring nu "de zichtbare" is, voor de jaarband erboven. */
+    wissel: [index: number];
+}>();
 
 /**
  * Hoeveel ervaringen er per pagina staan.
@@ -239,6 +250,7 @@ const naarPagina = async (nieuw: number): Promise<void> => {
     }
 
     pagina.value = nieuw;
+    gekozen.value = null;
 
     await nextTick();
 
@@ -252,6 +264,79 @@ const naarPagina = async (nieuw: number): Promise<void> => {
     // het onderdeel dán heeft.
     scrollNaar('ervaring');
 };
+
+/* --- De jaarband erboven ----------------------------------------------- */
+
+/**
+ * De ervaring die via de jaarband is gekozen, of niets.
+ *
+ * In de lijst staan er meer tegelijk in beeld, dus "de zichtbare ervaring"
+ * is hier: de gekozen, en anders de eerste van de pagina. Bladeren zet hem
+ * terug op die eerste.
+ */
+const gekozen = ref<number | null>(null);
+
+/** Het id van de gekozen ervaring, om zijn regel te laten oplichten. */
+const gekozenId = computed(() =>
+    gekozen.value === null ? null : (props.items[gekozen.value]?.id ?? null),
+);
+
+watch(
+    [gekozen, pagina, perPagina],
+    () => emit('wissel', gekozen.value ?? (pagina.value - 1) * perPagina.value),
+    { immediate: true },
+);
+
+/**
+ * Naar één ervaring, vanuit de jaarband: naar zijn pagina, en de focus op
+ * zijn regel, zodat je ziet welke het is en met Enter verder kunt lezen.
+ * Staat hij al op deze pagina, dan alleen erheen scrollen als hij buiten
+ * beeld staat.
+ */
+const naar = async (index: number, focus = true): Promise<void> => {
+    const item = props.items[index];
+
+    if (item === undefined) {
+        return;
+    }
+
+    const nodig = Math.floor(index / perPagina.value) + 1;
+
+    if (nodig !== pagina.value) {
+        await naarPagina(nodig);
+    }
+
+    gekozen.value = index;
+
+    await nextTick();
+
+    const knop = lijst.value?.querySelector<HTMLElement>(
+        `[data-ervaring="${item.id}"]`,
+    );
+
+    if (knop === null || knop === undefined) {
+        return;
+    }
+
+    /*
+     * Bladeren met de pijltjes in de band: niet meescrollen. De focus blijft
+     * dan in de band, en die zou bij elke stap uit beeld schuiven. De regel
+     * licht op (`data-gekozen`), en dat is genoeg om te zien welke het is.
+     */
+    if (!focus) {
+        return;
+    }
+
+    knop.focus({ preventScroll: true });
+
+    const vlak = knop.getBoundingClientRect();
+
+    if (vlak.top < 80 || vlak.bottom > window.innerHeight) {
+        scrollNaar(Math.max(0, window.scrollY + vlak.top - 160));
+    }
+};
+
+defineExpose({ naar });
 </script>
 
 <template>
@@ -319,6 +404,10 @@ const naarPagina = async (nieuw: number): Promise<void> => {
                         <button
                             type="button"
                             class="brand-site-ervaring-lijst-kaart"
+                            :data-ervaring="item.id"
+                            :data-gekozen="
+                                item.id === gekozenId ? '' : undefined
+                            "
                             @click="emit('open', item)"
                         >
                             <div class="brand-site-ervaring-lijst-kop">

@@ -92,6 +92,8 @@ html.brand-site-pagina body {
       Een kop die net iets groter moet, is een kop die een andere rol heeft.
     */
     --site-maat-titel-kort: clamp(1.875rem, 1.3rem + 1.9vw, 3rem);
+    /* Alleen voor de kop van een verhalend onderdeel; zie `data-rol`. */
+    --site-maat-titel-groot: clamp(2.125rem, 1.35rem + 2.5vw, 3.625rem);
     --site-maat-titel: clamp(1.625rem, 1.2rem + 1.4vw, 2.5rem);
     --site-maat-titel-lang: clamp(1.375rem, 1.15rem + 0.9vw, 2rem);
     --site-maat-kop: clamp(1.0625rem, 0.98rem + 0.35vw, 1.3125rem);
@@ -384,6 +386,70 @@ html.brand-site-pagina body {
     margin-inline: auto;
 }
 
+/*
+  De kop naar rol. Zie SectionHeading.vue.
+
+  **Verhalend** (Diensten, Projecten): de titel een maat groter, en op een
+  breed scherm een redactionele opbouw -- de titel links, de inleiding
+  rechts op de hoogte van de onderkant van de titel. Zo opent het
+  onderdeel als een hoofdstuk in plaats van als het zoveelste blok.
+
+  **Feitelijk** (Kerngegevens, Statistieken, Certificaten): compact. Een
+  kleinere titel, de inleiding in de tekstmaat en minder ruimte naar de
+  inhoud: hier dragen de feiten het gewicht, niet de kop.
+
+  Alleen maat, ritme en opbouw veranderen; letter, kleur en het opschrift
+  blijven overal hetzelfde, zodat het één familie blijft. Een lange titel
+  (`data-lengte='lang'`) houdt in beide rollen zijn kleinere maat.
+*/
+.brand-site-kop[data-rol='verhaal']
+    .brand-site-kop-titel:not([data-lengte='lang']) {
+    font-size: var(--site-maat-titel-groot);
+    line-height: 1.02;
+    letter-spacing: -0.035em;
+}
+
+@media (min-width: 64rem) {
+    .brand-site-kop[data-rol='verhaal'] {
+        display: grid;
+        grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+        column-gap: clamp(2rem, 5vw, 5rem);
+        align-items: end;
+        max-width: none;
+    }
+
+    .brand-site-kop[data-rol='verhaal'] > .brand-site-opschrift {
+        grid-column: 1;
+    }
+
+    .brand-site-kop[data-rol='verhaal'] > .brand-site-kop-titel {
+        grid-column: 1;
+    }
+
+    .brand-site-kop[data-rol='verhaal'] > .brand-site-kop-inleiding {
+        grid-column: 2;
+        grid-row: 2;
+        margin-top: 0;
+        padding-bottom: 0.35em;
+    }
+}
+
+.brand-site-kop[data-rol='feit'] {
+    max-width: 38rem;
+    margin-bottom: calc(var(--site-ruimte-kop) * 0.65);
+}
+
+.brand-site-kop[data-rol='feit'] .brand-site-kop-titel {
+    font-size: var(--site-maat-titel-lang);
+    line-height: 1.12;
+    letter-spacing: -0.025em;
+}
+
+.brand-site-kop[data-rol='feit'] .brand-site-kop-inleiding {
+    margin-top: 0.625rem;
+    font-size: var(--site-maat-tekst);
+}
+
 /* ---------------------------------------------------------------------
    Glazen platen en knoppen
 
@@ -610,4 +676,38 @@ html.brand-site-pagina body {
     .brand-site [data-slot='button']:active {
         transform: none;
     }
+}
+
+/*
+  "Naar de inhoud": buiten beeld tot hij de focus krijgt, dan als pil
+  linksboven, boven de kopbalk. Buiten beeld en niet `display: none`, want
+  dan kan de tabtoets hem niet vinden.
+*/
+.brand-site-naar-inhoud {
+    position: fixed;
+    top: calc(0.75rem + env(safe-area-inset-top, 0px));
+    left: 0.75rem;
+    z-index: 210;
+    padding: 0.625rem 1.125rem;
+    border-radius: 999px;
+    background: var(--brand-blue);
+    font-size: var(--site-maat-klein);
+    font-weight: 600;
+    color: var(--site-kop);
+    transform: translateY(-200%);
+}
+
+.brand-site-naar-inhoud:focus-visible {
+    transform: none;
+    outline: 2px solid var(--brand-cyan);
+    outline-offset: 2px;
+}
+
+/*
+  `main` krijgt de focus van die link (`tabindex="-1"`), maar is zelf geen
+  bediening: geen focusrand eromheen. De volgende Tab gaat naar de eerste
+  link in de inhoud.
+*/
+.brand-site main:focus {
+    outline: none;
 }

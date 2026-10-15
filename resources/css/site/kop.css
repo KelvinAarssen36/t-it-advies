@@ -312,6 +312,112 @@
     background: var(--site-plaat-vol);
 }
 
+/* --- Het kompas (telefoon) ----------------------------------------------
+
+  Waar je bent, naast het merk. Zie SiteHeader.vue. De knop vult de ruimte
+  tussen het merk en de menuknop (`flex: 1`) en kapt een lange naam af, dus
+  hij verandert nooit van breedte en duwt het merk of de menuknop niet weg.
+  Een haarlijn scheidt hem van het merk: het is een andere soort
+  informatie, geen deel van de naam.
+*/
+.brand-site-kompas {
+    display: flex;
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 2.75rem;
+    align-items: center;
+    overflow: hidden;
+    padding-left: 0.75rem;
+    border-left: 1px solid var(--site-plaat-rand);
+    text-align: left;
+    color: var(--site-tekst);
+    transition: color var(--site-duur-hover) var(--site-ease);
+}
+
+.brand-site-kompas[data-leeg] {
+    border-left-color: transparent;
+    pointer-events: none;
+}
+
+.brand-site-kompas:focus-visible {
+    outline: 2px solid var(--brand-cyan);
+    outline-offset: 2px;
+    border-radius: 0.5rem;
+}
+
+.brand-site-kompas:active {
+    color: var(--brand-ice);
+}
+
+.brand-site-kompas-woord {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--site-maat-klein);
+    font-weight: 600;
+    letter-spacing: 0.005em;
+}
+
+/* De naam in cyaan, net als het opschrift boven de sectie zelf. */
+.brand-site-kompas-woord::before {
+    content: '';
+    display: inline-block;
+    width: 0.375rem;
+    height: 0.375rem;
+    margin-right: 0.5rem;
+    border-radius: 50%;
+    background: var(--brand-cyan);
+    box-shadow: 0 0 0.5rem
+        color-mix(in oklab, var(--brand-cyan) 60%, transparent);
+    translate: 0 -0.0625rem;
+}
+
+.brand-site-kompas[data-leeg] .brand-site-kompas-woord::before {
+    display: none;
+}
+
+/*
+  De wissel: de oude naam rolt omhoog weg, de nieuwe komt van onderen op,
+  als een cijferrol. Kort -- dit gebeurt bij elk onderdeel dat je
+  passeert -- en alleen `transform` en `opacity`.
+*/
+.brand-site-kompas-leave-active {
+    transition:
+        opacity var(--site-duur-druk) var(--site-ease),
+        transform var(--site-duur-druk) var(--site-ease);
+}
+
+.brand-site-kompas-enter-active {
+    transition:
+        opacity var(--site-duur-hover) var(--site-ease),
+        transform var(--site-duur-hover) var(--site-ease);
+}
+
+.brand-site-kompas-leave-to {
+    opacity: 0;
+    transform: translateY(-60%);
+}
+
+.brand-site-kompas-enter-from {
+    opacity: 0;
+    transform: translateY(60%);
+}
+
+@media (min-width: 50rem) {
+    .brand-site-kompas {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .brand-site-kompas-leave-active,
+    .brand-site-kompas-enter-active {
+        transition: none;
+    }
+}
+
 /* --- Het mobiele menu --------------------------------------------------- */
 
 .brand-site-menuknop {

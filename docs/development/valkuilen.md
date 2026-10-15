@@ -12,6 +12,35 @@ zonder reden wordt de eerste die iemand overslaat.
 
 ## Opmaak
 
+### Een klasse zonder regel geeft geen foutmelding
+
+Hernoem je een klasse in de CSS en niet in de markup, dan valt er niets om:
+het blok staat er alleen zonder opmaak. Bij het opsplitsen van `app.css`
+naar `resources/css/site/` bleven er zo twee haakjes achter die nergens
+meer een regel hadden, en andersom bleven er twintig regels staan waar geen
+enkel element meer bij hoorde.
+
+Loop na zo'n ronde dus beide kanten op: elke `brand-*` in de sjablonen moet
+een regel hebben, en elke regel een element. Let bij dat eerste op vier
+dingen die er ten onrechte uitzien als een gat:
+
+| Lijkt ongebruikt               | Is in werkelijkheid                      |
+| ------------------------------ | ---------------------------------------- |
+| `brand-cyan`, `brand-navy`     | een kleurnaam uit het thema, geen klasse |
+| `brand-site-glas`              | een Tailwind-`@utility`                  |
+| `brand-site-intro-vangnet`     | een `@keyframes`                         |
+| `brand-site-werkwijze-verloop` | het `id` van een SVG-verloop             |
+
+En andersom: `brand-stap-vooruit` en `brand-stap-terug` staan nergens
+letterlijk in een sjabloon, want de naam wordt opgebouwd als
+`` `brand-stap-${richting}` ``. Een zoekopdracht op de letterlijke naam
+zegt dus "ongebruikt" over regels die wel degelijk werken.
+
+> Haal zulke regels nooit in één keer weg zonder proefronde. Zet er een
+> kopie naast, vergelijk achteraf welke klassen er precies uit het bestand
+> verdwenen zijn, en eis dat die lijst exact gelijk is aan wat je wilde
+> weghalen.
+
 ### Een raster krijgt `minmax(0, 1fr)`, nooit een kale `1fr`
 
 Een kale `1fr` is `minmax(auto, 1fr)`, en die ondergrens is de breedte van
@@ -374,6 +403,28 @@ hebt.
 In Vue's `<Transition>` staat het nieuwe element bij `before-enter` nog niet in
 de DOM. Wie daar in de wortel naar iets van de nieuwe pagina zoekt, vindt het
 niet; kijk in het element dat de hook meekrijgt.
+
+### Een losse testdatabase deelt nog steeds de opslag
+
+Een testserver met `DB_DATABASE=…_visueel` schrijft en wist in een eigen
+database, maar de beelden staan op de `public`-schijf onder `storage/`, en
+die is van iedereen. Modellen ruimen bij `deleting` hun beeld op
+(`Project`, `Experience`, `Certificate`); een testproject verwijderen
+haalde zo het echte projectbeeld van de eigenaar weg, en de site toonde een
+403 met de alt-tekst in een leeg kader. Geef een testomgeving dus ook een
+eigen opslag mee: `LARAVEL_STORAGE_PATH=<kopie van storage/>`, voor de
+server én voor elke `artisan`- of `tinker`-aanroep tegen die database.
+
+### Een view transition bevriest ook `requestAnimationFrame`
+
+Tijdens `document.startViewTransition` slaat de browser het renderen over
+tot de update klaar is: geen `requestAnimationFrame`, geen CSS-overgangen,
+geen `transitionend`. Wacht de code die de nieuwe pagina neerzet daarop --
+hier de `out-in`-overgang van `<main>` en het scrollherstel na drie
+beeldjes -- dan loopt de overgang vast tot de browser hem afbreekt. En een
+eigen view transition bij `popstate` legt het oude beeld pas een beeldje
+later vast, als Inertia de pagina al heeft gewisseld. Zie "Van kaart naar
+projectpagina" in [projecten](../architecture/modules/projecten.md).
 
 ## Modules
 

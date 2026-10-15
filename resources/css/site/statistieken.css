@@ -42,6 +42,202 @@
     margin-top: clamp(1.5rem, 3vw, 2rem);
 }
 
+/* --- De groepen als tabs ---------------------------------------------
+
+  Twee of meer groepen met een naam staan achter tabs; de samenvatting
+  (de cijfers zonder groep) staat erboven, altijd zichtbaar. Zie
+  StatistiekenSection.vue.
+
+  **Tabs als kopjes, niet als knoppen.** Een tab hier ís het kopje van zijn
+  groep: dezelfde letter als het groepskopje, met een lichtstreep onder de
+  gekozen tab en een haarlijn onder de hele rij. Zo leest de rij als
+  "deze groepen zijn er" en niet als een tweede schakelaar naast de
+  weergavekeuze van de ervaring.
+   --------------------------------------------------------------------- */
+.brand-site-statistiek-tabrij {
+    display: flex;
+    gap: clamp(0.25rem, 1.5vw, 1.25rem);
+    margin-bottom: clamp(1.25rem, 2.5vw, 1.75rem);
+    border-bottom: 1px solid var(--site-plaat-rand);
+
+    /*
+      Op een telefoon schuift de rij als hij niet past, in plaats van op twee
+      regels te breken: een tab op een tweede regel staat los van de streep
+      eronder. Geen zichtbare schuifbalk; de rand vervaagt aan de kant waar
+      nog iets staat, zodat je ziet dat er meer is.
+    */
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+}
+
+/*
+  Vervagen alleen aan de kant waar nog iets staat (`data-meer`, gezet door
+  StatistiekenSection bij het schuiven). Past de rij, dan vervaagt er niets.
+*/
+.brand-site-statistiek-tabrij[data-meer='rechts'] {
+    -webkit-mask-image: linear-gradient(
+        90deg,
+        black calc(100% - 2rem),
+        transparent
+    );
+    mask-image: linear-gradient(90deg, black calc(100% - 2rem), transparent);
+}
+
+.brand-site-statistiek-tabrij[data-meer='links'] {
+    -webkit-mask-image: linear-gradient(90deg, transparent, black 2rem);
+    mask-image: linear-gradient(90deg, transparent, black 2rem);
+}
+
+.brand-site-statistiek-tabrij[data-meer='beide'] {
+    -webkit-mask-image: linear-gradient(
+        90deg,
+        transparent,
+        black 2rem,
+        black calc(100% - 2rem),
+        transparent
+    );
+    mask-image: linear-gradient(
+        90deg,
+        transparent,
+        black 2rem,
+        black calc(100% - 2rem),
+        transparent
+    );
+}
+
+.brand-site-statistiek-tabrij::-webkit-scrollbar {
+    display: none;
+}
+
+.brand-site-statistiek-tab {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+    align-items: baseline;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0.625rem 0.125rem 0.75rem;
+    font-size: var(--site-maat-klein);
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--site-tekst-zacht);
+    transition: color var(--site-duur-hover) var(--site-ease);
+}
+
+/* Aan de randen ruimte voor het vervaagde randje, als de rij schuift. */
+.brand-site-statistiek-tabrij[data-meer] .brand-site-statistiek-tab:last-child {
+    margin-right: 1.5rem;
+}
+
+.brand-site-statistiek-tab-aantal {
+    font-size: var(--site-maat-label);
+    font-weight: 500;
+    color: var(--site-tekst-zacht);
+}
+
+/*
+  De lichtstreep onder de gekozen tab: altijd aanwezig, op breedte nul
+  zolang de tab niet gekozen is. Alleen `scale`, dus er verschuift niets.
+*/
+.brand-site-statistiek-tab::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    bottom: -1px;
+    left: 0;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--brand-cyan);
+    box-shadow: 0 0 10px color-mix(in oklab, var(--brand-cyan) 55%, transparent);
+    scale: 0 1;
+    transition: scale var(--site-duur-hover) var(--site-ease);
+}
+
+.brand-site-statistiek-tab[aria-selected='true'] {
+    color: var(--site-kop);
+}
+
+.brand-site-statistiek-tab[aria-selected='true']
+    .brand-site-statistiek-tab-aantal {
+    color: var(--brand-cyan);
+}
+
+.brand-site-statistiek-tab[aria-selected='true']::after {
+    scale: 1 1;
+}
+
+.brand-site-statistiek-tab:active {
+    color: var(--brand-ice);
+}
+
+.brand-site-statistiek-tab:focus-visible {
+    outline: 2px solid var(--brand-cyan);
+    outline-offset: -2px;
+    border-radius: 0.375rem;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .brand-site-statistiek-tab:hover {
+        color: var(--site-kop);
+    }
+}
+
+/*
+  Alle panelen in dezelfde rastercel: het blok is zo hoog als het hoogste
+  paneel, en wisselen laat de pagina eronder niet verspringen. Een
+  korte kruisovergang, met een kleine stap omhoog -- dezelfde als bij de
+  diensten: wie snel van tab wisselt, buigt de lopende overgang om.
+*/
+.brand-site-statistiek-panelen {
+    display: grid;
+}
+
+.brand-site-statistiek-paneel {
+    grid-area: 1 / 1;
+    min-width: 0;
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(0.375rem);
+    transition:
+        opacity 0.14s var(--site-ease),
+        transform 0.2s var(--site-ease),
+        visibility 0s linear 0.14s;
+}
+
+.brand-site-statistiek-paneel[data-actief] {
+    visibility: visible;
+    opacity: 1;
+    transform: none;
+    transition:
+        opacity 0.22s var(--site-ease),
+        transform 0.24s var(--site-ease),
+        visibility 0s;
+}
+
+.brand-site-statistiek-paneel:focus-visible {
+    outline: 2px solid var(--brand-cyan);
+    outline-offset: 0.5rem;
+    border-radius: 0.5rem;
+}
+
+.brand-site-statistiek-paneel > div + div {
+    margin-top: clamp(1.5rem, 3vw, 2rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .brand-site-statistiek-tab,
+    .brand-site-statistiek-tab::after,
+    .brand-site-statistiek-paneel,
+    .brand-site-statistiek-paneel[data-actief] {
+        transition: none;
+    }
+
+    .brand-site-statistiek-paneel {
+        transform: none;
+    }
+}
+
 .brand-site-statistiek-groepkop {
     margin-bottom: 1.125rem;
     font-size: var(--site-maat-klein, 0.8125rem);

@@ -235,6 +235,34 @@ const kiesItem = (sleutel: string, gebeurtenis: MouseEvent): void => {
 
 const actief = ref<string | null>(null);
 
+/**
+ * De korte naam van het onderdeel waar je nu bent, voor het kompas in de
+ * mobiele kopbalk. Dezelfde korte, vertaalde menunaam als in het menu
+ * (`PageSectionKey::menuLabel()` op de server), en dezelfde detectie als de
+ * markering op een breed scherm (`volgSecties`). In de hero, of op een
+ * subpagina, is er geen onderdeel en dus geen naam.
+ */
+const kompasNaam = computed(
+    () => items.value.find((item) => item.key === actief.value)?.label ?? '',
+);
+
+/**
+ * Alleen op een telefoon bestaat het kompas, en dat is gemeten. Op een breed
+ * scherm stond hij er verborgen (`display: none`), maar wisselde zijn naam
+ * toch bij elk onderdeel -- en dan rekent Vue's overgang de opmaak door,
+ * voor iets wat niemand ziet: bij snel scrollen op een trage processor een
+ * paar extra lange beeldjes. Een `matchMedia`-luisteraar en geen `resize`:
+ * die vuurt alleen als je de grens overgaat.
+ */
+const SMAL = '(max-width: 49.999rem)';
+const smal = ref(
+    typeof window !== 'undefined' && window.matchMedia(SMAL).matches,
+);
+let smalLijst: MediaQueryList | undefined;
+const opSmal = (gebeurtenis: MediaQueryListEvent): void => {
+    smal.value = gebeurtenis.matches;
+};
+
 /** Of er iets uit "Meer" op dit moment actief is. */
 const restIsActief = computed(() =>
     rest.value.some((item) => item.key === actief.value),
@@ -503,6 +531,9 @@ const opPaginaWissel = (): void => {
 };
 
 onMounted(() => {
+    smalLijst = window.matchMedia(SMAL);
+    smal.value = smalLijst.matches;
+    smalLijst.addEventListener('change', opSmal);
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('keydown', opToets);
@@ -538,6 +569,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+    smalLijst?.removeEventListener('change', opSmal);
     window.removeEventListener('scroll', onScroll);
     window.removeEventListener('keydown', opToets);
     window.removeEventListener('brand:pagina-gewisseld', opPaginaWissel);
@@ -764,6 +796,46 @@ onBeforeUnmount(() => {
                     </component>
                 </Button>
             </div>
+
+            <!--
+                Het kompas, alleen op een telefoon: waar je bent, in de
+                balk naast het merk. De pagina is daar zeventien schermen
+                lang en de balk toonde alleen het logo en de menuknop, dus
+                je wist niet in welk onderdeel je las. Een tik opent het
+                menu, met dat onderdeel gemarkeerd.
+
+                Bij een wissel rolt de naam kort omhoog weg en komt de
+                nieuwe van onderen op (`brand-site-kompas` in kop.css);
+                onder reduced motion wisselt hij meteen. De knop houdt zijn
+                breedte: hij vult de ruimte tussen het merk en de menuknop
+                en kapt een te lange naam af, zodat er niets verspringt.
+            -->
+            <button
+                v-if="smal && items.length > 0"
+                type="button"
+                class="brand-site-kompas"
+                :data-leeg="kompasNaam ? undefined : ''"
+                :aria-label="
+                    kompasNaam
+                        ? $t('Menu openen, nu bij :onderdeel', {
+                              onderdeel: kompasNaam,
+                          })
+                        : $t('Menu openen')
+                "
+                aria-controls="site-menu"
+                :aria-expanded="open"
+                :tabindex="kompasNaam ? undefined : -1"
+                @click="open = !open"
+            >
+                <Transition name="brand-site-kompas" mode="out-in">
+                    <span
+                        :key="kompasNaam"
+                        class="brand-site-kompas-woord"
+                        aria-hidden="true"
+                        >{{ kompasNaam }}</span
+                    >
+                </Transition>
+            </button>
 
             <button
                 type="button"

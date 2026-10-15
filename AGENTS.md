@@ -206,10 +206,13 @@ niet weet:
     bijvoorbeeld met een mediaquery of een `[data-...]`-selector naast de
     klasse zelf. Zie de voorbeelden in `app.css`.
 
-- **Een nieuwe `brand-*`-naam moet je eerst toetsen tegen `app.css`.** Alle
-  klassen staan in één bestand zonder naamruimte, dus een tweede definitie
-  van dezelfde naam overschrijft stil de eerste -- de laatste in het bestand
-  wint, ook al staat hij in een heel ander onderdeel.
+- **Een nieuwe `brand-*`-naam moet je eerst toetsen tegen álle stylesheets.**
+  De CSS staat in twee delen: het portaal en het gedeelde fundament in
+  `resources/css/app.css`, de publieke site in `resources/css/site/*.css`
+  met het voorvoegsel `brand-site-`. Dat zijn aparte bestanden maar **geen
+  aparte naamruimtes**: de browser voegt ze samen, dus een tweede definitie
+  van dezelfde naam overschrijft stil de eerste -- de laatste wint, ook al
+  staat hij in een heel ander bestand.
 
     Dat is gebeurd bij de module Projecten: `.brand-uitgelicht` was het
     merkje in de onderwerpentabel van Contact, en het uitgelichte project
@@ -222,7 +225,7 @@ niet weet:
     van dezelfde klasse is prima, een regel in een ander onderdeel niet:
 
     ```bash
-    grep -n '^\s*\.brand-uitgelicht\s*[,{]' resources/css/app.css
+    grep -rn '^\s*\.brand-uitgelicht\s*[,{]' resources/css/
     ```
 
     En als je klaar bent met een onderdeel, laat dit je alle namen zien die je
@@ -230,12 +233,23 @@ niet weet:
 
     ```bash
     git show HEAD:resources/css/app.css | grep -o '\.brand-[a-z0-9-]*' | sort -u > /tmp/oud
-    git diff -U0 resources/css/app.css | grep '^+' | grep -o '\.brand-[a-z0-9-]*' | sort -u > /tmp/nieuw
+    git show HEAD -- resources/css/site | grep -o '\.brand-[a-z0-9-]*' | sort -u >> /tmp/oud
+    sort -u -o /tmp/oud /tmp/oud
+    git diff -U0 resources/css/ | grep '^+' | grep -o '\.brand-[a-z0-9-]*' | sort -u > /tmp/nieuw
     comm -12 /tmp/nieuw /tmp/oud
     ```
 
     Geef de nieuwe dan het onderdeel als voorvoegsel
     (`.brand-projectuitgelicht`). De oudste gebruiker houdt de korte naam.
+
+- **Een klasse in de markup zonder regel in de CSS geeft geen foutmelding.**
+  Het blok staat er dan gewoon zonder opmaak. Loop na een hernoemronde dus
+  beide kanten op: elke `brand-*` in de sjablonen moet een regel hebben, en
+  elke regel een element. Let daarbij op vier dingen die er ten onrechte
+  uitzien als een gat -- een kleurnaam uit het thema (`brand-cyan`), een
+  Tailwind-`@utility`, een `@keyframes`, en het `id` van een SVG-verloop --
+  en op namen die dynamisch worden opgebouwd, zoals
+  `` `brand-stap-${richting}` ``. Zie `docs/development/valkuilen.md`.
 
 - **Listeners worden automatisch ontdekt.** Laravel registreert elke klasse in
   `app/Listeners` met een methode die met `handle` begint. Meld je die

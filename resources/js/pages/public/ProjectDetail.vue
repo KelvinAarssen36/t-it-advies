@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, onBeforeUnmount, onMounted } from 'vue';
 import SiteKruimels from '@/components/site/SiteKruimels.vue';
 import SiteTerug from '@/components/site/SiteTerug.vue';
 import { t } from '@/lib/i18n';
 import { projecten } from '@/routes';
 import type { ProjectHerkomst, ProjectOpDePagina } from '@/types/projecten';
+import { beeldKapot, meldKapot } from '@/lib/beelden';
+import {
+    opProjectKlik,
+    vliegTerugBijGeschiedenis,
+} from '@/lib/projectOvergang';
 
 /**
  * De pagina van één project.
@@ -76,12 +81,33 @@ const terug = computed(() =>
         ? null
         : { adres: projecten().url, tekst: t('Terug naar alle projecten') },
 );
+
+/*
+ * De terugknop van de browser: het beeld vliegt terug naar zijn kaart. Een
+ * eigen luisteraar per bezoek, en weg bij het verlaten: anders vliegt een
+ * oud project mee bij de volgende terugknop.
+ */
+let stopTerug: (() => void) | undefined;
+
+onMounted(() => {
+    stopTerug = vliegTerugBijGeschiedenis(props.project.slug);
+});
+
+onBeforeUnmount(() => stopTerug?.());
 </script>
 
 <template>
     <Head :title="props.project.titel" />
 
-    <div class="brand-site-projectpagina mx-auto max-w-5xl px-6 py-16 sm:py-24">
+    <!--
+        Een klik op een link terug (kruimelpad, de knoppen onderaan) laat het
+        grote beeld terugvliegen naar zijn kaart, als die er staat; de
+        terugknop van de browser ook. Zie lib/projectOvergang.ts.
+    -->
+    <div
+        class="brand-site-projectpagina mx-auto max-w-5xl px-6 py-16 sm:py-24"
+        @click="opProjectKlik($event, $event.currentTarget, props.project.slug)"
+    >
         <SiteKruimels :titel="'Projecten'" />
 
         <!--
@@ -97,6 +123,8 @@ const terug = computed(() =>
             <figure
                 v-if="props.project.beeld"
                 class="brand-site-projectpagina-beeld"
+                :data-project-beeld="props.project.slug"
+                :data-kapot="beeldKapot(props.project.beeld) ? '' : undefined"
             >
                 <img
                     :src="props.project.beeld"
@@ -106,12 +134,20 @@ const terug = computed(() =>
                     width="640"
                     height="640"
                     decoding="async"
+                    @error="meldKapot(props.project.beeld)"
                 />
+                <span
+                    v-if="beeldKapot(props.project.beeld)"
+                    class="brand-site-beeld-terugval brand-site-data"
+                    aria-hidden="true"
+                    >{{ props.project.letter }}</span
+                >
             </figure>
 
             <figure
                 v-else
                 class="brand-site-projectpagina-beeld brand-site-projectpagina-letter brand-site-data"
+                :data-project-beeld="props.project.slug"
                 aria-hidden="true"
             >
                 {{ props.project.letter }}

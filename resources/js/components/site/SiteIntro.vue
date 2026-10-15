@@ -14,8 +14,9 @@ import { gsap, opEenBreedScherm } from '@/lib/motion';
  * Dan vliegt de hele lens naar de plek waar in de hero de iris staat, en
  * gaat het diafragma van daaruit open. Waar de ringen landen, tekent de
  * ring van de hero zich en gaat het portret open: je kijkt door de lens de
- * site in. Ruim twee seconden; op een telefoon een lichte versie van ruim
- * één seconde, vanuit het midden, want daar staat geen iris naast de tekst.
+ * site in. Ruim twee seconden; op een telefoon een lichtere versie (alleen
+ * de ring en de naam, en sneller), die landt in de kleine iris bovenin de
+ * hero.
  *
  * **Geen laadscherm.** De hero staat er volledig onder; deze laag ligt er
  * alleen overheen. Er wordt niet aan de scrollpositie gezeten en er wordt
@@ -231,6 +232,13 @@ const landen = (snel = false): void => {
 
     if (snel) {
         landing.timeScale(2.6);
+    } else if (!opEenBreedScherm()) {
+        /*
+         * Op een telefoon landt de lens ook in de iris (die staat daar
+         * sinds de hero een regel met portret heeft), maar sneller: het
+         * hele stuk blijft daar onder de twee seconden.
+         */
+        landing.timeScale(1.3);
     }
 };
 

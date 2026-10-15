@@ -140,6 +140,7 @@ onBeforeUnmount(() => opruimers.forEach((opruimen) => opruimen()));
 <template>
     <SiteSection id="kerngegevens" :tone="tone" :divided="divided">
         <SectionHeading
+            rol="feit"
             v-if="kop"
             :eyebrow="kop.opschrift ?? undefined"
             :title="kop.titel"

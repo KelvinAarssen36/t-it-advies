@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { gsap, prefersReducedMotion } from '@/lib/motion';
 import { project } from '@/routes';
 import type { ProjectHerkomst, ProjectOpDeSite } from '@/types/projecten';
+import { beeldKapot, meldKapot } from '@/lib/beelden';
+import { opProjectKlik } from '@/lib/projectOvergang';
 
 /**
  * Het uitgelichte project, groot: de casus.
@@ -246,10 +248,21 @@ onBeforeUnmount(() => stopOpbouw?.());
     <article
         ref="plaat"
         class="brand-site-casus"
+        @click="opProjectKlik($event, plaat, item.slug)"
         :data-zonder-beeld="item.beeld ? undefined : ''"
         :data-in-dia="animeren ? undefined : ''"
     >
-        <figure v-if="item.beeld" ref="kader" class="brand-site-casus-beeld">
+        <!--
+            Laadt het beeld niet, dan blijft het kader staan met de letter
+            erin: zie lib/beelden.ts.
+        -->
+        <figure
+            v-if="item.beeld"
+            ref="kader"
+            class="brand-site-casus-beeld"
+            :data-project-beeld="item.slug"
+            :data-kapot="beeldKapot(item.beeld) ? '' : undefined"
+        >
             <img
                 ref="beeld"
                 :src="item.beeld"
@@ -258,7 +271,14 @@ onBeforeUnmount(() => stopOpbouw?.());
                 height="640"
                 :loading="meteen ? undefined : 'lazy'"
                 decoding="async"
+                @error="meldKapot(item.beeld)"
             />
+            <span
+                v-if="beeldKapot(item.beeld)"
+                class="brand-site-beeld-terugval brand-site-data"
+                aria-hidden="true"
+                >{{ item.letter }}</span
+            >
         </figure>
 
         <!--
@@ -269,6 +289,7 @@ onBeforeUnmount(() => stopOpbouw?.());
             v-else
             ref="kader"
             class="brand-site-casus-beeld brand-site-casus-letter brand-site-data"
+            :data-project-beeld="item.slug"
             aria-hidden="true"
         >
             {{ item.letter }}
@@ -328,7 +349,19 @@ onBeforeUnmount(() => stopOpbouw?.());
                 :class="verborgen"
             >
                 <Button variant="brand" as-child>
-                    <Link :href="adres">
+                    <!--
+            Vooraf ophalen bij aanwijzen of indrukken: dan staat de
+            projectpagina klaar op het moment van klikken, en hoeft het
+            meevliegende beeld (lib/projectOvergang.ts) niet te wachten.
+            Kort bewaren (anderhalve seconde, de klik volgt meteen): met de
+            standaard van dertig seconden hield de cache van Inertia een
+            hele voorpagina vast in het geheugen (gemeten: ±3200 knopen).
+        -->
+                    <Link
+                        :href="adres"
+                        :prefetch="['hover', 'click']"
+                        :cache-for="1500"
+                    >
                         {{ $t('Bekijk project') }}
                         <ArrowRight class="size-4" aria-hidden="true" />
                     </Link>

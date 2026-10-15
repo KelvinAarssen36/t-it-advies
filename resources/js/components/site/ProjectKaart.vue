@@ -11,6 +11,8 @@ import {
 } from '@/lib/motion';
 import { project } from '@/routes';
 import type { ProjectHerkomst, ProjectOpDeSite } from '@/types/projecten';
+import { beeldKapot, meldKapot } from '@/lib/beelden';
+import { opProjectKlik } from '@/lib/projectOvergang';
 
 /**
  * Eén project als kaart.
@@ -157,13 +159,36 @@ onBeforeUnmount(() => opruimers.forEach((opruimen) => opruimen()));
         :class="{ 'opacity-0': binnenkomst === 'reveal' }"
         :data-beeld="item.beeld ? '' : undefined"
         :data-groot="groot ? '' : undefined"
+        @click="opProjectKlik($event, kaart, item.slug)"
     >
-        <Link :href="adres" class="brand-site-projectkaart-link">
+        <!--
+            Vooraf ophalen bij aanwijzen of indrukken: dan staat de
+            projectpagina klaar op het moment van klikken, en hoeft het
+            meevliegende beeld (lib/projectOvergang.ts) niet te wachten.
+            Kort bewaren (anderhalve seconde, de klik volgt meteen): met de
+            standaard van dertig seconden hield de cache van Inertia een
+            hele voorpagina vast in het geheugen (gemeten: ±3200 knopen).
+        -->
+        <Link
+            :href="adres"
+            :prefetch="['hover', 'click']"
+            :cache-for="1500"
+            class="brand-site-projectkaart-link"
+        >
             <!--
                 Het beeld bovenaan: op een grote kaart altijd, op een
                 gewone alleen op een telefoon. Zie het blok bovenaan.
             -->
-            <span v-if="item.beeld" class="brand-site-projectkaart-banner">
+            <!--
+                Laadt het beeld niet, dan meldt het zich (`meldKapot`) en
+                staat in hetzelfde kader de letter. Zie lib/beelden.ts.
+            -->
+            <span
+                v-if="item.beeld"
+                class="brand-site-projectkaart-banner"
+                :data-project-beeld="item.slug"
+                :data-kapot="beeldKapot(item.beeld) ? '' : undefined"
+            >
                 <img
                     :src="item.beeld"
                     :alt="$t('Beeld bij :titel', { titel: item.titel })"
@@ -171,12 +196,20 @@ onBeforeUnmount(() => opruimers.forEach((opruimen) => opruimen()));
                     height="640"
                     loading="lazy"
                     decoding="async"
+                    @error="meldKapot(item.beeld)"
                 />
+                <span
+                    v-if="beeldKapot(item.beeld)"
+                    class="brand-site-beeld-terugval brand-site-data"
+                    aria-hidden="true"
+                    >{{ item.letter }}</span
+                >
             </span>
 
             <span
                 v-else-if="groot"
                 class="brand-site-projectkaart-letterveld brand-site-data"
+                :data-project-beeld="item.slug"
                 aria-hidden="true"
             >
                 {{ item.letter }}
@@ -188,15 +221,20 @@ onBeforeUnmount(() => opruimers.forEach((opruimen) => opruimen()));
                     `alt`: het grote beeld draagt de beschrijving al, en
                     twee keer hetzelfde voorlezen helpt niemand.
                 -->
-                <span class="brand-site-projectkaart-tegel" aria-hidden="true">
+                <span
+                    class="brand-site-projectkaart-tegel"
+                    :data-project-beeld="item.slug"
+                    aria-hidden="true"
+                >
                     <img
-                        v-if="item.beeld"
+                        v-if="item.beeld && !beeldKapot(item.beeld)"
                         :src="item.beeld"
                         alt=""
                         width="640"
                         height="640"
                         loading="lazy"
                         decoding="async"
+                        @error="meldKapot(item.beeld)"
                     />
                     <span v-else class="brand-site-data">{{
                         item.letter
@@ -237,7 +275,7 @@ onBeforeUnmount(() => opruimers.forEach((opruimen) => opruimen()));
             nooit iets afvangt, en alleen als er een beeld is.
         -->
         <span
-            v-if="item.beeld && !groot"
+            v-if="item.beeld && !groot && !beeldKapot(item.beeld)"
             ref="zweef"
             class="brand-site-projectkaart-zweef"
             aria-hidden="true"

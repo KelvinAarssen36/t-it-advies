@@ -651,6 +651,87 @@ de server -- de knop staat meteen goed in plaats van na een flikkering. Wie
 de link deelt deelt meestal het adres zonder `?van=`, en dan is de lijst
 precies goed.
 
+### Van kaart naar projectpagina: het beeld vliegt mee
+
+Klik je op een project -- een kaart of de casus op de voorpagina, of een
+regel op `/projecten` -- dan vliegt het beeld (of de letter) van die kaart
+naar de plek van het grote beeld op de projectpagina. Terug gebeurt
+hetzelfde omgekeerd: met de terugknop van de browser of een link terug op
+de projectpagina vliegt het grote beeld naar zijn kaart, als die na het
+terugscrollen in beeld staat. Zie
+[`projectOvergang.ts`](../../../resources/js/lib/projectOvergang.ts).
+
+**Hoe het werkt.** Bij de klik komt er een kopie van het beeld op precies
+dezelfde plek, vast op het scherm, een fractie opgetild. De oude pagina
+vervaagt eronder, de nieuwe komt op, en zodra die staat
+(`brand:pagina-gewisseld`) vliegt de kopie in 0,55 s (0,45 op een telefoon)
+naar het doel en lost op in het echte beeld. Breedte en hoogte en geen
+schaal: de kaart is 2:1, het tegeltje vierkant en de projectpagina 16:9 of
+vierkant, en met `object-fit: cover` snijdt het beeld onderweg mee zonder
+te vervormen. Het doel vindt hij via `data-project-beeld="<slug>"`. De
+links halen de projectpagina al op bij aanwijzen of indrukken
+(`prefetch: hover, click`), zodat de kopie niet op het netwerk wacht:
+gemeten van klik tot landing 0,85 s op desktop en 0,7 s op een telefoon,
+waarvan de vlucht zelf een halve seconde.
+
+**Geen View Transitions, en dat is uitgezocht.** Inertia 3.7.1 kent
+`viewTransition` (het roept `document.startViewTransition` aan bij een
+bezoek), en de browsers die we bedienen kennen het. Maar tijdens een view
+transition bevriest de browser het renderen, ook `requestAnimationFrame` en
+CSS-overgangen -- en precies daarop wachten de `out-in`-overgang van
+`<main>` en het terugzetten van de scrollpositie. Heen liep dat met een
+omweg nog, terug niet: Inertia gebruikt bij de terugknop geen view
+transition, en een eigen view transition legt het oude beeld pas een
+beeldje later vast, als Inertia de pagina al heeft gewisseld. Een kopie op
+het scherm werkt in elke browser, raakt de paginaovergang niet en valt bij
+elke twijfel terug op niets bijzonders.
+
+**De titel beweegt niet mee.** Een kaarttitel naar een paginakop vergroten
+kan alleen met een schaal, en dan staan de letters halverwege wazig. Het
+beeld draagt de beweging; de titel komt op met de pagina.
+
+Wanneer het **niet** speelt, en wat er dan gebeurt:
+
+| Situatie                                                                                 | Gedrag                                              |
+| ---------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| Reduced motion                                                                           | Geen kopie; de gewone paginawissel                  |
+| Ctrl-, Cmd-, Shift- of middelklik                                                        | Nieuw tabblad, zoals elke link; hier niets          |
+| Direct een projectpagina geopend                                                         | Niets om vandaan te vliegen                         |
+| Doel er niet of buiten beeld (bijv. de dia is niet aan de beurt, of Projecten staat uit) | De kopie lost op waar hij is                        |
+| Snel achter elkaar klikken                                                               | De vorige kopie is meteen weg; de laatste klik wint |
+| De nieuwe pagina komt niet binnen 4 s                                                    | De kopie lost op                                    |
+
+Tijdens de vlucht schuift de nieuwe pagina niet omhoog bij het opkomen
+(`.brand-site[data-overgang]`), anders landt de kopie op een plek die zelf
+nog beweegt.
+
+**De voettekst flitste bij terugkomen.** Inertia zet de bewaarde
+scrollpositie al terug terwijl de projectpagina er nog staat; die is
+korter, dus de browser knipte af op de onderkant en de voettekst schoot een
+tel in beeld. Dat gebeurde al bij elke terugweg, maar viel met de kopie
+erboven extra op. Nu houdt PublicLayout de hoogte van de site vast vanaf de
+`popstate` tot de nieuwe pagina staat (`houdHoogteVast`/`laatHoogteLos`).
+
+### Een beeld dat niet laadt
+
+Laadt een projectbeeld niet, dan blijft het kader staan, in dezelfde maat,
+en komt de letter van de organisatie erin -- dezelfde terugval als bij een
+project zonder beeld. Een `<img>` meldt zich met `@error` in
+[`beelden.ts`](../../../resources/js/lib/beelden.ts); die lijst geldt voor
+de hele site, dus ook het tegeltje, het zwevende beeld en de projectpagina
+weten het meteen. Het kader houdt zijn maat omdat de verhouding op het beeld
+zelf staat; het kapotte beeld wordt onzichtbaar en de letter ligt erover
+(`.brand-site-beeld-terugval`).
+
+Aanleiding: op 14 oktober gaf het beeld van "Migratie naar Exchange Online"
+een 403 en stond de alt-tekst in een leeg kader. Het bestand was van de
+schijf verdwenen: een testproject verwijderen in een losse testdatabase
+haalde via `Project::deleting` het gedeelde bestand weg, omdat die
+testomgeving dezelfde opslag gebruikte. Het is teruggezet uit de back-up
+van 8 oktober (de beelden staan daarin op hun sha256), en een testomgeving
+krijgt nu een eigen opslag mee (`LARAVEL_STORAGE_PATH`; zie
+[valkuilen](../../development/valkuilen.md)).
+
 ## De routes
 
 | Route                             | Naam                      | Wat              |

@@ -168,6 +168,47 @@ Productiebuild, desktop 1440×900 tenzij anders vermeld, 4x CPU.
 Bij 1x CPU scrolt de site op desktop en mobiel vrijwel volledig op 60
 beeldjes per seconde (p95 16,8 ms), zonder lange beeldjes.
 
+## Ronde 7: de nieuwe onderdelen nagemeten (15 oktober)
+
+Gemeten op twee lokaal geserveerde productiebuilds naast elkaar, om en om
+en meerdere keren: de vastgelegde code (HEAD, via `git archive`) en de
+nieuwe, met dezelfde testdatabase en dezelfde scripts (`perf.cjs`,
+headless Chromium, `Emulation.setCPUThrottlingRate`).
+
+| Situatie                  | HEAD (voor)                         | Nu (na)                             |
+| ------------------------- | ----------------------------------- | ----------------------------------- |
+| Desktop 1x, snel          | 3–4% trage beeldjes, max 33–50 ms   | 5–6%, max 33–50 ms                  |
+| Desktop 4x, langzaam (3×) | 59–60%, max 133–150, LoAF 758–1097  | 59–61%, max 100–133, LoAF 684–961   |
+| Desktop 4x, snel (3×)     | 50–53%, max 167–250, LoAF 2095–2253 | 53–55%, max 167–217, LoAF 2268–2358 |
+| Mobiel 4x, snel (3×)      | 6–7%, max 83–100, LoAF 166–242      | 6–7%, max 67–83, LoAF 172–223       |
+| CLS                       | 0                                   | 0                                   |
+
+**Wat dit zegt.** Bij gewoon gebruik (1x) en op mobiel is er geen
+meetbaar verschil. Bij snel scrollen op een vier keer tragere processor
+kost de nieuwe versie op desktop ongeveer vijf procent meer tijd in lange
+beeldjes; dat is klein en ligt aan de rand van de spreiding tussen runs.
+Een verbetering is het niet, en zo staat het hier ook.
+
+**Wat onderweg is gevonden en hersteld** (eerst gemeten, dan opgelost):
+
+- **Het kompas** in de mobiele kopbalk stond op desktop verborgen in de
+  pagina en wisselde toch bij elk onderdeel van naam; Vue's overgang
+  rekende dan de opmaak door (`FrameRequestCallback` met gedwongen layout
+  in het profiel). Nu bestaat hij alleen op een telefoon.
+- **De lens in de voet** had een `drop-shadow` op een ring die bij elke
+  scrollstap verandert: elk beeldje een filter opnieuw schilderen. Op
+  mobiel ook zonder naloop (`scrub: true`). Mobiel ging daarmee van LoAF
+  227–449 ms naar 172–223 ms, gelijk aan HEAD.
+- **Vooraf ophalen** van projectpagina's (`prefetch`) hield met de
+  standaardcache van dertig seconden een hele voorpagina in het geheugen
+  (±3200 knopen extra na twee rondes heen en terug). Met
+  `cache-for="1500"` blijft het aantal knopen gelijk.
+
+**Wat niet nieuw is:** het aantal luisteraars groeit met ongeveer twintig
+per navigatie, voor en na. Dat is `gsap.matchMedia()`: zijn `add()` hangt
+een luisteraar aan een `MediaQueryList` die `revert()` nooit weghaalt
+(gezien in `gsap-core.js`). Er hangt geen DOM aan.
+
 ## Wat bewust is gebleven
 
 - **De knopglans (`.brand-glans`).** Een eindeloze CSS-animatie; omdat de

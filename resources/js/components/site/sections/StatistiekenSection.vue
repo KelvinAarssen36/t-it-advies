@@ -2,19 +2,18 @@
 import { usePage } from '@inertiajs/vue3';
 import {
     computed,
+    nextTick,
     onBeforeUnmount,
     onMounted,
+    ref,
     useTemplateRef,
-    type Component,
 } from 'vue';
 import SectionHeading from '@/components/site/SectionHeading.vue';
 import SiteSection from '@/components/site/SiteSection.vue';
-import StatistiekBalk from '@/components/site/StatistiekBalk.vue';
-import StatistiekRing from '@/components/site/StatistiekRing.vue';
-import StatistiekTeller from '@/components/site/StatistiekTeller.vue';
+import StatistiekBanden from '@/components/site/StatistiekBanden.vue';
 import { vulStatistieken, type TeVullenStatistiek } from '@/lib/motion';
 import type { SectieKop, SectieProps } from '@/types/secties';
-import type { StatistiekGroep, Weergave } from '@/types/statistieken';
+import type { StatistiekGroep } from '@/types/statistieken';
 
 /**
  * De statistieken: vaardigheden en kengetallen, als instrumenten.
@@ -45,34 +44,28 @@ import type { StatistiekGroep, Weergave } from '@/types/statistieken';
  * zichtbaars; eerder stonden alle ringen vooraan en leek de sleepgreep
  * niets te doen.
  *
+ * **De samenvatting staat altijd open; de groepen staan achter tabs.** Het
+ * blok was de langste sectie van de pagina (1293 pixels breed, 1511 op een
+ * telefoon), met alle instrumenten van alle groepen onder elkaar. Nu:
+ *
+ * - **De naamloze groep is de samenvatting** en staat altijd zichtbaar. Dat
+ *   is geen keuze van dit component maar van het model: een statistiek
+ *   zonder groep staat "los bovenaan" -- de kengetallen die nergens bij
+ *   horen en die je als eerste wilt zien (jaren, tickets, bereikbaarheid,
+ *   klanten). Zie docs/architecture/modules/statistieken.md.
+ * - **De groepen met een naam krijgen elk een tab**, maar alleen als het er
+ *   twee of meer zijn. Eén groep staat er gewoon, met zijn kopje: een
+ *   tabrij met één tab is een knop die niets kiest.
+ * - **Er wordt niets verzonnen.** De tabs zijn precies de groepen die de
+ *   klant in het beheer heeft gemaakt, in zijn volgorde, met zijn namen;
+ *   het getal erachter is hoeveel cijfers erin staan.
+ *
  * `tone` en `divided` komen van buiten: welke achtergrond deze sectie
  * krijgt hangt af van waar hij in de rij staat. Zie Welcome.vue.
  *
  * Zie docs/architecture/modules/statistieken.md.
  */
 defineProps<SectieProps>();
-
-/**
- * Van vorm naar component, en van vorm naar raster.
- *
- * Twee vaste tabellen en geen namen die tijdens het draaien ontstaan.
- * Dat is dezelfde keuze als in Welcome.vue: de bundler moet kunnen zien
- * welke bestanden er nodig zijn, en Tailwind leest de broncode om te
- * weten welke klassen bestaan. Een naam die hij pas tijdens het draaien
- * tegenkomt, vindt hij niet -- en dan mist die klasse in de gebouwde
- * stylesheet.
- */
-const VORMEN: Record<Weergave, Component> = {
-    ring: StatistiekRing,
-    teller: StatistiekTeller,
-    balk: StatistiekBalk,
-};
-
-const RASTER: Record<Weergave, string> = {
-    ring: 'brand-site-statistiek-ringen',
-    teller: 'brand-site-statistiek-tellers',
-    balk: 'brand-site-statistiek-balken',
-};
 
 const page = usePage();
 
@@ -94,32 +87,147 @@ const scheiding = computed(() =>
     (page.props.locale as string | undefined) === 'en' ? ',' : '.',
 );
 
-const blok = useTemplateRef<HTMLElement>('blok');
+/* --- Samenvatting en tabs ---------------------------------------------- */
 
-let opruimen: (() => void) | undefined;
+/** De naamloze groep: de samenvatting, altijd zichtbaar. */
+const samenvatting = computed(() =>
+    groepen.value.filter((groep) => groep.naam === null),
+);
 
-onMounted(() => {
-    if (blok.value === null) {
+/** De groepen met een naam: de tabs, als het er twee of meer zijn. */
+const benoemd = computed(() =>
+    groepen.value.filter((groep) => groep.naam !== null),
+);
+
+const metTabs = computed(() => benoemd.value.length >= 2);
+
+const aantal = (groep: StatistiekGroep): number =>
+    groep.bundels.reduce((som, bundel) => som + bundel.items.length, 0);
+
+const actief = ref(0);
+
+/** Unieke id's per tab en paneel; de sleutel is de Nederlandse groepsnaam. */
+const id = (soort: 'tab' | 'paneel', index: number): string =>
+    `statistiek-${soort}-${index}`;
+
+const tabRij = useTemplateRef<HTMLElement>('tabRij');
+
+const tabKnoppen = (): HTMLButtonElement[] =>
+    Array.from(
+        tabRij.value?.querySelectorAll<HTMLButtonElement>('[role="tab"]') ?? [],
+    );
+
+/**
+ * Een tab kiezen.
+ *
+ * **Automatische activatie** (het WAI-ARIA-patroon kent twee smaken): met
+ * de pijltjes kies je meteen. Dat mag omdat alle panelen al in de pagina
+ * staan; er wordt niets geladen, dus een paneel tonen kost niets en je
+ * hoeft niet eerst te verplaatsen en dan nog op Enter te drukken.
+ *
+ * Een paneel vult zich de eerste keer dat het in beeld komt (de golf van
+ * `vulStatistieken`). Daarna is het een korte kruisovergang: wie heen en
+ * weer klikt, ziet zijn cijfers wisselen en niet elke keer de hele golf.
+ */
+const kies = (index: number, focus = false): void => {
+    const knoppen = tabKnoppen();
+    const nieuw = (index + knoppen.length) % Math.max(1, knoppen.length);
+
+    actief.value = nieuw;
+
+    if (focus) {
+        knoppen[nieuw]?.focus();
+    }
+
+    houdInBeeld(knoppen[nieuw]);
+    void nextTick(() => vulPaneel(nieuw));
+};
+
+/**
+ * Op een telefoon schuift de tabrij; de gekozen tab hoort daarin zichtbaar
+ * te staan. Zelf rekenen en niet `scrollIntoView`: die mag ook de pagina
+ * verschuiven, en dat vecht met Lenis.
+ */
+const houdInBeeld = (knop: HTMLElement | undefined): void => {
+    const rij = tabRij.value;
+
+    if (!rij || !knop || rij.scrollWidth <= rij.clientWidth) {
         return;
     }
 
-    /*
-     * **Per band een eigen golf, en niet één voor het hele blok.** Eerst
-     * hing alles aan de bovenkant van de sectie: die komt binnen, en het
-     * hele blok van anderhalve schermhoogte begon tegelijk te vullen. De
-     * rijen onderaan waren dan al klaar voordat je erbij was, en wie snel
-     * scrolde zag alleen nog stilstaande meters. Nu vult een band pas als
-     * hij zelf in beeld komt: je ziet elke golf gebeuren, en er lopen
-     * nooit meer tweens tegelijk dan er op het scherm staan.
-     *
-     * Binnen een band de volgorde waarin ze op het scherm staan, want die
-     * bepaalt het golfje; `querySelectorAll` geeft documentvolgorde.
-     */
-    const banden = Array.from(
-        blok.value.querySelectorAll<HTMLElement>('[data-bundel]'),
-    );
+    const links = knop.offsetLeft - 16;
+    const rechts = knop.offsetLeft + knop.offsetWidth + 16 - rij.clientWidth;
 
-    const stoppers = banden.map((band) => {
+    if (rij.scrollLeft > links) {
+        rij.scrollTo({ left: links, behavior: 'smooth' });
+    } else if (rij.scrollLeft < rechts) {
+        rij.scrollTo({ left: rechts, behavior: 'smooth' });
+    }
+};
+
+/**
+ * Aan welke kant van de tabrij nog iets verborgen staat. De rand vervaagt
+ * alleen daar (zie `data-meer` in statistieken.css): een vaste vervaging
+ * links knipte de eerste tab af terwijl er niets meer te zien was.
+ */
+const meer = ref<'' | 'links' | 'rechts' | 'beide'>('');
+
+const meetRij = (): void => {
+    const rij = tabRij.value;
+
+    if (!rij || rij.scrollWidth <= rij.clientWidth + 1) {
+        meer.value = '';
+
+        return;
+    }
+
+    const links = rij.scrollLeft > 2;
+    const rechts = rij.scrollLeft + rij.clientWidth < rij.scrollWidth - 2;
+
+    meer.value =
+        links && rechts ? 'beide' : links ? 'links' : rechts ? 'rechts' : '';
+};
+
+let kijker: ResizeObserver | undefined;
+
+const opToets = (gebeurtenis: KeyboardEvent): void => {
+    const sprongen: Record<string, number> = {
+        ArrowRight: actief.value + 1,
+        ArrowLeft: actief.value - 1,
+        Home: 0,
+        End: benoemd.value.length - 1,
+    };
+
+    const doel = sprongen[gebeurtenis.key];
+
+    if (doel === undefined) {
+        return;
+    }
+
+    gebeurtenis.preventDefault();
+    kies(doel, true);
+};
+
+/* --- Vullen ------------------------------------------------------------- */
+
+const blok = useTemplateRef<HTMLElement>('blok');
+
+const stoppers: Array<() => void> = [];
+
+/** Welke tabpanelen al gevuld zijn. */
+const gevuld = new Set<number>();
+
+/**
+ * **Per band een eigen golf, en niet één voor het hele blok.** Eerst hing
+ * alles aan de bovenkant van de sectie: die komt binnen, en het hele blok
+ * begon tegelijk te vullen. De rijen onderaan waren dan al klaar voordat
+ * je erbij was. Nu vult een band pas als hij zelf in beeld komt.
+ *
+ * Binnen een band de volgorde waarin ze op het scherm staan, want die
+ * bepaalt het golfje; `querySelectorAll` geeft documentvolgorde.
+ */
+const vulBanden = (binnen: HTMLElement): void => {
+    for (const band of binnen.querySelectorAll<HTMLElement>('[data-bundel]')) {
         const onderdelen: TeVullenStatistiek[] = Array.from(
             band.querySelectorAll<HTMLElement>('[data-vul]'),
         ).map((vak) => ({
@@ -133,68 +241,163 @@ onMounted(() => {
          * begint als zijn blok op 80% van het scherm staat; een rij balken
          * die daaronder in beeld kwam, stond dan zichtbaar leeg. Het anker
          * begint een stukje boven de band (zie
-         * `.brand-site-statistiek-wacht`), dus de golf start zodra de band
-         * onderaan in beeld komt.
+         * `.brand-site-statistiek-wacht`).
          */
         const anker = band.querySelector<HTMLElement>('[data-wacht]') ?? band;
 
-        return vulStatistieken(anker, onderdelen, {
-            scheiding: scheiding.value,
-        });
-    });
+        stoppers.push(
+            vulStatistieken(anker, onderdelen, { scheiding: scheiding.value }),
+        );
+    }
+};
 
-    opruimen = () => stoppers.forEach((stop) => stop());
+/**
+ * Een tabpaneel vullen, één keer. Een paneel dat niet gekozen is wordt niet
+ * gevuld: het staat onzichtbaar in de pagina, en een golf die niemand ziet
+ * is werk voor niets -- en zou bij het kiezen alleen nog stilstaan.
+ */
+const vulPaneel = (index: number): void => {
+    if (gevuld.has(index)) {
+        return;
+    }
+
+    const paneel = blok.value?.querySelector<HTMLElement>(
+        `#${id('paneel', index)}`,
+    );
+
+    if (!paneel) {
+        return;
+    }
+
+    gevuld.add(index);
+    vulBanden(paneel);
+};
+
+onMounted(() => {
+    if (blok.value === null) {
+        return;
+    }
+
+    for (const groep of blok.value.querySelectorAll<HTMLElement>(
+        '[data-vaste-groep]',
+    )) {
+        vulBanden(groep);
+    }
+
+    if (metTabs.value) {
+        vulPaneel(actief.value);
+        meetRij();
+
+        if (tabRij.value && typeof ResizeObserver !== 'undefined') {
+            kijker = new ResizeObserver(meetRij);
+            kijker.observe(tabRij.value);
+        }
+    }
 });
 
-onBeforeUnmount(() => opruimen?.());
+onBeforeUnmount(() => {
+    kijker?.disconnect();
+    stoppers.forEach((stop) => stop());
+});
 </script>
 
 <template>
     <SiteSection id="statistieken" :tone="tone" :divided="divided">
         <div ref="blok" class="brand-site-statistieken">
             <SectionHeading
+                rol="feit"
                 v-if="kop"
                 :eyebrow="kop.opschrift ?? undefined"
                 :title="kop.titel"
                 :intro="kop.inleiding ?? undefined"
             />
 
+            <!--
+                De samenvatting: de cijfers zonder groep, altijd zichtbaar.
+                Geen kopje; die staan vooraan en horen nergens bij.
+            -->
             <div
-                v-for="groep in groepen"
+                v-for="groep in samenvatting"
                 :key="groep.sleutel"
+                data-vaste-groep
                 class="brand-site-statistiek-groep"
             >
-                <!--
-                    De naamloze groep heeft geen kopje. Die staat vooraan;
-                    daar horen de losse cijfers die nergens bij horen.
-                -->
-                <h3 v-if="groep.naam" class="brand-site-statistiek-groepkop">
-                    {{ groep.naam }}
-                </h3>
+                <StatistiekBanden :groep="groep" />
+            </div>
 
-                <!--
-                    De banden, in de volgorde die de klant heeft gesleept.
-                    Elke band bevat opeenvolgende statistieken van dezelfde
-                    vorm; die verdeling komt van de server.
-                -->
+            <!-- Eén groep met een naam: gewoon tonen, met zijn kopje. -->
+            <template v-if="!metTabs">
                 <div
-                    v-for="(bundel, index) in groep.bundels"
-                    :key="`${groep.sleutel}-${index}`"
-                    data-bundel
-                    :class="RASTER[bundel.weergave]"
+                    v-for="groep in benoemd"
+                    :key="groep.sleutel"
+                    data-vaste-groep
+                    class="brand-site-statistiek-groep"
                 >
-                    <span
-                        data-wacht
-                        class="brand-site-statistiek-wacht"
-                        aria-hidden="true"
-                    />
-                    <component
-                        :is="VORMEN[bundel.weergave]"
-                        v-for="item in bundel.items"
-                        :key="item.id"
-                        :item="item"
-                        :data-waarde="item.waarde"
-                    />
+                    <h3 class="brand-site-statistiek-groepkop">
+                        {{ groep.naam }}
+                    </h3>
+                    <StatistiekBanden :groep="groep" />
+                </div>
+            </template>
+
+            <!--
+                Twee of meer groepen: tabs. Het WAI-ARIA-patroon: een
+                `tablist` met `tab`-knoppen, één `tabpanel` per groep, en
+                alleen de gekozen tab in de tabvolgorde (pijltjes, Home en
+                End voor de rest).
+
+                **Alle panelen staan in de pagina en op elkaar** (dezelfde
+                rastercel). Het blok is daardoor zo hoog als het hoogste
+                paneel en de pagina eronder verspringt niet bij het
+                wisselen; een paneel dat niet gekozen is, is onzichtbaar en
+                `inert`, maar zijn inhoud staat er -- voor een zoekmachine,
+                en als er iets misgaat met het kiezen.
+            -->
+            <div v-else class="brand-site-statistiek-groep">
+                <div
+                    ref="tabRij"
+                    role="tablist"
+                    :aria-label="$t('Cijfers per groep')"
+                    class="brand-site-statistiek-tabrij"
+                    :data-meer="meer || undefined"
+                    @keydown="opToets"
+                    @scroll.passive="meetRij"
+                >
+                    <button
+                        v-for="(groep, index) in benoemd"
+                        :id="id('tab', index)"
+                        :key="groep.sleutel"
+                        type="button"
+                        role="tab"
+                        class="brand-site-statistiek-tab"
+                        :aria-selected="actief === index ? 'true' : 'false'"
+                        :aria-controls="id('paneel', index)"
+                        :tabindex="actief === index ? 0 : -1"
+                        @click="kies(index)"
+                    >
+                        <span>{{ groep.naam }}</span>
+                        <span
+                            class="brand-site-statistiek-tab-aantal brand-site-data"
+                            aria-hidden="true"
+                            >{{ aantal(groep) }}</span
+                        >
+                    </button>
+                </div>
+
+                <div class="brand-site-statistiek-panelen">
+                    <div
+                        v-for="(groep, index) in benoemd"
+                        :id="id('paneel', index)"
+                        :key="groep.sleutel"
+                        role="tabpanel"
+                        class="brand-site-statistiek-paneel"
+                        :aria-labelledby="id('tab', index)"
+                        :data-actief="actief === index ? '' : undefined"
+                        :inert="actief !== index"
+                        :tabindex="actief === index ? 0 : -1"
+                    >
+                        <StatistiekBanden :groep="groep" />
+                    </div>
                 </div>
             </div>
         </div>

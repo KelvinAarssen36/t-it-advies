@@ -121,8 +121,70 @@
     color: var(--site-kop);
 }
 
+/*
+  De lens om het merkteken: een schaalring en een ring die zich tekent als
+  de voet binnenschuift (zie `sluitDeLens` in SiteFooter.vue). Dit is de
+  eindstand, en dus ook wat je ziet zonder JavaScript of met minder
+  beweging: de lens rond, het oog scherp.
+*/
+.brand-site-voet-lens {
+    position: relative;
+    display: grid;
+    flex: none;
+    width: clamp(3.25rem, 2.5rem + 2vw, 4.25rem);
+    aspect-ratio: 1;
+    place-items: center;
+}
+
+.brand-site-voet-lens > svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.brand-site-voet-schaal circle {
+    fill: none;
+    stroke: color-mix(in oklab, var(--brand-platinum) 26%, transparent);
+    stroke-width: 4px;
+    stroke-dasharray: 0.5 5.5;
+}
+
+/*
+  Geen `drop-shadow` op de ring: de streep verandert bij elke scrollstap, en
+  een filter erop liet de browser de gloed elk beeldje opnieuw schilderen --
+  op een telefoon gemeten als tien extra trage beeldjes in de voet. De gloed
+  zit nu in een vast, zacht vlak achter de lens, dat niet verandert.
+*/
+.brand-site-voet-ring circle {
+    fill: none;
+    stroke: var(--brand-cyan);
+    stroke-width: 1.25px;
+}
+
+.brand-site-voet-lens::before {
+    content: '';
+    position: absolute;
+    inset: 8%;
+    border-radius: 50%;
+    background: radial-gradient(
+        circle,
+        color-mix(in oklab, var(--brand-cyan) 14%, transparent) 40%,
+        transparent 72%
+    );
+}
+
+/* Alleen de schaalring draait, als één laag. */
+@media (min-width: 50rem) {
+    .brand-site-voet-schaal {
+        will-change: transform;
+    }
+}
+
 .brand-site-voet-teken {
-    width: clamp(2rem, 1.5rem + 1.4vw, 2.875rem);
+    position: relative;
+    width: 56%;
     height: auto;
     flex: none;
 }

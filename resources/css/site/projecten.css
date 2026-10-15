@@ -1413,3 +1413,100 @@
     overflow-wrap: anywhere;
     color: var(--site-tekst);
 }
+
+/* ---------------------------------------------------------------------
+   Een beeld dat niet laadt
+
+   Het kader blijft staan en houdt zijn maat -- de verhouding staat op het
+   beeld zelf, en een kapot beeld houdt die doos -- maar het beeld wordt
+   onzichtbaar en de letter van de organisatie komt erin, net als bij een
+   project zónder beeld. Zo staat er nooit een alt-tekst in een leeg vlak,
+   en verspringt er niets op het moment dat het laden mislukt. Zie
+   lib/beelden.ts.
+   --------------------------------------------------------------------- */
+:is(
+    .brand-site-projectkaart-banner,
+    .brand-site-casus-beeld,
+    .brand-site-projectpagina-beeld
+)[data-kapot] {
+    position: relative;
+    container-type: inline-size;
+}
+
+:is(
+        .brand-site-projectkaart-banner,
+        .brand-site-casus-beeld,
+        .brand-site-projectpagina-beeld
+    )[data-kapot]
+    > img {
+    visibility: hidden;
+}
+
+.brand-site-beeld-terugval {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: clamp(2.5rem, 22cqi, 5.5rem);
+    font-weight: 500;
+    line-height: 1;
+    color: color-mix(in oklab, var(--brand-cyan) 85%, transparent);
+    background:
+        radial-gradient(
+            60% 70% at 50% 45%,
+            var(--site-licht-blauw),
+            transparent 72%
+        ),
+        var(--site-plaat-vol);
+}
+
+/* ---------------------------------------------------------------------
+   De overgang van kaart naar projectpagina (en terug)
+
+   Een kopie van het beeld, vast op het scherm, die van de kaart naar het
+   grote beeld vliegt. Zie lib/projectOvergang.ts. Onder de kopbalk (die
+   staat op 50) en boven de inhoud.
+   --------------------------------------------------------------------- */
+.brand-site-projectkloon {
+    position: fixed;
+    z-index: 40;
+    overflow: hidden;
+    pointer-events: none;
+    container-type: size;
+    background: var(--site-plaat-vol);
+    box-shadow: 0 30px 80px -40px var(--site-schaduw);
+}
+
+.brand-site-projectkloon img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Een project zonder beeld: de letter, die meegroeit met het vlak. */
+.brand-site-projectkloon[data-letter] {
+    display: grid;
+    place-items: center;
+    font-family: var(--site-font-data);
+    font-size: clamp(1rem, 40cqmin, 5.5rem);
+    font-weight: 500;
+    line-height: 1;
+    color: color-mix(in oklab, var(--brand-cyan) 85%, transparent);
+    background:
+        radial-gradient(
+            60% 70% at 50% 45%,
+            var(--site-licht-blauw),
+            transparent 72%
+        ),
+        var(--site-plaat-vol);
+}
+
+/*
+  Tijdens de vlucht schuift de nieuwe pagina niet omhoog bij het opkomen;
+  hij vervaagt alleen in. Anders landt de kopie op een plek die zelf nog
+  twaalf pixels beweegt, en verspringt het beeld bij het overnemen.
+*/
+.brand-site[data-overgang] .brand-pagina-enter-from {
+    translate: none;
+}

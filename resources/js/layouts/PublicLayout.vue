@@ -149,6 +149,14 @@ const onthoudGeschiedenis = (gebeurtenis: PopStateEvent): void => {
 
     viaGeschiedenis = true;
     bewaardePositie = typeof top === 'number' ? top : null;
+
+    /*
+     * Inertia zet de bewaarde positie al terug terwijl de vórige pagina er
+     * nog staat. Is die korter (een projectpagina), dan knipt de browser af
+     * op de onderkant ervan en schiet de voettekst in beeld. Daarom alvast
+     * hoog genoeg voor die positie; zie `houdHoogteVast`.
+     */
+    houdHoogteVast((bewaardePositie ?? 0) + window.innerHeight);
 };
 
 const pakHouvast = (): Houvast | null => {
@@ -283,6 +291,53 @@ const markeerHero = (pagina: Element | null | undefined): void => {
         'data-met-hero',
         pagina?.querySelector('.brand-site-hero') != null,
     );
+};
+
+const hoofd = ref<HTMLElement | null>(null);
+
+/**
+ * "Naar de inhoud": de focus naar `main`, zonder dat de browser er zelf
+ * heen springt -- Lenis houdt de scrollpositie bij, en een sprong buiten
+ * hem om laat de twee vechten. Daarna scrollt Lenis naar het begin van de
+ * inhoud.
+ */
+const naarInhoud = (): void => {
+    hoofd.value?.focus({ preventScroll: true });
+    scrollNaar('inhoud', { verschuiving: 0 });
+};
+
+/**
+ * De hoogte van de site vasthouden zolang `<main>` wisselt.
+ *
+ * Met `out-in` staat er tussen het wegvallen van de oude pagina en het
+ * opkomen van de nieuwe even géén `main`. De site is dan alleen de kop en
+ * de voettekst: de browser kort de scrollpositie in, en wie terugging van
+ * een project naar de voorpagina, zag een tel de voettekst in beeld
+ * schieten voordat de pagina op zijn plek kwam. Met het meevliegende
+ * projectbeeld erboven viel dat extra op.
+ *
+ * Nu houdt de wortel bij het vertrek zijn hoogte (`min-height`), en laat
+ * hij die pas los als de nieuwe pagina staat en de scrollpositie is
+ * teruggezet (`naHetScrollen`). Eén keer meten bij vertrek en één keer
+ * loslaten: geen werk per beeldje.
+ */
+const houdHoogteVast = (minstens = 0): void => {
+    /*
+     * Niet bij een taalwissel: dan blijft het dezelfde pagina, en zet
+     * `zetTerug` de bezoeker op het onderdeel waar hij was. Een vastgehouden
+     * hoogte die halverwege loslaat, schoof dat een paar pixels op.
+     */
+    if (root.value === null || alleenDeTaal) {
+        return;
+    }
+
+    const nu = Number.parseFloat(root.value.style.minHeight) || 0;
+
+    root.value.style.minHeight = `${Math.max(nu, minstens, root.value.offsetHeight)}px`;
+};
+
+const laatHoogteLos = (): void => {
+    root.value?.style.removeProperty('min-height');
 };
 
 /*
@@ -430,6 +485,7 @@ const naHetScrollen = (): void => {
              * kop en deze layout weten verder niets van elkaar, en dat
              * hoort zo te blijven.
              */
+            laatHoogteLos();
             window.dispatchEvent(new CustomEvent('brand:pagina-gewisseld'));
         }),
     );
@@ -533,6 +589,9 @@ onMounted(() => {
             return;
         }
 
+        // Geen wissel van pagina, dus ook geen `naHetScrollen` dat de
+        // vastgehouden hoogte loslaat.
+        laatHoogteLos();
         void nextTick(scanReveals);
     });
 });
@@ -566,6 +625,22 @@ onBeforeUnmount(() => {
             als eerste in de boom, zodat hij er ook echt bovenop valt
             zonder dat er een z-index-wedstrijd voor nodig is.
         -->
+        <!--
+            Naar de inhoud: de eerste tabstop van elke publieke pagina, en
+            alleen zichtbaar als hij de focus heeft. Wie met het toetsenbord
+            werkt, hoeft dan niet eerst langs het merk, elf menu-items en
+            de taalkeuze. De focus gaat echt naar `main` (`naarInhoud`), en
+            niet alleen het scherm: anders begint de volgende Tab weer
+            bovenaan in de kop.
+        -->
+        <a
+            href="#inhoud"
+            class="brand-site-naar-inhoud"
+            @click.prevent="naarInhoud"
+        >
+            {{ $t('Naar de inhoud') }}
+        </a>
+
         <SiteIntro />
 
         <ScrollProgress />
@@ -596,10 +671,11 @@ onBeforeUnmount(() => {
         <Transition
             name="brand-pagina"
             mode="out-in"
+            @before-leave="() => houdHoogteVast()"
             @before-enter="voorBinnenkomst"
             @after-enter="naBinnenkomst"
         >
-            <main :key="paginaSleutel">
+            <main id="inhoud" ref="hoofd" :key="paginaSleutel" tabindex="-1">
                 <slot />
             </main>
         </Transition>

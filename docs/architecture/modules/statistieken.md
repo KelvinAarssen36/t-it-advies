@@ -111,8 +111,72 @@ een garantie: sinds PHP 8.0 zijn de sorteringen stabiel.
 
 ## Hoe het op de landingspagina komt te staan
 
-De sectiekop zoals overal, daarna per groep een kopje en daaronder de
-cijfers.
+De sectiekop zoals overal, daarna **de samenvatting** (de cijfers zonder
+groep) en daaronder **de groepen**: als tabs bij twee of meer groepen, en
+anders gewoon met een kopje. Zie
+[Samenvatting en tabs](#samenvatting-en-tabs-het-blok-korter-zonder-iets-te-verbergen).
+
+### Samenvatting en tabs: het blok korter zonder iets te verbergen
+
+Dit was de langste sectie van de pagina: alle instrumenten van alle groepen
+onder elkaar. Nu staat er per keer één groep, en blijven de kengetallen
+altijd in beeld.
+
+**Wat de samenvatting is, beslist het model en niet de opmaak.** Een
+statistiek zonder groep staat "los bovenaan" (zie
+[De groep is een sleutel én een label](#de-groep-is-een-sleutel-én-een-label)):
+de cijfers die nergens bij horen en die je als eerste wilt zien. Op de site
+van de eigenaar zijn dat de vier tellers -- jaren, tickets, bereikbaarheid,
+klanten. Die staan dus altijd open, met hun eigen golf per band zoals
+eerder. Is er geen naamloze groep, dan is er geen samenvatting en staan
+alle groepen achter tabs.
+
+**De tabs zijn precies de groepen van de klant**, in zijn volgorde, met zijn
+namen, en met het aantal cijfers erachter (een getal uit de data, geen
+categorie die het component verzint). Bij **één** groep met een naam staan
+er geen tabs: die groep staat er gewoon, met zijn kopje -- een tabrij met
+één tab is een knop die niets kiest.
+
+| Wat       | Hoe                                                                                                                                         |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rollen    | `tablist` met `tab`-knoppen, één `tabpanel` per groep, `aria-selected`, `aria-controls`, `aria-labelledby`                                  |
+| Toetsen   | Pijl links/rechts (rondlopend), Home, End; alleen de gekozen tab in de tabvolgorde (roving `tabindex`); Tab gaat naar het paneel            |
+| Activatie | **Automatisch**: de pijltjes kiezen meteen. Alle panelen staan al in de pagina, dus kiezen kost niets en Enter is overbodig                 |
+| Panelen   | Allemaal in de DOM, op elkaar in één rastercel; de niet-gekozen zijn onzichtbaar en `inert`                                                 |
+| Hoogte    | Die van het hoogste paneel: wisselen verschuift de pagina niet (gemeten: CLS 0, hoogte gelijk)                                              |
+| Wisselen  | Een kruisovergang van 0,22 s met een stap van 6 px, als bij de diensten; reduced motion: direct                                             |
+| Telefoon  | De tabrij schuift horizontaal als hij niet past; de gekozen tab schuift in beeld; de rand vervaagt alleen waar nog iets staat (`data-meer`) |
+
+**Waarom stapelen en geen hoogte-overgang.** Een blok dat bij elke tab zijn
+hoogte aanpast, laat alles eronder meeschuiven -- en een hoogte animeren
+kost elk beeldje opmaak. Gestapeld is het blok zo hoog als het langste
+paneel, en dat is ook de prijs: bij een kort paneel staat er wat lucht
+onder.
+
+**Een paneel vult zich één keer.** De gekozen tab vult zich zoals altijd
+(per band een golf zodra hij in beeld komt). Een ander paneel vult zich de
+eerste keer dat je hem kiest, vanaf nul; daarna is het alleen nog de
+kruisovergang. Wie heen en weer klikt, ziet zijn cijfers wisselen en niet
+elke keer de hele golf -- en de samenvatting beweegt bij een tabwissel
+helemaal niet. Een paneel dat niemand kiest, wordt ook nooit gevuld: een
+golf die niemand ziet is werk voor niets.
+
+**Gemeten** (testdatabase met de echte zestien statistieken, waarvan
+vijftien online):
+
+| Breedte        | Voor    | Na      | Verschil        |
+| -------------- | ------- | ------- | --------------- |
+| Desktop (1440) | 1293 px | 943 px  | −350 px (−27 %) |
+| Telefoon (390) | 1511 px | 1077 px | −434 px (−29 %) |
+
+Dat is minder dan de geschatte 40–50 %: de samenvatting blijft staan, en
+het blok is zo hoog als het hoogste paneel. Frames tijdens scrollen en een
+tabwissel: geen trage beeldjes (ontwikkelmodus, headless).
+
+De banden zelf tekent
+[`StatistiekBanden.vue`](../../../resources/js/components/site/StatistiekBanden.vue),
+zodat de samenvatting, een losse groep en een tabpaneel dezelfde opbouw
+hebben.
 
 ### Binnen een groep geldt de sleepvolgorde, met een band per vorm
 

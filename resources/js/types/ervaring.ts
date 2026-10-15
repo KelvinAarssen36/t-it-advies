@@ -107,6 +107,8 @@ export type ErvaringOpDeSite = {
     duur: string;
     /** Het beginjaar, alleen om de tijdlijn in groepen te zetten. */
     jaar: string;
+    /** Het laatste jaar van de periode (dit jaar als hij nog loopt); voor de jaarband. */
+    totJaar: string;
     loopt: boolean;
     beschrijving: string | null;
 };

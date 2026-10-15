@@ -26,7 +26,14 @@ import type { ErvaringOpDeSite } from '@/types/ervaring';
  * regels stond de pagina dan achtentwintig wielstappen stil: voor wie
  * gewoon verder wilde lezen voelde dat als een site die vastloopt. Nu scrolt
  * de pagina altijd door, en blader je met de knoppen onderaan, de
- * jaartallen in de rail, een klik op een kaart of de pijltjestoetsen.
+ * jaarband erboven (ErvaringJaarband), een klik op een kaart of de
+ * pijltjestoetsen.
+ *
+ * **Hier stond ook een eigen rail met jaartallen**, links van de kaarten.
+ * Die deed hetzelfde als de jaarband boven de sectie, maar kleiner en alleen
+ * hier; twee tijdlijnen naast elkaar is er één te veel. De jaarband is nu de
+ * jaarbediening voor beide weergaven, en deze carrousel meldt alleen welke
+ * ervaring vooraan staat (`wissel`) en laat zich ernaartoe sturen (`naar`).
  *
  * De functie waar je bent staat vooraan op een eigen kaart; die ervóór en
  * die erna staan kleiner erboven en eronder, **leesbaar** -- je ziet dus
@@ -51,7 +58,11 @@ import type { ErvaringOpDeSite } from '@/types/ervaring';
  */
 const props = defineProps<{ items: ErvaringOpDeSite[] }>();
 
-const emit = defineEmits<{ open: [item: ErvaringOpDeSite] }>();
+const emit = defineEmits<{
+    open: [item: ErvaringOpDeSite];
+    /** Welke ervaring nu vooraan staat, voor de jaarband. */
+    wissel: [index: number];
+}>();
 
 const laatste = computed(() => Math.max(props.items.length - 1, 0));
 
@@ -91,11 +102,10 @@ const vak = ref<HTMLElement | null>(null);
 const stapel = ref<HTMLElement | null>(null);
 
 /*
- * De lijn langs de rail en de balk onderin. Ze worden net als de kaarten
+ * De balk onderin: hoe ver je in de loopbaan bent. Net als de kaarten
  * rechtstreeks aangestuurd; alleen `transform`, dus de browser hoeft de
  * pagina niet opnieuw door te rekenen.
  */
-const bereik = ref<HTMLElement | null>(null);
 const balk = ref<HTMLElement | null>(null);
 
 /**
@@ -176,10 +186,6 @@ const plaats = (): void => {
     const { gat, stap } = maten.value;
 
     const deel = laatste.value === 0 ? 1 : positie / laatste.value;
-
-    if (bereik.value !== null) {
-        bereik.value.style.transform = `scaleY(${deel.toFixed(4)})`;
-    }
 
     if (balk.value !== null) {
         balk.value.style.transform = `scaleX(${deel.toFixed(4)})`;
@@ -301,6 +307,11 @@ const ga = (naar: number): void => {
     doel = Math.min(Math.max(naar, 0), laatste.value);
     startLus();
 };
+
+/** Voor de jaarband: naar deze ervaring bladeren. */
+defineExpose({ naar: ga });
+
+watch(huidig, (nu) => emit('wissel', nu), { immediate: true });
 
 /* --- Erop drukken ---------------------------------------------------- */
 
@@ -471,45 +482,6 @@ onBeforeUnmount(() => {
     stopLus();
     toezicht?.disconnect();
 });
-
-/**
- * De jaartallen langs de rail.
- *
- * Alleen waar een nieuw jaar begint, en alleen als er genoeg ruimte is
- * sinds het vorige label. Bij vijfentwintig functies over vijfendertig
- * jaar zouden ze anders over elkaar heen vallen, en dan is het geen
- * oriëntatiepunt meer maar een grijze streep.
- */
-const jaarMerken = computed(() => {
-    const aantal = props.items.length;
-
-    if (aantal === 0) {
-        return [];
-    }
-
-    const merken: { jaar: string; positie: number; index: number }[] = [];
-    let vorige = -100;
-
-    props.items.forEach((item, index) => {
-        const nieuwJaar =
-            index === 0 || props.items[index - 1]?.jaar !== item.jaar;
-
-        if (!nieuwJaar) {
-            return;
-        }
-
-        const plek = aantal === 1 ? 0 : (index / (aantal - 1)) * 100;
-
-        if (plek - vorige < 10) {
-            return;
-        }
-
-        merken.push({ jaar: item.jaar, positie: plek, index });
-        vorige = plek;
-    });
-
-    return merken;
-});
 </script>
 
 <template>
@@ -535,30 +507,6 @@ const jaarMerken = computed(() => {
         @keydown="opToets"
     >
         <div class="brand-site-ervaring-binnen">
-            <!-- De rail met de jaartallen, als oriëntatiepunt. -->
-            <div class="brand-site-ervaring-rail">
-                <div class="brand-site-ervaring-spoor" aria-hidden="true">
-                    <div ref="bereik" class="brand-site-ervaring-bereik" />
-                </div>
-
-                <div class="brand-site-ervaring-jaren">
-                    <button
-                        v-for="merk in jaarMerken"
-                        :key="merk.jaar"
-                        type="button"
-                        tabindex="-1"
-                        class="brand-site-ervaring-jaar"
-                        :style="{ top: `${merk.positie}%` }"
-                        :data-actief="
-                            actief.jaar === merk.jaar ? '' : undefined
-                        "
-                        @click="ga(merk.index)"
-                    >
-                        {{ merk.jaar }}
-                    </button>
-                </div>
-            </div>
-
             <!--
                 De stapel. Alle ervaringen staan hier in de HTML -- ook de
                 kaarten die je niet ziet, zodat een zoekmachine de hele
