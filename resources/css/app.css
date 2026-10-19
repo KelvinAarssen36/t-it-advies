@@ -764,8 +764,19 @@ html::-webkit-scrollbar-thumb:hover {
   breekregel. Een geplakt adres of een samengesteld woord van veertig
   tekens stak daardoor uit zijn kaart, en bij de kerngegevens werd het door
   de `overflow: hidden` van de strook halverwege afgeknipt.
+
+  **En de twee plekken die in een portaal staan, erbij.** Een venster
+  (`.brand-blad`) en het "Meer"-lijstje in de kop (`.brand-site-nav-meer`)
+  worden aan het eind van `<body>` getekend, buiten `.brand-dark-page`.
+  Overerven doen ze dus niet, en daar stond hetzelfde lange woord alsnog
+  uit zijn vak: `.brand-blad` heeft `overflow-y: auto`, en dan maakt de
+  browser van de andere kant óók `auto` -- een horizontale schuifbalk in
+  het venster. Gemeten op een telefoon van 390 pixels: het venster was er
+  499 breed. Zie valkuilen.md, "Een venster staat niet in .brand-site".
 */
-.brand-dark-page {
+.brand-dark-page,
+.brand-blad,
+.brand-site-nav-meer {
     overflow-wrap: break-word;
 }
 
@@ -804,7 +815,7 @@ html::-webkit-scrollbar-thumb:hover {
   breedte en het verhaal op /over-mij had regels van 110 tekens. Zie
   valkuilen.md, "Een globale regel met een klasse ervoor weegt mee".
 */
-:where(.brand-dark-page)
+:where(.brand-dark-page, .brand-blad, .brand-site-nav-meer)
     :where(
         h1,
         h2,
@@ -7208,7 +7219,7 @@ button:hover > .brand-verlaat,
 
     .brand-voetblok-uitleg {
         margin-top: 0.25rem;
-        max-width: 60ch;
+        max-width: min(60ch, 100%);
         font-size: 0.8125rem;
         text-wrap: pretty;
         color: var(--muted-foreground);
@@ -7293,7 +7304,7 @@ button:hover > .brand-verlaat,
 
     .brand-overmij-blokuitleg {
         margin-top: 0.25rem;
-        max-width: 60ch;
+        max-width: min(60ch, 100%);
         font-size: 0.8125rem;
         text-wrap: pretty;
         color: var(--muted-foreground);
@@ -7388,7 +7399,7 @@ button:hover > .brand-verlaat,
     }
 
     .brand-overmij-voorbeeldtekst {
-        max-width: 68ch;
+        max-width: min(68ch, 100%);
         font-size: 0.875rem;
         line-height: 1.7;
         text-wrap: pretty;

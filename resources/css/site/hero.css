@@ -106,7 +106,7 @@
   liever een afbreking dan een pagina die zijwaarts gaat schuiven.
 */
 .brand-site-hero-titel {
-    max-width: 18ch;
+    max-width: min(18ch, 100%);
     font-weight: 600;
     color: var(--site-kop);
     letter-spacing: -0.035em;
@@ -117,13 +117,13 @@
 }
 
 .brand-site-hero-titel[data-lengte='middel'] {
-    max-width: 22ch;
+    max-width: min(22ch, 100%);
     font-size: clamp(2rem, 1.4rem + 2.2vw, 3.375rem);
     line-height: 1.06;
 }
 
 .brand-site-hero-titel[data-lengte='lang'] {
-    max-width: 28ch;
+    max-width: min(28ch, 100%);
     font-size: clamp(1.625rem, 1.3rem + 1.3vw, 2.5rem);
     line-height: 1.12;
     letter-spacing: -0.025em;

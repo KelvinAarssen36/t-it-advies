@@ -18,6 +18,7 @@ import {
     lichtVeld,
     revealOnScroll,
     scrollNaar,
+    slaOngezieneSectiesOver,
     splitReveal,
     startSmoothScroll,
 } from '@/lib/motion';
@@ -73,6 +74,7 @@ let stopReveal: (() => void) | undefined;
 let stopSplit: (() => void) | undefined;
 let stopListening: (() => void) | undefined;
 let stopVeld: (() => void) | undefined;
+let stopOverslaan: (() => void) | undefined;
 
 /**
  * Is er alleen van taal gewisseld, en waar stond de bezoeker toen?
@@ -222,6 +224,22 @@ const scanReveals = () => {
     stopVeld?.();
     stopVeld =
         veld.value === null ? undefined : lichtVeld(veld.value, root.value);
+
+    /*
+     * Secties buiten beeld laten we de browser overslaan -- de grootste
+     * snelheidswinst op deze site, en hij raakt geen enkele animatie aan.
+     *
+     * Hier en niet in `onMounted`: `<main>` krijgt de taal en de pagina
+     * als sleutel, dus bij elke wissel staat er een nieuwe. De oude
+     * opruimen hoort erbij, anders blijven er luisteraars hangen die naar
+     * een `<main>` wijzen die er niet meer is.
+     *
+     * Vóór `hermeetScroll()`, zodat de verversing hieronder meteen
+     * controleert of de opgemeten hoogtes kloppen.
+     */
+    stopOverslaan?.();
+    stopOverslaan =
+        hoofd.value === null ? undefined : slaOngezieneSectiesOver(hoofd.value);
 
     /*
      * En dan pas opmeten. De pagina is net een paar schermen langer of
@@ -611,6 +629,7 @@ onBeforeUnmount(() => {
     document.documentElement.classList.remove(SITE_KLASSE);
     window.removeEventListener('popstate', onthoudGeschiedenis);
     window.removeEventListener('brand:rustig', scanReveals);
+    stopOverslaan?.();
     stopVeld?.();
     stopListening?.();
     stopSplit?.();

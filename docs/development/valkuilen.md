@@ -296,6 +296,45 @@ Dat is erger dan de fout die we wilden oplossen.
 
 ---
 
+### `contain-intrinsic-size` gaat over de binnenmaat
+
+Bij `content-visibility: auto` hoort een maat voor wat de browser
+overslaat. Die maat is de **binnenmaat**: de padding en de rand telt hij
+er nog bij op.
+
+Met `getBoundingClientRect().height` -- de buitenmaat -- werd elke sectie
+zijn eigen padding te hoog. Met twaalf secties werd de pagina duizend
+pixels langer, en een pagina die van hoogte verandert laat ScrollTrigger
+opnieuw meten; die verversing zette het overslaan weer uit, waarna het
+opnieuw aanging. Het kostte meer dan het opleverde.
+
+Trek de padding en de randen eraf, of lees de binnenmaat via een
+`ResizeObserver`. Zie `slaOngezieneSectiesOver()` in motion.ts.
+
+### Een sectie overslaan is iets anders dan hem niet tonen
+
+`content-visibility: auto` zet ook `contain: layout style paint` aan, en
+dat **altijd** -- ook als de sectie gewoon in beeld staat. Alles wat
+buiten het vak van de sectie uitsteekt wordt dus afgekapt.
+
+Op deze site viel dat mee, maar dat is gecontroleerd en niet aangenomen:
+elf schermafdrukken met en zonder, naast elkaar gelegd. De overloop die
+de meting aanwees zat overal binnen een `overflow: hidden` die er al was.
+Zet je het op een nieuw onderdeel, kijk dan eerst of er een gloed, een
+schaduw of een spoor buiten het vak ligt.
+
+### Meten of iets wordt overgeslagen doe je niet met geometrie
+
+`element.getBoundingClientRect()` op iets binnen een overgeslagen sectie
+laat de browser die sectie alsnog tekenen. Je meting maakt dan kapot wat
+je wilde meten, en je ziet nul overgeslagen secties terwijl het gewoon
+werkt.
+
+Gebruik `contentvisibilityautostatechange`. En let op: wie al wordt
+overgeslagen vóórdat je gaat luisteren, stuurt geen signaal -- je
+begintoestand moet je dus zelf goed zetten of je ziet hetzelfde verkeerde
+antwoord.
+
 ## De publieke site
 
 ### Een `backdrop-filter` vangt wat erin `position: fixed` staat
@@ -325,6 +364,24 @@ via `.brand-site` geërfd wordt -- het lettertype, de kleur, de variabelen
 die alleen daar staan zoals `--site-ease` -- komt daar niet aan. Zet het op
 het venster zelf (`.brand-blad` in `resources/css/site/vensters.css`), en
 gebruik in een venster alleen de tokens uit `:root`.
+
+**Dit is twee keer misgegaan, de tweede keer met de breekregel.**
+`overflow-wrap: break-word` stond op `.brand-dark-page` -- precies omdat
+het erft, zodat één regel de hele site dekt. Alleen erft een portaal
+niets. Zet de klant een functietitel als
+"Bedrijfsinformatievoorzieningsbeheerder" in zijn tijdlijn, dan brak dat
+woord in het venster niet af. En omdat `.brand-blad` al
+`overflow-y: auto` heeft, maakt de browser van de andere kant óók `auto`:
+een horizontale schuifbalk in het venster. Gemeten op een telefoon van
+390 pixels was het venster er 499 breed.
+
+Het lijstje achter "Meer" in de kop (`.brand-site-nav-meer`) staat om
+dezelfde reden in een portaal en toont ook tekst van de klant.
+
+Loop bij een nieuw oppervlak in een portaal dus na wat het níet erft.
+`BreekregelTest` bewaakt deze ene, en bewaakt er ook twee tegen elkaar:
+`break-word` en `min-width: 0` horen dezelfde oppervlakken te noemen,
+anders werkt het op het verschil half.
 
 ### `var(--x), terugval` is niet hetzelfde als `var(--x, terugval)`
 

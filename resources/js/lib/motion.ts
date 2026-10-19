@@ -365,6 +365,104 @@ export function bundel(
  */
 let lenis: Lenis | undefined;
 
+/**
+ * Secties buiten beeld hoeft de browser niet te tekenen.
+ *
+ * De grootste snelheidswinst op de publieke site, en hij kost geen enkele
+ * animatie. Zie de uitleg bij `.brand-site-overslaan` in
+ * resources/css/site/basis.css voor de meetcijfers.
+ *
+ * **Wat deze functie doet, doet de CSS niet alleen.** `content-visibility`
+ * haalt de hoogte van een overgeslagen sectie weg; wat ervoor in de plaats
+ * komt staat in `contain-intrinsic-size`. Staat daar een gok, dan wordt de
+ * pagina korter of langer dan hij was en verspringt alles eronder -- en
+ * ScrollTrigger heeft zijn posities op dat moment al uitgerekend. Daarom
+ * meet deze functie elke sectie eerst op, zet die maat erop, en pas daarna
+ * gaat het overslaan aan. Zo verandert er geen pixel.
+ *
+ * `auto` ervoor laat de browser de maat bijwerken zodra hij de sectie
+ * echt een keer getekend heeft. Vanaf dat moment klopt hij tot op de
+ * pixel, ook als een lettertype of een afbeelding later nog iets
+ * verschuift.
+ *
+ * **De binnenmaat en niet de buitenmaat.** `contain-intrinsic-size` zegt
+ * hoe groot de inhoud is; de browser telt de padding en de rand daar nog
+ * bij op. Zet je er de buitenmaat in, dan wordt elke sectie zijn eigen
+ * padding te hoog. Gemeten met twaalf secties: de pagina werd duizend
+ * pixels langer, en een pagina die van hoogte verandert laat ScrollTrigger
+ * opnieuw meten -- waarna deze functie weer draait, en zo verder. Dat
+ * kostte meer dan het opleverde.
+ *
+ * **Eerst alle hoogtes lezen, dan pas schrijven.** Lezen en schrijven om
+ * en om dwingt de browser bij elke ronde opnieuw de opmaak te berekenen --
+ * met twaalf secties is dat twaalf keer in plaats van één keer.
+ *
+ * **Bij een refresh gaat het even uit.** ScrollTrigger meet dan opnieuw
+ * waar alles staat, en dat moet gebeuren terwijl de secties echt getekend
+ * zijn; anders rekent hij met de opgegeven maat in plaats van met de
+ * echte. `refreshInit` komt vóór dat meten, `refresh` erna.
+ */
+export function slaOngezieneSectiesOver(main: HTMLElement): () => void {
+    const KLASSE = 'brand-site-overslaan';
+
+    const secties = (): HTMLElement[] =>
+        Array.from(main.children).filter(
+            (kind): kind is HTMLElement =>
+                kind instanceof HTMLElement && kind.tagName === 'SECTION',
+        );
+
+    const uit = (): void => main.classList.remove(KLASSE);
+
+    const meet = (): void => {
+        uit();
+
+        const vakken = secties();
+
+        const hoogtes = vakken.map((sectie) => {
+            const buiten = sectie.getBoundingClientRect().height;
+            const stijl = getComputedStyle(sectie);
+
+            const randen =
+                parseFloat(stijl.paddingTop) +
+                parseFloat(stijl.paddingBottom) +
+                parseFloat(stijl.borderTopWidth) +
+                parseFloat(stijl.borderBottomWidth);
+
+            return buiten - (Number.isFinite(randen) ? randen : 0);
+        });
+
+        vakken.forEach((sectie, plek) => {
+            const hoogte = Math.round(hoogtes[plek]);
+
+            // Een sectie zonder hoogte is er nog niet; die slaan we over,
+            // anders zou hij op nul blijven staan.
+            if (hoogte <= 0) {
+                return;
+            }
+
+            sectie.style.containIntrinsicSize = `auto ${hoogte}px`;
+        });
+
+        main.classList.add(KLASSE);
+    };
+
+    meet();
+
+    ScrollTrigger.addEventListener('refreshInit', uit);
+    ScrollTrigger.addEventListener('refresh', meet);
+
+    return () => {
+        ScrollTrigger.removeEventListener('refreshInit', uit);
+        ScrollTrigger.removeEventListener('refresh', meet);
+
+        uit();
+
+        for (const sectie of secties()) {
+            sectie.style.removeProperty('contain-intrinsic-size');
+        }
+    };
+}
+
 export function startSmoothScroll(): () => void {
     if (prefersReducedMotion()) {
         return () => {};

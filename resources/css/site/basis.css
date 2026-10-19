@@ -143,6 +143,20 @@ html.brand-site-pagina body {
     z-index: -1;
     overflow: hidden;
     pointer-events: none;
+
+    /*
+      Een eigen laag voor de achtergrond.
+
+      Dit vlak staat stil terwijl de hele pagina erlangs schuift. Zonder
+      deze regel tekent de browser het bij elke veeg opnieuw mee; met deze
+      regel houdt hij er een kopie van en schuift hij alleen de inhoud
+      erover. Gemeten op een vier keer tragere machine: haperende beeldjes
+      van drie procent naar één, en twee beeldjes per seconde erbij.
+
+      Er verandert niets aan hoe het eruitziet -- het is een tip aan de
+      browser over hóe hij tekent, niet over wát.
+    */
+    will-change: transform;
 }
 
 /*
@@ -710,4 +724,48 @@ html.brand-site-pagina body {
 */
 .brand-site main:focus {
     outline: none;
+}
+
+/*
+  ---------------------------------------------------------------------------
+  Secties buiten beeld hoeft de browser niet te tekenen
+  ---------------------------------------------------------------------------
+
+  Dit is de grootste snelheidswinst op de publieke site, en hij kost geen
+  enkele animatie.
+
+  De landingspagina is ruim tienduizend pixels hoog met zo'n tweeduizend
+  elementen. Zonder dit rekende de browser bij élk beeldje de stijlen door
+  van álles wat er staat -- ook van de drie secties die nog duizenden
+  pixels onder je scherm liggen. Gemeten op een machine die vier keer
+  trager rekent dan deze, tijdens een veeg van ruim twee seconden:
+
+      zoals het was      stijlen 729ms  opmaak 142ms  script 454ms   30 b/s
+      met deze regel     stijlen 294ms  opmaak  48ms  script  53ms   52 b/s
+
+  Dat is tweederde minder werk, en het aantal haperende beeldjes ging van
+  tien procent naar nul.
+
+  **De animaties blijven precies zoals ze waren.** Een sectie die buiten
+  beeld ligt wordt niet getekend; komt hij in beeld, dan tekent de browser
+  hem en doet hij alles wat hij altijd deed. Het is de browser die werk
+  overslaat, niet wij.
+
+  **`contain-intrinsic-size` zet `PublicLayout` er zelf op**, per sectie en
+  in pixels, gemeten vóórdat deze klasse erbij komt. Dat is geen
+  nauwkeurigheid om de nauwkeurigheid: een sectie die niet getekend wordt
+  heeft geen eigen hoogte meer, dus zonder die maat zou de pagina korter
+  worden en zou alles eronder verspringen -- en ScrollTrigger heeft zijn
+  posities dan al uitgerekend. Met de gemeten maat verandert er geen pixel.
+
+  **Waarom niet op `<main>` zelf of op een dieper element.** Op `main`
+  valt er niets over te slaan (die is altijd in beeld), en dieper wordt de
+  winst kleiner terwijl het aantal plekken waar een versiering buiten zijn
+  vak valt groter wordt. De sectie is de natuurlijke eenheid: dat is ook
+  wat in het menu staat.
+
+  Zie docs/architecture/prestaties.md.
+*/
+.brand-site-overslaan > section {
+    content-visibility: auto;
 }

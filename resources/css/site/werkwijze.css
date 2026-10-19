@@ -532,7 +532,7 @@
 
 .brand-site-werkwijzepagina-inleiding {
     margin-top: 1rem;
-    max-width: 60ch;
+    max-width: min(60ch, 100%);
     font-size: var(--site-maat-lead);
     line-height: 1.6;
     color: var(--site-tekst-zacht);
@@ -621,7 +621,7 @@
 
 .brand-site-werkwijzepagina-kort {
     margin-top: 0.625rem;
-    max-width: 62ch;
+    max-width: min(62ch, 100%);
     font-size: var(--site-maat-lead);
     line-height: 1.6;
     color: var(--site-tekst);
@@ -633,7 +633,7 @@
     display: grid;
     gap: 0.875rem;
     margin-top: 0.875rem;
-    max-width: 62ch;
+    max-width: min(62ch, 100%);
     font-size: var(--site-maat-tekst);
     line-height: 1.7;
     color: var(--site-tekst-zacht);
@@ -646,7 +646,7 @@
     display: grid;
     gap: 0.25rem;
     margin-top: 1.25rem;
-    max-width: 62ch;
+    max-width: min(62ch, 100%);
     padding-left: 1rem;
     border-left: 1px solid var(--site-plaat-rand-sterk);
     font-size: var(--site-maat-tekst);

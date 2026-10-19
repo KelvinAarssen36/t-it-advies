@@ -237,9 +237,25 @@
     align-items: flex-start;
 }
 
+/*
+  `min(24ch, 100%)` en niet `24ch`.
+
+  Vierentwintig tekens is de leesmaat van een kop -- die blijft. Maar op
+  een smalle kaart is vierentwintig tekens van deze lettergrootte breder
+  dan de kaart zelf, en dan claimt de kop die ruimte gewoon: gemeten op
+  een telefoon was de titel 432 pixels breed in een vak van 308, en liep
+  "Bedrijfsinformatievoorzieningsbeheerder" de kaart uit.
+
+  De breekregel loste dat niet op. Die laat het wóórd afbreken; dit gaat
+  over de doos eromheen. Zie app.css bij `.brand-dark-page`.
+
+  Met `min()` verandert er niets zodra er ruimte is, en klemt hij op de
+  kaart zodra die er niet is. Alle maten in tekens op de publieke site
+  staan daarom zo.
+*/
 .brand-site-casus-titel {
     margin-top: 0.875rem;
-    max-width: 24ch;
+    max-width: min(24ch, 100%);
     font-size: var(--site-maat-titel);
     font-weight: 600;
     line-height: 1.08;
@@ -249,7 +265,7 @@
 }
 
 .brand-site-casus-titel[data-lengte='lang'] {
-    max-width: 32ch;
+    max-width: min(32ch, 100%);
     font-size: var(--site-maat-titel-lang);
     line-height: 1.15;
     letter-spacing: -0.02em;
@@ -269,7 +285,7 @@
 
 .brand-site-casus-zin {
     margin-top: 0.875rem;
-    max-width: 62ch;
+    max-width: min(62ch, 100%);
     font-size: var(--site-maat-tekst);
     line-height: 1.65;
     text-wrap: pretty;
@@ -1103,7 +1119,7 @@
 }
 
 .brand-site-projectbreed-zin {
-    max-width: 68ch;
+    max-width: min(68ch, 100%);
     font-size: var(--site-maat-tekst);
     line-height: 1.6;
     color: var(--site-tekst-zacht);
@@ -1207,7 +1223,7 @@
 
 .brand-site-projectpagina-inleiding {
     margin-top: 1rem;
-    max-width: 60ch;
+    max-width: min(60ch, 100%);
     font-size: var(--site-maat-lead);
     line-height: 1.6;
     text-wrap: pretty;
@@ -1312,14 +1328,14 @@
 
 .brand-site-projectpagina-kop .brand-site-projectpagina-titel {
     margin-top: 0.875rem;
-    max-width: 22ch;
+    max-width: min(22ch, 100%);
     font-size: var(--site-maat-titel);
 }
 
 .brand-site-projectpagina-titel[data-lengte='lang'],
 .brand-site-projectpagina-kop
     .brand-site-projectpagina-titel[data-lengte='lang'] {
-    max-width: 32ch;
+    max-width: min(32ch, 100%);
     font-size: var(--site-maat-titel-lang);
     line-height: 1.15;
     letter-spacing: -0.02em;
@@ -1405,7 +1421,7 @@
 }
 
 .brand-site-projectpagina-tekst {
-    max-width: 68ch;
+    max-width: min(68ch, 100%);
     font-size: 1rem;
     line-height: 1.75;
     text-wrap: pretty;

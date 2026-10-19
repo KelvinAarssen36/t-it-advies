@@ -209,6 +209,72 @@ per navigatie, voor en na. Dat is `gsap.matchMedia()`: zijn `add()` hangt
 een luisteraar aan een `MediaQueryList` die `revert()` nooit weghaalt
 (gezien in `gsap-core.js`). Er hangt geen DOM aan.
 
+## Ronde 8: de traagheid bij de klant (16 oktober)
+
+De klant meldde dat de site bij hem "mega laggy" was terwijl hij hier vlot
+liep. Dat is nagebootst door de processor af te knijpen, en toen
+uitgezocht waar de tijd heen ging.
+
+### Wat het níet was
+
+Dit staat er omdat het uren kan kosten om het nog eens uit te zoeken. Elk
+van deze is gemeten, niet beredeneerd:
+
+| Verdachte                                | Uitkomst                                                                    |
+| ---------------------------------------- | --------------------------------------------------------------------------- |
+| Laragon of de server bij de klant        | Nee -- zelfde beeld op een afgeknepen processor hier                        |
+| Schaduwen, `filter`, `backdrop-filter`   | Nee -- alle drie uitzetten gaf 33 tegen 32 beeldjes, dus niets              |
+| `html:has(.brand-dark-page)`             | Nee -- de regel weghalen veranderde niets (854 tegen 925ms, binnen de ruis) |
+| Gedwongen herberekeningen door onze code | Nee -- 234 geometrie-uitvragen over 130 beeldjes, dat is niets              |
+| Zware afbeeldingen                       | Nee -- de grote PNG's in `public/images` worden nergens gebruikt            |
+| `will-change` eraf halen                 | Maakte het **slechter**: 41,8 tegen 42,5 beeldjes                           |
+| CSS-animaties uitzetten                  | Niets: 43,1 tegen 42,5                                                      |
+
+### Wat het wél was
+
+De landingspagina is ruim tienduizend pixels hoog met zo'n tweeduizend
+elementen. De browser rekende bij elk beeldje álles door -- ook de secties
+die duizenden pixels onder het scherm lagen. In een trace was dat te zien
+als `Layerize` van 327ms over 122 beeldjes (2,7ms per beeld alleen al om
+de lagen te bepalen), 838 keer verven en 2996 laagbijwerkingen: ongeveer
+vijfentwintig lagen per beeld.
+
+De oplossing is `content-visibility: auto` op de secties. Zie
+`.brand-site-overslaan` in [`site/basis.css`](../../resources/css/site/basis.css)
+en `slaOngezieneSectiesOver()` in [`motion.ts`](../../resources/js/lib/motion.ts).
+
+**Er is geen animatie aangeraakt.** Het is de browser die tekenwerk
+overslaat dat je toch niet ziet; komt een sectie in beeld, dan doet hij
+precies wat hij deed.
+
+### Wat het oplevert
+
+Gemeten over een veeg van vijfentwintig muiswielstappen, dezelfde veeg
+voor en na:
+
+| Processor                | Voor                      | Na                        |
+| ------------------------ | ------------------------- | ------------------------- |
+| 1x (een normale machine) | 60 b/s, 0% hapering       | 60 b/s, 0% hapering       |
+| 4x trager                | 30-34 b/s, 4-10% hapering | **42 b/s, 1-3% hapering** |
+| 6x trager                | 19 b/s, 37% hapering      | **24 b/s, 12% hapering**  |
+
+En per soort werk, bij 4x: doorrekenen van stijlen 729 → 294ms, opmaak
+142 → 48ms, script 454 → 53ms in de proefopstelling. In de ingebouwde
+versie liggen die getallen hoger omdat ScrollTrigger er zijn eigen
+verversing omheen doet; het beeldritme is wat telt, en dat is het cijfer
+hierboven.
+
+### Wat er nog open staat
+
+Op een machine die zes keer trager is dan deze blijft het met 24 beeldjes
+per seconde schokkerig. Dat is geen los te repareren plek meer: wat
+overblijft is het tekenwerk van het ontwerp zelf -- de lagen, de
+gradiënten en het licht. Verder komen betekent daar iets aan veranderen,
+en dat is een ontwerpkeuze en geen optimalisatie.
+
+De terugval in `motion.ts` (`machineIsTraag()`) blijft daarvoor het
+vangnet.
+
 ## Wat bewust is gebleven
 
 - **De knopglans (`.brand-glans`).** Een eindeloze CSS-animatie; omdat de
