@@ -7,6 +7,7 @@ import InputError from '@/components/InputError.vue';
 import LocaleFlag from '@/components/LocaleFlag.vue';
 import LogoKiezer from '@/components/LogoKiezer.vue';
 import MaandKiezer from '@/components/MaandKiezer.vue';
+import VerplichtMelding from '@/components/VerplichtMelding.vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -26,6 +27,8 @@ import {
     bevestigVerwijderen,
 } from '@/lib/bevestiging';
 import { t } from '@/lib/i18n';
+import { useVerplicht } from '@/lib/verplicht';
+import { nederlandsAlsHint } from '@/lib/vertaling';
 import website from '@/routes/website';
 import projecten from '@/routes/website/projecten';
 import type { ProjectOpties, ProjectRij } from '@/types/projecten';
@@ -127,6 +130,68 @@ const formulier = ref<Formulier>(leeg());
 /** Of de eigenaar zijn eigen woord moet invullen. */
 const eigenSoort = computed(() => formulier.value.type === 'anders');
 
+/*
+ * Alles wat moet, staat op stap 1; stap 2 is het Engels en dat mag leeg
+ * blijven. Het eigen soort telt alleen mee als "Anders" gekozen is --
+ * dezelfde voorwaarde als `required_if` in ProjectRequest.
+ */
+const nodig = useVerplicht(
+    () => [
+        {
+            sleutel: 'organisation',
+            naam: t('Organisatie'),
+            gevuld: formulier.value.organisation.trim() !== '',
+            stap: 1,
+        },
+        ...(eigenSoort.value
+            ? [
+                  {
+                      sleutel: 'type_label_nl',
+                      naam: t('Je eigen soort'),
+                      gevuld: formulier.value.type_label_nl.trim() !== '',
+                      stap: 1,
+                  },
+              ]
+            : []),
+        {
+            sleutel: 'title_nl',
+            naam: t('Titel'),
+            gevuld: formulier.value.title_nl.trim() !== '',
+            stap: 1,
+        },
+        {
+            sleutel: 'role_nl',
+            naam: t('Jouw rol'),
+            gevuld: formulier.value.role_nl.trim() !== '',
+            stap: 1,
+        },
+        {
+            sleutel: 'started_on',
+            naam: t('Begin'),
+            gevuld: formulier.value.start.trim() !== '',
+            stap: 1,
+        },
+        {
+            sleutel: 'summary_nl',
+            naam: t('Korte samenvatting'),
+            gevuld: formulier.value.summary_nl.trim() !== '',
+            stap: 1,
+        },
+    ],
+    stap,
+);
+
+/** Van stap 1 naar stap 2, maar niet met een half ingevuld formulier. */
+const volgende = (): void => {
+    if (!nodig.klaar) {
+        nodig.meld();
+
+        return;
+    }
+
+    naarStap(2);
+};
+
 /* --- Het beeld ------------------------------------------------------- */
 
 const beeld = ref<File | null>(null);
@@ -193,6 +258,7 @@ const vulIn = (item: ProjectRij | null): void => {
     stap.value = 1;
     richting.value = 'vooruit';
     fouten.value = {};
+    nodig.herstel();
     automatisch.value = null;
     vertaalFout.value = null;
 };
@@ -426,6 +492,19 @@ const veldenVanStap1 = [
 const meteenOnline = ref(true);
 
 const opslaan = async (): Promise<void> => {
+    /*
+     * Staat er nog iets leeg op stap 1, dan gaat het venster daarheen
+     * terug. Anders leest de klant op stap 2 een melding over een veld
+     * dat hij niet voor zich heeft -- dezelfde reden als bij een fout
+     * van de server hieronder.
+     */
+    if (!nodig.compleet) {
+        nodig.meld();
+        naarStap(nodig.eersteLegeStap());
+
+        return;
+    }
+
     open.value = false;
     await adem();
 
@@ -589,7 +668,12 @@ const samenvattingOver = computed(
                             v-model="formulier.organisation"
                             :maxlength="120"
                         />
-                        <InputError :message="fouten.organisation" />
+                        <InputError
+                            :message="
+                                fouten.organisation ??
+                                nodig.melding('organisation')
+                            "
+                        />
                         <p class="text-xs text-pretty text-muted-foreground">
                             {{
                                 $t(
@@ -615,7 +699,12 @@ const samenvattingOver = computed(
                                 $t('Bijvoorbeeld: Haalbaarheidsonderzoek')
                             "
                         />
-                        <InputError :message="fouten.type_label_nl" />
+                        <InputError
+                            :message="
+                                fouten.type_label_nl ??
+                                nodig.melding('type_label_nl')
+                            "
+                        />
                     </div>
 
                     <div class="grid gap-2">
@@ -627,6 +716,9 @@ const samenvattingOver = computed(
                             id="project-eigensoort-en"
                             v-model="formulier.type_label_en"
                             :maxlength="60"
+                            :placeholder="
+                                nederlandsAlsHint(formulier.type_label_nl)
+                            "
                         />
                         <InputError :message="fouten.type_label_en" />
                     </div>
@@ -643,7 +735,11 @@ const samenvattingOver = computed(
                             :maxlength="120"
                             v-focus
                         />
-                        <InputError :message="fouten.title_nl" />
+                        <InputError
+                            :message="
+                                fouten.title_nl ?? nodig.melding('title_nl')
+                            "
+                        />
                     </div>
 
                     <div class="grid gap-2">
@@ -658,7 +754,11 @@ const samenvattingOver = computed(
                                 $t('Bijvoorbeeld: Technisch projectleider')
                             "
                         />
-                        <InputError :message="fouten.role_nl" />
+                        <InputError
+                            :message="
+                                fouten.role_nl ?? nodig.melding('role_nl')
+                            "
+                        />
                     </div>
                 </div>
 
@@ -675,7 +775,12 @@ const samenvattingOver = computed(
                                 :maanden="props.opties.maanden"
                                 :jaren="props.opties.jaren"
                             />
-                            <InputError :message="fouten.started_on" />
+                            <InputError
+                                :message="
+                                    fouten.started_on ??
+                                    nodig.melding('started_on')
+                                "
+                            />
                         </div>
 
                         <div v-if="!formulier.loopt" class="grid gap-2">
@@ -712,7 +817,11 @@ const samenvattingOver = computed(
                         :maxlength="props.opties.samenvattingMax"
                         rows="3"
                     />
-                    <InputError :message="fouten.summary_nl" />
+                    <InputError
+                        :message="
+                            fouten.summary_nl ?? nodig.melding('summary_nl')
+                        "
+                    />
                     <p class="text-xs text-muted-foreground">
                         {{
                             $t(':aantal tekens over', {
@@ -815,10 +924,23 @@ const samenvattingOver = computed(
                     </Button>
                 </div>
 
+                <!--
+                    De Nederlandse tekst boven het Engelse veld, zodat je
+                    niet hoeft terug te bladeren om te weten wát je aan
+                    het vertalen bent. Lukt het automatisch vertalen niet,
+                    dan is dit het enige houvast dat er is. Zelfde vorm
+                    als bij een certificaat, een dienst, een ervaring en
+                    een opleiding; zie .brand-bron in app.css.
+                -->
                 <div v-if="eigenSoort" class="grid gap-2">
                     <Label for="project-eigensoort-en2">
                         {{ $t('Je eigen soort') }}
                     </Label>
+                    <p class="brand-bron">
+                        {{
+                            formulier.type_label_nl || $t('Nog niets ingevuld')
+                        }}
+                    </p>
                     <Input
                         id="project-eigensoort-en2"
                         v-model="formulier.type_label_en"
@@ -830,6 +952,9 @@ const samenvattingOver = computed(
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div class="grid gap-2">
                         <Label for="project-titel-en">{{ $t('Titel') }}</Label>
+                        <p class="brand-bron">
+                            {{ formulier.title_nl || $t('Nog niets ingevuld') }}
+                        </p>
                         <Input
                             id="project-titel-en"
                             v-model="formulier.title_en"
@@ -840,6 +965,9 @@ const samenvattingOver = computed(
 
                     <div class="grid gap-2">
                         <Label for="project-rol-en">{{ $t('Jouw rol') }}</Label>
+                        <p class="brand-bron">
+                            {{ formulier.role_nl || $t('Nog niets ingevuld') }}
+                        </p>
                         <Input
                             id="project-rol-en"
                             v-model="formulier.role_en"
@@ -861,6 +989,9 @@ const samenvattingOver = computed(
                     <Label for="project-samenvatting-en">
                         {{ $t('Korte samenvatting') }}
                     </Label>
+                    <p class="brand-bron">
+                        {{ formulier.summary_nl || $t('Nog niets ingevuld') }}
+                    </p>
                     <Textarea
                         id="project-samenvatting-en"
                         v-model="formulier.summary_en"
@@ -875,6 +1006,9 @@ const samenvattingOver = computed(
                     <Label for="project-omschrijving-en">
                         {{ $t('Wat je hebt gedaan') }}
                     </Label>
+                    <p class="brand-bron">
+                        {{ formulier.body_nl || $t('Nog niets ingevuld') }}
+                    </p>
                     <Textarea
                         id="project-omschrijving-en"
                         v-model="formulier.body_en"
@@ -888,6 +1022,9 @@ const samenvattingOver = computed(
                     <Label for="project-resultaat-en">
                         {{ $t('Wat het opleverde') }}
                     </Label>
+                    <p class="brand-bron">
+                        {{ formulier.result_nl || $t('Nog niets ingevuld') }}
+                    </p>
                     <Textarea
                         id="project-resultaat-en"
                         v-model="formulier.result_en"
@@ -897,6 +1034,8 @@ const samenvattingOver = computed(
                     <InputError :message="fouten.result_en" />
                 </div>
             </div>
+
+            <VerplichtMelding :ontbreekt="nodig.ontbreekt" />
 
             <DialogFooter>
                 <Button
@@ -920,7 +1059,8 @@ const samenvattingOver = computed(
                     v-if="stap === 1"
                     type="button"
                     variant="bewerken"
-                    @click="naarStap(2)"
+                    :geblokkeerd="!nodig.klaar"
+                    @click="volgende"
                 >
                     {{ $t('Volgende') }}
                 </Button>
@@ -929,6 +1069,7 @@ const samenvattingOver = computed(
                     type="button"
                     variant="bewerken"
                     :disabled="bezig"
+                    :geblokkeerd="!nodig.compleet"
                     @click="opslaan"
                 >
                     {{ bezig ? $t('Bezig...') : $t('Opslaan') }}

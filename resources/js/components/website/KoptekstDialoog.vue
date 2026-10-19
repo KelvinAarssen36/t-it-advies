@@ -4,6 +4,7 @@ import { Languages, Loader2 } from '@lucide/vue';
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import InputError from '@/components/InputError.vue';
 import LocaleFlag from '@/components/LocaleFlag.vue';
+import VerplichtMelding from '@/components/VerplichtMelding.vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -17,6 +18,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { bevestigBewerken, bevestigVerwijderen } from '@/lib/bevestiging';
 import { t } from '@/lib/i18n';
+import { useVerplicht } from '@/lib/verplicht';
+import { nederlandsAlsHint } from '@/lib/vertaling';
 import website from '@/routes/website';
 import type { KoptekstRij } from '@/types/secties';
 
@@ -84,6 +87,29 @@ const tekst = ref({
     intro_en: '',
 });
 
+/*
+ * Het opschrift telt alleen mee als dit onderdeel er een heeft. De
+ * tijdlijn heeft er geen, en daar staat het veld dus ook niet op het
+ * scherm -- zie `opschrift` hierboven en BewaartKoptekst.php, die
+ * dezelfde afweging op de server maakt.
+ */
+const nodig = useVerplicht(() => [
+    ...(props.opschrift
+        ? [
+              {
+                  sleutel: 'eyebrow_nl',
+                  naam: t('Opschrift'),
+                  gevuld: tekst.value.eyebrow_nl.trim() !== '',
+              },
+          ]
+        : []),
+    {
+        sleutel: 'title_nl',
+        naam: t('Titel'),
+        gevuld: tekst.value.title_nl.trim() !== '',
+    },
+]);
+
 /**
  * Het Engels zoals het bij het openen van het venster stond.
  *
@@ -131,6 +157,7 @@ const vulIn = (): void => {
     automatisch.value = props.kop.automatisch_vertaald;
     vertaalFout.value = null;
     fouten.value = {};
+    nodig.herstel();
 };
 
 watch(open, (isOpen) => {
@@ -257,6 +284,12 @@ const vertaal = async (): Promise<void> => {
 /* --- Opslaan ----------------------------------------------------------- */
 
 const opslaan = async (): Promise<void> => {
+    if (!nodig.compleet) {
+        nodig.meld();
+
+        return;
+    }
+
     /*
      * Het venster gaat dicht vóór de bevestiging in plaats van eronder
      * te liggen; zie de toelichting in pages/website/Indeling.vue.
@@ -324,7 +357,11 @@ const adem = (): Promise<void> =>
                         v-model="tekst.eyebrow_nl"
                         maxlength="60"
                     />
-                    <InputError :message="fouten.eyebrow_nl" />
+                    <InputError
+                        :message="
+                            fouten.eyebrow_nl ?? nodig.melding('eyebrow_nl')
+                        "
+                    />
                 </div>
 
                 <div class="grid gap-1.5">
@@ -337,7 +374,9 @@ const adem = (): Promise<void> =>
                         v-model="tekst.title_nl"
                         maxlength="120"
                     />
-                    <InputError :message="fouten.title_nl" />
+                    <InputError
+                        :message="fouten.title_nl ?? nodig.melding('title_nl')"
+                    />
                 </div>
 
                 <div class="grid gap-1.5">
@@ -372,6 +411,7 @@ const adem = (): Promise<void> =>
                         :id="`${props.sleutel}-eyebrow-en`"
                         v-model="tekst.eyebrow_en"
                         maxlength="60"
+                        :placeholder="nederlandsAlsHint(tekst.eyebrow_nl)"
                     />
                     <InputError :message="fouten.eyebrow_en" />
                 </div>
@@ -390,6 +430,7 @@ const adem = (): Promise<void> =>
                         :id="`${props.sleutel}-title-en`"
                         v-model="tekst.title_en"
                         maxlength="120"
+                        :placeholder="nederlandsAlsHint(tekst.title_nl)"
                     />
                     <InputError :message="fouten.title_en" />
                 </div>
@@ -403,6 +444,7 @@ const adem = (): Promise<void> =>
                         :id="`${props.sleutel}-intro-en`"
                         v-model="tekst.intro_en"
                         maxlength="300"
+                        :placeholder="nederlandsAlsHint(tekst.intro_nl)"
                     />
                     <InputError :message="fouten.intro_en" />
                 </div>
@@ -449,6 +491,8 @@ const adem = (): Promise<void> =>
                 </div>
             </div>
 
+            <VerplichtMelding :ontbreekt="nodig.ontbreekt" />
+
             <DialogFooter class="gap-2">
                 <div class="flex gap-2">
                     <Button
@@ -462,6 +506,7 @@ const adem = (): Promise<void> =>
                         variant="bewerken"
                         class="gap-2"
                         :disabled="bezig"
+                        :geblokkeerd="!nodig.compleet"
                         @click="opslaan"
                     >
                         <Loader2 v-if="bezig" class="size-4 animate-spin" />

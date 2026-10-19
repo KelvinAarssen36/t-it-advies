@@ -8,6 +8,7 @@ import {
     AtSign,
     Award,
     ChartNoAxesColumn,
+    CircleAlert,
     CircleQuestionMark,
     ClipboardList,
     UserRound,
@@ -435,6 +436,62 @@ defineOptions({
                                 {{
                                     $t(
                                         'Ben je er toch eentje vergeten, dan blijft je venster gewoon openstaan met alles wat je al had ingevuld. Je raakt niets kwijt.',
+                                    )
+                                }}
+                            </p>
+                        </UitlegKaart>
+
+                        <UitlegKaart
+                            :titel="
+                                $t('Een vage knop: er moet nog iets ingevuld')
+                            "
+                            :icoon="CircleAlert"
+                        >
+                            <p>
+                                {{
+                                    $t(
+                                        'Zolang er een verplicht veld leeg is, staat de knop Volgende of Opslaan er vager bij en krijg je een verbodsteken als je er met je muis op gaat staan. Dat is geen storing -- het is het portaal dat je tegenhoudt voordat je verder gaat.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Druk er gerust toch op. Dan verschijnt er boven de knoppen een regel die de velden bij naam noemt, en staat er onder elk leeg vakje "Dit veld is nog leeg." Vul je ze in, dan staat de knop er meteen weer gewoon bij.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Staat er iets leeg op een vorige stap, dan springt het venster daar vanzelf naartoe. Je hoeft dus niet zelf te zoeken waar het zat.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Let op: dit is iets anders dan een grijze knop. Die is gewoon grijs van zichzelf en verandert niets aan je website -- Annuleren en Sluiten bijvoorbeeld. Deze knop houdt zijn eigen kleur, maar vager.',
+                                    )
+                                }}
+                            </p>
+                        </UitlegKaart>
+
+                        <UitlegKaart
+                            :titel="$t('Grijze tekst in een Engels veld')"
+                            :icoon="Languages"
+                        >
+                            <p>
+                                {{
+                                    $t(
+                                        'Bij een leeg Engels veld zie je je eigen Nederlandse tekst grijs staan. Zo weet je waar het veld over gaat zonder terug te hoeven bladeren -- handig als het automatisch vertalen een keer niet lukt.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Die grijze tekst wordt niet opgeslagen. Hij verdwijnt zodra je zelf begint te typen, en laat je het veld leeg, dan blijft het ook echt leeg. Je kunt dus niet per ongeluk het Nederlands opslaan alsof het de vertaling is.',
                                     )
                                 }}
                             </p>
@@ -2208,6 +2265,13 @@ defineOptions({
                                 {{
                                     $t(
                                         'Zodra een back-up klaar is, leest het portaal hem meteen terug om te controleren of hij echt werkt. Met de knop Controleren doe je dat later nog eens: hij probeert de back-up dan echt terug te zetten en draait dat direct terug, zodat je weet dat het lukt zonder dat er iets verandert.',
+                                    )
+                                }}
+                            </p>
+                            <p>
+                                {{
+                                    $t(
+                                        'Gaat het terugzetten een keer mis, dan verandert er niets. Het gebeurt in een keer of helemaal niet, dus je website blijft staan zoals hij stond en de veiligheidskopie blijft gewoon bewaard. Je krijgt dan een melding, en wij kunnen in het logboek zien wat er misging.',
                                     )
                                 }}
                             </p>

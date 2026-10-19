@@ -174,6 +174,43 @@ wat de eigenaar als één handeling deed.
 ertussen zitten, dan had een mislukte terugzetting de beelden al
 overschreven.
 
+### Eerst de unieke waarden parkeren
+
+Bijwerken op `id` heeft één valkuil, en die heeft een keer toegeslagen.
+Hebben twee rijen elkaars unieke waarde gekregen, dan botst de eerste
+bijwerking op de tweede rij die zijn oude waarde nog heeft:
+
+```
+Duplicate entry 'diensten' for key 'page_sections_key_unique'
+```
+
+Dat gebeurt niet met een back-up van vanmiddag, wel zodra de nummers zijn
+verschoven: na een nieuwe installatie, na opnieuw zaaien, of bij een
+bestand van een andere omgeving. Precies de gevallen waarvoor terugzetten
+bedoeld is.
+
+`BackupTerugzetter::parkeerUniekeWaarden()` zet daarom eerst elke unieke
+waarde in de tabel op een tijdelijke eigen waarde (`~herstel-<id>`). Daarna
+is het veld vrij en kan elke rij zijn eigen waarde terugkrijgen, in welke
+volgorde dan ook. Het staat in dezelfde transactie, dus van buiten is er
+nooit een geparkeerde waarde te zien -- en er staat een test op die
+controleert dat er geen achterblijft.
+
+**De unieke kolommen komen uit het schema zelf**, via `Schema::getIndexes()`,
+en niet uit een lijst in de code. Zo'n lijst zou verouderen zodra er een
+module bijkomt, en dan is deze storing terug zonder dat iets het meldt. Nu
+zijn het er vier: `page_sections.key`, `section_headings.section`,
+`projects.slug` en `contact_fields.key`.
+
+### En als het tóch misgaat
+
+Dan krijgt de eigenaar geen foutpagina maar een melding dat het niet is
+gelukt en dat er **niets** is veranderd. Dat klopt ook: alles zit in één
+transactie, dus bij een storing is er niets half gedaan, en de
+veiligheidskopie van vlak ervoor blijft gewoon staan. De details gaan naar
+het logboek en niet naar het scherm -- in zo'n databasefout staat de inhoud
+van de rij die klem zat.
+
 ## Beelden: elk beeld één keer
 
 Beelden staan in één gedeelde map onder hun eigen inhoud-hash:

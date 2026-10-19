@@ -4,6 +4,7 @@ import { Languages, Loader2 } from '@lucide/vue';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import InputError from '@/components/InputError.vue';
 import LocaleFlag from '@/components/LocaleFlag.vue';
+import VerplichtMelding from '@/components/VerplichtMelding.vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -18,6 +19,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { bevestigBewerken, bevestigVerwijderen } from '@/lib/bevestiging';
 import { t } from '@/lib/i18n';
+import { useVerplicht } from '@/lib/verplicht';
+import { nederlandsAlsHint } from '@/lib/vertaling';
 import website from '@/routes/website';
 import contact from '@/routes/website/contact';
 import type { ContactInstellingen } from '@/types/contact';
@@ -54,6 +57,19 @@ const formulier = ref({
     confirmation_body_en: '',
 });
 
+const nodig = useVerplicht(() => [
+    {
+        sleutel: 'confirmation_subject_nl',
+        naam: t('Onderwerp van de mail'),
+        gevuld: formulier.value.confirmation_subject_nl.trim() !== '',
+    },
+    {
+        sleutel: 'confirmation_body_nl',
+        naam: t('Tekst van de mail'),
+        gevuld: formulier.value.confirmation_body_nl.trim() !== '',
+    },
+]);
+
 /** Het Engels zoals het bij het openen van het venster stond. */
 let engelsBijOpenen = '';
 
@@ -88,6 +104,7 @@ const vulIn = (): void => {
     automatisch.value = props.instellingen.automatischVertaald;
     vertaalFout.value = null;
     fouten.value = {};
+    nodig.herstel();
 };
 
 watch(open, (isOpen) => {
@@ -198,6 +215,12 @@ const vertaal = async (): Promise<void> => {
 /* --- Opslaan ----------------------------------------------------------- */
 
 const opslaan = async (): Promise<void> => {
+    if (!nodig.compleet) {
+        nodig.meld();
+
+        return;
+    }
+
     open.value = false;
     await adem();
 
@@ -268,7 +291,12 @@ const adem = (): Promise<void> =>
                         v-model="formulier.confirmation_subject_nl"
                         :maxlength="160"
                     />
-                    <InputError :message="fouten.confirmation_subject_nl" />
+                    <InputError
+                        :message="
+                            fouten.confirmation_subject_nl ??
+                            nodig.melding('confirmation_subject_nl')
+                        "
+                    />
                 </div>
 
                 <div class="grid gap-2">
@@ -282,7 +310,12 @@ const adem = (): Promise<void> =>
                         :maxlength="2000"
                         rows="6"
                     />
-                    <InputError :message="fouten.confirmation_body_nl" />
+                    <InputError
+                        :message="
+                            fouten.confirmation_body_nl ??
+                            nodig.melding('confirmation_body_nl')
+                        "
+                    />
                     <p class="text-xs text-pretty text-muted-foreground">
                         {{
                             $t(
@@ -329,6 +362,11 @@ const adem = (): Promise<void> =>
                                 id="mail-onderwerp-en"
                                 v-model="formulier.confirmation_subject_en"
                                 :maxlength="160"
+                                :placeholder="
+                                    nederlandsAlsHint(
+                                        formulier.confirmation_subject_nl,
+                                    )
+                                "
                             />
                             <InputError
                                 :message="fouten.confirmation_subject_en"
@@ -344,6 +382,11 @@ const adem = (): Promise<void> =>
                                 v-model="formulier.confirmation_body_en"
                                 :maxlength="2000"
                                 rows="6"
+                                :placeholder="
+                                    nederlandsAlsHint(
+                                        formulier.confirmation_body_nl,
+                                    )
+                                "
                             />
                             <InputError
                                 :message="fouten.confirmation_body_en"
@@ -362,6 +405,8 @@ const adem = (): Promise<void> =>
                 </div>
             </div>
 
+            <VerplichtMelding :ontbreekt="nodig.ontbreekt" />
+
             <DialogFooter>
                 <Button type="button" variant="ghost" @click="open = false">
                     {{ $t('Annuleren') }}
@@ -369,11 +414,8 @@ const adem = (): Promise<void> =>
                 <Button
                     type="button"
                     variant="bewerken"
-                    :disabled="
-                        bezig ||
-                        formulier.confirmation_subject_nl.trim() === '' ||
-                        formulier.confirmation_body_nl.trim() === ''
-                    "
+                    :disabled="bezig"
+                    :geblokkeerd="!nodig.compleet"
                     @click="opslaan"
                 >
                     {{ bezig ? $t('Bezig...') : $t('Opslaan') }}

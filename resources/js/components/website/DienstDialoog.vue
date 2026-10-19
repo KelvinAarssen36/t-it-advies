@@ -19,6 +19,7 @@ import {
 import BrandSelect from '@/components/BrandSelect.vue';
 import InputError from '@/components/InputError.vue';
 import LocaleFlag from '@/components/LocaleFlag.vue';
+import VerplichtMelding from '@/components/VerplichtMelding.vue';
 import DienstIcoon from '@/components/site/DienstIcoon.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -38,6 +39,7 @@ import {
     bevestigVerwijderen,
 } from '@/lib/bevestiging';
 import { t } from '@/lib/i18n';
+import { useVerplicht } from '@/lib/verplicht';
 import website from '@/routes/website';
 import diensten from '@/routes/website/diensten';
 import type { DienstRij, DienstenOpties } from '@/types/diensten';
@@ -100,6 +102,49 @@ const formulier = ref({
 });
 
 const punten = ref<PuntRij[]>([]);
+
+/*
+ * Alles wat moet, staat op stap 1; stap 2 is het Engels en mag leeg.
+ *
+ * De expertisepunten gaan mee in de lijst: `punten.*.text_nl` is op de
+ * server verplicht, dus een punt dat je toevoegt maar leeg laat staan
+ * houdt de hele dienst tegen. Zonder deze regels zou de klant dat pas
+ * merken nadat hij op opslaan had gedrukt.
+ */
+const nodig = useVerplicht(
+    () => [
+        {
+            sleutel: 'title_nl',
+            naam: t('Titel'),
+            gevuld: formulier.value.title_nl.trim() !== '',
+            stap: 1,
+        },
+        {
+            sleutel: 'summary_nl',
+            naam: t('Korte tekst'),
+            gevuld: formulier.value.summary_nl.trim() !== '',
+            stap: 1,
+        },
+        ...punten.value.map((punt, index) => ({
+            sleutel: `punten.${index}.text_nl`,
+            naam: t('Expertisepunt :nummer', { nummer: index + 1 }),
+            gevuld: punt.text_nl.trim() !== '',
+            stap: 1,
+        })),
+    ],
+    stap,
+);
+
+/** Van stap 1 naar stap 2, maar niet met een half ingevuld formulier. */
+const volgende = (): void => {
+    if (!nodig.klaar) {
+        nodig.meld();
+
+        return;
+    }
+
+    naarStap(2);
+};
 
 /** Of de klant hem meteen online wil; alleen bij een nieuwe dienst. */
 const meteenOnline = ref(true);
@@ -176,6 +221,7 @@ const vulIn = (): void => {
     vertaaltPunt.value = null;
     fouten.value = {};
     stap.value = 1;
+    nodig.herstel();
 };
 
 watch(open, (isOpen) => {
@@ -478,6 +524,18 @@ const vertaalPunt = (punt: PuntRij): void => {
 
 const opslaan = async (): Promise<void> => {
     /*
+     * Staat er nog iets leeg op stap 1, dan gaat het venster daarheen
+     * terug -- anders leest de klant een melding over een veld dat hij
+     * niet voor zich heeft. Zelfde reden als bij `veldenVanStap1`.
+     */
+    if (!nodig.compleet) {
+        nodig.meld();
+        naarStap(nodig.eersteLegeStap());
+
+        return;
+    }
+
+    /*
      * Het venster gaat dicht vóór de bevestiging in plaats van eronder
      * te liggen; zie de toelichting in pages/website/Indeling.vue.
      */
@@ -651,7 +709,11 @@ const adem = (): Promise<void> =>
                             v-model="formulier.title_nl"
                             maxlength="80"
                         />
-                        <InputError :message="fouten.title_nl" />
+                        <InputError
+                            :message="
+                                fouten.title_nl ?? nodig.melding('title_nl')
+                            "
+                        />
                     </div>
 
                     <div class="grid gap-1.5">
@@ -671,7 +733,11 @@ const adem = (): Promise<void> =>
                                 )
                             }}
                         </p>
-                        <InputError :message="fouten.summary_nl" />
+                        <InputError
+                            :message="
+                                fouten.summary_nl ?? nodig.melding('summary_nl')
+                            "
+                        />
                     </div>
 
                     <div class="grid gap-1.5">
@@ -741,7 +807,10 @@ const adem = (): Promise<void> =>
                                     "
                                 />
                                 <InputError
-                                    :message="fouten[`punten.${index}.text_nl`]"
+                                    :message="
+                                        fouten[`punten.${index}.text_nl`] ??
+                                        nodig.melding(`punten.${index}.text_nl`)
+                                    "
                                 />
                             </div>
 
@@ -934,6 +1003,8 @@ const adem = (): Promise<void> =>
                 </div>
             </Transition>
 
+            <VerplichtMelding :ontbreekt="nodig.ontbreekt" />
+
             <DialogFooter class="gap-2">
                 <div class="flex flex-1 justify-between gap-2">
                     <Button
@@ -958,7 +1029,8 @@ const adem = (): Promise<void> =>
                         <Button
                             v-if="stap === 1"
                             class="gap-2"
-                            @click="naarStap(2)"
+                            :geblokkeerd="!nodig.klaar"
+                            @click="volgende"
                         >
                             {{ $t('Volgende') }}
                             <ArrowRight class="size-4" />
@@ -969,6 +1041,7 @@ const adem = (): Promise<void> =>
                             :variant="bewerkt ? 'bewerken' : 'aanmaken'"
                             class="gap-2"
                             :disabled="bezig || vertaalt"
+                            :geblokkeerd="!nodig.compleet"
                             @click="opslaan"
                         >
                             <Loader2 v-if="bezig" class="size-4 animate-spin" />

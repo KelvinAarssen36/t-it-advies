@@ -559,6 +559,56 @@ Nederlands op een Engelse pagina.
 Zie [`Experience`](../../app/Models/Experience.php) voor het eerste
 voorbeeld, en [de module zelf](modules/ervaring.md) voor de uitwerking.
 
+### Het Nederlands staat er grijs bij
+
+Een leeg Engels vakje zegt niets. Lukt het automatisch vertalen niet -- de
+dienst ligt eruit, of er is geen sleutel ingesteld -- dan stond de klant
+voor een rij lege velden zonder te zien waar ze over gingen. Bij een
+venster met tien velden moest hij ernaast gaan staan en vergelijken.
+
+Zijn eigen Nederlandse tekst staat er nu grijs bij, en dat gaat op twee
+manieren. Welke van de twee hangt af van waar het Engelse veld staat.
+
+| Waar het Engels staat               | Hoe                                     | Waarom                                                                 |
+| ----------------------------------- | --------------------------------------- | ---------------------------------------------------------------------- |
+| Op een eigen stap                   | `<p class="brand-bron">` erboven        | Je kunt niet terugbladeren, en het citaat blijft staan terwijl je typt |
+| Onder het Nederlands, zelfde scherm | `nederlandsAlsHint()` als `placeholder` | Een citaat zou herhalen wat twee centimeter hoger staat                |
+
+```vue
+<Input
+    id="punt-en"
+    v-model="formulier.text_en"
+    :placeholder="nederlandsAlsHint(formulier.text_nl)"
+/>
+```
+
+#### Waarom een placeholder en niet de waarde
+
+**Een placeholder wordt nooit meeverstuurd.** De klant kan dus niet per
+ongeluk het Nederlands opslaan alsóf het de Engelse vertaling is -- precies
+de fout die we hier wilden uitsluiten. Zet je de tekst in het veld zelf,
+dan gebeurt dat juist wél zodra hij op opslaan drukt, en staat er voortaan
+Nederlands in een kolom die Engels heet.
+
+`VertalingHoudvastTest` bewaakt allebei de kanten: dat elk Engels veld het
+Nederlands van **datzelfde** veld laat zien, en dat `nederlandsAlsHint()`
+nooit op een `v-model`, `:value` of `:model-value` belandt.
+
+#### Wat de hint niet zegt
+
+Hij belooft niets over de site. Of een leeg Engels veld terugvalt op het
+Nederlands of juist wegblijft, verschilt per veld -- zie de tabel hierboven
+in dit hoofdstuk. Die uitleg staat bij het veld zelf, in de regel eronder.
+De hint zegt alleen: _dít_ is de tekst die je aan het vertalen bent.
+
+#### Twee velden houden hun eigen hint
+
+De knoptekst van LinkedIn en het woord onder een cijfer vallen bij leeg
+laten niet terug op het Nederlands maar op een **Engelse standaard**. Die
+standaard is wat de bezoeker te zien krijgt, dus die hoort daar als hint te
+staan. Ze staan bij naam in
+`VertalingHoudvastTest::EIGEN_ENGELSE_STANDAARD`.
+
 ### En een test erbij
 
 Elke module die tweetalige inhoud opslaat, krijgt een test die bewijst dat

@@ -4,6 +4,7 @@ import { TriangleAlert } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
 import InputError from '@/components/InputError.vue';
 import PasteCodeButton from '@/components/PasteCodeButton.vue';
+import VerplichtMelding from '@/components/VerplichtMelding.vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -20,6 +21,8 @@ import {
     InputOTPSlot,
 } from '@/components/ui/input-otp';
 import { Label } from '@/components/ui/label';
+import { t } from '@/lib/i18n';
+import { useVerplicht } from '@/lib/verplicht';
 import backups from '@/routes/admin/backups';
 import type { BackupRij, Verschil } from '@/types/backups';
 
@@ -61,6 +64,7 @@ watch(open, (isOpen) => {
         code.value = '';
         overgetypt.value = '';
         fouten.value = {};
+        nodig.herstel();
     }
 });
 
@@ -78,8 +82,40 @@ const compleet = computed(() => {
     );
 });
 
+/*
+ * Allebei de velden hebben een eigen melding, want "leeg" klopt hier
+ * niet: drie van de zes cijfers is niet leeg maar nog niet af, en vier
+ * cijfers die niet kloppen zijn helemaal niet leeg. In geen van beide
+ * meldingen staat iets wat de klant heeft getypt.
+ */
+const nodig = useVerplicht(() => [
+    ...(terugzetten.value
+        ? [
+              {
+                  sleutel: 'bevestigcode',
+                  naam: t('Typ deze vier cijfers over'),
+                  gevuld:
+                      overgetypt.value.trim() === props.backup?.bevestigcode,
+                  melding: t('Deze vier cijfers komen nog niet overeen.'),
+              },
+          ]
+        : []),
+    {
+        sleutel: 'code',
+        naam: t('De code uit je authenticator'),
+        gevuld: code.value.length === 6,
+        melding: t('Vul de zes cijfers uit je authenticator in.'),
+    },
+]);
+
 const versturen = (): void => {
-    if (!compleet.value || bezig.value || props.backup === null) {
+    if (!compleet.value) {
+        nodig.meld();
+
+        return;
+    }
+
+    if (bezig.value || props.backup === null) {
         return;
     }
 
@@ -271,7 +307,11 @@ const versturen = (): void => {
                         />
                     </div>
 
-                    <InputError :message="fouten.bevestigcode" />
+                    <InputError
+                        :message="
+                            fouten.bevestigcode ?? nodig.melding('bevestigcode')
+                        "
+                    />
                 </div>
 
                 <div class="grid gap-3">
@@ -295,7 +335,9 @@ const versturen = (): void => {
                             </InputOTPGroup>
                         </InputOTP>
 
-                        <InputError :message="fouten.code" />
+                        <InputError
+                            :message="fouten.code ?? nodig.melding('code')"
+                        />
 
                         <PasteCodeButton @pasted="(c: string) => (code = c)" />
                     </div>
@@ -312,6 +354,8 @@ const versturen = (): void => {
                     }}
                 </p>
 
+                <VerplichtMelding :ontbreekt="nodig.ontbreekt" />
+
                 <DialogFooter>
                     <Button type="button" variant="ghost" @click="open = false">
                         {{ $t('Annuleren') }}
@@ -319,7 +363,8 @@ const versturen = (): void => {
                     <Button
                         type="submit"
                         variant="verwijderen"
-                        :disabled="bezig || !compleet"
+                        :disabled="bezig"
+                        :geblokkeerd="!compleet"
                     >
                         {{
                             bezig

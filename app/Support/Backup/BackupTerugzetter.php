@@ -6,6 +6,7 @@ use App\Enums\PageSectionKey;
 use App\Models\Backup;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -49,6 +50,14 @@ use Illuminate\Support\Facades\Storage;
  */
 class BackupTerugzetter
 {
+    /**
+     * Het voorvoegsel van een geparkeerde unieke waarde.
+     *
+     * Staat alleen binnen de transactie van een terugzetting in de
+     * database, dus niemand ziet het ooit. Zie `parkeerUniekeWaarden()`.
+     */
+    private const PARKEER = '~herstel-';
+
     /**
      * Pad op de publieke schijf → de hash in de beeldmap.
      *
@@ -178,6 +187,30 @@ class BackupTerugzetter
             DB::table($tabel)->whereIn('id', $teveel)->delete();
         }
 
+        /*
+         * Eerst de unieke waarden uit de weg, dan pas bijwerken.
+         *
+         * **Dit is de reparatie van een echte storing.** Bijwerken gaat
+         * rij voor rij op `id`, en dat gaat mis zodra twee rijen van
+         * waarde wisselen: zet je rij 2 op `diensten` terwijl rij 5 die
+         * sleutel nog heeft, dan weigert de database met
+         * "Duplicate entry 'diensten'". De terugzetting breekt dan
+         * halverwege af -- gelukkig binnen een transactie, dus er bleef
+         * niets half gedaan achter, maar de eigenaar zag een crash.
+         *
+         * Dat gebeurt niet bij een back-up van vanmiddag, wel zodra de
+         * nummers verschoven zijn: na een nieuwe installatie, na opnieuw
+         * zaaien, of bij een bestand van een andere omgeving. Precies de
+         * gevallen waarvoor terugzetten bedoeld is.
+         *
+         * We parkeren daarom elke unieke waarde die nog op een rij staat
+         * op een tijdelijke eigen waarde. Daarna is het veld vrij en kan
+         * elke rij zijn eigen waarde terugkrijgen, in welke volgorde dan
+         * ook. Alles staat in dezelfde transactie, dus de geparkeerde
+         * waarden zijn nooit van buiten te zien.
+         */
+        $this->parkeerUniekeWaarden($tabel);
+
         $onbekend = [];
 
         foreach ($rijen as $rij) {
@@ -219,6 +252,72 @@ class BackupTerugzetter
         }
 
         return $meldingen;
+    }
+
+    /**
+     * Elke unieke waarde in deze tabel tijdelijk op een eigen waarde zetten.
+     *
+     * Zie de uitleg in `zetTabelTerug()`. De waarde bevat het `id`, dus hij
+     * is per rij uniek, en het voorvoegsel is iets wat een eigenaar nooit
+     * intikt.
+     *
+     * **De unieke kolommen komen uit het schema zelf** en niet uit een
+     * lijst hier. Zo'n lijst zou verouderen zodra er een module bijkomt,
+     * en dan is deze storing terug zonder dat iets het meldt.
+     */
+    private function parkeerUniekeWaarden(string $tabel): void
+    {
+        $kolommen = $this->uniekeTekstkolommen($tabel);
+
+        if ($kolommen === []) {
+            return;
+        }
+
+        foreach (DB::table($tabel)->pluck('id') as $id) {
+            DB::table($tabel)->where('id', $id)->update(
+                array_fill_keys($kolommen, self::PARKEER.$id),
+            );
+        }
+    }
+
+    /**
+     * De kolommen met een eigen unieke index waar tekst in staat.
+     *
+     * Alleen tekst: een geparkeerde waarde moet in de kolom passen, en
+     * een getal of een datum kun je niet op `~herstel-3` zetten. In de
+     * tabellen die meegaan zijn ze allemaal tekst -- `page_sections.key`,
+     * `section_headings.section`, `projects.slug` en `contact_fields.key`
+     * -- maar die controle staat er voor de volgende module.
+     *
+     * @return array<int, string>
+     */
+    private function uniekeTekstkolommen(string $tabel): array
+    {
+        $uit = [];
+
+        foreach (Schema::getIndexes($tabel) as $index) {
+            if (($index['primary'] ?? false) || ! ($index['unique'] ?? false)) {
+                continue;
+            }
+
+            foreach ((array) ($index['columns'] ?? []) as $kolom) {
+                if ($kolom === 'id') {
+                    continue;
+                }
+
+                if (! in_array(
+                    Schema::getColumnType($tabel, $kolom),
+                    ['char', 'varchar', 'string', 'text'],
+                    true,
+                )) {
+                    continue;
+                }
+
+                $uit[$kolom] = true;
+            }
+        }
+
+        return array_keys($uit);
     }
 
     /**

@@ -135,6 +135,126 @@ class BackupTerugzetTest extends TestCase
         $this->assertSame('Per ongeluk weg', $terug->title_nl);
     }
 
+    /**
+     * De volgorde gaat mee en komt terug.
+     *
+     * Dertien tabellen hebben een `position`, en dat is wat de eigenaar op
+     * zijn scherm heeft zitten slepen. Zou die niet meegaan, dan staat na
+     * een terugzetting alles er wel maar in een andere volgorde -- en dat
+     * is het soort schade waar je pas achter komt als je op je eigen site
+     * kijkt.
+     */
+    public function test_the_order_goes_back_too(): void
+    {
+        $eerste = Project::factory()->create(['position' => 1]);
+        $tweede = Project::factory()->create(['position' => 2]);
+        $derde = Project::factory()->create(['position' => 3]);
+
+        $backup = $this->maak();
+
+        // Alles door elkaar, zoals na een middagje slepen.
+        $eerste->forceFill(['position' => 3])->save();
+        $tweede->forceFill(['position' => 1])->save();
+        $derde->forceFill(['position' => 2])->save();
+
+        $this->zetTerug($backup);
+
+        $this->assertSame(1, $eerste->refresh()->position);
+        $this->assertSame(2, $tweede->refresh()->position);
+        $this->assertSame(3, $derde->refresh()->position);
+    }
+
+    /**
+     * En het Engels ook.
+     *
+     * Zeventien tabellen hebben `_en`-velden. Die zijn met de hand
+     * nagelezen of door de vertaaldienst gemaakt, en ze staan los van het
+     * Nederlands. Een terugzetting die alleen het Nederlands terugbrengt
+     * laat een halve website achter.
+     */
+    public function test_the_english_text_goes_back_too(): void
+    {
+        $project = Project::factory()->create([
+            'title_nl' => 'Werkplekken vernieuwd',
+            'title_en' => 'Workplaces renewed',
+        ]);
+
+        $backup = $this->maak();
+
+        $project->forceFill([
+            'title_nl' => 'Iets anders',
+            'title_en' => null,
+        ])->save();
+
+        $this->zetTerug($backup);
+
+        $terug = $project->refresh();
+
+        $this->assertSame('Werkplekken vernieuwd', $terug->title_nl);
+        $this->assertSame('Workplaces renewed', $terug->title_en);
+    }
+
+    /**
+     * Twee rijen die van unieke waarde zijn gewisseld gaan gewoon terug.
+     *
+     * **Dit is de test voor een echte storing.** Terugzetten werkt rij
+     * voor rij bij op `id`. Hebben twee rijen elkaars unieke waarde
+     * gekregen -- en dat gebeurt zodra de nummers verschoven zijn, na
+     * opnieuw zaaien of bij een bestand van een andere omgeving -- dan
+     * weigerde de database halverwege:
+     *
+     *     Duplicate entry 'diensten' for key 'page_sections_key_unique'
+     *
+     * De transactie draaide netjes terug, dus er bleef niets half gedaan
+     * achter, maar de eigenaar kreeg een crash in plaats van zijn
+     * back-up. Zonder de parkeerstap valt deze test om met precies die
+     * melding.
+     */
+    public function test_two_rows_that_swapped_their_unique_value_go_back(): void
+    {
+        $eerste = Project::factory()->create(['slug' => 'eerste-project']);
+        $tweede = Project::factory()->create(['slug' => 'tweede-project']);
+
+        $backup = $this->maak();
+
+        /*
+         * De wissel. Via een tussenwaarde, want de database laat twee
+         * rijen met dezelfde slug niet toe -- en dat is precies de muur
+         * waar het terugzetten tegenaan liep.
+         */
+        DB::table('projects')->where('id', $eerste->id)->update(['slug' => 'even-opzij']);
+        DB::table('projects')->where('id', $tweede->id)->update(['slug' => 'eerste-project']);
+        DB::table('projects')->where('id', $eerste->id)->update(['slug' => 'tweede-project']);
+
+        $this->zetTerug($backup);
+
+        $this->assertSame('eerste-project', $eerste->refresh()->slug);
+        $this->assertSame('tweede-project', $tweede->refresh()->slug);
+    }
+
+    /**
+     * En er blijft niets van het parkeren achter.
+     *
+     * Tijdens het terugzetten staat elke unieke waarde even op een eigen
+     * tijdelijke waarde. Blijft daar één van staan -- omdat een rij wel
+     * geparkeerd maar niet bijgewerkt werd -- dan heeft de eigenaar een
+     * project met de slug `~herstel-3`, en dat is een adres op zijn site.
+     */
+    public function test_no_parked_value_is_left_behind(): void
+    {
+        Project::factory()->count(3)->create();
+
+        $backup = $this->maak();
+
+        $this->zetTerug($backup);
+
+        $this->assertSame(
+            0,
+            Project::query()->where('slug', 'like', '~herstel-%')->count(),
+            'Er staat nog een tijdelijke waarde van het terugzetten in de database.',
+        );
+    }
+
     public function test_an_image_comes_back_too(): void
     {
         $pad = 'projecten/voorbeeld.webp';

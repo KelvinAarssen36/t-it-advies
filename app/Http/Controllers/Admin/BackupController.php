@@ -27,6 +27,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Throwable;
 
 /**
  * Beheer → Back-ups.
@@ -444,7 +445,43 @@ class BackupController extends Controller
         /** @var array<string, string> $beelden */
         $beelden = is_array($manifest['beelden'] ?? null) ? $manifest['beelden'] : [];
 
-        $meldingen = $terugzetter->metBeelden($beelden)->zetTerug($data);
+        /*
+         * Gaat het terugzetten tóch mis, dan is dat geen foutpagina waard.
+         *
+         * Het hele terugzetten zit in één transactie, dus bij een storing
+         * is er niets half gedaan: de website staat nog precies zoals hij
+         * stond. Dat is het enige wat de eigenaar op dat moment wil weten,
+         * en daarom staat het er ook met zoveel woorden.
+         *
+         * **`Throwable` en niet alleen `RuntimeException`**, want wat hier
+         * misgaat komt uit de database en dat is een `QueryException`. Die
+         * werd niet afgevangen, en toen twee rijen van unieke waarde
+         * gewisseld waren kreeg de eigenaar een foutpagina met de ruwe SQL
+         * erop. Zie `BackupTerugzetter::parkeerUniekeWaarden()` voor de
+         * oorzaak die daaronder zat.
+         *
+         * De melding zelf blijft schoon: de details gaan naar het logboek,
+         * niet naar het scherm. In zo'n databasefout staat de inhoud van de
+         * rij die klem zat, en dat is niets voor een toast.
+         */
+        try {
+            $meldingen = $terugzetter->metBeelden($beelden)->zetTerug($data);
+        } catch (Throwable $fout) {
+            report($fout);
+
+            $logboek->failure(SecurityEventType::BackupTeruggezet, $gebruiker, [
+                'naam' => $backup->naam,
+            ]);
+
+            Toast::fout(
+                __('Het terugzetten is niet gelukt.'),
+                (string) __('Er is niets veranderd: je website staat nog precies zoals hij stond, en :kopie blijft gewoon staan. Lukt het een tweede keer ook niet, laat het ons dan weten -- wij kunnen in het logboek zien wat er misging.', [
+                    'kopie' => $veiligheidskopie->naam,
+                ]),
+            );
+
+            return back();
+        }
 
         $this->opruimer->ruimOp();
 
@@ -598,7 +635,7 @@ class BackupController extends Controller
 
         try {
             return Carbon::parse($gemaakt);
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return Carbon::now();
         }
     }

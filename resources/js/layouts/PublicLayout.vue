@@ -567,6 +567,17 @@ onMounted(() => {
     scanReveals();
 
     /*
+     * De machine beent het niet bij: alles meteen op zijn plek.
+     *
+     * Dit signaal komt uit `motion.ts`, dat tijdens het scrollen meet of
+     * het beeldritme het bijhoudt. Op dit moment geeft
+     * `prefersReducedMotion()` al `true`, dus deze scan ruimt de triggers
+     * op die er hingen en zet elk blok op zijn eindtoestand -- zonder er
+     * iets nieuws aan te hangen.
+     */
+    window.addEventListener('brand:rustig', scanReveals);
+
+    /*
      * Deze layout blijft bij een Inertia-navigatie staan, dus `onMounted`
      * draait maar één keer.
      *
@@ -599,6 +610,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
     document.documentElement.classList.remove(SITE_KLASSE);
     window.removeEventListener('popstate', onthoudGeschiedenis);
+    window.removeEventListener('brand:rustig', scanReveals);
     stopVeld?.();
     stopListening?.();
     stopSplit?.();

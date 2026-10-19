@@ -4180,6 +4180,27 @@ button:hover > .brand-verlaat,
         line-height: 1;
     }
 
+    /* --- Wat er nog ingevuld moet worden ----------------------------- */
+
+    /*
+      De regel boven de knoppen van een venster: wat er nog ingevuld
+      moet worden voordat er opgeslagen kan worden. Zie lib/verplicht.ts.
+
+      Hij staat links uitgelijnd en niet rechts bij de knoppen: de melding
+      hoort bij het formulier erboven, niet bij de knop eronder. Bij een
+      smal venster breekt hij gewoon af in plaats van de knoppen weg te
+      duwen.
+    */
+    .brand-verplicht-melding {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        line-height: 1.4;
+        text-wrap: pretty;
+        color: var(--destructive);
+    }
+
     /* --- Een regel in het overzicht ---------------------------------- */
 
     .brand-ervaring-regel {

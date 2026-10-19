@@ -3,6 +3,7 @@ import { Check } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
 import InputError from '@/components/InputError.vue';
 import PasteCodeButton from '@/components/PasteCodeButton.vue';
+import VerplichtMelding from '@/components/VerplichtMelding.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,6 +20,8 @@ import {
     InputOTPSlot,
 } from '@/components/ui/input-otp';
 import { Label } from '@/components/ui/label';
+import { t } from '@/lib/i18n';
+import { useVerplicht } from '@/lib/verplicht';
 import type { BackupRij } from '@/types/backups';
 
 /**
@@ -69,6 +72,8 @@ const emit = defineEmits<{
 }>();
 
 watch(open, (isOpen) => {
+    bewaking.herstel();
+
     if (!isOpen) {
         code.value = '';
 
@@ -102,8 +107,42 @@ const compleet = computed(
     () => gekozen.value.length === props.nodig && code.value.length === 6,
 );
 
+/*
+ * `bewaking` en niet `nodig`: dat woord is hier al een prop, en dat is
+ * het aantal back-ups dat weg moet.
+ *
+ * Allebei de regels hebben een eigen melding, want "leeg" klopt niet:
+ * drie van de zes cijfers is niet leeg maar nog niet af. In geen van
+ * beide meldingen staat iets wat de klant heeft getypt.
+ */
+const bewaking = useVerplicht(() => [
+    {
+        sleutel: 'ids',
+        naam: t('Welke er weg mogen'),
+        gevuld: gekozen.value.length === props.nodig,
+        // Dezelfde zin als de server teruggeeft bij `ids`; zie
+        // BackupController. Twee keer hetzelfde lezen is rustiger dan
+        // twee zinnen over hetzelfde.
+        melding: t('Kies er :aantal om weg te gooien.', {
+            aantal: props.nodig,
+        }),
+    },
+    {
+        sleutel: 'code',
+        naam: t('De code uit je authenticator'),
+        gevuld: code.value.length === 6,
+        melding: t('Vul de zes cijfers uit je authenticator in.'),
+    },
+]);
+
 const bevestig = (): void => {
-    if (compleet.value && !props.bezig) {
+    if (!compleet.value) {
+        bewaking.meld();
+
+        return;
+    }
+
+    if (!props.bezig) {
         emit('bevestig', gekozen.value, code.value);
     }
 };
@@ -143,7 +182,22 @@ const bevestig = (): void => {
                 }}
             </p>
 
-            <div class="grid max-h-72 gap-2 overflow-y-auto">
+            <!--
+                Een kop boven de lijst, met het sterretje erbij. Die stond
+                er niet: de keuze is verplicht, maar nergens stond dat met
+                zoveel woorden. `role="group"` met `aria-labelledby` hangt
+                de kop aan de hele lijst -- een `for` zou naar één knop
+                wijzen, en het gaat om de verzameling.
+            -->
+            <Label id="opruim-keuze" verplicht>
+                {{ $t('Welke er weg mogen') }}
+            </Label>
+
+            <div
+                class="grid max-h-72 gap-2 overflow-y-auto"
+                role="group"
+                aria-labelledby="opruim-keuze"
+            >
                 <button
                     v-for="keuze in props.keuzes"
                     :key="keuze.id"
@@ -212,12 +266,15 @@ const bevestig = (): void => {
                         :message="
                             props.fouten.code ??
                             props.fouten.vervang ??
-                            props.fouten.ids
+                            props.fouten.ids ??
+                            bewaking.melding('code')
                         "
                     />
 
                     <PasteCodeButton @pasted="(c: string) => (code = c)" />
                 </div>
+
+                <VerplichtMelding :ontbreekt="bewaking.ontbreekt" />
 
                 <DialogFooter>
                     <!--
@@ -238,7 +295,8 @@ const bevestig = (): void => {
                     <Button
                         type="submit"
                         variant="verwijderen"
-                        :disabled="props.bezig || !compleet"
+                        :disabled="props.bezig"
+                        :geblokkeerd="!compleet"
                     >
                         {{
                             props.bezig

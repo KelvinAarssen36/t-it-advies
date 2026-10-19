@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { bevestigBewerken, bevestigVerwijderen } from '@/lib/bevestiging';
 import { t } from '@/lib/i18n';
+import { nederlandsAlsHint } from '@/lib/vertaling';
 import website from '@/routes/website';
 import footer from '@/routes/website/footer';
 import type { VoetInstelling, VoetOpties } from '@/types/voettekst';
@@ -302,6 +303,9 @@ const adem = (): Promise<void> =>
                             id="voet-zin-en"
                             v-model="formulier.tagline_en"
                             :maxlength="props.opties.taglineMax"
+                            :placeholder="
+                                nederlandsAlsHint(formulier.tagline_nl)
+                            "
                         />
                         <p class="text-xs text-muted-foreground">
                             {{ $t('Nog :aantal tekens', { aantal: overEn }) }}

@@ -4,6 +4,7 @@ import { Languages, Loader2 } from '@lucide/vue';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import InputError from '@/components/InputError.vue';
 import LocaleFlag from '@/components/LocaleFlag.vue';
+import VerplichtMelding from '@/components/VerplichtMelding.vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -22,6 +23,8 @@ import {
     bevestigVerwijderen,
 } from '@/lib/bevestiging';
 import { t } from '@/lib/i18n';
+import { useVerplicht } from '@/lib/verplicht';
+import { nederlandsAlsHint } from '@/lib/vertaling';
 import website from '@/routes/website';
 import werkwijze from '@/routes/website/werkwijze';
 import type { StapOpties, StapRij } from '@/types/werkwijze';
@@ -74,6 +77,19 @@ const formulier = ref({
     published: true,
 });
 
+const nodig = useVerplicht(() => [
+    {
+        sleutel: 'title_nl',
+        naam: t('Titel'),
+        gevuld: formulier.value.title_nl.trim() !== '',
+    },
+    {
+        sleutel: 'summary_nl',
+        naam: t('Korte tekst'),
+        gevuld: formulier.value.summary_nl.trim() !== '',
+    },
+]);
+
 /** Of de eigenaar hem meteen online wil; alleen bij een nieuwe. */
 const meteenOnline = ref(true);
 
@@ -124,6 +140,7 @@ const vulIn = (): void => {
     meteenOnline.value = true;
     vertaalFout.value = null;
     fouten.value = {};
+    nodig.herstel();
 };
 
 watch(open, (isOpen) => {
@@ -268,6 +285,12 @@ const vertaal = async (): Promise<void> => {
 /* --- Opslaan ----------------------------------------------------------- */
 
 const opslaan = async (): Promise<void> => {
+    if (!nodig.compleet) {
+        nodig.meld();
+
+        return;
+    }
+
     open.value = false;
     await adem();
 
@@ -372,7 +395,11 @@ const adem = (): Promise<void> =>
                             :placeholder="$t('Bijvoorbeeld: Kennismaken')"
                             v-focus
                         />
-                        <InputError :message="fouten.title_nl" />
+                        <InputError
+                            :message="
+                                fouten.title_nl ?? nodig.melding('title_nl')
+                            "
+                        />
                     </div>
 
                     <div class="grid gap-2">
@@ -404,7 +431,11 @@ const adem = (): Promise<void> =>
                             $t('Wat er in deze stap gebeurt, in één zin.')
                         "
                     />
-                    <InputError :message="fouten.summary_nl" />
+                    <InputError
+                        :message="
+                            fouten.summary_nl ?? nodig.melding('summary_nl')
+                        "
+                    />
                     <p class="text-xs text-muted-foreground">
                         {{ $t(':aantal tekens over', { aantal: overNl }) }}
                     </p>
@@ -495,6 +526,9 @@ const adem = (): Promise<void> =>
                                     id="stap-titel-en"
                                     v-model="formulier.title_en"
                                     :maxlength="80"
+                                    :placeholder="
+                                        nederlandsAlsHint(formulier.title_nl)
+                                    "
                                 />
                                 <InputError :message="fouten.title_en" />
                             </div>
@@ -507,6 +541,9 @@ const adem = (): Promise<void> =>
                                     id="stap-duur-en"
                                     v-model="formulier.duration_en"
                                     :maxlength="40"
+                                    :placeholder="
+                                        nederlandsAlsHint(formulier.duration_nl)
+                                    "
                                 />
                                 <InputError :message="fouten.duration_en" />
                             </div>
@@ -521,6 +558,9 @@ const adem = (): Promise<void> =>
                                 v-model="formulier.summary_en"
                                 :maxlength="props.opties.samenvattingMax"
                                 rows="2"
+                                :placeholder="
+                                    nederlandsAlsHint(formulier.summary_nl)
+                                "
                             />
                             <InputError :message="fouten.summary_en" />
                             <p class="text-xs text-muted-foreground">
@@ -540,6 +580,9 @@ const adem = (): Promise<void> =>
                                 id="stap-resultaat-en"
                                 v-model="formulier.result_en"
                                 :maxlength="props.opties.resultaatMax"
+                                :placeholder="
+                                    nederlandsAlsHint(formulier.result_nl)
+                                "
                             />
                             <InputError :message="fouten.result_en" />
                         </div>
@@ -553,6 +596,9 @@ const adem = (): Promise<void> =>
                                 v-model="formulier.body_en"
                                 :maxlength="props.opties.verhaalMax"
                                 rows="4"
+                                :placeholder="
+                                    nederlandsAlsHint(formulier.body_nl)
+                                "
                             />
                             <InputError :message="fouten.body_en" />
                         </div>
@@ -578,6 +624,8 @@ const adem = (): Promise<void> =>
                 </div>
             </div>
 
+            <VerplichtMelding :ontbreekt="nodig.ontbreekt" />
+
             <DialogFooter>
                 <Button type="button" variant="ghost" @click="open = false">
                     {{ $t('Annuleren') }}
@@ -585,11 +633,8 @@ const adem = (): Promise<void> =>
                 <Button
                     type="button"
                     :variant="bewerkt ? 'bewerken' : 'aanmaken'"
-                    :disabled="
-                        bezig ||
-                        formulier.title_nl.trim() === '' ||
-                        formulier.summary_nl.trim() === ''
-                    "
+                    :disabled="bezig"
+                    :geblokkeerd="!nodig.compleet"
                     @click="opslaan"
                 >
                     {{ bezig ? $t('Bezig...') : $t('Opslaan') }}

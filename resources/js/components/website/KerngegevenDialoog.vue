@@ -5,6 +5,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import BrandSelect from '@/components/BrandSelect.vue';
 import InputError from '@/components/InputError.vue';
 import LocaleFlag from '@/components/LocaleFlag.vue';
+import VerplichtMelding from '@/components/VerplichtMelding.vue';
 import KerngegevenIcoon from '@/components/site/KerngegevenIcoon.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,6 +24,8 @@ import {
     bevestigVerwijderen,
 } from '@/lib/bevestiging';
 import { t } from '@/lib/i18n';
+import { useVerplicht } from '@/lib/verplicht';
+import { nederlandsAlsHint } from '@/lib/vertaling';
 import website from '@/routes/website';
 import kerngegevens from '@/routes/website/kerngegevens';
 import type { KerngegevenOpties, KerngegevenRij } from '@/types/kerngegevens';
@@ -73,6 +76,19 @@ const formulier = ref({
     published: true,
 });
 
+const nodig = useVerplicht(() => [
+    {
+        sleutel: 'label_nl',
+        naam: t('Label'),
+        gevuld: formulier.value.label_nl.trim() !== '',
+    },
+    {
+        sleutel: 'value_nl',
+        naam: t('Waarde'),
+        gevuld: formulier.value.value_nl.trim() !== '',
+    },
+]);
+
 /** Of de eigenaar hem meteen online wil; alleen bij een nieuwe. */
 const meteenOnline = ref(true);
 
@@ -118,6 +134,7 @@ const vulIn = (): void => {
     meteenOnline.value = true;
     vertaalFout.value = null;
     fouten.value = {};
+    nodig.herstel();
 };
 
 watch(open, (isOpen) => {
@@ -284,6 +301,12 @@ const vertaal = async (): Promise<void> => {
 /* --- Opslaan ----------------------------------------------------------- */
 
 const opslaan = async (): Promise<void> => {
+    if (!nodig.compleet) {
+        nodig.meld();
+
+        return;
+    }
+
     open.value = false;
     await adem();
 
@@ -422,7 +445,9 @@ const adem = (): Promise<void> =>
                     <p class="text-xs text-muted-foreground">
                         {{ $t('Nog :aantal tekens', { aantal: overLabelNl }) }}
                     </p>
-                    <InputError :message="fouten.label_nl" />
+                    <InputError
+                        :message="fouten.label_nl ?? nodig.melding('label_nl')"
+                    />
                 </div>
 
                 <div class="grid gap-2">
@@ -438,7 +463,9 @@ const adem = (): Promise<void> =>
                     <p class="text-xs text-muted-foreground">
                         {{ $t('Nog :aantal tekens', { aantal: overNl }) }}
                     </p>
-                    <InputError :message="fouten.value_nl" />
+                    <InputError
+                        :message="fouten.value_nl ?? nodig.melding('value_nl')"
+                    />
                 </div>
 
                 <div class="grid gap-2">
@@ -503,6 +530,7 @@ const adem = (): Promise<void> =>
                             id="kerngegeven-label-en"
                             v-model="formulier.label_en"
                             maxlength="60"
+                            :placeholder="nederlandsAlsHint(formulier.label_nl)"
                         />
                         <p class="text-xs text-muted-foreground">
                             {{
@@ -522,6 +550,7 @@ const adem = (): Promise<void> =>
                             id="kerngegeven-waarde-en"
                             v-model="formulier.value_en"
                             :maxlength="props.opties.waardeMax"
+                            :placeholder="nederlandsAlsHint(formulier.value_nl)"
                         />
                         <p class="text-xs text-muted-foreground">
                             {{ $t('Nog :aantal tekens', { aantal: overEn }) }}
@@ -537,6 +566,7 @@ const adem = (): Promise<void> =>
                             id="kerngegeven-notitie-en"
                             v-model="formulier.note_en"
                             :maxlength="props.opties.notitieMax"
+                            :placeholder="nederlandsAlsHint(formulier.note_nl)"
                         />
                         <InputError :message="fouten.note_en" />
                     </div>
@@ -557,6 +587,8 @@ const adem = (): Promise<void> =>
                     </p>
                 </div>
 
+                <VerplichtMelding :ontbreekt="nodig.ontbreekt" />
+
                 <DialogFooter>
                     <Button type="button" variant="ghost" @click="open = false">
                         {{ $t('Annuleren') }}
@@ -565,6 +597,7 @@ const adem = (): Promise<void> =>
                         type="submit"
                         :variant="bewerkt ? 'bewerken' : 'aanmaken'"
                         :disabled="bezig"
+                        :geblokkeerd="!nodig.compleet"
                     >
                         {{
                             bezig

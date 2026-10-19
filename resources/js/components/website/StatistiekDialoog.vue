@@ -5,6 +5,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import BrandSelect from '@/components/BrandSelect.vue';
 import InputError from '@/components/InputError.vue';
 import LocaleFlag from '@/components/LocaleFlag.vue';
+import VerplichtMelding from '@/components/VerplichtMelding.vue';
 import StatistiekBalk from '@/components/site/StatistiekBalk.vue';
 import StatistiekRing from '@/components/site/StatistiekRing.vue';
 import StatistiekTeller from '@/components/site/StatistiekTeller.vue';
@@ -25,6 +26,8 @@ import {
     bevestigVerwijderen,
 } from '@/lib/bevestiging';
 import { t } from '@/lib/i18n';
+import { useVerplicht } from '@/lib/verplicht';
+import { nederlandsAlsHint } from '@/lib/vertaling';
 import website from '@/routes/website';
 import statistieken from '@/routes/website/statistieken';
 import type {
@@ -130,6 +133,7 @@ const vulIn = (): void => {
     meteenOnline.value = true;
     vertaalFout.value = null;
     fouten.value = {};
+    nodig.herstel();
 };
 
 watch(open, (isOpen) => {
@@ -160,6 +164,27 @@ const gekozenWeergave = computed(() =>
 const maximum = computed(() => gekozenWeergave.value?.maximum ?? 100);
 
 const isPercentage = computed(() => formulier.value.display !== 'teller');
+
+/*
+ * De waarde mag nul zijn -- nul projecten is een getal -- dus er wordt
+ * naar een leeg vakje gekeken en niet naar een waarde die onwaar is. Met
+ * `v-model.number` staat er bij een leeggemaakt vakje een lege tekst, en
+ * die vangt `String()` op.
+ */
+const nodig = useVerplicht(() => [
+    {
+        sleutel: 'value',
+        // Hetzelfde veld heet "Percentage" zodra je die weergave kiest;
+        // de melding hoort te noemen wat er op het scherm staat.
+        naam: isPercentage.value ? t('Percentage') : t('Getal'),
+        gevuld: String(formulier.value.value).trim() !== '',
+    },
+    {
+        sleutel: 'label_nl',
+        naam: t('Naam'),
+        gevuld: formulier.value.label_nl.trim() !== '',
+    },
+]);
 
 /**
  * Een waarde boven de grens knippen zodra de weergave verandert.
@@ -293,6 +318,12 @@ const vertaal = async (): Promise<void> => {
 /* --- Opslaan ----------------------------------------------------------- */
 
 const opslaan = async (): Promise<void> => {
+    if (!nodig.compleet) {
+        nodig.meld();
+
+        return;
+    }
+
     open.value = false;
     await adem();
 
@@ -414,7 +445,11 @@ const adem = (): Promise<void> =>
                                 min="0"
                                 :max="maximum"
                             />
-                            <InputError :message="fouten.value" />
+                            <InputError
+                                :message="
+                                    fouten.value ?? nodig.melding('value')
+                                "
+                            />
                         </div>
                     </div>
 
@@ -442,7 +477,11 @@ const adem = (): Promise<void> =>
                                 })
                             }}
                         </p>
-                        <InputError :message="fouten.label_nl" />
+                        <InputError
+                            :message="
+                                fouten.label_nl ?? nodig.melding('label_nl')
+                            "
+                        />
                     </div>
 
                     <div class="grid gap-2">
@@ -533,6 +572,7 @@ const adem = (): Promise<void> =>
                             id="statistiek-label-en"
                             v-model="formulier.label_en"
                             maxlength="60"
+                            :placeholder="nederlandsAlsHint(formulier.label_nl)"
                         />
                         <InputError :message="fouten.label_en" />
                     </div>
@@ -546,6 +586,7 @@ const adem = (): Promise<void> =>
                             id="statistiek-note-en"
                             v-model="formulier.note_en"
                             maxlength="120"
+                            :placeholder="nederlandsAlsHint(formulier.note_nl)"
                         />
                         <InputError :message="fouten.note_en" />
                     </div>
@@ -559,6 +600,7 @@ const adem = (): Promise<void> =>
                             id="statistiek-groep-en"
                             v-model="formulier.group_en"
                             maxlength="60"
+                            :placeholder="nederlandsAlsHint(formulier.group_nl)"
                         />
                         <p class="text-xs text-pretty text-muted-foreground">
                             {{
@@ -638,6 +680,8 @@ const adem = (): Promise<void> =>
                 </div>
             </div>
 
+            <VerplichtMelding :ontbreekt="nodig.ontbreekt" />
+
             <DialogFooter class="gap-2">
                 <div class="flex gap-2">
                     <Button
@@ -652,6 +696,7 @@ const adem = (): Promise<void> =>
                         :variant="bewerkt ? 'bewerken' : 'aanmaken'"
                         class="gap-2"
                         :disabled="bezig"
+                        :geblokkeerd="!nodig.compleet"
                         @click="opslaan"
                     >
                         <Loader2 v-if="bezig" class="size-4 animate-spin" />

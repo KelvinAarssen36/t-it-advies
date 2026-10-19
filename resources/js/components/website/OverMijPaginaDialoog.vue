@@ -19,6 +19,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { bevestigBewerken, bevestigVerwijderen } from '@/lib/bevestiging';
 import { t } from '@/lib/i18n';
+import { nederlandsAlsHint } from '@/lib/vertaling';
 import website from '@/routes/website';
 import overMij from '@/routes/website/over-mij';
 import type { OverMijInstelling, OverMijOpties } from '@/types/over-mij';
@@ -447,7 +448,7 @@ const adem = (): Promise<void> =>
                         :placeholder="
                             taal === 'nl'
                                 ? $t('Bijvoorbeeld: Even voorstellen')
-                                : undefined
+                                : nederlandsAlsHint(formulier.page_title_nl)
                         "
                         v-focus
                     />
@@ -468,6 +469,11 @@ const adem = (): Promise<void> =>
                         v-model="formulier[veld.inleiding]"
                         :maxlength="300"
                         rows="3"
+                        :placeholder="
+                            taal === 'en'
+                                ? nederlandsAlsHint(formulier.page_intro_nl)
+                                : undefined
+                        "
                     />
                     <InputError :message="fouten[veld.inleiding]" />
                 </div>
@@ -484,7 +490,7 @@ const adem = (): Promise<void> =>
                                 ? $t(
                                       'Een witregel tussen twee stukken maakt er op je website twee alinea\'s van.',
                                   )
-                                : undefined
+                                : nederlandsAlsHint(formulier.story_nl)
                         "
                     />
                     <InputError :message="fouten[veld.verhaal]" />

@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { bevestigBewerken, bevestigVerwijderen } from '@/lib/bevestiging';
 import { t } from '@/lib/i18n';
+import { nederlandsAlsHint } from '@/lib/vertaling';
 import website from '@/routes/website';
 import footer from '@/routes/website/footer';
 import type { VoetInstelling, VoetOpties } from '@/types/voettekst';
@@ -341,6 +342,9 @@ const adem = (): Promise<void> =>
                             id="voet-plaats-en"
                             v-model="formulier.region_en"
                             :maxlength="props.opties.plaatsMax"
+                            :placeholder="
+                                nederlandsAlsHint(formulier.region_nl)
+                            "
                         />
                         <InputError :message="fouten.region_en" />
                     </div>

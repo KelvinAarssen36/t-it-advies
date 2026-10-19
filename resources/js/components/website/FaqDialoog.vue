@@ -4,6 +4,7 @@ import { Languages, Loader2 } from '@lucide/vue';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import InputError from '@/components/InputError.vue';
 import LocaleFlag from '@/components/LocaleFlag.vue';
+import VerplichtMelding from '@/components/VerplichtMelding.vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -22,6 +23,8 @@ import {
     bevestigVerwijderen,
 } from '@/lib/bevestiging';
 import { t } from '@/lib/i18n';
+import { useVerplicht } from '@/lib/verplicht';
+import { nederlandsAlsHint } from '@/lib/vertaling';
 import website from '@/routes/website';
 import faq from '@/routes/website/faq';
 import type { FaqOpties, VraagRij } from '@/types/faq';
@@ -65,6 +68,19 @@ const formulier = ref({
     published: true,
 });
 
+const nodig = useVerplicht(() => [
+    {
+        sleutel: 'question_nl',
+        naam: t('Vraag'),
+        gevuld: formulier.value.question_nl.trim() !== '',
+    },
+    {
+        sleutel: 'answer_nl',
+        naam: t('Antwoord'),
+        gevuld: formulier.value.answer_nl.trim() !== '',
+    },
+]);
+
 /** Of de eigenaar hem meteen online wil; alleen bij een nieuwe. */
 const meteenOnline = ref(true);
 
@@ -103,6 +119,7 @@ const vulIn = (): void => {
     meteenOnline.value = true;
     vertaalFout.value = null;
     fouten.value = {};
+    nodig.herstel();
 };
 
 watch(open, (isOpen) => {
@@ -229,6 +246,12 @@ const vertaal = async (): Promise<void> => {
 /* --- Opslaan ----------------------------------------------------------- */
 
 const opslaan = async (): Promise<void> => {
+    if (!nodig.compleet) {
+        nodig.meld();
+
+        return;
+    }
+
     open.value = false;
     await adem();
 
@@ -331,7 +354,11 @@ const adem = (): Promise<void> =>
                         "
                         v-focus
                     />
-                    <InputError :message="fouten.question_nl" />
+                    <InputError
+                        :message="
+                            fouten.question_nl ?? nodig.melding('question_nl')
+                        "
+                    />
                 </div>
 
                 <div class="grid gap-2">
@@ -350,7 +377,11 @@ const adem = (): Promise<void> =>
                             )
                         "
                     />
-                    <InputError :message="fouten.answer_nl" />
+                    <InputError
+                        :message="
+                            fouten.answer_nl ?? nodig.melding('answer_nl')
+                        "
+                    />
                     <p class="text-xs text-muted-foreground">
                         {{ $t(':aantal tekens over', { aantal: overNl }) }}
                     </p>
@@ -391,6 +422,9 @@ const adem = (): Promise<void> =>
                                 id="vraag-en"
                                 v-model="formulier.question_en"
                                 :maxlength="160"
+                                :placeholder="
+                                    nederlandsAlsHint(formulier.question_nl)
+                                "
                             />
                             <InputError :message="fouten.question_en" />
                         </div>
@@ -404,6 +438,9 @@ const adem = (): Promise<void> =>
                                 v-model="formulier.answer_en"
                                 :maxlength="props.opties.antwoordMax"
                                 rows="5"
+                                :placeholder="
+                                    nederlandsAlsHint(formulier.answer_nl)
+                                "
                             />
                             <InputError :message="fouten.answer_en" />
                             <p class="text-xs text-muted-foreground">
@@ -439,6 +476,8 @@ const adem = (): Promise<void> =>
                 </div>
             </div>
 
+            <VerplichtMelding :ontbreekt="nodig.ontbreekt" />
+
             <DialogFooter>
                 <Button type="button" variant="ghost" @click="open = false">
                     {{ $t('Annuleren') }}
@@ -446,11 +485,8 @@ const adem = (): Promise<void> =>
                 <Button
                     type="button"
                     :variant="bewerkt ? 'bewerken' : 'aanmaken'"
-                    :disabled="
-                        bezig ||
-                        formulier.question_nl.trim() === '' ||
-                        formulier.answer_nl.trim() === ''
-                    "
+                    :disabled="bezig"
+                    :geblokkeerd="!nodig.compleet"
                     @click="opslaan"
                 >
                     {{ bezig ? $t('Bezig...') : $t('Opslaan') }}

@@ -257,6 +257,43 @@ vertalen is niet gelukt", en ook zijn titel komt niet terug.
 Dat is drie keer gebeurd. `VertaalgrenzenTest` bewaakt het nu, en leest de
 grens uit de module zelf in plaats van hem over te typen.
 
+### Een `disabled` knop slikt de klik op, en dus ook de uitleg
+
+De knop die pas mag als alles is ingevuld was `disabled`. Dat voelt juist,
+maar het betekent letterlijk: er gebeurt níets als je erop drukt. Geen
+melding, geen uitleg, en een schermlezer slaat hem helemaal over. De klant
+staat voor een grijze knop en moet zelf maar uitvinden welk van de tien
+vakjes leeg is.
+
+Gebruik `:geblokkeerd` in plaats van `:disabled` als de reden "er is nog
+iets leeg" is. De knop ziet er hetzelfde uit, maar de klik komt binnen --
+en juist die klik vertelt wat er mist. `disabled` houd je voor wat écht
+niet kan: er loopt al een verzoek.
+
+`VerplichteVeldenTest` valt om zodra er weer een `:disabled` aan een lege
+waarde hangt.
+
+### De naam in een melding moet het label van het scherm zijn
+
+"Vul eerst nog in: Opleider" terwijl er **Instelling** op het scherm staat,
+is erger dan geen melding: de klant zoekt naar een veld dat er niet is.
+
+Dat is hier misgegaan bij de opleiding, en het valt niet op bij het
+bouwen -- je weet zelf wel welk veld je bedoelt. Pak de naam letterlijk uit
+het `<Label>` over. `VerplichteVeldenTest` vergelijkt de twee nu.
+
+### Een wachtwoordbeheerder vult velden zonder toetsaanslag
+
+Dit is de reden dat de inlogschermen hun knop níet uitgrijzen. Die
+formulieren draaien op Inertia's `<Form>` met velden zonder `v-model`, dus
+"staat hier al iets?" kun je alleen beantwoorden door mee te kijken met wat
+er getypt wordt.
+
+Precies dáár vult een wachtwoordbeheerder beide velden in zonder dat er een
+toets wordt aangeraakt. De knop zou dan grijs blijven terwijl alles is
+ingevuld -- en de klant kan niet inloggen op een scherm dat er goed uitziet.
+Dat is erger dan de fout die we wilden oplossen.
+
 ---
 
 ## De publieke site
@@ -425,6 +462,45 @@ beeldjes -- dan loopt de overgang vast tot de browser hem afbreekt. En een
 eigen view transition bij `popstate` legt het oude beeld pas een beeldje
 later vast, als Inertia de pagina al heeft gewisseld. Zie "Van kaart naar
 projectpagina" in [projecten](../architecture/modules/projecten.md).
+
+## Gegevens
+
+### Rij voor rij bijwerken breekt op een unieke kolom
+
+Werk je een tabel bij op `id` -- rij 2 krijgt deze waarden, rij 5 die --
+dan gaat dat goed tot twee rijen elkaars unieke waarde hebben. De eerste
+bijwerking botst dan op de tweede rij, die zijn oude waarde nog heeft:
+
+```
+Duplicate entry 'diensten' for key 'page_sections_key_unique'
+```
+
+Er is geen volgorde die dit oplost; het is een wissel, en die kun je niet
+in stappen doen. Dat is bij het terugzetten van een back-up gebeurd, en
+alleen bij een bestand waarvan de nummers verschoven waren -- dus precies
+in het geval waarvoor terugzetten bedoeld is, en niet in de test die het
+met een verse back-up probeerde.
+
+**Parkeer eerst.** Zet elke unieke waarde op een tijdelijke eigen waarde
+(`~herstel-<id>`), werk daarna bij, allemaal in dezelfde transactie. Zet er
+ook een test op dat er geen geparkeerde waarde blijft staan: zo'n restje is
+een slug in het adres van de klant.
+
+> Haal de unieke kolommen uit het schema (`Schema::getIndexes()`) en niet
+> uit een lijst in de code. Een lijst veroudert bij de volgende module, en
+> dan is de storing terug zonder dat iets het meldt.
+
+### Een handeling die kan mislukken hoort geen foutpagina te geven
+
+Het terugzetten draaide in een transactie, dus bij die botsing was er niets
+half gedaan. Maar de uitzondering werd niet afgevangen, en de klant kreeg
+een foutpagina met de ruwe SQL erop -- inclusief de inhoud van de rij die
+klem zat.
+
+Vang bij zo'n handeling `Throwable` af en niet alleen `RuntimeException`:
+wat uit de database komt is een `QueryException`. Zeg op het scherm wat de
+klant wil weten -- _er is niets veranderd_ -- en laat de details naar het
+logboek gaan.
 
 ## Modules
 

@@ -3,6 +3,7 @@ import { router } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
+import VerplichtMelding from '@/components/VerplichtMelding.vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -14,6 +15,8 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { t } from '@/lib/i18n';
+import { useVerplicht } from '@/lib/verplicht';
 import inlogadres from '@/routes/inlogadres';
 
 /**
@@ -47,6 +50,23 @@ const formulier = ref({
     password: '',
 });
 
+/*
+ * Alleen of er iets staat, nooit wát er staat. Deze regelaar bewaart
+ * niets van wat je typt; bij het wachtwoord telt hij enkel de lengte.
+ */
+const nodig = useVerplicht(() => [
+    {
+        sleutel: 'email',
+        naam: t('Nieuw inlogadres'),
+        gevuld: formulier.value.email.trim() !== '',
+    },
+    {
+        sleutel: 'password',
+        naam: t('Je huidige wachtwoord'),
+        gevuld: formulier.value.password !== '',
+    },
+]);
+
 watch(open, (isOpen) => {
     if (!isOpen) {
         /*
@@ -55,10 +75,17 @@ watch(open, (isOpen) => {
          */
         formulier.value = { email: '', password: '' };
         fouten.value = {};
+        nodig.herstel();
     }
 });
 
 const aanvragen = (): void => {
+    if (!nodig.compleet) {
+        nodig.meld();
+
+        return;
+    }
+
     bezig.value = true;
     fouten.value = {};
 
@@ -117,7 +144,9 @@ const aanvragen = (): void => {
                             )
                         }}
                     </p>
-                    <InputError :message="fouten.email" />
+                    <InputError
+                        :message="fouten.email ?? nodig.melding('email')"
+                    />
                 </div>
 
                 <div class="grid gap-2">
@@ -130,7 +159,9 @@ const aanvragen = (): void => {
                         autocomplete="current-password"
                         :placeholder="$t('Je huidige wachtwoord')"
                     />
-                    <InputError :message="fouten.password" />
+                    <InputError
+                        :message="fouten.password ?? nodig.melding('password')"
+                    />
                 </div>
 
                 <!--
@@ -165,11 +196,18 @@ const aanvragen = (): void => {
                     </li>
                 </ol>
 
+                <VerplichtMelding :ontbreekt="nodig.ontbreekt" />
+
                 <DialogFooter>
                     <Button type="button" variant="ghost" @click="open = false">
                         {{ $t('Annuleren') }}
                     </Button>
-                    <Button type="submit" variant="bewerken" :disabled="bezig">
+                    <Button
+                        type="submit"
+                        variant="bewerken"
+                        :disabled="bezig"
+                        :geblokkeerd="!nodig.compleet"
+                    >
                         {{
                             bezig ? $t('Bezig...') : $t('Stuur de bevestiging')
                         }}

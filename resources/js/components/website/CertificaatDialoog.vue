@@ -6,6 +6,7 @@ import InputError from '@/components/InputError.vue';
 import LocaleFlag from '@/components/LocaleFlag.vue';
 import LogoKiezer from '@/components/LogoKiezer.vue';
 import MaandKiezer from '@/components/MaandKiezer.vue';
+import VerplichtMelding from '@/components/VerplichtMelding.vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -24,6 +25,7 @@ import {
     bevestigVerwijderen,
 } from '@/lib/bevestiging';
 import { t } from '@/lib/i18n';
+import { useVerplicht } from '@/lib/verplicht';
 import website from '@/routes/website';
 import certificaten from '@/routes/website/certificaten';
 import type { CertificaatRij, CertificatenOpties } from '@/types/certificaten';
@@ -69,6 +71,31 @@ const formulier = ref({
     body_nl: '',
     body_en: '',
 });
+
+/* Alles wat moet, staat op stap 1; stap 2 is het Engels en mag leeg. */
+const nodig = useVerplicht(
+    () => [
+        {
+            sleutel: 'title_nl',
+            naam: t('Naam van het certificaat'),
+            gevuld: formulier.value.title_nl.trim() !== '',
+            stap: 1,
+        },
+        {
+            sleutel: 'issuer',
+            naam: t('Uitgever'),
+            gevuld: formulier.value.issuer.trim() !== '',
+            stap: 1,
+        },
+        {
+            sleutel: 'issued_on',
+            naam: t('Behaald in'),
+            gevuld: formulier.value.issued_on.trim() !== '',
+            stap: 1,
+        },
+    ],
+    stap,
+);
 
 /* --- Het logo ---------------------------------------------------------- */
 
@@ -143,6 +170,7 @@ const vulIn = (): void => {
     vertaalFout.value = null;
     fouten.value = {};
     stap.value = 1;
+    nodig.herstel();
 };
 
 watch(open, (isOpen) => {
@@ -168,6 +196,17 @@ const richting = ref<'vooruit' | 'terug'>('vooruit');
 const naarStap = (nieuw: number): void => {
     richting.value = nieuw > stap.value ? 'vooruit' : 'terug';
     stap.value = nieuw;
+};
+
+/** Van stap 1 naar stap 2, maar niet met een half ingevuld formulier. */
+const volgende = (): void => {
+    if (!nodig.klaar) {
+        nodig.meld();
+
+        return;
+    }
+
+    naarStap(2);
 };
 
 /**
@@ -294,6 +333,18 @@ const vertaal = async (): Promise<void> => {
 /* --- Opslaan ----------------------------------------------------------- */
 
 const opslaan = async (): Promise<void> => {
+    /*
+     * Staat er nog iets leeg op stap 1, dan gaat het venster daarheen
+     * terug -- anders leest de klant een melding over een veld dat hij
+     * niet voor zich heeft. Zelfde reden als bij `veldenVanStap1`.
+     */
+    if (!nodig.compleet) {
+        nodig.meld();
+        naarStap(nodig.eersteLegeStap());
+
+        return;
+    }
+
     /*
      * Het venster gaat dicht vóór de bevestiging in plaats van eronder
      * te liggen; zie de toelichting in pages/website/Indeling.vue.
@@ -465,7 +516,11 @@ const adem = (): Promise<void> =>
                                 })
                             }}
                         </p>
-                        <InputError :message="fouten.title_nl" />
+                        <InputError
+                            :message="
+                                fouten.title_nl ?? nodig.melding('title_nl')
+                            "
+                        />
                     </div>
 
                     <!--
@@ -487,7 +542,11 @@ const adem = (): Promise<void> =>
                                 maxlength="120"
                                 placeholder="Microsoft"
                             />
-                            <InputError :message="fouten.issuer" />
+                            <InputError
+                                :message="
+                                    fouten.issuer ?? nodig.melding('issuer')
+                                "
+                            />
                         </div>
 
                         <div class="grid gap-2">
@@ -516,7 +575,12 @@ const adem = (): Promise<void> =>
                                 :jaren="props.opties.jaren"
                                 :aria-label="$t('Behaald in')"
                             />
-                            <InputError :message="fouten.issued_on" />
+                            <InputError
+                                :message="
+                                    fouten.issued_on ??
+                                    nodig.melding('issued_on')
+                                "
+                            />
                         </div>
 
                         <div class="grid gap-2">
@@ -689,6 +753,8 @@ const adem = (): Promise<void> =>
                 andere vensters hebben hem niet en hij zei niets wat er
                 niet al twee keer stond.
             -->
+            <VerplichtMelding :ontbreekt="nodig.ontbreekt" />
+
             <DialogFooter class="gap-2">
                 <div class="flex flex-1 justify-between gap-2">
                     <Button
@@ -713,7 +779,8 @@ const adem = (): Promise<void> =>
                         <Button
                             v-if="stap === 1"
                             class="gap-2"
-                            @click="naarStap(2)"
+                            :geblokkeerd="!nodig.klaar"
+                            @click="volgende"
                         >
                             {{ $t('Volgende') }}
                             <ArrowRight class="size-4" />
@@ -724,6 +791,7 @@ const adem = (): Promise<void> =>
                             :variant="bewerkt ? 'bewerken' : 'aanmaken'"
                             class="gap-2"
                             :disabled="bezig"
+                            :geblokkeerd="!nodig.compleet"
                             @click="opslaan"
                         >
                             <Loader2 v-if="bezig" class="size-4 animate-spin" />

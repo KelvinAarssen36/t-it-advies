@@ -4,6 +4,7 @@ import { TriangleAlert } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
 import InputError from '@/components/InputError.vue';
 import PasteCodeButton from '@/components/PasteCodeButton.vue';
+import VerplichtMelding from '@/components/VerplichtMelding.vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -19,6 +20,8 @@ import {
     InputOTPSlot,
 } from '@/components/ui/input-otp';
 import { Label } from '@/components/ui/label';
+import { t } from '@/lib/i18n';
+import { useVerplicht } from '@/lib/verplicht';
 import { passkeyStap } from '@/routes/security';
 
 /**
@@ -49,10 +52,24 @@ const code = ref('');
 const bezig = ref(false);
 const fouten = ref<Record<string, string>>({});
 
+/*
+ * Een eigen melding: drie van de zes cijfers is niet leeg maar nog niet
+ * af. Er staat niets in wat de klant heeft getypt.
+ */
+const nodig = useVerplicht(() => [
+    {
+        sleutel: 'code',
+        naam: t('De code uit je authenticator'),
+        gevuld: code.value.length === 6,
+        melding: t('Vul de zes cijfers uit je authenticator in.'),
+    },
+]);
+
 watch(open, (isOpen) => {
     if (!isOpen) {
         code.value = '';
         fouten.value = {};
+        nodig.herstel();
     }
 });
 
@@ -67,7 +84,13 @@ const uitleg = computed(() =>
 );
 
 const versturen = (): void => {
-    if (code.value.length < 6 || bezig.value) {
+    if (code.value.length < 6) {
+        nodig.meld();
+
+        return;
+    }
+
+    if (bezig.value) {
         return;
     }
 
@@ -147,10 +170,16 @@ const opGeplakt = (plakcode: string): void => {
                         </InputOTPGroup>
                     </InputOTP>
 
-                    <InputError :message="fouten.code ?? fouten.aan" />
+                    <InputError
+                        :message="
+                            fouten.code ?? fouten.aan ?? nodig.melding('code')
+                        "
+                    />
 
                     <PasteCodeButton @pasted="opGeplakt" />
                 </div>
+
+                <VerplichtMelding :ontbreekt="nodig.ontbreekt" />
 
                 <DialogFooter>
                     <Button type="button" variant="ghost" @click="open = false">
@@ -159,7 +188,8 @@ const opGeplakt = (plakcode: string): void => {
                     <Button
                         type="submit"
                         :variant="props.gewenst ? 'bewerken' : 'verwijderen'"
-                        :disabled="bezig || code.length < 6"
+                        :disabled="bezig"
+                        :geblokkeerd="code.length < 6"
                     >
                         {{
                             bezig

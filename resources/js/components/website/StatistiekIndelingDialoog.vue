@@ -10,6 +10,7 @@ import {
     watch,
 } from 'vue';
 import InputError from '@/components/InputError.vue';
+import VerplichtMelding from '@/components/VerplichtMelding.vue';
 import StatistiekGroepVak from '@/components/website/StatistiekGroepVak.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -189,6 +190,7 @@ watch(open, (isOpen) => {
     }
 
     concept.value = bouwVakken(props.items);
+    gemeld.value = false;
 });
 
 /* --- De vakken --------------------------------------------------------- */
@@ -515,6 +517,16 @@ const geldig = computed(
     () => Object.keys(fouten.value).length === 0 && alleCijfersErIn.value,
 );
 
+/*
+ * Of er op de grijze opslaanknop is gedrukt.
+ *
+ * Hier past `useVerplicht()` niet: het gaat niet om een leeg veld maar om
+ * twee groepen met dezelfde naam of een groep zonder naam, en die uitleg
+ * staat al in het rood bij het vak zelf. Wat ontbrak was een antwoord op
+ * de druk op de knop, en dat is deze ene regel die de weg wijst.
+ */
+const gemeld = ref(false);
+
 /* --- Opslaan ----------------------------------------------------------- */
 
 /**
@@ -566,8 +578,12 @@ const veranderd = computed(
 
 const opslaan = async (): Promise<void> => {
     if (!geldig.value) {
+        gemeld.value = true;
+
         return;
     }
+
+    gemeld.value = false;
 
     // Niets veranderd is geen opslag waard: geen vraag, geen verzoek,
     // geen melding.
@@ -678,6 +694,15 @@ const adem = (): Promise<void> =>
                 />
             </div>
 
+            <VerplichtMelding
+                :boodschap="
+                    $t(
+                        'Er klopt nog iets niet aan je groepen. Kijk bij het vak met de rode tekst hierboven.',
+                    )
+                "
+                :toon="gemeld && !geldig"
+            />
+
             <DialogFooter class="gap-2">
                 <div class="flex gap-2">
                     <Button
@@ -690,7 +715,8 @@ const adem = (): Promise<void> =>
                     <Button
                         variant="bewerken"
                         class="gap-2"
-                        :disabled="bezig || !geldig"
+                        :disabled="bezig"
+                        :geblokkeerd="!geldig"
                         @click="opslaan"
                     >
                         <Loader2 v-if="bezig" class="size-4 animate-spin" />

@@ -4,6 +4,7 @@ import { Languages, Loader2 } from '@lucide/vue';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import InputError from '@/components/InputError.vue';
 import LocaleFlag from '@/components/LocaleFlag.vue';
+import VerplichtMelding from '@/components/VerplichtMelding.vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -21,6 +22,8 @@ import {
     bevestigVerwijderen,
 } from '@/lib/bevestiging';
 import { t } from '@/lib/i18n';
+import { useVerplicht } from '@/lib/verplicht';
+import { nederlandsAlsHint } from '@/lib/vertaling';
 import website from '@/routes/website';
 import punten from '@/routes/website/over-mij/punten';
 import type { PuntRij } from '@/types/over-mij';
@@ -50,6 +53,14 @@ const fouten = ref<Record<string, string>>({});
 
 const formulier = ref({ text_nl: '', text_en: '' });
 
+const nodig = useVerplicht(() => [
+    {
+        sleutel: 'text_nl',
+        naam: t('Punt'),
+        gevuld: formulier.value.text_nl.trim() !== '',
+    },
+]);
+
 const vertaalt = ref(false);
 const vertaalFout = ref<string | null>(null);
 
@@ -69,6 +80,7 @@ const vulIn = (): void => {
 
     fouten.value = {};
     vertaalFout.value = null;
+    nodig.herstel();
 };
 
 watch(open, (isOpen) => {
@@ -172,6 +184,12 @@ const vertaal = async (): Promise<void> => {
 /* --- Opslaan ----------------------------------------------------------- */
 
 const opslaan = async (): Promise<void> => {
+    if (!nodig.compleet) {
+        nodig.meld();
+
+        return;
+    }
+
     open.value = false;
     await adem();
 
@@ -253,7 +271,9 @@ const adem = (): Promise<void> =>
                     <p class="text-xs text-muted-foreground">
                         {{ $t('Nog :aantal tekens', { aantal: overPuntNl }) }}
                     </p>
-                    <InputError :message="fouten.text_nl" />
+                    <InputError
+                        :message="fouten.text_nl ?? nodig.melding('text_nl')"
+                    />
                 </div>
 
                 <div class="border-t border-border pt-4">
@@ -287,6 +307,7 @@ const adem = (): Promise<void> =>
                             id="punt-en"
                             v-model="formulier.text_en"
                             :maxlength="80"
+                            :placeholder="nederlandsAlsHint(formulier.text_nl)"
                         />
                         <InputError :message="fouten.text_en" />
                         <InputError :message="vertaalFout ?? undefined" />
@@ -308,6 +329,8 @@ const adem = (): Promise<void> =>
                 </div>
             </div>
 
+            <VerplichtMelding :ontbreekt="nodig.ontbreekt" />
+
             <DialogFooter>
                 <Button type="button" variant="ghost" @click="open = false">
                     {{ $t('Annuleren') }}
@@ -315,7 +338,8 @@ const adem = (): Promise<void> =>
                 <Button
                     type="button"
                     :variant="bewerkt ? 'bewerken' : 'aanmaken'"
-                    :disabled="bezig || formulier.text_nl.trim() === ''"
+                    :disabled="bezig"
+                    :geblokkeerd="!nodig.compleet"
                     @click="opslaan"
                 >
                     {{ bezig ? $t('Bezig...') : $t('Opslaan') }}

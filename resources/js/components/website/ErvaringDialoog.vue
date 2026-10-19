@@ -14,6 +14,7 @@ import InputError from '@/components/InputError.vue';
 import LocaleFlag from '@/components/LocaleFlag.vue';
 import LogoKiezer from '@/components/LogoKiezer.vue';
 import MaandKiezer from '@/components/MaandKiezer.vue';
+import VerplichtMelding from '@/components/VerplichtMelding.vue';
 import ErvaringIcoon from '@/components/site/ErvaringIcoon.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -34,6 +35,7 @@ import {
     bevestigVerwijderen,
 } from '@/lib/bevestiging';
 import { t } from '@/lib/i18n';
+import { useVerplicht } from '@/lib/verplicht';
 import website from '@/routes/website';
 import ervaring from '@/routes/website/ervaring';
 import type { ErvaringOpties, ErvaringRij } from '@/types/ervaring';
@@ -128,6 +130,42 @@ const leeg = (): Formulier => ({
 
 const formulier = ref<Formulier>(leeg());
 
+/* Alles wat moet, staat op stap 1; stap 2 is het Engels en mag leeg. */
+const nodig = useVerplicht(
+    () => [
+        {
+            sleutel: 'role_nl',
+            naam: t('Functie'),
+            gevuld: formulier.value.role_nl.trim() !== '',
+            stap: 1,
+        },
+        {
+            sleutel: 'organisation',
+            naam: t('Organisatie'),
+            gevuld: formulier.value.organisation.trim() !== '',
+            stap: 1,
+        },
+        {
+            sleutel: 'started_on',
+            naam: t('Van'),
+            gevuld: formulier.value.start.trim() !== '',
+            stap: 1,
+        },
+    ],
+    stap,
+);
+
+/** Van stap 1 naar stap 2, maar niet met een half ingevuld formulier. */
+const volgende = (): void => {
+    if (!nodig.klaar) {
+        nodig.meld();
+
+        return;
+    }
+
+    naarStap(2);
+};
+
 /* --- Het beeldmerk --------------------------------------------------- */
 
 /**
@@ -192,6 +230,7 @@ const vulIn = (): void => {
     richting.value = 'vooruit';
     fouten.value = {};
     automatisch.value = null;
+    nodig.herstel();
 };
 
 /**
@@ -349,6 +388,18 @@ const veldenVanStap1 = [
 const meteenOnline = ref(true);
 
 const opslaan = async (): Promise<void> => {
+    /*
+     * Staat er nog iets leeg op stap 1, dan gaat het venster daarheen
+     * terug -- anders leest de klant een melding over een veld dat hij
+     * niet voor zich heeft. Zelfde reden als bij `veldenVanStap1`.
+     */
+    if (!nodig.compleet) {
+        nodig.meld();
+        naarStap(nodig.eersteLegeStap());
+
+        return;
+    }
+
     /*
      * Het venster gaat dicht vóór de bevestiging in plaats van eronder te
      * liggen; zegt de klant nee, dan komt het weer open met alles er nog
@@ -713,7 +764,11 @@ const valtTeVertalen = computed(
                                     $t('Bijvoorbeeld: Systeembeheerder')
                                 "
                             />
-                            <InputError :message="fouten.role_nl" />
+                            <InputError
+                                :message="
+                                    fouten.role_nl ?? nodig.melding('role_nl')
+                                "
+                            />
                         </div>
 
                         <div class="grid gap-4 sm:grid-cols-2">
@@ -726,7 +781,12 @@ const valtTeVertalen = computed(
                                     v-model="formulier.organisation"
                                     :maxlength="120"
                                 />
-                                <InputError :message="fouten.organisation" />
+                                <InputError
+                                    :message="
+                                        fouten.organisation ??
+                                        nodig.melding('organisation')
+                                    "
+                                />
                                 <!--
                                     De organisatie heeft geen Engels veld. Een
                                     bedrijfsnaam is een eigennaam; die vertaal
@@ -856,7 +916,12 @@ const valtTeVertalen = computed(
                                     :placeholder="$t('Kies een maand')"
                                     :aria-label="$t('Begindatum')"
                                 />
-                                <InputError :message="fouten.started_on" />
+                                <InputError
+                                    :message="
+                                        fouten.started_on ??
+                                        nodig.melding('started_on')
+                                    "
+                                />
                             </div>
                         </div>
 
@@ -1095,6 +1160,8 @@ const valtTeVertalen = computed(
                 </Transition>
             </div>
 
+            <VerplichtMelding :ontbreekt="nodig.ontbreekt" />
+
             <DialogFooter class="gap-2 sm:justify-between sm:gap-2">
                 <Button
                     v-if="stap === 2"
@@ -1120,7 +1187,8 @@ const valtTeVertalen = computed(
                     <Button
                         v-if="stap === 1"
                         class="gap-2"
-                        @click="naarStap(2)"
+                        :geblokkeerd="!nodig.klaar"
+                        @click="volgende"
                     >
                         {{ $t('Volgende') }}
                         <ArrowRight class="size-4" />
@@ -1135,6 +1203,7 @@ const valtTeVertalen = computed(
                         :variant="bewerkt ? 'bewerken' : 'aanmaken'"
                         class="gap-2"
                         :disabled="bezig || vertaalt"
+                        :geblokkeerd="!nodig.compleet"
                         @click="opslaan"
                     >
                         <Loader2 v-if="bezig" class="size-4 animate-spin" />

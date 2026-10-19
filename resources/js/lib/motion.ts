@@ -71,12 +71,215 @@ export function opEenTelefoon(): boolean {
     return typeof window !== 'undefined' && window.matchMedia(SMAL).matches;
 }
 
+/** Waar het oordeel over deze machine blijft staan, zolang het tabblad open is. */
+const OORDEEL = 'brand-beweging-traag';
+
+/**
+ * Beent deze machine de animaties niet bij?
+ *
+ * **Dit is gemeten en geen voorzorg.** Op een processor die zes keer
+ * trager is dan een gewone laptop zakt de voorpagina tijdens het scrollen
+ * naar negentien beeldjes per seconde, met uitschieters van 167 ms -- dat
+ * is zichtbaar haperen. Met de animatielaag uit is diezelfde pagina op
+ * diezelfde machine 54 beeldjes per seconde, zonder één uitschieter boven
+ * de 50 ms.
+ *
+ * Het zit niet in de opmaak: alle schaduwen, gloed en `backdrop-filter`
+ * uitzetten scheelde twee beeldjes. Het is het werk per beeldje -- het
+ * zachte scrollen en de scroll-gestuurde scènes.
+ *
+ * Daarom meet `letOpHetRitme()` na het opstarten even mee. Hapert het
+ * echt, dan onthouden we dat voor dit tabblad en valt alles terug op het
+ * rustige pad dat hier al bestond. Niets verdwijnt: alles staat meteen op
+ * zijn plek, alleen zonder de beweging ernaartoe.
+ *
+ * In `sessionStorage` en niet in `localStorage`: het oordeel gaat over
+ * hoe druk de machine nú is, en dat hoort niet maanden mee te gaan.
+ */
+export function machineIsTraag(): boolean {
+    if (typeof window === 'undefined') {
+        return false;
+    }
+
+    let bewaard: string | null = null;
+
+    try {
+        bewaard = window.sessionStorage.getItem(OORDEEL);
+    } catch {
+        // Privémodus of opslag uit: dan meten we elke keer opnieuw.
+    }
+
+    if (bewaard !== null) {
+        return bewaard === 'ja';
+    }
+
+    const traag = rekentDezeMachineTraag();
+
+    try {
+        window.sessionStorage.setItem(OORDEEL, traag ? 'ja' : 'nee');
+    } catch {
+        // Zie hierboven.
+    }
+
+    return traag;
+}
+
+/**
+ * Een korte rekenproef, vóór er iets is aangehangen.
+ *
+ * **Waarom niet gewoon tijdens het scrollen meten?** Dat was de eerste
+ * opzet en hij kwam te laat. Het oordeel viel pas na een seconde vegen, en
+ * op dat moment hingen de scroll-scènes er al in; die stoppen lukt niet
+ * meer zonder ze half achter te laten. Gemeten: de vólgende pagina was
+ * daarna vlot (60 beeldjes), maar de pagina waar je binnenkwam bleef
+ * haperen -- en dat is net de voorpagina.
+ *
+ * Deze proef duurt een paar milliseconden en draait vóór de eerste
+ * animatie wordt aangehangen, dus een trage machine krijgt het rustige
+ * pad meteen.
+ *
+ * **Eerst even warmdraaien.** De eerste keer dat een lus loopt is hij
+ * altijd traag, want de browser moet hem nog vertalen. Zonder die
+ * opwarming krijgt ook een snelle machine het stempel traag.
+ *
+ * De grens ligt op acht milliseconden. Een gewone laptop doet hier één tot
+ * drie over; een machine die de animaties niet bijbeent tien tot twintig.
+ * Dat is ruim genoeg uit elkaar om er geen scherprechter van te maken.
+ */
+function rekentDezeMachineTraag(): boolean {
+    const WERK = 300_000;
+    const GRENS = 8;
+
+    const lus = (keer: number): number => {
+        let uit = 0;
+
+        for (let i = 0; i < keer; i++) {
+            uit += Math.sqrt(i);
+        }
+
+        return uit;
+    };
+
+    // Warmdraaien; de uitkomst doet er niet toe, het gaat om de vertaalslag.
+    lus(20_000);
+
+    const begin = performance.now();
+
+    lus(WERK);
+
+    return performance.now() - begin > GRENS;
+}
+
+function onthoudDatHetTraagIs(): void {
+    try {
+        window.sessionStorage.setItem(OORDEEL, 'ja');
+    } catch {
+        // Zie hierboven: niet kunnen onthouden is geen reden om te stoppen.
+    }
+}
+
+/**
+ * Meet het beeldritme tijdens het scrollen en trekt aan de bel als het
+ * echt hapert.
+ *
+ * **Meten terwijl er gescrold wordt, en niet daarbuiten.** Dat was de
+ * eerste poging en hij sloeg nooit aan: een pagina die stilstaat haalt op
+ * elke machine zijn zestig beeldjes, want er is niets te doen. Het werk
+ * zit in het scrollen, dus daar hoort de meting. We haken daarom aan op
+ * Lenis, die alleen meldt terwijl hij beweegt.
+ *
+ * **De eerste tien beeldjes tellen niet mee.** Het begin van een veeg is
+ * altijd het duurst: dan rekent de browser de opmaak door die tijdens het
+ * stilstaan is blijven liggen. Zou je die meetellen, dan krijgt elke
+ * machine het stempel traag.
+ *
+ * Een onderbreking van meer dan een vijfde seconde telt ook niet: dan heeft
+ * de bezoeker even losgelaten, en dat is geen hapering maar een pauze.
+ */
+function letOpHetRitme(lenis: Lenis, stop: () => void): void {
+    /** Boven deze duur haalt een beeldje de dertig per seconde niet. */
+    const TE_TRAAG = 32;
+    const OPWARMEN = 10;
+    const BEELDJES = 45;
+
+    let vorige = 0;
+    let gezien = 0;
+    let traag = 0;
+    let klaar = false;
+
+    const kijk = (): void => {
+        if (klaar) {
+            return;
+        }
+
+        const nu = performance.now();
+        const duur = nu - vorige;
+
+        vorige = nu;
+
+        if (duur > 200) {
+            // Een nieuwe veeg na een pauze: niet meetellen.
+            return;
+        }
+
+        gezien++;
+
+        if (gezien <= OPWARMEN) {
+            return;
+        }
+
+        if (duur > TE_TRAAG) {
+            traag++;
+        }
+
+        if (gezien < OPWARMEN + BEELDJES) {
+            return;
+        }
+
+        klaar = true;
+
+        if (traag / BEELDJES <= 0.5) {
+            // Een hik, geen machine die niet meekomt.
+            return;
+        }
+
+        onthoudDatHetTraagIs();
+        stop();
+
+        /*
+         * En de rest van deze pagina ook opruimen.
+         *
+         * **Alleen het zachte scrollen stoppen was niet genoeg**, en dat
+         * is gemeten: op de pagina waar het oordeel viel bleef het daarna
+         * net zo hard haperen, want de scroll-triggers die er al hingen
+         * bleven gewoon draaien. Pas op de vólgende pagina was het vlot.
+         *
+         * Deze melding laat de layout opnieuw scannen. `prefersReducedMotion()`
+         * geeft inmiddels `true`, dus die scan zet alles meteen op zijn
+         * plek en hangt er niets nieuws aan. Zie PublicLayout.
+         */
+        window.dispatchEvent(new CustomEvent('brand:rustig'));
+    };
+
+    lenis.on('scroll', kijk);
+}
+
+/**
+ * Of we de beweging moeten overslaan.
+ *
+ * Twee redenen, en ze komen op hetzelfde neer: de bezoeker heeft erom
+ * gevraagd in zijn systeeminstellingen, of zijn machine beent het niet bij.
+ */
 export function prefersReducedMotion(): boolean {
     if (typeof window === 'undefined' || !window.matchMedia) {
         return false;
     }
 
-    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        return true;
+    }
+
+    return machineIsTraag();
 }
 
 /**
@@ -201,7 +404,15 @@ export function startSmoothScroll(): () => void {
     gsap.ticker.add(ticker, false, true);
     gsap.ticker.lagSmoothing(0);
 
-    return () => {
+    let gestopt = false;
+
+    const stop = (): void => {
+        if (gestopt) {
+            return;
+        }
+
+        gestopt = true;
+
         gsap.ticker.remove(ticker);
         huidige.off('scroll', onScroll);
         huidige.destroy();
@@ -211,6 +422,18 @@ export function startSmoothScroll(): () => void {
             lenis = undefined;
         }
     };
+
+    /*
+     * Beent deze machine het bij?
+     *
+     * Zo niet, dan gaat het zachte scrollen er meteen weer af en neemt de
+     * browser het over -- die scrolt buiten de hoofddraad om en hapert
+     * dus niet. Vanaf dat moment slaat `prefersReducedMotion()` de hele
+     * animatielaag over, ook op de volgende pagina's in dit tabblad.
+     */
+    letOpHetRitme(huidige, stop);
+
+    return stop;
 }
 
 /**

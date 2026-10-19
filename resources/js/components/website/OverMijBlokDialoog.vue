@@ -17,6 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { bevestigBewerken, bevestigVerwijderen } from '@/lib/bevestiging';
 import { t } from '@/lib/i18n';
+import { nederlandsAlsHint } from '@/lib/vertaling';
 import website from '@/routes/website';
 import overMij from '@/routes/website/over-mij';
 import type { OverMijInstelling, OverMijOpties } from '@/types/over-mij';
@@ -306,6 +307,9 @@ const adem = (): Promise<void> =>
                             v-model="formulier.summary_en"
                             :maxlength="props.opties.samenvattingMax"
                             rows="4"
+                            :placeholder="
+                                nederlandsAlsHint(formulier.summary_nl)
+                            "
                         />
                         <InputError :message="fouten.summary_en" />
                         <InputError :message="vertaalFout ?? undefined" />

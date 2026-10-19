@@ -419,6 +419,130 @@ beantwoord: leeglaten kan er niet eens. Zo'n veld is in de validatie wel
 `required` maar voor de klant niets om op te letten, en dan is een
 sterretje ruis. Het gaat om velden die hij zélf moet invullen.
 
+### En de knop wacht tot ze er staan
+
+Het sterretje zegt _dat_ een veld moet. Daarnaast houdt de knop zelf de
+deur dicht tot het er staat.
+
+Dat was er niet, en dat was te merken: je vulde een project half in, drukte
+op **Volgende**, deed de hele Engelse stap, drukte op **Opslaan** -- en
+kreeg dan pas een rode melding over de organisatie, drie schermen terug.
+De klant beheert alles zelf, dus zo'n omweg is geen schoonheidsfoutje maar
+de reden dat hij het de volgende keer niet meer durft.
+
+Nu is het omgedraaid:
+
+|                      |                                                                 |
+| -------------------- | --------------------------------------------------------------- |
+| **Vooraf**           | De knop is grijs zolang er iets leeg is                         |
+| **Bij de druk erop** | Een regel boven de knoppen: "Vul eerst nog in: Titel, Jouw rol" |
+| **En daarbij**       | Onder elk leeg veld: "Dit veld is nog leeg."                    |
+
+De twee meldingen zijn geen dubbelop. Een lang venster scrollt, dus de
+markering onder een veld kan buiten beeld staan; de regel boven de knoppen
+noemt het veld bij naam. Andersom zegt die regel niet wélk van de drie
+vakjes het is. Samen is er geen zoekwerk meer.
+
+De bewaking staat in [`lib/verplicht.ts`](../../resources/js/lib/verplicht.ts):
+
+```ts
+const nodig = useVerplicht(() => [
+    {
+        sleutel: 'title_nl',
+        naam: t('Titel'),
+        gevuld: formulier.value.title_nl.trim() !== '',
+    },
+]);
+```
+
+De `naam` is wat in de melding komt te staan, en die hoort **letterlijk
+hetzelfde** te zijn als het label op het scherm -- anders leest de klant
+over een veld dat hij nergens ziet. `VerplichteVeldenTest` bewaakt dat.
+
+#### De knop is grijs maar niet uitgeschakeld
+
+Dit is de kern en het is makkelijk mis te doen. Een echte `disabled` knop
+doet níets als je erop drukt: geen melding, geen uitleg, en een
+schermlezer slaat hem over. De klant staat dan voor een grijze knop zonder
+te weten waarom.
+
+Daarom is er een aparte prop:
+
+```vue
+<Button :disabled="bezig" :geblokkeerd="!nodig.compleet" @click="opslaan">
+```
+
+|               |                                              |
+| ------------- | -------------------------------------------- |
+| `disabled`    | Wat écht niet kan -- er loopt al een verzoek |
+| `geblokkeerd` | Wat nog niet mag -- er is een veld leeg      |
+
+`geblokkeerd` haalt de zweefklassen weg, zet de knop op halve dekking en
+meldt zich met `aria-disabled`. De klik komt gewoon binnen, en juist die
+klik levert de uitleg op. `opslaan()` begint dan met:
+
+```ts
+if (!nodig.compleet) {
+    nodig.meld();
+
+    return;
+}
+```
+
+#### Een venster met stappen
+
+Geef elk veld zijn `stap` mee en de `stap`-ref als tweede argument. Dan
+kijkt `nodig.klaar` alleen naar de stap waar je op staat -- dat stuurt
+**Volgende** -- en `nodig.compleet` naar het geheel, voor **Opslaan**.
+
+Mist er bij het opslaan tóch nog iets van een stap terug, dan springt het
+venster daarheen:
+
+```ts
+if (!nodig.compleet) {
+    nodig.meld();
+    naarStap(nodig.eersteLegeStap());
+
+    return;
+}
+```
+
+Zonder dat leest de klant op stap 2 een melding over een veld dat hij niet
+voor zich heeft -- dezelfde reden waarom een fout van de server ook al naar
+de juiste stap springt.
+
+#### Waar het bewust niet staat
+
+De inlogschermen, het wachtwoordscherm, het profielscherm en het publieke
+contactformulier draaien op Inertia's `<Form>`: de velden staan daar zonder
+`v-model`, dus er is geen waarde om "staat hier al iets?" aan af te lezen.
+
+Meekijken met wat er getypt wordt zou kunnen, maar juist dáár vult een
+wachtwoordbeheerder de velden vaak in **zonder een toetsaanslag**. De knop
+zou dan grijs blijven terwijl alles is ingevuld -- erger dan wat we wilden
+oplossen. De server geeft daar meteen een duidelijke melding terug, en
+`Profile.vue` heeft het `required`-attribuut van de browser zelf.
+
+Die schermen staan bij naam in `VerplichteVeldenTest::ZONDER_EIGEN_WAARDEN`.
+Zet je er een bij, zet de reden erbij.
+
+#### Als "leeg" niet het goede woord is
+
+Drie van de zes cijfers uit een authenticator is niet leeg, maar ook niet
+af. Geef zo'n veld een eigen `melding` mee:
+
+```ts
+{
+    sleutel: 'code',
+    naam: t('De code uit je authenticator'),
+    gevuld: code.value.length === 6,
+    melding: t('Vul de zes cijfers uit je authenticator in.'),
+}
+```
+
+Zet daar nooit iets in dat de klant heeft getypt. Een wachtwoord of een
+code hoort nergens in een melding thuis.
+
 ## Datum kiezen: een maandkiezer, geen datumveld
 
 Waar een maand en een jaar nodig zijn -- de periode van een ervaring --
@@ -784,22 +908,29 @@ vermijden.
    label van elk veld met `required`.** Dit is de stap die het vaakst
    wordt overgeslagen, en de enige waarbij de klant verkeerde informatie
    krijgt als je hem vergeet.
-2. Een keuze uit een lijst? `BrandSelect`, met `aria-label` als er geen
+2. **Zet diezelfde velden in `useVerplicht()`**, en de knop op
+   `:geblokkeerd`. Zonder dat kan de klant doorklikken en krijgt hij de
+   fout pas van de server, schermen later. `VerplichteVeldenTest` valt om
+   als je het vergeet.
+3. Een keuze uit een lijst? `BrandSelect`, met `aria-label` als er geen
    zichtbaar label naast staat. Lange lijst? Dan zoekt hij vanzelf.
-3. Een maand en een jaar? `MaandKiezer`, met de lijsten van de server.
-4. Een invoerveld? `Input`, die draagt `brand-control` al.
-5. Een bestand? Het inheemse veld op `sr-only` achter een `Button`, en het
+4. Een maand en een jaar? `MaandKiezer`, met de lijsten van de server.
+5. Een invoerveld? `Input`, die draagt `brand-control` al.
+6. Een Engels veld naast of achter zijn Nederlandse? Laat het Nederlands
+   grijs zien -- `nederlandsAlsHint()` of `.brand-bron`. Zie
+   [vertalingen](vertalingen.md).
+7. Een bestand? Het inheemse veld op `sr-only` achter een `Button`, en het
    formulier als `FormData` versturen.
-6. Kan er iets schuiven binnen de pagina? `brand-scrollbar` erop, en de plek
+8. Kan er iets schuiven binnen de pagina? `brand-scrollbar` erop, en de plek
    erbij in de tabel hierboven. Schuift het **zijwaarts** -- een brede
    tabel -- dan `brand-schuif-x` in plaats van `overflow-x-auto`, anders
    slikt het vak het muiswiel op en staat de pagina stil.
-7. Een kleur nodig die er niet is? Die komt in `:root` én in `.dark`, en in de
+9. Een kleur nodig die er niet is? Die komt in `:root` én in `.dark`, en in de
    tabel bovenaan dit document.
-8. Maakt, wijzigt of verwijdert een knop iets? Dan krijgt hij de variant
-   van zijn handeling, niet de standaardknop. Zie hierboven.
-9. Gaat een link naar de publieke site? Dan hoort `VerlaatPortaal` erachter.
-10. Controleer beide thema's, en controleer met het toetsenbord dat de
+10. Maakt, wijzigt of verwijdert een knop iets? Dan krijgt hij de variant
+    van zijn handeling, niet de standaardknop. Zie hierboven.
+11. Gaat een link naar de publieke site? Dan hoort `VerlaatPortaal` erachter.
+12. Controleer beide thema's, en controleer met het toetsenbord dat de
     focusring zichtbaar is en dat de lijst met de pijltjes te bedienen is.
 
 Zie ook [huisstijl en kleuren](huisstijl-en-kleuren.md) voor het palet zelf en
